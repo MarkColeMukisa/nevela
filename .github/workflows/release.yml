@@ -1,0 +1,44 @@
+name: Release
+
+# Pushing a tag like v0.2.0 publishes a GitHub release whose notes are that version's
+# section of CHANGELOG.md. See apps/docs/src/content/docs/contributing/releasing.md.
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag matches the recorded version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          recorded="$(node -p "require('./package.json').version")"
+          if [ "$version" != "$recorded" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json ($recorded). Run pnpm release first."
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Release notes from the changelog
+        run: |
+          awk -v version="$VERSION" '
+            /^## \[/ { printing = ($0 ~ "^## \\[" version "\\]") ; next }
+            /^\[[^]]+\]: / { printing = 0 }
+            printing { print }
+          ' CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "CHANGELOG.md has no notes for $VERSION."
+            exit 1
+          fi
+          cat notes.md
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag

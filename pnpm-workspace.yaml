@@ -2,6 +2,7 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
+  esbuild: true
   sharp: true
 minimumReleaseAgeExclude:
   - '@flaredev/core@0.9.1'

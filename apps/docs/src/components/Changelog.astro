@@ -1,0 +1,20 @@
+---
+/**
+ * The repository's CHANGELOG.md, rendered. Reading the file at build time means the
+ * site and the repository cannot show different release notes.
+ */
+import { createMarkdownProcessor } from "@astrojs/markdown-remark";
+import changelog from "../../../../CHANGELOG.md?raw";
+
+// From the first version heading on: the file's own title and introduction are for
+// people reading it on GitHub.
+const text = changelog.replace(/\r\n/g, "\n");
+let releases = text.slice(text.indexOf("\n## ["));
+// An empty Unreleased section is noise on a public page.
+releases = releases.replace(/\n## \[Unreleased\]\s*(?=\n## \[|\n\[[^\]]+\]: |$)/, "\n");
+
+const processor = await createMarkdownProcessor();
+const { code } = await processor.render(releases);
+---
+
+<Fragment set:html={code} />
