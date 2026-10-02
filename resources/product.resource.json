@@ -1,0 +1,9 @@
+{
+  "name": "Product",
+  "fields": [
+    { "name": "name", "type": "string" },
+    { "name": "sku", "type": "string", "unique": true },
+    { "name": "price", "type": "decimal" },
+    { "name": "active", "type": "boolean" }
+  ]
+}

@@ -1,0 +1,7 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+allowBuilds:
+  sharp: true
+minimumReleaseAgeExclude:
+  - '@flaredev/core@0.9.1'

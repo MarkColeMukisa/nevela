@@ -1,0 +1,11 @@
+node_modules/
+vendor/
+.env
+.env.*
+!.env.example
+.next/
+.phpunit.result.cache
+
+# TypeScript / Next build output
+*.tsbuildinfo
+next-env.d.ts

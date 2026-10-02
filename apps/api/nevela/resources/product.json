@@ -1,0 +1,37 @@
+{
+    "$schema": "https://nevela.dev/schema/resource.v1.json",
+    "name": "Product",
+    "table": "products",
+    "slug": "products",
+    "label": "Product",
+    "pluralLabel": "Products",
+    "icon": "package",
+    "group": "Catalogue",
+    "fields": {
+        "name": {
+            "kind": "string"
+        },
+        "sku": {
+            "kind": "string",
+            "unique": true
+        },
+        "price": {
+            "kind": "float",
+            "format": "money"
+        },
+        "active": {
+            "kind": "boolean"
+        },
+        "kind": {
+            "kind": "enum",
+            "options": [
+                "stock",
+                "digital"
+            ]
+        },
+        "notes": {
+            "kind": "text",
+            "required": false
+        }
+    }
+}
