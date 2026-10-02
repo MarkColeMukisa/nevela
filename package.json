@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Nevela: Laravel as the authority, Flare's Next.js frontend as the UI, one resource description driving both.",
-  "packageManager": "pnpm@10",
+  "packageManager": "pnpm@11.8.0",
   "engines": {
     "node": ">=20"
   },
