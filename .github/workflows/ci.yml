@@ -74,5 +74,20 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile --filter nevela-web
+      - name: Release script tests
+        run: pnpm test:release
       - run: pnpm --filter nevela-web typecheck
       - run: pnpm --filter nevela-web build
+
+  docs:
+    name: Docs site (build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter nevela-docs
+      - run: pnpm docs:build

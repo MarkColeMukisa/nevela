@@ -22,7 +22,8 @@ nevela/
 ├─ packages/laravel/   nevela/laravel: Composer package (generator + runtime)
 ├─ apps/api/           a Laravel app using the package
 ├─ apps/web/           Flare's Next.js dashboard, backed by Laravel
-└─ docs/architecture.md
+├─ apps/docs/           the documentation site (Astro Starlight)
+└─ CHANGELOG.md
 ```
 
 ## Run it
@@ -106,4 +107,13 @@ Unique fields stay unique across repeated runs, and a unique field with few poss
 cd packages/laravel && composer install && vendor/bin/phpunit
 ```
 
-See [docs/architecture.md](docs/architecture.md) for the contract and the roadmap.
+## Documentation
+
+The documentation is a website in [apps/docs](apps/docs): getting started, field types, commands, the REST API, the web app, configuration and releasing. Run it with:
+
+```sh
+pnpm install
+pnpm docs:dev
+```
+
+Changes per version are in [CHANGELOG.md](CHANGELOG.md), which the site also shows.

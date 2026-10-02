@@ -1,0 +1,34 @@
+---
+/**
+ * The banner across the top of every page.
+ *
+ * Starlight's own banner is static frontmatter, which goes stale. This reads the version
+ * from package.json and the words from src/version.ts, so the two cannot disagree.
+ */
+import { NEVELA_VERSION, RELEASE_BANNER } from "../version";
+---
+
+<div class="fl-banner">
+  <strong>Nevela {NEVELA_VERSION}</strong>: {RELEASE_BANNER.text}
+  <a href={RELEASE_BANNER.href}>{RELEASE_BANNER.label}</a>
+</div>
+
+<style>
+  .fl-banner {
+    padding: 0.6rem 1rem;
+    text-align: center;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #fff;
+    background: linear-gradient(90deg, #4f46ff 0%, #6f00ff 45%, #b400ff 100%);
+  }
+
+  .fl-banner a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    white-space: nowrap;
+    /* Astro drops the line break between the text and the link, so space it here. */
+    margin-inline-start: 0.35em;
+  }
+</style>
