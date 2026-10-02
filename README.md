@@ -98,7 +98,7 @@ Fills a resource with plausible records made from its descriptor, and prints how
  INFO  Seeded 1,000 Products in 114 ms (8,809 rows/s).
 ```
 
-Unique fields stay unique across repeated runs. `--fresh` deletes the resource's existing records first. Rows are inserted directly in one transaction, so model events don't fire and a failed run keeps nothing.
+Unique fields stay unique across repeated runs, and a unique field with few possible values (an enum, a rating) is refused up front if `--count` is more than it can hold. `--fresh` deletes the resource's existing records first. The delete and the inserts share one transaction, so a failed run leaves the table as it was. Rows are inserted directly, so model events do not fire.
 
 ## Package tests
 

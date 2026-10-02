@@ -73,7 +73,7 @@ Errors (only under the Nevela prefix):
 
 ## Verified so far
 
-- 18 unit tests pass: descriptor parsing and JSON round-trip, list-query parsing and rejection, generated-block writer (update, edit detection, once-files, CRLF), and generator output (`php -l` on every generated PHP file, rules, the web registry and dashboard pages, regeneration that keeps user code).
+- 19 unit tests pass: descriptor parsing and JSON round-trip, list-query parsing and rejection, generated-block writer (update, edit detection, once-files, CRLF), and generator output (`php -l` on every generated PHP file, rules, the web registry and dashboard pages, regeneration that keeps user code).
 - The package runs in a real Laravel 13 app (`apps/api`, PHP 8.5, SQLite). Every endpoint in the contract was called over HTTP: token, me, list with sort/search/filter/paging, show, create, PATCH, PUT, delete, stats, descriptors, and the 400/401/404/422 error bodies.
 - `apps/web` type-checks against `@flaredev/core` 0.9.1 (including the generated `product.resource.ts`) and `next build` passes.
 - With both apps running: the dashboard home, list, filtered list, detail and not-found pages render Laravel's data, and the sign-in, create, update, import, export, delete and bulk-delete server actions were called over HTTP and returned Laravel's results and validation messages.

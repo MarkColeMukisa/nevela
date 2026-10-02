@@ -9,3 +9,6 @@ vendor/
 # TypeScript / Next build output
 *.tsbuildinfo
 next-env.d.ts
+
+# A library is tested against whatever its constraints resolve to, not a lock
+packages/*/composer.lock
