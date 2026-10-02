@@ -86,6 +86,20 @@ curl -g "localhost:8000/api/products?sort=-price&filter[kind]=digital" -H "Autho
 
 Edit `nevela/resources/<name>.json`, then `php artisan nevela:generate`. Generated code lives between `// nevela:generated:start` and `// nevela:generated:end`. Code outside that block is yours and is never touched. If you edit *inside* a block, regeneration skips that file and tells you (`--force` overrides). Migrations, policies and dashboard pages are written once and then belong to you; add a new migration when fields change.
 
+## Seeding
+
+```sh
+php artisan nevela:seed Product --count=1000
+```
+
+Fills a resource with plausible records made from its descriptor, and prints how long it took:
+
+```
+ INFO  Seeded 1,000 Products in 114 ms (8,809 rows/s).
+```
+
+Unique fields stay unique across repeated runs, and a unique field with few possible values (an enum, a rating) is refused up front if `--count` is more than it can hold. `--fresh` deletes the resource's existing records first. The delete and the inserts share one transaction, so a failed run leaves the table as it was. Rows are inserted directly, so model events do not fire.
+
 ## Package tests
 
 ```sh
