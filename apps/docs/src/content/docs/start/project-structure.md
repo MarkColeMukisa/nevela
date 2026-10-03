@@ -10,8 +10,6 @@ my-app/
 ├─ apps/
 │  ├─ api/      the Laravel app
 │  └─ web/      the Next.js dashboard
-├─ packages/
-│  └─ nevela-laravel/   the Nevela package (see below)
 ├─ scripts/
 │  └─ dev.mjs   runs both apps together
 └─ package.json
@@ -47,11 +45,16 @@ An ordinary Laravel app. These are the parts Nevela adds to it:
 
 See [The web app](/guides/web-app/) for how these fit together.
 
-## packages/nevela-laravel
+## The Nevela package
 
-The Nevela package itself: the generator, the commands and the code behind the REST API. Composer installs it into `apps/api` from this folder.
+The generator, the commands and the code behind the REST API are a Composer package, `nevela/laravel`. It is installed into `apps/api/vendor` like any other dependency, and updated the same way:
 
-It is here because Nevela has no tagged release on Packagist yet. Once it has, new apps install the package from Packagist like any other dependency and this folder is not created. Treat it as a dependency: don't edit it, so that updating later stays simple.
+```sh
+cd apps/api
+composer update nevela/laravel
+```
+
+If your app has a `packages/nevela-laravel` folder instead, it was created with `--bundled-package`, or before a matching release existed. Composer installs the package from that folder. Treat it as a dependency and don't edit it.
 
 ## The root
 

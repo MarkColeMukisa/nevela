@@ -41,10 +41,13 @@ php artisan migrate
 | `--no-install` | Don't install the dashboard's dependencies. |
 | `--no-user` | Don't ask to create the first user. |
 | `--no-git` | Don't run `git init`. |
+| `--bundled-package` | Use the copy of `nevela/laravel` inside this installer instead of the release on Packagist. |
 | `-y`, `--yes` | Ask nothing; take the defaults. |
 
 With npm, put options after `--`: `npm create nevela@latest my-app -- --no-install`.
 
 ## How it installs the Laravel package
 
-If `nevela/laravel` is on Packagist, it is installed from there. Until then, the package travels inside this installer and is placed in `my-app/packages/nevela-laravel`, where Composer installs it by path.
+`nevela/laravel` is installed from [Packagist](https://packagist.org/packages/nevela/laravel), at the release that matches this installer's version.
+
+If Packagist has no matching release, or you pass `--bundled-package`, the copy that travels inside this installer is placed in `my-app/packages/nevela-laravel` and Composer installs it from there. That is how Nevela's own CI tests a change to the package before it is released.
