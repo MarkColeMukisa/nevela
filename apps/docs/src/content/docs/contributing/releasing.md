@@ -102,9 +102,11 @@ git tag v0.2.0
 git push origin main --follow-tags
 ```
 
-**4. Update the docs site's headline.** `apps/docs/src/version.ts` holds the one-line summary shown in the banner and on the home page. The version number beside it is read from `package.json`, so only the words need changing.
+**4. Publish the packages.** `pnpm split:laravel v0.2.0` for Packagist and `npm publish` in `packages/create-nevela` for npm. Both are described below.
 
-**5. The GitHub release is created for you.** Pushing the tag runs `.github/workflows/release.yml`. It checks that the tag matches the version in `package.json`, takes that version's section from the changelog, and publishes it as the release notes.
+**5. Update the docs site's headline.** `apps/docs/src/version.ts` holds the one-line summary shown in the banner and on the home page. The version number beside it is read from `package.json`, so only the words need changing.
+
+**6. The GitHub release is created for you.** Pushing the tag runs `.github/workflows/release.yml`. It checks that the tag matches the version in `package.json`, takes that version's section from the changelog, and publishes it as the release notes.
 
 ## The first release
 
@@ -150,16 +152,38 @@ Its version is the repository's version, so publish once per release.
 
 ## Publishing the Laravel package to Packagist
 
-Packagist expects a package at the root of a repository, and `nevela/laravel` lives in `packages/laravel`. The fix is a second, read-only repository that holds only that folder.
+Packagist expects a package at the root of a repository, and `nevela/laravel` lives in `packages/laravel`. So it is published from [MarkColeMukisa/nevela-laravel](https://github.com/MarkColeMukisa/nevela-laravel), a read-only copy of that folder with its history. Nobody commits there; it is only ever written by the split.
 
-One-time setup:
+### On every release
 
-1. Create an empty GitHub repository, for example `MarkColeMukisa/nevela-laravel`.
-2. Create a fine-grained personal access token with **Contents: read and write** on that repository only.
-3. In this repository's settings, add the token as the secret `LARAVEL_SPLIT_TOKEN`, and add the variable `LARAVEL_SPLIT_REPO` with the value `MarkColeMukisa/nevela-laravel`.
-4. Push to `main` once. `.github/workflows/split-laravel.yml` copies `packages/laravel` and its history to the new repository.
-5. Submit the new repository's URL at [packagist.org/packages/submit](https://packagist.org/packages/submit).
+After the tag is pushed:
 
-After that, every push to `main` and every release tag is copied across, and Packagist picks up new versions from the tags.
+```sh
+pnpm split:laravel v0.2.0
+```
 
-Until the variable is set, the workflow does nothing. Until the package is on Packagist, `create-nevela` puts a copy of it in each new app's `packages/nevela-laravel` folder and installs it from there. Once it is on Packagist, new apps install it from Packagist with no change to the command.
+That copies `packages/laravel` as it is on `main` to the other repository, and gives the same tag there. Packagist reads versions from those tags and picks a new one up within a few minutes.
+
+Without a tag, `pnpm split:laravel` updates the copy's `main` only. It uses your own git credentials, and nothing is stored.
+
+### Once: submit it to Packagist
+
+1. Sign in at [packagist.org](https://packagist.org) with GitHub.
+2. Go to [packagist.org/packages/submit](https://packagist.org/packages/submit) and enter `https://github.com/MarkColeMukisa/nevela-laravel`.
+3. Let Packagist install its GitHub hook when it offers, so new tags show up without a manual update.
+
+The package only becomes installable with `composer require nevela/laravel` once a release tag exists in the copy. Before that, Packagist lists it with a development version only.
+
+### What changes for new apps
+
+`create-nevela` asks Packagist whether there is a release that goes with its own version. If there is, the new app installs `nevela/laravel` from Packagist. If not, it puts a copy of the package in the app's `packages/nevela-laravel` folder and installs it from there. The command people type is the same either way.
+
+### Optional: let CI do the split
+
+`.github/workflows/split-laravel.yml` runs the same split on every push to `main` and every release tag, so nobody has to remember. It needs a token, because a workflow in one repository cannot push to another by default:
+
+1. Create a fine-grained personal access token with **Contents: read and write** on `nevela-laravel` only.
+2. Add it to this repository as the secret `LARAVEL_SPLIT_TOKEN`: `gh secret set LARAVEL_SPLIT_TOKEN`.
+3. Turn the workflow on: `gh variable set LARAVEL_SPLIT_REPO --body MarkColeMukisa/nevela-laravel`.
+
+Until that variable is set, the workflow does nothing.

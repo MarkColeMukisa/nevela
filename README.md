@@ -118,6 +118,10 @@ Unique fields stay unique across repeated runs, and a unique field with few poss
 cd packages/laravel && composer install && vendor/bin/phpunit
 ```
 
+## License
+
+MIT. Copyright (c) 2026 Mark Cole MUKISA. The dashboard in `apps/web` is derived from [Flare](https://github.com/MUKE-coder/flare-framework) by Muke Johnbaptist, also MIT; its licence is kept in `apps/web/LICENSE-flare`.
+
 ## Documentation
 
 The documentation is a website in [apps/docs](apps/docs): getting started, field types, commands, the REST API, the web app, configuration and releasing. Run it with:

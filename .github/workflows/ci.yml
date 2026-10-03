@@ -76,6 +76,8 @@ jobs:
       - run: pnpm install --frozen-lockfile --filter nevela-web
       - name: Release script tests
         run: pnpm test:release
+      - name: create-nevela unit tests
+        run: pnpm test:create
       - run: pnpm --filter nevela-web typecheck
       - run: pnpm --filter nevela-web build
 
@@ -114,6 +116,8 @@ jobs:
           mkdir "$RUNNER_TEMP/create-nevela"
           tar -xzf create-nevela-*.tgz -C "$RUNNER_TEMP/create-nevela"
           test -f "$RUNNER_TEMP/create-nevela/package/template/web/_gitignore"
+          test -f "$RUNNER_TEMP/create-nevela/package/packagist.mjs"
+          test -f "$RUNNER_TEMP/create-nevela/package/LICENSE"
       - name: Create an app
         working-directory: ${{ runner.temp }}
         run: node create-nevela/package/index.mjs demo-app --yes --pm pnpm

@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
+import { onPackagist } from './packagist.mjs';
 import { copyLaravelPackage, copyWebTemplate } from './template.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -142,16 +143,6 @@ function checkRequirements() {
   }
 
   if (!available('composer')) fail('Composer isn\'t installed, or isn\'t on your PATH: https://getcomposer.org/download/');
-}
-
-/** Whether nevela/laravel can be installed from Packagist yet. */
-async function onPackagist() {
-  try {
-    const response = await fetch('https://repo.packagist.org/p2/nevela/laravel.json', { signal: AbortSignal.timeout(8000) });
-    return response.ok;
-  } catch {
-    return false;
-  }
 }
 
 /** Sanctum's trait on the User model. `install:api` asks for this by hand; do it for them. */
@@ -302,10 +293,11 @@ async function main() {
   });
 
   await step('Installing Nevela', async () => {
-    if (await onPackagist()) {
-      run('composer', ['require', `nevela/laravel:^${VERSION.split('.').slice(0, 2).join('.')}`, '--no-interaction', '--no-progress'], { cwd: api });
+    const wanted = VERSION.split('.').slice(0, 2).map(Number);
+    if (await onPackagist(wanted)) {
+      run('composer', ['require', `nevela/laravel:^${wanted.join('.')}`, '--no-interaction', '--no-progress'], { cwd: api });
     } else {
-      // Not published yet: the package travels with this installer and is installed by path.
+      // No matching release there yet: the package travels with this installer and is installed by path.
       copyLaravelPackage(path.join(root, 'packages', 'nevela-laravel'));
       run('composer', ['config', 'repositories.nevela', 'path', '../../packages/nevela-laravel'], { cwd: api });
       run('composer', ['require', 'nevela/laravel:@dev', '--no-interaction', '--no-progress'], { cwd: api });

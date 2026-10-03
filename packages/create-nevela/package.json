@@ -9,7 +9,9 @@
   "files": [
     "index.mjs",
     "template.mjs",
-    "template"
+    "packagist.mjs",
+    "template",
+    "LICENSE"
   ],
   "scripts": {
     "prepack": "node build-template.mjs"
@@ -29,5 +31,7 @@
     "url": "git+https://github.com/MarkColeMukisa/nevela.git",
     "directory": "packages/create-nevela"
   },
-  "homepage": "https://nevela-docs.vercel.app"
+  "homepage": "https://nevela-docs.vercel.app",
+  "license": "MIT",
+  "author": "Mark Cole MUKISA"
 }
