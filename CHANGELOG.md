@@ -6,6 +6,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-03
+
 ### Added
 
 - `pnpm create nevela my-app`: create a new app, a Laravel API and a Next.js dashboard installed and connected, with one command.
@@ -21,3 +23,6 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - A documentation site in `apps/docs`, with a home page, search, light and dark themes and the current version in the header.
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
+
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/MarkColeMukisa/nevela/releases/tag/v0.1.0
