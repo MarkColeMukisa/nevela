@@ -16,13 +16,15 @@ If a token is revoked in Laravel, the next page load finds `GET /auth/me` answer
 
 ## Creating users
 
-The dashboard has no sign-up page yet. Create users in Laravel:
+The dashboard has no sign-up page yet. Create users in the Laravel app:
 
 ```sh
-php artisan tinker --execute="App\Models\User::create(['name' => 'Admin', 'email' => 'admin@example.com', 'password' => 'choose-a-password']);"
+php artisan nevela:user
 ```
 
-The user model needs Sanctum's `HasApiTokens` trait. See the [quickstart](/start/quickstart/#starting-from-an-empty-laravel-app).
+It asks for a name, an email and a password, and the password is not shown as you type. See [Commands](/reference/commands/#nevelauser) for the options.
+
+The user model needs Sanctum's `HasApiTokens` trait. `pnpm create nevela` adds it for you.
 
 ## Over the API
 

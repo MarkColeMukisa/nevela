@@ -8,6 +8,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ### Added
 
+- `pnpm create nevela my-app`: create a new app, a Laravel API and a Next.js dashboard installed and connected, with one command.
+- `php artisan nevela:user`: create someone who can sign in to the dashboard.
 - `php artisan nevela:resource`: describe a resource once and generate its Laravel model, migration, form request, API resource, controller, policy and routes.
 - `php artisan nevela:generate`: regenerate from the descriptors. Only code between the `nevela:generated` markers is rewritten; a file edited inside its markers is skipped and reported.
 - `php artisan nevela:seed`: fill a resource with plausible records and print how long it took.
@@ -17,4 +19,4 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - Web files generated from Laravel: the Flare descriptor, the resource registry and the dashboard pages for each resource.
 - A documentation site in `apps/docs`, with a home page, search, light and dark themes and the current version in the header.
 - This changelog and a release script, `pnpm release`.
-- CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, and a type-check and build of the web app.
+- CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.

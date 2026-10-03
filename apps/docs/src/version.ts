@@ -17,7 +17,7 @@ export const RELEASE_HEADLINE = "One description, a Laravel API and a Next.js da
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "resources, a REST API, the dashboard and seeding, from one command.",
+  text: "a Laravel API and a Next.js dashboard from pnpm create nevela my-app.",
   href: "/start/quickstart/",
   label: "Get started",
 };

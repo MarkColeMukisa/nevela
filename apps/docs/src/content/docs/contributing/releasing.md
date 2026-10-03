@@ -7,12 +7,13 @@ How Nevela is versioned, how the changelog is kept, and how to cut a release.
 
 ## One version for the whole repository
 
-The Laravel package, the web app and the docs are released together under one number. It is recorded in three places, and `pnpm release` keeps them the same:
+The Laravel package, the web app, the create command and the docs are released together under one number. It is recorded in four places, and `pnpm release` keeps them the same:
 
 | File | Where |
 |---|---|
 | `package.json` | `"version"` |
 | `apps/web/package.json` | `"version"` |
+| `packages/create-nevela/package.json` | `"version"` |
 | `packages/laravel/src/Nevela.php` | `Nevela::VERSION` |
 
 A release is a git tag named `v` plus the version, such as `v0.2.0`.
@@ -89,13 +90,13 @@ It moves the Unreleased notes under a new heading with today's date, leaves Unre
 It stops without changing anything if:
 
 - Unreleased is empty. Write the notes first.
-- the three version files disagree
+- the version files disagree
 - the version is lower than the current one, or is already in the changelog
 
 **3. Review, commit, tag and push.** The script only edits files and prints these commands for you:
 
 ```sh
-git add CHANGELOG.md package.json apps/web/package.json packages/laravel/src/Nevela.php
+git add CHANGELOG.md package.json apps/web/package.json packages/create-nevela/package.json packages/laravel/src/Nevela.php
 git commit -m "Release v0.2.0"
 git tag v0.2.0
 git push origin main --follow-tags
@@ -118,7 +119,7 @@ pnpm release 0.1.0
 **The release script made changes you do not want.** Nothing is committed yet. Discard them:
 
 ```sh
-git checkout -- CHANGELOG.md package.json apps/web/package.json packages/laravel/src/Nevela.php
+git checkout -- CHANGELOG.md package.json apps/web/package.json packages/create-nevela/package.json packages/laravel/src/Nevela.php
 ```
 
 **You tagged the wrong commit, and have not pushed.** Delete the tag and make it again:
@@ -129,6 +130,36 @@ git tag -d v0.2.0
 
 **A bad release is already public.** Do not move or delete the tag: anyone who fetched it would have a different `v0.2.0` from everyone else. Fix the problem and release `v0.2.1`.
 
-## Not set up yet
+## Publishing the create command to npm
 
-The Laravel package is not published on Packagist. Packagist expects a package at the root of a repository, and `nevela/laravel` lives in `packages/laravel`. Publishing it needs a read-only copy of that folder in its own repository, updated on each tag. Until then, apps install it by path, as [Getting started](/start/quickstart/#starting-from-an-empty-laravel-app) shows.
+`create-nevela` is what makes `pnpm create nevela my-app` work. Publish it after tagging a release:
+
+```sh
+cd packages/create-nevela
+npm login          # once per machine
+npm publish
+```
+
+`npm publish` runs `build-template.mjs` first, which copies the dashboard (`apps/web`) and the Laravel package (`packages/laravel`) into the package, leaving out the example resources. To see exactly what would be published without publishing:
+
+```sh
+npm pack --dry-run
+```
+
+Its version is the repository's version, so publish once per release.
+
+## Publishing the Laravel package to Packagist
+
+Packagist expects a package at the root of a repository, and `nevela/laravel` lives in `packages/laravel`. The fix is a second, read-only repository that holds only that folder.
+
+One-time setup:
+
+1. Create an empty GitHub repository, for example `MarkColeMukisa/nevela-laravel`.
+2. Create a fine-grained personal access token with **Contents: read and write** on that repository only.
+3. In this repository's settings, add the token as the secret `LARAVEL_SPLIT_TOKEN`, and add the variable `LARAVEL_SPLIT_REPO` with the value `MarkColeMukisa/nevela-laravel`.
+4. Push to `main` once. `.github/workflows/split-laravel.yml` copies `packages/laravel` and its history to the new repository.
+5. Submit the new repository's URL at [packagist.org/packages/submit](https://packagist.org/packages/submit).
+
+After that, every push to `main` and every release tag is copied across, and Packagist picks up new versions from the tags.
+
+Until the variable is set, the workflow does nothing. Until the package is on Packagist, `create-nevela` puts a copy of it in each new app's `packages/nevela-laravel` folder and installs it from there. Once it is on Packagist, new apps install it from Packagist with no change to the command.

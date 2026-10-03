@@ -1,9 +1,11 @@
 ---
 title: "Commands"
-description: "nevela:resource, nevela:generate and nevela:seed, with every option."
+description: "nevela:resource, nevela:generate, nevela:seed and nevela:user, with every option."
 ---
 
-Nevela adds three commands to `php artisan`. Run them in the Laravel app (`apps/api`).
+Nevela adds four commands to `php artisan`. Run them in the Laravel app (`apps/api`).
+
+To create a new app in the first place, see the [quickstart](/start/quickstart/): `pnpm create nevela my-app`.
 
 ## nevela:resource
 
@@ -85,10 +87,24 @@ What to know before using it:
 - **It is all or nothing.** The delete from `--fresh` and all the inserts share one transaction. If anything fails, the table is left as it was.
 - **Rows are inserted directly.** That is what makes it fast. It also means the form request, the policy and model events do not run. Use it for development and demo data, not for importing real records.
 
-## Running the tests
+## nevela:user
+
+Create someone who can sign in to the dashboard.
 
 ```sh
-cd packages/laravel
-composer install
-vendor/bin/phpunit
+php artisan nevela:user
+```
+
+It asks for a name, an email and a password. The password is not shown as you type.
+
+| Option | Meaning |
+|---|---|
+| `--name=` | The person's name. |
+| `--email=` | The address they sign in with. Must not be in use already. |
+| `--password=` | Their password, at least 8 characters. Leave it out to be asked for it, which keeps it out of your shell history. |
+
+Pass all three to create a user without being asked anything, for example in a deploy script:
+
+```sh
+php artisan nevela:user --name="Ada Okafor" --email=ada@example.com --password="$ADMIN_PASSWORD"
 ```

@@ -1,0 +1,33 @@
+{
+  "name": "create-nevela",
+  "version": "0.1.0",
+  "description": "Create a new Nevela app: a Laravel API and a Next.js dashboard from one resource description.",
+  "type": "module",
+  "bin": {
+    "create-nevela": "index.mjs"
+  },
+  "files": [
+    "index.mjs",
+    "template.mjs",
+    "template"
+  ],
+  "scripts": {
+    "prepack": "node build-template.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "nevela",
+    "laravel",
+    "nextjs",
+    "scaffold",
+    "create"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MarkColeMukisa/nevela.git",
+    "directory": "packages/create-nevela"
+  },
+  "homepage": "https://nevela-docs.vercel.app"
+}

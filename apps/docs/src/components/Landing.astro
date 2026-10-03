@@ -7,7 +7,9 @@ import { NEVELA_VERSION, RELEASE_HEADLINE, RELEASE_URL, REPO_URL } from "../vers
  * Flare's landing page (MIT), with Nevela's content.
  */
 const install = [
-  { id: "resource", label: "Create a resource", command: 'php artisan nevela:resource Product --fields="name:string, sku:string!, price:money"' },
+  { id: "pnpm", label: "pnpm", command: "pnpm create nevela my-app" },
+  { id: "npm", label: "npm", command: "npm create nevela@latest my-app" },
+  { id: "resource", label: "Add a resource", command: 'php artisan nevela:resource Product --fields="name:string, sku:string!, price:money"' },
   { id: "generate", label: "Regenerate", command: "php artisan nevela:generate" },
   { id: "seed", label: "Seed", command: "php artisan nevela:seed Product --count=1000" },
 ];
@@ -38,6 +40,21 @@ const batteries = [
 ];
 
 const generators = [
+  {
+    id: "create",
+    label: "create nevela",
+    command: "pnpm create nevela my-app",
+    lead: "A new app in one command: a Laravel API and a Next.js dashboard, installed and connected.",
+    out: [
+      ["✔", "Creating the Laravel app"],
+      ["✔", "Adding token sign-in (Sanctum)"],
+      ["✔", "Installing Nevela"],
+      ["✔", "Adding the dashboard"],
+      ["✔", "Installing the dashboard's dependencies with pnpm"],
+      ["✔", "Created my-app"],
+    ],
+    href: "/start/quickstart/",
+  },
   {
     id: "resource",
     label: "nevela:resource",
@@ -191,7 +208,7 @@ const faq = [
     </div>
 
     <div class="fl-install" data-tabs>
-      <div class="fl-install-tabs" role="tablist" aria-label="Commands">
+      <div class="fl-install-tabs" role="tablist" aria-label="Create an app, then add to it">
         {install.map((item, index) => (
           <button role="tab" id={`fl-i-${item.id}`} aria-controls={`fl-ip-${item.id}`} aria-selected={index === 0 ? "true" : "false"} tabindex={index === 0 ? 0 : -1}>
             {item.label}
@@ -293,7 +310,7 @@ const faq = [
     <section class="fl-section fl-rail" aria-labelledby="fl-generate">
       <p class="fl-step"><span>[ 02 / 03 ]</span> Generate</p>
       <div class="fl-section-head">
-        <h2 id="fl-generate">Three commands,<br /><span class="fl-ember-text">all in artisan</span></h2>
+        <h2 id="fl-generate">One command to start,<br /><span class="fl-ember-text">one for each thing you add</span></h2>
         <p>Each one writes plain, readable files into your project. Change them, or regenerate: Nevela keeps your edits and tells you when it skipped a file.</p>
       </div>
 
@@ -397,7 +414,7 @@ const faq = [
 
     <!-- Close -->
     <section class="fl-close fl-rail" aria-labelledby="fl-close">
-      <h2 id="fl-close">Create your first resource<br /><span class="fl-ember-text">in the next five minutes</span></h2>
+      <h2 id="fl-close">Create your app<br /><span class="fl-ember-text">in the next five minutes</span></h2>
       <div class="fl-actions">
         <a class="fl-btn fl-btn-primary" href="/start/quickstart/">Follow the quickstart</a>
         <a class="fl-btn fl-btn-quiet" href="/reference/commands/">Command reference</a>

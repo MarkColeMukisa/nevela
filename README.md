@@ -2,6 +2,18 @@
 
 Nevela is a Laravel-first full-stack framework. **Laravel is the authority**: it owns data, validation, authorization, jobs and the API. **The UI is Flare's Next.js frontend** (by Muke Johnbaptist / JB, `MUKE-coder/flare-framework`), with its data and sign-in layer pointed at Laravel. **One resource description drives both.**
 
+## Create an app
+
+```sh
+pnpm create nevela my-app
+cd my-app
+pnpm run dev
+```
+
+You need PHP 8.3+, Composer and Node.js 20+. Until `create-nevela` is on npm, run `npx github:MarkColeMukisa/nevela my-app` instead. The docs are at https://nevela-docs.vercel.app.
+
+## Add a resource
+
 ```
 php artisan nevela:resource Product --fields="name:string, sku:string!, price:money, kind:enum(stock|digital), notes:text?" --icon=package
 ```
@@ -19,26 +31,25 @@ That one command writes:
 
 ```
 nevela/
-├─ packages/laravel/   nevela/laravel: Composer package (generator + runtime)
+├─ packages/laravel/        nevela/laravel: Composer package (generator + runtime)
+├─ packages/create-nevela/  the `pnpm create nevela` command
 ├─ apps/api/           a Laravel app using the package
 ├─ apps/web/           Flare's Next.js dashboard, backed by Laravel
 ├─ apps/docs/           the documentation site (Astro Starlight)
 └─ CHANGELOG.md
 ```
 
-## Run it
+## Working on Nevela itself
 
-Laravel side:
+The rest of this page is for changing the framework. Laravel side:
 
 ```sh
 cd apps/api
 composer install
 php artisan migrate
-php artisan tinker --execute="App\Models\User::create(['name' => 'Admin', 'email' => 'admin@example.com', 'password' => 'admin123']);"
+php artisan nevela:user
 php artisan serve
 ```
-
-Keep the spaces around `=>` in that command. Without any spaces, Windows PowerShell passes it to `php` unquoted, the `>` is treated as a file redirect, and the command fails without creating the user.
 
 Web side, in a second terminal:
 

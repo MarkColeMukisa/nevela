@@ -70,7 +70,10 @@ export default defineConfig({
         },
         {
           label: "Contributing",
-          items: [{ label: "Releasing", slug: "contributing/releasing" }],
+          items: [
+            { label: "Working on Nevela", slug: "contributing/development" },
+            { label: "Releasing", slug: "contributing/releasing" },
+          ],
         },
       ],
     }),

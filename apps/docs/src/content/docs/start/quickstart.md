@@ -1,58 +1,74 @@
 ---
 title: "Quickstart"
-description: "From a fresh clone to a running dashboard with one resource in it."
+description: "Create a new Nevela app with one command, sign in, and add your first resource."
 ---
 
-This page takes you from a fresh clone to a running dashboard with one resource in it.
+This page takes you from an empty folder to a running dashboard with one resource in it.
 
 ## What you need
 
-- PHP 8.3 or newer, with Composer
-- Node.js 20 or newer, with pnpm
-- A database Laravel supports. The default is SQLite, which needs no setup.
+- PHP 8.3 or newer, with [Composer](https://getcomposer.org/download/)
+- Node.js 20 or newer
+- Nothing else. The database is SQLite by default, which needs no setup.
 
-## 1. Run the Laravel app
+## 1. Create the app
+
+```sh
+pnpm create nevela my-app
+```
+
+`npm create nevela@latest my-app` works too. The dashboard is installed with whichever package manager you run this with.
+
+:::note[Before the first npm release]
+`create-nevela` is not on npm yet. Until it is, run it straight from GitHub:
+
+```sh
+npx github:MarkColeMukisa/nevela my-app
+```
+:::
+
+It does the setup for you:
+
+```
+  ✔ Creating the Laravel app
+  ✔ Adding token sign-in (Sanctum)
+  ✔ Installing Nevela
+  ✔ Adding the dashboard
+  ✔ Installing the dashboard's dependencies with pnpm
+
+  Create a user to sign in with now? (Y/n)
+```
+
+Answer yes and it asks for a name, an email and a password. That is the account you sign in with.
+
+You get this:
+
+```
+my-app/
+├─ apps/api/    a Laravel app with Sanctum and Nevela installed
+├─ apps/web/    the Next.js dashboard, pointed at the API
+└─ scripts/     runs both together
+```
+
+[Project structure](/start/project-structure/) explains what is where.
+
+## 2. Run it
+
+```sh
+cd my-app
+pnpm run dev
+```
+
+That starts Laravel on http://127.0.0.1:8000 and the dashboard on http://localhost:3000. Open http://localhost:3000/sign-in and sign in.
+
+If you skipped creating a user, do it now, in a second terminal:
 
 ```sh
 cd apps/api
-composer install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate
+php artisan nevela:user
 ```
 
-Create a user to sign in with. Users are created in Laravel; the dashboard has no sign-up page.
-
-```sh
-php artisan tinker --execute="App\Models\User::create(['name' => 'Admin', 'email' => 'admin@example.com', 'password' => 'choose-a-password']);"
-```
-
-Keep the spaces around `=>`. In Windows PowerShell, a command with no spaces in it is passed on without quotes, the `>` is read as a file redirect, and no user is created.
-
-Start the server:
-
-```sh
-php artisan serve
-```
-
-Laravel is now on http://127.0.0.1:8000.
-
-## 2. Run the web app
-
-In a second terminal, from the repository root:
-
-```sh
-pnpm install
-cd apps/web
-cp .env.example .env.local
-pnpm dev
-```
-
-Open http://localhost:3000/sign-in and sign in with the user you created.
-
-If you see "Can't reach the server", the web app cannot reach Laravel. Check that `php artisan serve` is running and that `NEVELA_API_URL` in `apps/web/.env.local` matches its address, including the `/api` at the end.
-
-## 3. Create a resource
+## 3. Add a resource
 
 In `apps/api`:
 
@@ -71,34 +87,30 @@ php artisan nevela:seed Contact --count=1000
 
 ## 4. Lock down who can do what
 
-Every generated policy starts by allowing any signed-in user. Before real use, open `apps/api/app/Policies/ContactPolicy.php` and write your rules. The file is generated once and is yours from then on.
+Every generated policy starts by allowing any signed-in user. Before real use, open `apps/api/app/Policies/ContactPolicy.php` and write your rules. The file is generated once and is yours from then on. See [Roles and policies](/guides/policies/).
 
-## Starting from an empty Laravel app
+## If something goes wrong
 
-The repository ships with `apps/api` already set up. To add Nevela to a new Laravel app instead:
+**"PHP isn't installed" or "Composer isn't installed".** The command checks for both before it starts. Install them, open a new terminal so they are on your `PATH`, and run it again.
 
-```sh
-composer create-project laravel/laravel apps/api
-cd apps/api
-php artisan install:api
-composer config repositories.nevela path ../../packages/laravel
-composer require nevela/laravel:@dev
-```
+**"Can't reach the server" on the sign-in page.** The dashboard cannot reach Laravel. Check that `pnpm run dev` is still running and that `NEVELA_API_URL` in `apps/web/.env.local` matches Laravel's address, including the `/api` at the end.
 
-Then add the Sanctum trait to `app/Models/User.php`:
+**The folder already exists.** The command refuses to write into a folder that has files in it. Pick another name or remove the folder.
 
-```php
-use Laravel\Sanctum\HasApiTokens;
+## Options
 
-class User extends Authenticatable
-{
-    use HasApiTokens, HasFactory, Notifiable;
-}
-```
+| Option | Meaning |
+|---|---|
+| `--pm <pnpm\|npm\|yarn\|bun>` | Package manager for the dashboard. Default: the one you ran the command with. |
+| `--no-install` | Don't install the dashboard's dependencies. |
+| `--no-user` | Don't ask to create the first user. |
+| `--no-git` | Don't run `git init`. |
+| `-y`, `--yes` | Ask nothing; take the defaults. |
 
-Without that trait, sign-in fails with a message naming the model to fix.
+With npm, put options after `--`: `npm create nevela@latest my-app -- --no-install`.
 
 ## Next
 
 - [Resources](/concepts/resources/): the field types and how regeneration works
 - [REST API](/reference/api/): calling the API directly
+- [Deploying](/guides/deploying/): what each app needs in production
