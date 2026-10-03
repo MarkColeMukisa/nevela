@@ -74,8 +74,10 @@ So a change to `apps/web` is a change to what new apps get.
 Try it against your working copy, from any folder outside the repository:
 
 ```sh
-node /path/to/nevela/packages/create-nevela/index.mjs test-app
+node /path/to/nevela/packages/create-nevela/index.mjs test-app --bundled-package
 ```
+
+`--bundled-package` makes the new app use `packages/laravel` from your working copy. Without it, the app installs the last release from Packagist and your changes to the package are not in it.
 
 ## The docs site
 

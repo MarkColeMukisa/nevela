@@ -98,9 +98,11 @@ It stops without changing anything if:
 ```sh
 git add CHANGELOG.md package.json apps/web/package.json packages/create-nevela/package.json packages/laravel/src/Nevela.php
 git commit -m "Release v0.2.0"
-git tag v0.2.0
+git tag -a v0.2.0 -m "v0.2.0"
 git push origin main --follow-tags
 ```
+
+The `-a` matters: `--follow-tags` only pushes annotated tags, so a plain `git tag v0.2.0` would stay on your machine.
 
 **4. Publish the packages.** `pnpm split:laravel v0.2.0` for Packagist and `npm publish` in `packages/create-nevela` for npm. Both are described below.
 
@@ -172,11 +174,13 @@ Without a tag, `pnpm split:laravel` updates the copy's `main` only. It uses your
 2. Go to [packagist.org/packages/submit](https://packagist.org/packages/submit) and enter `https://github.com/MarkColeMukisa/nevela-laravel`.
 3. Let Packagist install its GitHub hook when it offers, so new tags show up without a manual update.
 
-The package only becomes installable with `composer require nevela/laravel` once a release tag exists in the copy. Before that, Packagist lists it with a development version only.
+This is done: the package is at [packagist.org/packages/nevela/laravel](https://packagist.org/packages/nevela/laravel). A version appears there for each release tag in the copy.
 
 ### What changes for new apps
 
-`create-nevela` asks Packagist whether there is a release that goes with its own version. If there is, the new app installs `nevela/laravel` from Packagist. If not, it puts a copy of the package in the app's `packages/nevela-laravel` folder and installs it from there. The command people type is the same either way.
+`create-nevela` asks Packagist whether there is a release that goes with its own version: `^0.1` accepts any `0.1.x`. If there is, the new app installs `nevela/laravel` from Packagist. If not, it puts the copy that ships inside the installer in the app's `packages/nevela-laravel` folder and installs it from there. The command people type is the same either way.
+
+So release order matters: split and tag the package before publishing `create-nevela` to npm, or the new installer will find no matching release and fall back to its bundled copy.
 
 ### Optional: let CI do the split
 

@@ -107,6 +107,7 @@ Every generated policy starts by allowing any signed-in user. Before real use, o
 | `--no-install` | Don't install the dashboard's dependencies. |
 | `--no-user` | Don't ask to create the first user. |
 | `--no-git` | Don't run `git init`. |
+| `--bundled-package` | Use the copy of `nevela/laravel` inside the installer instead of the release on Packagist. |
 | `-y`, `--yes` | Ask nothing; take the defaults. |
 
 With npm, put options after `--`: `npm create nevela@latest my-app -- --no-install`.

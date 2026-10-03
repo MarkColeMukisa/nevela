@@ -6,6 +6,18 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Added
+
+- `create-nevela --bundled-package`: use the copy of `nevela/laravel` inside the installer instead of the release on Packagist.
+
+### Changed
+
+- New apps install `nevela/laravel` from Packagist when a release matching the installer's version exists, instead of always carrying a copy in `packages/nevela-laravel`.
+
+### Fixed
+
+- On Windows, `create-nevela` wrote the package constraint as an exact `0.1` instead of `^0.1`, so `composer update` would not have picked up later 0.1.x releases.
+
 ## [0.1.0] - 2026-10-03
 
 ### Added

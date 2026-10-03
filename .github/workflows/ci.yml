@@ -120,7 +120,8 @@ jobs:
           test -f "$RUNNER_TEMP/create-nevela/package/LICENSE"
       - name: Create an app
         working-directory: ${{ runner.temp }}
-        run: node create-nevela/package/index.mjs demo-app --yes --pm pnpm
+        # --bundled-package: test the package as it is in this commit, not the last release on Packagist.
+        run: node create-nevela/package/index.mjs demo-app --yes --pm pnpm --bundled-package
       - name: The new app has what it should, and none of the examples
         working-directory: ${{ runner.temp }}/demo-app
         run: |

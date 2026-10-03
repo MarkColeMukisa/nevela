@@ -121,8 +121,9 @@ function main() {
 
     git add CHANGELOG.md ${VERSION_FILES.map(({ file }) => file).join(' ')}
     git commit -m "Release v${version}"
-    git tag v${version}
+    git tag -a v${version} -m "v${version}"
     git push origin main --follow-tags
+    pnpm split:laravel v${version}
 `);
 }
 

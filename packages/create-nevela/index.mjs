@@ -40,6 +40,8 @@ const HELP = `
     --no-install               Don't install the dashboard's dependencies.
     --no-user                  Don't ask to create the first user.
     --no-git                   Don't run git init.
+    --bundled-package          Use the copy of nevela/laravel that ships with this installer
+                               instead of the release on Packagist.
     -y, --yes                  Ask nothing; take the defaults.
     -h, --help                 Show this.
     -v, --version              Show the version.
@@ -73,7 +75,9 @@ function run(command, args, { cwd, interactive = false, allowFailure = false } =
  */
 function spawnCommand(command, args, options) {
   if (!windows) return spawnSync(command, args, options);
-  const quote = (arg) => (/^[\w./:=@^,-]+$/.test(arg) ? arg : `"${arg.replace(/"/g, '\\"')}"`);
+  // `^` is not in the safe list on purpose: unquoted, cmd.exe treats it as an escape
+  // character and drops it, which turned the constraint "^0.1" into an exact "0.1".
+  const quote = (arg) => (/^[\w./:=@,-]+$/.test(arg) ? arg : `"${arg.replace(/"/g, '\\"')}"`);
   return spawnSync([command, ...args.map(quote)].join(' '), { ...options, shell: true });
 }
 
@@ -93,7 +97,7 @@ async function step(label, work) {
 }
 
 function parseArgs(argv) {
-  const options = { name: undefined, pm: undefined, install: true, user: true, git: true, yes: false };
+  const options = { name: undefined, pm: undefined, install: true, user: true, git: true, yes: false, bundledPackage: false };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '-h' || arg === '--help') {
@@ -106,6 +110,7 @@ function parseArgs(argv) {
     else if (arg === '--no-install') options.install = false;
     else if (arg === '--no-user') options.user = false;
     else if (arg === '--no-git') options.git = false;
+    else if (arg === '--bundled-package') options.bundledPackage = true;
     else if (arg === '--pm') options.pm = argv[++i];
     else if (arg.startsWith('--pm=')) options.pm = arg.slice(5);
     else if (arg.startsWith('-')) fail(`Unknown option ${arg}. Run with --help to see the options.`);
@@ -294,10 +299,11 @@ async function main() {
 
   await step('Installing Nevela', async () => {
     const wanted = VERSION.split('.').slice(0, 2).map(Number);
-    if (await onPackagist(wanted)) {
+    if (!options.bundledPackage && (await onPackagist(wanted))) {
       run('composer', ['require', `nevela/laravel:^${wanted.join('.')}`, '--no-interaction', '--no-progress'], { cwd: api });
     } else {
-      // No matching release there yet: the package travels with this installer and is installed by path.
+      // No matching release there (or --bundled-package): the copy that travels with this
+      // installer is placed in the app and installed by path.
       copyLaravelPackage(path.join(root, 'packages', 'nevela-laravel'));
       run('composer', ['config', 'repositories.nevela', 'path', '../../packages/nevela-laravel'], { cwd: api });
       run('composer', ['require', 'nevela/laravel:@dev', '--no-interaction', '--no-progress'], { cwd: api });
