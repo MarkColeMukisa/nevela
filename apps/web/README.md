@@ -35,6 +35,6 @@ Sign in at `/sign-in` with a user that exists in the Laravel app.
 
 ## Left out for now
 
-These parts of Flare's app depended on its own database or Better Auth and were removed: sign-up, password reset, two-factor, passkeys, the account pages, saved views, the audit history, the per-day chart, product search, costs and observability pages. File and relation fields are not generated yet (see the roadmap in `docs/architecture.md`).
+These parts of Flare's app depended on its own database or Better Auth and were removed: sign-up, password reset, two-factor, passkeys, the account pages, saved views, the audit history, the per-day chart, product search, costs and observability pages. File and relation fields are not generated yet (see the roadmap in `apps/docs/src/content/docs/concepts/architecture.md`).
 
 `policies/index.ts` can hide buttons per role, but it is display only. Laravel's policies decide what is allowed.

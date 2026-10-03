@@ -1,0 +1,1777 @@
+---
+import { Code } from "@astrojs/starlight/components";
+import { NEVELA_VERSION, RELEASE_HEADLINE, RELEASE_URL, REPO_URL } from "../version";
+/**
+ * The docs home page. One idea carries it: describe a resource once, and Nevela writes
+ * both sides — the Laravel API and the Next.js dashboard. The layout and styles are
+ * Flare's landing page (MIT), with Nevela's content.
+ */
+const install = [
+  { id: "resource", label: "Create a resource", command: 'php artisan nevela:resource Product --fields="name:string, sku:string!, price:money"' },
+  { id: "generate", label: "Regenerate", command: "php artisan nevela:generate" },
+  { id: "seed", label: "Seed", command: "php artisan nevela:seed Product --count=1000" },
+];
+
+const generated = [
+  { path: "nevela/resources/contact.json", what: "Descriptor" },
+  { path: "app/Models/Contact.php", what: "Eloquent model" },
+  { path: "database/migrations/…_create_contacts_table.php", what: "Migration" },
+  { path: "app/Http/Requests/Nevela/ContactRequest.php", what: "Validation" },
+  { path: "app/Http/Controllers/Api/ContactController.php", what: "REST API" },
+  { path: "app/Policies/ContactPolicy.php", what: "Authorization" },
+  { path: "routes/nevela.php", what: "Routes" },
+  { path: "web: resources/contact.resource.ts", what: "Dashboard descriptor" },
+  { path: "web: app/dashboard/contacts/page.tsx", what: "Table, forms, detail" },
+];
+
+const stack = ["Laravel", "Eloquent", "Sanctum", "Next.js 16", "React 19", "Flare dashboard", "Tailwind CSS"];
+
+const batteries = [
+  { name: "REST API", body: "List, read, create, update, replace and delete for every resource, with paging, sorting, search and filters.", href: "/reference/api/", icon: "bolt" },
+  { name: "Validation", body: "A Laravel form request per resource. Its messages show next to the right field in the dashboard.", href: "/concepts/field-types/", icon: "shield" },
+  { name: "Dashboard", body: "Tables, stats, forms, detail pages, import and export for every resource, from its descriptor.", href: "/guides/web-app/", icon: "grid" },
+  { name: "Authorization", body: "A Laravel policy per resource. Laravel decides; the dashboard only shows the answer.", href: "/guides/policies/", icon: "key" },
+  { name: "Sign-in", body: "Sanctum tokens kept in an httpOnly cookie. The browser never sees the token.", href: "/guides/authentication/", icon: "mail" },
+  { name: "Database", body: "Eloquent models with UUID ids and a migration you can read, on any database Laravel supports.", href: "/concepts/resources/#what-gets-generated", icon: "db" },
+  { name: "Seeding", body: "Fill a resource with plausible records in one command, and see how long it took.", href: "/guides/seeding/", icon: "wave" },
+  { name: "Your code is kept", body: "Regeneration rewrites only its marked blocks, and tells you when you edited inside one.", href: "/concepts/regeneration/#your-code-is-kept", icon: "box" },
+];
+
+const generators = [
+  {
+    id: "resource",
+    label: "nevela:resource",
+    command: 'php artisan nevela:resource Product --fields="name:string, sku:string!, price:money, kind:enum(stock|digital)"',
+    lead: "Describe a resource once. Nevela writes the Laravel side and the dashboard side from it.",
+    out: [
+      ["created", "app/Models/Product.php"],
+      ["created", "database/migrations/…_create_products_table.php"],
+      ["created", "app/Http/Requests/Nevela/ProductRequest.php"],
+      ["created", "app/Http/Controllers/Api/ProductController.php"],
+      ["created", "app/Policies/ProductPolicy.php"],
+      ["created", "../web/resources/product.resource.ts"],
+      ["created", "../web/app/dashboard/products/page.tsx"],
+    ],
+    href: "/reference/commands/#nevelaresource",
+  },
+  {
+    id: "generate",
+    label: "nevela:generate",
+    command: "php artisan nevela:generate",
+    lead: "Change the descriptor and run it again. Generated blocks follow; your own code stays where it is.",
+    out: [
+      ["updated", "app/Models/Product.php"],
+      ["updated", "app/Http/Requests/Nevela/ProductRequest.php"],
+      ["exists (yours)", "app/Policies/ProductPolicy.php"],
+      ["updated", "../web/resources/product.resource.ts"],
+      ["exists (yours)", "../web/app/dashboard/products/page.tsx"],
+    ],
+    href: "/reference/commands/#nevelagenerate",
+  },
+  {
+    id: "seed",
+    label: "nevela:seed",
+    command: "php artisan nevela:seed Product --count=1000",
+    lead: "Fill a resource with records that follow its descriptor, timed.",
+    out: [
+      ["info", "Seeded 1,000 Products in 114 ms (8,809 rows/s)."],
+      ["", "Products in the database .......... 1,000"],
+    ],
+    href: "/reference/commands/#nevelaseed",
+  },
+];
+
+const examples = [
+  {
+    id: "descriptor",
+    label: "Descriptor",
+    title: "nevela/resources/product.json",
+    lang: "json",
+    code: `{
+    "name": "Product",
+    "icon": "package",
+    "group": "Catalogue",
+    "fields": {
+        "name": { "kind": "string" },
+        "sku": { "kind": "string", "unique": true },
+        "price": { "kind": "float", "format": "money" },
+        "kind": { "kind": "enum", "options": ["stock", "digital"] },
+        "notes": { "kind": "text", "required": false }
+    }
+}`,
+  },
+  {
+    id: "policy",
+    label: "Policy",
+    title: "app/Policies/ProductPolicy.php",
+    lang: "php",
+    code: `class ProductPolicy
+{
+    // Laravel enforces this on every request. The dashboard shows the answer.
+    public function delete(User $user, Product $product): bool
+    {
+        return $user->role === 'admin';
+    }
+}`,
+  },
+  {
+    id: "model",
+    label: "Your code",
+    title: "app/Models/Product.php",
+    lang: "php",
+    code: `class Product extends Model
+{
+    // nevela:generated:start hash=4f1c2a9b7e31
+    protected $fillable = ['name', 'sku', 'price', 'kind', 'notes'];
+    // nevela:generated:end
+
+    // Yours. Regeneration never touches what is outside the markers.
+    public function scopeDigital($query)
+    {
+        return $query->where('kind', 'digital');
+    }
+}`,
+  },
+  {
+    id: "api",
+    label: "API",
+    title: "Any HTTP client",
+    lang: "bash",
+    code: `curl -g "http://127.0.0.1:8000/api/products?sort=-price&q=lamp&filter[kind]=stock" \\
+  -H "Accept: application/json" -H "Authorization: Bearer $TOKEN"`,
+  },
+];
+
+const faq = [
+  {
+    q: "Is it production-ready?",
+    a: "Not yet. Nevela is at 0.x: the generator, the API and the dashboard work end to end and are tested on every change, but relations, file uploads and account pages are still to come, and things can change between minor versions.",
+  },
+  {
+    q: "Where do the rules live?",
+    a: "In Laravel only. Validation is a form request, authorization is a policy, and the dashboard shows what Laravel answers. No rule is written twice.",
+  },
+  {
+    q: "Can I edit the generated code?",
+    a: "Yes. Generated code lives inside marked blocks; everything outside them is yours and is never touched. If you edit inside a block, Nevela skips that file and tells you instead of overwriting it.",
+  },
+  {
+    q: "How does it relate to Flare?",
+    a: "The dashboard is Flare's Next.js frontend by Muke Johnbaptist, used under the MIT license. Nevela replaces its database and sign-in layer with calls to Laravel, and generates Flare's resource descriptors from Laravel.",
+  },
+  {
+    q: "Which databases work?",
+    a: "Any that Laravel supports: SQLite, MySQL, MariaDB, PostgreSQL and SQL Server. The Laravel app ships set up for SQLite, which needs no installation.",
+  },
+];
+---
+
+<div class="fl-landing not-content">
+  <!-- Hero -->
+  <section class="fl-hero" aria-labelledby="fl-hero-title">
+    <div class="fl-hero-grid" aria-hidden="true"></div>
+    <a class="fl-pill" href={RELEASE_URL}>
+      <span class="fl-pill-tag">v{NEVELA_VERSION}</span>
+      <span class="fl-pill-text">{RELEASE_HEADLINE}</span>
+    </a>
+    <h1 id="fl-hero-title" class="fl-hero-title">
+      <span class="fl-line">The fullstack framework</span>
+      <span class="fl-line fl-ember-text">for Laravel and Next.js</span>
+    </h1>
+    <p class="fl-hero-lead">
+      Describe a resource once. Nevela writes the table, the API, the validation and the policy in Laravel,
+      and the dashboard screens in Next.js. Laravel stays the only place your rules live.
+    </p>
+    <div class="fl-actions">
+      <a class="fl-btn fl-btn-primary" href="/start/quickstart/">Start building</a>
+      <a class="fl-btn fl-btn-quiet" href={REPO_URL}>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" /></svg>
+        View on GitHub
+      </a>
+    </div>
+
+    <div class="fl-install" data-tabs>
+      <div class="fl-install-tabs" role="tablist" aria-label="Commands">
+        {install.map((item, index) => (
+          <button role="tab" id={`fl-i-${item.id}`} aria-controls={`fl-ip-${item.id}`} aria-selected={index === 0 ? "true" : "false"} tabindex={index === 0 ? 0 : -1}>
+            {item.label}
+          </button>
+        ))}
+      </div>
+      {install.map((item, index) => (
+        <div class="fl-install-line" role="tabpanel" id={`fl-ip-${item.id}`} aria-labelledby={`fl-i-${item.id}`} hidden={index !== 0}>
+          <span class="fl-prompt" aria-hidden="true">$</span>
+          <code>{item.command}</code>
+          <button class="fl-copy" data-copy={item.command} aria-label="Copy command">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
+            <span class="fl-copy-label">Copy</span>
+          </button>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- The idea, shown: one command in, both sides out -->
+  <div class="fl-frame">
+    <section class="fl-demo fl-rail" aria-label="What nevela:resource writes">
+      <div class="fl-demo-pane">
+        <div class="fl-pane-head">
+          <span class="fl-dot" aria-hidden="true"></span>
+          Terminal, in the Laravel app
+          <span class="fl-pane-note">you write</span>
+        </div>
+        <pre class="fl-code"><code><span class="f">php artisan</span> nevela:resource Contact \
+  --fields=<span class="s">"name:string,
+            email:email!,
+            phone:tel?,
+            status:enum(lead|customer)"</span>
+
+<span class="f">php artisan</span> migrate</code></pre>
+      </div>
+      <div class="fl-demo-arrow" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+      </div>
+      <div class="fl-demo-pane">
+        <div class="fl-pane-head">
+          <span class="fl-dot fl-dot-ember" aria-hidden="true"></span>
+          Laravel and Next.js
+          <span class="fl-pane-note">Nevela writes</span>
+        </div>
+        <ol class="fl-gen">
+          {generated.map((file, index) => (
+            <li style={`--i:${index}`}>
+              <span class="fl-plus" aria-hidden="true">+</span>
+              <span class="fl-path">{file.path}</span>
+              <span class="fl-what">{file.what}</span>
+            </li>
+          ))}
+        </ol>
+        <p class="fl-demo-foot">Edit the descriptor and run <code>nevela:generate</code>: every file follows, and your own code outside the generated blocks is kept.</p>
+      </div>
+    </section>
+
+    <section class="fl-stack fl-rail" aria-label="Built on">
+      <span class="fl-stack-label">Built on</span>
+      <ul>
+        {stack.map((name) => <li>{name}</li>)}
+      </ul>
+    </section>
+
+    <!-- 01 What you get -->
+    <section class="fl-section fl-rail" aria-labelledby="fl-create">
+      <p class="fl-step"><span>[ 01 / 03 ]</span> Describe</p>
+      <div class="fl-section-head">
+        <h2 id="fl-create">Everything a resource needs,<br /><span class="fl-ember-text">from one description</span></h2>
+        <p>
+          <code>nevela:resource</code> turns a list of fields into a working feature on both sides: the Laravel
+          code that owns the data, and the screens people use to work with it.
+        </p>
+      </div>
+      <ul class="fl-batteries">
+        {batteries.map((item) => (
+          <li>
+            <a href={item.href}>
+              <span class="fl-icon" aria-hidden="true">
+                {item.icon === "key" && <svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4" /><path d="M10.8 12.2 20 3M17 6l3 3M14.5 8.5l2 2" /></svg>}
+                {item.icon === "db" && <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" /></svg>}
+                {item.icon === "grid" && <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>}
+                {item.icon === "shield" && <svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6l-8-3Z" /><path d="m9 12 2 2 4-4" /></svg>}
+                {item.icon === "box" && <svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" /><path d="m3 8 9 5 9-5M12 13v8" /></svg>}
+                {item.icon === "mail" && <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg>}
+                {item.icon === "bolt" && <svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" /></svg>}
+                {item.icon === "wave" && <svg viewBox="0 0 24 24"><path d="M2 12h3l3-7 4 14 3-9 2 2h5" /></svg>}
+              </span>
+              <span class="fl-battery-name">{item.name}</span>
+              <span class="fl-battery-body">{item.body}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <!-- 02 Generate -->
+    <section class="fl-section fl-rail" aria-labelledby="fl-generate">
+      <p class="fl-step"><span>[ 02 / 03 ]</span> Generate</p>
+      <div class="fl-section-head">
+        <h2 id="fl-generate">Three commands,<br /><span class="fl-ember-text">all in artisan</span></h2>
+        <p>Each one writes plain, readable files into your project. Change them, or regenerate: Nevela keeps your edits and tells you when it skipped a file.</p>
+      </div>
+
+      <div class="fl-gens" data-tabs>
+        <div class="fl-gens-tabs" role="tablist" aria-label="Commands">
+          {generators.map((item, index) => (
+            <button role="tab" id={`fl-g-${item.id}`} aria-controls={`fl-gp-${item.id}`} aria-selected={index === 0 ? "true" : "false"} tabindex={index === 0 ? 0 : -1}>
+              {item.label}
+            </button>
+          ))}
+        </div>
+        {generators.map((item, index) => (
+          <div class="fl-gens-panel" role="tabpanel" id={`fl-gp-${item.id}`} aria-labelledby={`fl-g-${item.id}`} hidden={index !== 0}>
+            <div class="fl-gens-copy">
+              <p>{item.lead}</p>
+              <a href={item.href} class="fl-link">Read the reference</a>
+            </div>
+            <div class="fl-terminal">
+              <div class="fl-terminal-cmd">
+                <span class="fl-prompt" aria-hidden="true">$</span>
+                <code>{item.command}</code>
+              </div>
+              <ul class="fl-terminal-out">
+                {item.out.map(([status, text]) => (
+                  <li>{status && <span class="fl-created">{status}</span>} {text}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div class="fl-examples" data-tabs>
+        <p class="fl-examples-title">And what you write stays small</p>
+        <div class="fl-gens-tabs" role="tablist" aria-label="Code examples">
+          {examples.map((example, index) => (
+            <button role="tab" id={`fl-x-${example.id}`} aria-controls={`fl-xp-${example.id}`} aria-selected={index === 0 ? "true" : "false"} tabindex={index === 0 ? 0 : -1}>
+              {example.label}
+            </button>
+          ))}
+        </div>
+        {examples.map((example, index) => (
+          <div role="tabpanel" id={`fl-xp-${example.id}`} aria-labelledby={`fl-x-${example.id}`} hidden={index !== 0}>
+            <Code code={example.code} lang={example.lang} title={example.title} />
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- 03 How it fits together -->
+    <section class="fl-section fl-rail" aria-labelledby="fl-ship">
+      <p class="fl-step"><span>[ 03 / 03 ]</span> Run</p>
+      <div class="fl-section-head">
+        <h2 id="fl-ship">Laravel decides,<br /><span class="fl-ember-text">the dashboard shows</span></h2>
+        <p>The Next.js server holds the sign-in token and calls Laravel for everything. The browser never talks to Laravel, and no rule is written twice.</p>
+      </div>
+      <div class="fl-ship">
+        <div class="fl-terminal fl-terminal-tall">
+          <div class="fl-terminal-cmd">
+            <span class="fl-prompt" aria-hidden="true">$</span>
+            <code>curl -X POST /api/products -d '{"{"}"name": "", "sku": "L-1"{"}"}'</code>
+          </div>
+          <ul class="fl-terminal-out">
+            <li><span class="fl-step-mark">422</span> Validation failed.</li>
+            <li class="fl-dim">&nbsp;&nbsp;name: The name field is required.</li>
+            <li class="fl-dim">&nbsp;&nbsp;sku: The sku has already been taken.</li>
+            <li class="fl-dim">&nbsp;&nbsp;price: The price field is required.</li>
+            <li class="fl-ok">The same messages appear next to each field in the dashboard form.</li>
+          </ul>
+        </div>
+        <div class="fl-ship-side">
+          <div class="fl-share">
+            <p class="fl-share-title">One API, any client</p>
+            <p>The dashboard uses the same REST API you can call from a mobile app, a script or another service.</p>
+            <a href="/reference/api/" class="fl-link">REST API reference</a>
+          </div>
+          <div class="fl-share">
+            <p class="fl-share-title">Data to look at, straight away</p>
+            <p>Seed a thousand records that follow the descriptor, and see the time it took.</p>
+            <code class="fl-share-cmd">php artisan nevela:seed Product</code>
+            <a href="/reference/commands/#nevelaseed" class="fl-link">Seeding</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="fl-section fl-rail" aria-labelledby="fl-faq">
+      <div class="fl-faq-grid">
+        <h2 id="fl-faq" class="fl-faq-title">Questions</h2>
+        <div class="fl-faq">
+          {faq.map((item) => (
+            <details>
+              <summary>{item.q}</summary>
+              <p>{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- Close -->
+    <section class="fl-close fl-rail" aria-labelledby="fl-close">
+      <h2 id="fl-close">Create your first resource<br /><span class="fl-ember-text">in the next five minutes</span></h2>
+      <div class="fl-actions">
+        <a class="fl-btn fl-btn-primary" href="/start/quickstart/">Follow the quickstart</a>
+        <a class="fl-btn fl-btn-quiet" href="/reference/commands/">Command reference</a>
+      </div>
+    </section>
+
+    <footer class="fl-footer fl-rail">
+      <span class="fl-footer-brand">
+        <img src="/favicon.svg" alt="" width="18" height="18" /> Nevela
+      </span>
+      <span class="fl-footer-meta">Open source. Dashboard by Flare, MIT.</span>
+      <nav aria-label="Project links">
+        <a href={REPO_URL}>GitHub</a>
+        <a href="/reference/changelog/">Changelog</a>
+        <a href="/start/quickstart/">Quickstart</a>
+      </nav>
+    </footer>
+  </div>
+</div>
+
+<script>
+  // Tabs (commands, examples): click or arrow keys, ARIA tabs pattern.
+  for (const group of document.querySelectorAll<HTMLElement>("[data-tabs]")) {
+    const tabs = [...group.querySelectorAll<HTMLButtonElement>(':scope > [role="tablist"] > [role="tab"]')];
+    const select = (tab: HTMLButtonElement) => {
+      for (const other of tabs) {
+        const selected = other === tab;
+        other.setAttribute("aria-selected", String(selected));
+        other.tabIndex = selected ? 0 : -1;
+        const panel = document.getElementById(other.getAttribute("aria-controls") ?? "");
+        if (panel) panel.hidden = !selected;
+      }
+    };
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => select(tab));
+      tab.addEventListener("keydown", (event) => {
+        const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+        if (!step) return;
+        event.preventDefault();
+        const next = tabs[(index + step + tabs.length) % tabs.length]!;
+        select(next);
+        next.focus();
+      });
+    });
+  }
+
+  // Copy buttons: confirm in place, then return to "Copy".
+  for (const button of document.querySelectorAll<HTMLButtonElement>("[data-copy]")) {
+    button.addEventListener("click", async () => {
+      const label = button.querySelector(".fl-copy-label");
+      try {
+        await navigator.clipboard.writeText(button.dataset.copy ?? "");
+        if (label) label.textContent = "Copied";
+      } catch {
+        if (label) label.textContent = "Press Ctrl+C";
+      }
+      setTimeout(() => label && (label.textContent = "Copy"), 1800);
+    });
+  }
+</script>
+
+<style>
+  /* The landing breaks out of Starlight's content column to the full width. */
+  :global(:root:has(.fl-landing)) {
+    --fl-page: #fafafa;
+  }
+  :global(:root[data-theme="dark"]:has(.fl-landing)),
+  :global(:root:not([data-theme]):has(.fl-landing)) {
+    --fl-page: #121212;
+  }
+  :global(body:has(.fl-landing)) {
+    background: var(--fl-page);
+    overflow-x: clip;
+  }
+  :global(body:has(.fl-landing) .header) {
+    background: color-mix(in srgb, var(--fl-page) 88%, transparent);
+  }
+  :global(.main-frame:has(.fl-landing) .content-panel) {
+    padding: 0;
+    border: 0;
+  }
+  :global(.main-frame:has(.fl-landing) .sl-container) {
+    max-width: none;
+    margin: 0;
+  }
+  :global(.main-frame:has(.fl-landing) .sl-markdown-content) {
+    margin: 0;
+  }
+  :global(.main-frame:has(.fl-landing) h1#_top) {
+    display: none;
+  }
+
+  /* Layout rules below set display; the hidden attribute (inactive tab panels) must still win. */
+  .fl-landing [hidden] {
+    display: none !important;
+  }
+
+  .fl-landing {
+    /* The rail crosshairs hang past the frame edge; never let them widen the page. */
+    overflow-x: clip;
+    --frame: 75rem;
+    --gutter: clamp(1rem, 4vw, 2.5rem);
+    color: var(--fl-body);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .fl-landing code {
+    font-family: var(--sl-font-mono);
+    font-size: 0.9em;
+  }
+
+  .fl-ember-text {
+    color: var(--fl-ember);
+    background-image: var(--fl-fuse);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    /* Descenders are clipped by the tight heading line-height without this. */
+    padding-bottom: 0.08em;
+  }
+
+  @media (forced-colors: active) {
+    .fl-ember-text {
+      background-image: none;
+      -webkit-text-fill-color: currentColor;
+    }
+  }
+
+  /* ---- Hero ---- */
+  .fl-hero {
+    position: relative;
+    text-align: center;
+    padding: clamp(3.5rem, 9vw, 7rem) var(--gutter) clamp(3rem, 6vw, 4.5rem);
+    isolation: isolate;
+  }
+
+  .fl-hero-grid {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      linear-gradient(var(--fl-rule) 1px, transparent 1px),
+      linear-gradient(90deg, var(--fl-rule) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: center top;
+    mask-image: radial-gradient(ellipse 60% 70% at 50% 35%, #000 10%, transparent 75%);
+    opacity: 0.55;
+  }
+
+  .fl-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.3125rem 0.875rem 0.3125rem 0.3125rem;
+    border: 1px solid var(--fl-rule);
+    border-radius: 999px;
+    background: var(--fl-paper);
+    color: var(--fl-body);
+    font-size: 0.8125rem;
+    text-decoration: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .fl-pill {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .fl-pill-text {
+    min-width: 0;
+  }
+
+  .fl-pill-text code {
+    white-space: nowrap;
+  }
+
+  .fl-pill:hover {
+    border-color: var(--fl-ember);
+  }
+
+  .fl-pill-tag {
+    padding: 0.125rem 0.5rem;
+    border-radius: 999px;
+    background: var(--fl-ember-soft);
+    color: var(--fl-ember-strong);
+    font-weight: 600;
+    font-size: 0.75rem;
+  }
+
+  .fl-hero-title {
+    margin: 1.75rem auto 0;
+    max-width: 16ch;
+    font-size: clamp(2.375rem, 1.2rem + 5vw, 4.75rem);
+    font-weight: 650;
+    line-height: 1.02;
+    letter-spacing: -0.045em;
+    color: var(--fl-ink);
+    text-wrap: balance;
+  }
+
+  .fl-line {
+    display: block;
+    text-wrap: balance;
+  }
+
+  .fl-hero-lead {
+    margin: 1.5rem auto 0;
+    max-width: 38rem;
+    font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
+    line-height: 1.6;
+    color: var(--fl-muted);
+    text-wrap: pretty;
+  }
+
+  .fl-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  .fl-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 2.75rem;
+    padding: 0 1.25rem;
+    border-radius: 0.625rem;
+    font-size: 0.9375rem;
+    font-weight: 560;
+    text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .fl-btn svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .fl-btn-primary {
+    background: var(--fl-fuse-fill, #6f00ff);
+    color: #fff;
+  }
+
+  .fl-btn-primary:hover {
+    filter: brightness(1.12);
+  }
+
+  .fl-btn-quiet {
+    border: 1px solid var(--fl-rule-strong);
+    background: var(--fl-paper);
+    color: var(--fl-ink);
+  }
+
+  .fl-btn-quiet:hover {
+    border-color: var(--fl-muted);
+  }
+
+  /* Install command */
+  .fl-stacks {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+    margin-top: 2rem;
+  }
+
+  .fl-stack-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1.5rem;
+    border: 1px solid var(--fl-rule, var(--sl-color-hairline));
+    border-radius: 12px;
+    background: var(--fl-surface, transparent);
+  }
+
+  .fl-stack-card header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .fl-stack-card h3 {
+    margin: 0;
+    font-size: 1.15rem;
+  }
+
+  .fl-stack-tag {
+    font-family: var(--sl-font-mono, ui-monospace, monospace);
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    color: var(--fl-ember, var(--sl-color-text-accent));
+    border: 1px solid currentColor;
+    white-space: nowrap;
+  }
+
+  .fl-stack-line {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .fl-stack-card dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.3rem 1rem;
+    margin: 0;
+    font-size: 0.875rem;
+  }
+
+  .fl-stack-card dl > div {
+    display: contents;
+  }
+
+  .fl-stack-card dt {
+    color: var(--sl-color-gray-3);
+  }
+
+  .fl-stack-card dd {
+    margin: 0;
+  }
+
+  .fl-stack-body {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--sl-color-gray-2);
+  }
+
+  .fl-stack-card .fl-install-line {
+    margin-top: auto;
+  }
+
+  .fl-stacks-more {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--sl-color-gray-2);
+  }
+
+  .fl-install-note {
+    font-family: inherit;
+    color: var(--sl-color-gray-2);
+  }
+
+  .fl-install {
+    margin: 2.75rem auto 0;
+    max-width: 40rem;
+    border: 1px solid var(--fl-rule);
+    border-radius: 0.875rem;
+    background: var(--fl-paper);
+    text-align: left;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 12px 32px -12px rgba(0, 0, 0, 0.08);
+  }
+
+  .fl-install-tabs,
+  .fl-gens-tabs {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.375rem;
+    border-bottom: 1px solid var(--fl-rule);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .fl-install-tabs button,
+  .fl-gens-tabs button {
+    flex: none;
+    border: 0;
+    background: transparent;
+    color: var(--fl-muted);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+  }
+
+  .fl-install-tabs button:hover,
+  .fl-gens-tabs button:hover {
+    color: var(--fl-ink);
+  }
+
+  .fl-install-tabs button[aria-selected="true"],
+  .fl-gens-tabs button[aria-selected="true"] {
+    background: var(--fl-raised);
+    color: var(--fl-ink);
+  }
+
+  .fl-install-line {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 0.625rem 0.875rem 1.125rem;
+  }
+
+  .fl-install-line code {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+    color: var(--fl-ink);
+    font-size: 0.875rem;
+  }
+
+  .fl-prompt {
+    font-family: var(--sl-font-mono);
+    color: var(--fl-ember);
+    user-select: none;
+  }
+
+  .fl-copy {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border: 1px solid var(--fl-rule);
+    background: var(--fl-surface);
+    color: var(--fl-muted);
+    font: inherit;
+    font-size: 0.75rem;
+    padding: 0.3125rem 0.625rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+  }
+
+  .fl-copy:hover {
+    color: var(--fl-ink);
+    border-color: var(--fl-rule-strong);
+  }
+
+  .fl-copy svg {
+    width: 0.875rem;
+    height: 0.875rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+  }
+
+  /* ---- Frame: side rails with ember crosshairs where sections meet them ---- */
+  .fl-frame {
+    max-width: var(--frame);
+    margin: 0 auto;
+    border-inline: 1px solid var(--fl-rule);
+  }
+
+  .fl-rail {
+    position: relative;
+    border-top: 1px solid var(--fl-rule);
+  }
+
+  .fl-rail::before,
+  .fl-rail::after {
+    content: "+";
+    position: absolute;
+    top: -0.8rem;
+    font-family: var(--sl-font-mono);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    color: var(--fl-ember);
+    pointer-events: none;
+  }
+
+  .fl-rail::before {
+    left: -0.4rem;
+  }
+
+  .fl-rail::after {
+    right: -0.4rem;
+  }
+
+  /* ---- Demo panel ---- */
+  .fl-demo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.15fr);
+    align-items: stretch;
+    gap: 0;
+    background: var(--fl-paper);
+  }
+
+  .fl-demo-pane {
+    min-width: 0;
+    padding: 1.5rem clamp(1rem, 2.5vw, 2rem) 1.75rem;
+  }
+
+  .fl-pane-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--sl-font-mono);
+    font-size: 0.78125rem;
+    color: var(--fl-ink);
+    padding-bottom: 0.875rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px dashed var(--fl-rule-strong);
+  }
+
+  .fl-pane-note {
+    margin-left: auto;
+    font-family: var(--sl-font);
+    color: var(--fl-muted);
+    font-size: 0.75rem;
+  }
+
+  .fl-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--fl-rule-strong);
+  }
+
+  .fl-dot-ember {
+    background: var(--fl-ember);
+  }
+
+  .fl-code {
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    font-family: var(--sl-font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.75;
+    color: var(--fl-ink);
+    overflow-x: auto;
+  }
+
+  .fl-code .k {
+    color: #8250df;
+  }
+  .fl-code .s {
+    color: var(--fl-ember-strong);
+  }
+  .fl-code .f {
+    color: #0550ae;
+  }
+  .fl-code .n {
+    color: #0550ae;
+  }
+  :global(:root:not([data-theme="light"])) .fl-code .k {
+    color: #d2a8ff;
+  }
+  :global(:root:not([data-theme="light"])) .fl-code .f,
+  :global(:root:not([data-theme="light"])) .fl-code .n {
+    color: #79c0ff;
+  }
+
+  .fl-demo-arrow {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    border-inline: 1px dashed var(--fl-rule);
+    background: var(--fl-surface);
+  }
+
+  .fl-demo-arrow svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: none;
+    stroke: var(--fl-ember);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .fl-gen {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-family: var(--sl-font-mono);
+    font-size: 0.8125rem;
+  }
+
+  .fl-gen li {
+    display: grid;
+    grid-template-columns: 1rem minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: baseline;
+    padding: 0.3125rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--fl-rule) 60%, transparent);
+    animation: fl-write 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(var(--i) * 90ms + 250ms);
+  }
+
+  .fl-plus {
+    color: var(--fl-ember);
+    font-weight: 600;
+  }
+
+  .fl-path {
+    color: var(--fl-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fl-what {
+    font-family: var(--sl-font);
+    font-size: 0.75rem;
+    color: var(--fl-muted);
+  }
+
+  .fl-demo-foot {
+    margin: 1rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--fl-muted);
+    max-width: 44ch;
+  }
+
+  @keyframes fl-write {
+    from {
+      opacity: 0;
+      transform: translateX(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fl-gen li {
+      animation: none;
+    }
+  }
+
+  /* ---- Stack strip ---- */
+  .fl-stack {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.25rem clamp(1rem, 2.5vw, 2rem);
+    background: var(--fl-page);
+  }
+
+  .fl-stack-label {
+    flex: none;
+    font-size: 0.8125rem;
+    color: var(--fl-muted);
+  }
+
+  .fl-stack ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fl-stack li {
+    font-size: 0.9375rem;
+    font-weight: 560;
+    letter-spacing: -0.015em;
+    color: var(--fl-ink);
+    padding-inline: 1rem;
+    border-inline-start: 1px solid var(--fl-rule);
+  }
+
+  /* ---- Sections ---- */
+  .fl-section {
+    padding: clamp(3.5rem, 7vw, 5.5rem) clamp(1rem, 4vw, 3rem);
+  }
+
+  .fl-step {
+    margin: 0 0 1.75rem;
+    font-family: var(--sl-font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fl-muted);
+  }
+
+  .fl-step span {
+    color: var(--fl-ember);
+    margin-right: 0.5rem;
+  }
+
+  .fl-section-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 1.5rem 3rem;
+    align-items: end;
+    margin-bottom: 2.75rem;
+  }
+
+  .fl-section-head h2,
+  .fl-close h2 {
+    margin: 0;
+    font-size: clamp(1.875rem, 1.2rem + 2.6vw, 3rem);
+    font-weight: 650;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    color: var(--fl-ink);
+    text-wrap: balance;
+  }
+
+  .fl-section-head p {
+    margin: 0;
+    max-width: 34rem;
+    color: var(--fl-muted);
+    font-size: 1.0625rem;
+  }
+
+  .fl-section-head code,
+  .fl-stat-label code {
+    color: var(--fl-ink);
+  }
+
+  /* Batteries: one ruled grid, not floating cards */
+  .fl-batteries {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--fl-rule);
+    border-left: 1px solid var(--fl-rule);
+  }
+
+  .fl-batteries li {
+    border-right: 1px solid var(--fl-rule);
+    border-bottom: 1px solid var(--fl-rule);
+  }
+
+  .fl-batteries a {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    height: 100%;
+    padding: 1.5rem 1.375rem 1.625rem;
+    text-decoration: none;
+    background: var(--fl-paper);
+    transition: background-color 0.15s ease;
+  }
+
+  .fl-batteries a:hover {
+    background: var(--fl-surface);
+  }
+
+  .fl-batteries a:hover .fl-battery-name {
+    color: var(--fl-ember-strong);
+  }
+
+  .fl-icon svg {
+    width: 1.375rem;
+    height: 1.375rem;
+    fill: none;
+    stroke: var(--fl-ember);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    margin-bottom: 0.625rem;
+  }
+
+  .fl-battery-name {
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--fl-ink);
+    transition: color 0.15s ease;
+  }
+
+  .fl-battery-body {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--fl-muted);
+  }
+
+  /* Generators */
+  .fl-gens {
+    border: 1px solid var(--fl-rule);
+    border-radius: 0.875rem;
+    background: var(--fl-paper);
+    overflow: hidden;
+  }
+
+  .fl-gens-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr);
+  }
+
+  .fl-gens-copy {
+    padding: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1.25rem;
+  }
+
+  .fl-gens-copy p {
+    margin: 0;
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    color: var(--fl-ink);
+    max-width: 30ch;
+  }
+
+  .fl-link {
+    font-size: 0.875rem;
+    font-weight: 560;
+    color: var(--fl-ember-strong);
+    text-decoration: none;
+  }
+
+  .fl-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .fl-terminal {
+    min-width: 0;
+    background: var(--fl-surface);
+    border-left: 1px solid var(--fl-rule);
+    font-family: var(--sl-font-mono);
+    font-size: 0.8125rem;
+  }
+
+  .fl-terminal-cmd {
+    display: flex;
+    gap: 0.625rem;
+    padding: 1.125rem 1.375rem;
+    border-bottom: 1px dashed var(--fl-rule-strong);
+  }
+
+  .fl-terminal-cmd code {
+    color: var(--fl-ink);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .fl-terminal-out {
+    margin: 0;
+    padding: 1rem 1.375rem 1.25rem;
+    list-style: none;
+    line-height: 1.9;
+    color: var(--fl-body);
+  }
+
+  .fl-created {
+    color: var(--fl-ember);
+    display: inline-block;
+    width: 4.5rem;
+  }
+
+  .fl-step-mark {
+    color: var(--fl-ember);
+    font-weight: 600;
+    margin-right: 0.5rem;
+  }
+
+  .fl-dim {
+    color: var(--fl-muted);
+  }
+
+  .fl-ok {
+    color: #1a7f37;
+  }
+
+  :global(:root:not([data-theme="light"])) .fl-ok {
+    color: #3fb950;
+  }
+
+  /* Ship */
+  .fl-ship {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .fl-terminal-tall {
+    border: 1px solid var(--fl-rule);
+    border-radius: 0.875rem;
+  }
+
+  .fl-ship-side {
+    display: grid;
+    gap: 1.5rem;
+    align-content: start;
+  }
+
+  .fl-stat {
+    display: grid;
+    gap: 0.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--fl-rule);
+  }
+
+  .fl-stat-number {
+    font-size: clamp(3.5rem, 2.5rem + 3vw, 5rem);
+    font-weight: 650;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    color: var(--fl-ink);
+  }
+
+  .fl-stat-number span {
+    color: var(--fl-ember);
+    font-size: 0.5em;
+    letter-spacing: -0.02em;
+    margin-left: 0.1em;
+  }
+
+  .fl-stat-label {
+    font-size: 0.9375rem;
+    color: var(--fl-muted);
+    max-width: 34ch;
+  }
+
+  .fl-share {
+    display: grid;
+    gap: 0.5rem;
+    justify-items: start;
+  }
+
+  .fl-share p {
+    margin: 0;
+    color: var(--fl-muted);
+    font-size: 0.9375rem;
+  }
+
+  .fl-share .fl-share-title {
+    color: var(--fl-ink);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  .fl-share-cmd {
+    margin: 0.25rem 0;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--fl-rule);
+    border-radius: 0.5rem;
+    background: var(--fl-paper);
+    color: var(--fl-ink);
+  }
+
+  /* Close + footer */
+  .fl-close {
+    text-align: center;
+    padding: clamp(4rem, 8vw, 6rem) var(--gutter);
+    background: var(--fl-paper);
+  }
+
+  .fl-close h2 {
+    margin-inline: auto;
+    max-width: 18ch;
+  }
+
+  .fl-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.5rem;
+    padding: 1.5rem clamp(1rem, 2.5vw, 2rem);
+    font-size: 0.8125rem;
+    color: var(--fl-muted);
+  }
+
+  .fl-footer-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--fl-ink);
+  }
+
+  .fl-footer nav {
+    display: flex;
+    gap: 1.25rem;
+    margin-left: auto;
+  }
+
+  .fl-footer a {
+    color: var(--fl-muted);
+    text-decoration: none;
+  }
+
+  .fl-footer a:hover {
+    color: var(--fl-ink);
+  }
+
+
+  /* ---- Hero showcase: npm create, and the app it makes ---- */
+  .fl-showcase {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.45fr);
+    gap: 1.25rem;
+    max-width: 72rem;
+    margin: 3.5rem auto 0;
+    text-align: left;
+    align-items: start;
+  }
+
+  .fl-showcase-term {
+    border-radius: 0.875rem;
+    background: #141414;
+    color: #e5e5e5;
+    border: 1px solid #2a2a2a;
+    box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+
+  .fl-term-bar,
+  .fl-browser-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.625rem 0.875rem;
+  }
+
+  .fl-term-bar {
+    border-bottom: 1px solid #262626;
+  }
+
+  .fl-term-bar span,
+  .fl-browser-bar span {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 999px;
+    background: #3a3a3a;
+  }
+
+  .fl-browser-bar span {
+    background: var(--fl-rule-strong);
+  }
+
+  .fl-browser-bar code {
+    margin-left: 0.75rem;
+    flex: 1;
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.375rem;
+    background: var(--fl-surface);
+    color: var(--fl-muted);
+    font-size: 0.75rem;
+  }
+
+  .fl-term {
+    list-style: none;
+    margin: 0;
+    padding: 1rem 1.125rem 1.25rem;
+    font-family: var(--sl-font-mono);
+    font-size: 0.78125rem;
+    line-height: 1.95;
+  }
+
+  .fl-term li {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    animation: fl-write 0.35s ease-out both;
+    animation-delay: calc(var(--i) * 180ms + 200ms);
+  }
+
+  .fl-term .fl-dim {
+    color: #8a8a8a;
+  }
+
+  .fl-term .fl-prompt,
+  .fl-ok-mark {
+    color: #a98bff;
+  }
+
+  .fl-term-choice {
+    color: #fafafa;
+    font-weight: 600;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fl-term li {
+      animation: none;
+    }
+  }
+
+  .fl-showcase-app {
+    border: 1px solid var(--fl-rule);
+    border-radius: 0.875rem;
+    background: var(--fl-paper);
+    overflow: hidden;
+    box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.18);
+  }
+
+  .fl-browser-bar {
+    border-bottom: 1px solid var(--fl-rule);
+  }
+
+  .fl-showcase-app img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1280 / 860;
+  }
+
+  .fl-theme-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    padding: 0.75rem;
+    border-top: 1px solid var(--fl-rule);
+  }
+
+  .fl-theme-chips button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--fl-rule);
+    border-radius: 999px;
+    background: var(--fl-paper);
+    color: var(--fl-muted);
+    font: inherit;
+    font-size: 0.78125rem;
+    cursor: pointer;
+  }
+
+  .fl-theme-chips button[aria-pressed="true"] {
+    border-color: var(--fl-ink);
+    color: var(--fl-ink);
+  }
+
+  .fl-swatch {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  }
+
+  .fl-swatch-default { background: #5b5bd6; }
+  .fl-swatch-coral { background: linear-gradient(135deg, #e61e4d, #d70466); }
+  .fl-swatch-amber { background: #ffd814; }
+  .fl-swatch-sky { background: #0051c3; }
+  .fl-swatch-mono { background: #0a0a0a; }
+  .fl-swatch-emerald { background: #3ecf8e; }
+
+  .fl-gens-tabs button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  /* ---- Look: every theme's sign-in and home page ---- */
+  .fl-looks {
+    border: 1px solid var(--fl-rule);
+    border-radius: 0.875rem;
+    background: var(--fl-paper);
+    overflow: hidden;
+  }
+
+  .fl-look-panel {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    padding: 1.25rem;
+  }
+
+  .fl-look-panel figure,
+  .fl-shot {
+    margin: 0;
+  }
+
+  .fl-look-panel img,
+  .fl-shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--fl-rule);
+    border-radius: 0.625rem;
+  }
+
+  .fl-look-panel figcaption {
+    margin-top: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--fl-muted);
+  }
+
+  .fl-look-note {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--fl-muted);
+  }
+
+  .fl-look-note code,
+  .fl-section-head code {
+    color: var(--fl-ink);
+  }
+
+  /* ---- Secure ---- */
+  .fl-secure {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .fl-methods {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--fl-rule);
+  }
+
+  .fl-methods li {
+    display: grid;
+    gap: 0.2rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--fl-rule);
+  }
+
+  .fl-method-name {
+    font-weight: 600;
+    color: var(--fl-ink);
+    letter-spacing: -0.01em;
+  }
+
+  .fl-method-body {
+    font-size: 0.9rem;
+    color: var(--fl-muted);
+  }
+
+  .fl-method-more {
+    border-bottom: 0 !important;
+  }
+
+  .fl-shot {
+    max-height: 34rem;
+    overflow: hidden;
+    border-radius: 0.625rem;
+    mask-image: linear-gradient(to bottom, black 80%, transparent);
+  }
+
+  /* ---- Code examples ---- */
+  .fl-examples {
+    margin-top: 2.5rem;
+  }
+
+  .fl-examples-title {
+    margin: 0 0 1rem;
+    font-weight: 600;
+    color: var(--fl-ink);
+    letter-spacing: -0.015em;
+  }
+
+  .fl-examples .fl-gens-tabs {
+    border: 1px solid var(--fl-rule);
+    border-bottom: 0;
+    border-radius: 0.875rem 0.875rem 0 0;
+    background: var(--fl-paper);
+  }
+
+  .fl-examples :global(.expressive-code .frame) {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  .fl-examples :global(.expressive-code) {
+    margin: 0;
+  }
+
+  /* ---- FAQ ---- */
+  .fl-faq-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.6fr) minmax(0, 1.4fr);
+    gap: 2rem;
+  }
+
+  .fl-faq-title {
+    margin: 0;
+    font-size: clamp(1.875rem, 1.2rem + 2.6vw, 3rem);
+    font-weight: 650;
+    letter-spacing: -0.04em;
+    color: var(--fl-ink);
+  }
+
+  .fl-faq details {
+    border-bottom: 1px solid var(--fl-rule);
+  }
+
+  .fl-faq details:first-child {
+    border-top: 1px solid var(--fl-rule);
+  }
+
+  .fl-faq summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 1.125rem 2rem 1.125rem 0;
+    font-weight: 560;
+    color: var(--fl-ink);
+    position: relative;
+  }
+
+  .fl-faq summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .fl-faq summary::after {
+    content: "+";
+    position: absolute;
+    right: 0.25rem;
+    font-family: var(--sl-font-mono);
+    color: var(--fl-ember);
+    transition: transform 0.15s ease;
+  }
+
+  .fl-faq details[open] summary::after {
+    transform: rotate(45deg);
+  }
+
+  .fl-faq details p {
+    margin: 0 0 1.25rem;
+    max-width: 60ch;
+    color: var(--fl-muted);
+  }
+
+  /* ---- Narrow screens ---- */
+  @media (max-width: 64rem) {
+    .fl-batteries {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 50rem) {
+    .fl-showcase,
+    .fl-look-panel,
+    .fl-secure,
+    .fl-faq-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .fl-demo {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .fl-demo-arrow {
+      width: auto;
+      height: 2.5rem;
+      border-inline: 0;
+      border-block: 1px dashed var(--fl-rule);
+    }
+    .fl-demo-arrow svg {
+      transform: rotate(90deg);
+    }
+    .fl-section-head,
+    .fl-gens-panel,
+    .fl-ship {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .fl-terminal {
+      border-left: 0;
+      border-top: 1px solid var(--fl-rule);
+    }
+    .fl-terminal-tall {
+      border: 1px solid var(--fl-rule);
+    }
+    .fl-stack {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .fl-stack li:first-child {
+      border-inline-start: 0;
+      padding-inline-start: 0;
+    }
+    .fl-footer nav {
+      margin-left: 0;
+    }
+  }
+
+  @media (max-width: 34rem) {
+    .fl-batteries {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .fl-what {
+      display: none;
+    }
+  }
+</style>

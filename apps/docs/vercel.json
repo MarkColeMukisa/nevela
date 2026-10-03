@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "astro",
+  "installCommand": "cd ../.. && npx --yes pnpm@11.8.0 install --frozen-lockfile --filter nevela-docs",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
+}

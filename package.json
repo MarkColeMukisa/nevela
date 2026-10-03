@@ -8,6 +8,10 @@
     "node": ">=20"
   },
   "scripts": {
-    "test:laravel": "cd packages/laravel && vendor/bin/phpunit"
+    "test:laravel": "cd packages/laravel && vendor/bin/phpunit",
+    "test:release": "node --test scripts/release.test.mjs",
+    "release": "node scripts/release.mjs",
+    "docs:dev": "pnpm --filter nevela-docs dev",
+    "docs:build": "pnpm --filter nevela-docs build"
   }
 }
