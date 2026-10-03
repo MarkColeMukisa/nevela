@@ -1,0 +1,50 @@
+# create-nevela
+
+Create a new [Nevela](https://nevela-docs.vercel.app) app: a Laravel API and a Next.js dashboard, generated from one resource description.
+
+```sh
+pnpm create nevela my-app
+# or
+npm create nevela@latest my-app
+```
+
+You need PHP 8.3 or newer, Composer, and Node.js 20 or newer.
+
+## What you get
+
+```
+my-app/
+├─ apps/api/    a Laravel app with Sanctum and Nevela installed
+├─ apps/web/    the Next.js dashboard, pointed at the API
+└─ scripts/     `dev` runs both together
+```
+
+Then:
+
+```sh
+cd my-app
+pnpm run dev
+```
+
+Open http://localhost:3000/sign-in. Add your first resource from `apps/api`:
+
+```sh
+php artisan nevela:resource Product --fields="name:string, sku:string!, price:money"
+php artisan migrate
+```
+
+## Options
+
+| Option | Meaning |
+|---|---|
+| `--pm <pnpm\|npm\|yarn\|bun>` | Package manager for the dashboard. Default: the one you ran this with. |
+| `--no-install` | Don't install the dashboard's dependencies. |
+| `--no-user` | Don't ask to create the first user. |
+| `--no-git` | Don't run `git init`. |
+| `-y`, `--yes` | Ask nothing; take the defaults. |
+
+With npm, put options after `--`: `npm create nevela@latest my-app -- --no-install`.
+
+## How it installs the Laravel package
+
+If `nevela/laravel` is on Packagist, it is installed from there. Until then, the package travels inside this installer and is placed in `my-app/packages/nevela-laravel`, where Composer installs it by path.

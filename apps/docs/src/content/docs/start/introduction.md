@@ -8,6 +8,12 @@ Nevela is a Laravel-first fullstack framework. Laravel owns the data, the rules 
 ## The idea in one example
 
 ```sh
+pnpm create nevela my-app
+```
+
+That gives you a Laravel API and a Next.js dashboard, set up and connected. Then, for each kind of record your app keeps:
+
+```sh
 php artisan nevela:resource Product --fields="name:string, sku:string!, price:money, kind:enum(stock|digital), notes:text?"
 php artisan migrate
 ```
@@ -29,7 +35,8 @@ After those two commands you have:
 
 | Part | What it is |
 |---|---|
-| `nevela/laravel` | A Laravel package: the generator, the seed command and the runtime behind the REST API. |
+| `create-nevela` | The command that creates a new app: `pnpm create nevela my-app`. |
+| `nevela/laravel` | A Laravel package: the generator, the commands and the runtime behind the REST API. |
 | The Laravel app | An ordinary Laravel app that uses the package. Your models, policies and migrations live here. |
 | The web app | A Next.js dashboard. It has no database; it calls the Laravel API. |
 
@@ -39,12 +46,12 @@ The dashboard is [Flare](https://github.com/MUKE-coder/flare-framework)'s Next.j
 
 - Relations between resources (`belongsTo`, `hasMany`) and file uploads are not generated.
 - Sign-up, password reset and account pages are not part of the web app. Users are created in Laravel.
-- The Laravel package is not on Packagist. It is installed from the repository by path.
+- The Laravel package is not on Packagist yet. A new app carries its own copy in `packages/nevela-laravel`.
 
 The [roadmap](/concepts/architecture/#roadmap) lists what is planned.
 
 ## Next
 
-- [Quickstart](/start/quickstart/): run both apps and create your first resource
+- [Quickstart](/start/quickstart/): create an app and add your first resource
 - [Resources](/concepts/resources/): how a resource is described and what is generated
 - [Commands](/reference/commands/): the three artisan commands

@@ -1,0 +1,38 @@
+name: Split the Laravel package
+
+# Copies packages/laravel, with its history, to a repository of its own so Packagist can
+# read it (Packagist needs composer.json at the root of a repository).
+#
+# Does nothing until the repository variable LARAVEL_SPLIT_REPO (e.g.
+# "MarkColeMukisa/nevela-laravel") and the secret LARAVEL_SPLIT_TOKEN are set.
+# See apps/docs/src/content/docs/contributing/releasing.md.
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+
+jobs:
+  split:
+    if: vars.LARAVEL_SPLIT_REPO != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Split and push
+        env:
+          SPLIT_REPO: ${{ vars.LARAVEL_SPLIT_REPO }}
+          SPLIT_TOKEN: ${{ secrets.LARAVEL_SPLIT_TOKEN }}
+        run: |
+          if [ -z "$SPLIT_TOKEN" ]; then
+            echo "LARAVEL_SPLIT_REPO is set but the LARAVEL_SPLIT_TOKEN secret is missing."
+            exit 1
+          fi
+          git subtree split --prefix=packages/laravel --branch laravel-split
+          remote="https://x-access-token:${SPLIT_TOKEN}@github.com/${SPLIT_REPO}.git"
+          git push "$remote" laravel-split:main --force
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            # The same tag name, pointing at the split history, is what Packagist versions from.
+            git tag -f "$GITHUB_REF_NAME" laravel-split
+            git push "$remote" "refs/tags/$GITHUB_REF_NAME" --force
+          fi

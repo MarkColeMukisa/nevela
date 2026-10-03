@@ -18,6 +18,7 @@ const REPO = 'https://github.com/MarkColeMukisa/nevela';
 const VERSION_FILES = [
   { file: 'package.json', pattern: /("version":\s*")(\d+\.\d+\.\d+)(")/ },
   { file: 'apps/web/package.json', pattern: /("version":\s*")(\d+\.\d+\.\d+)(")/ },
+  { file: 'packages/create-nevela/package.json', pattern: /("version":\s*")(\d+\.\d+\.\d+)(")/ },
   { file: 'packages/laravel/src/Nevela.php', pattern: /(public const VERSION = ')(\d+\.\d+\.\d+)(')/ },
 ];
 

@@ -7,7 +7,11 @@
   "engines": {
     "node": ">=20"
   },
+  "bin": {
+    "create-nevela": "packages/create-nevela/index.mjs"
+  },
   "scripts": {
+    "create": "node packages/create-nevela/index.mjs",
     "test:laravel": "cd packages/laravel && vendor/bin/phpunit",
     "test:release": "node --test scripts/release.test.mjs",
     "release": "node scripts/release.mjs",

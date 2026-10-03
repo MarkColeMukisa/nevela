@@ -15,3 +15,7 @@ packages/*/composer.lock
 
 .vercel
 
+
+# Built by packages/create-nevela/build-template.mjs when packing for npm
+packages/create-nevela/template/
+*.tgz

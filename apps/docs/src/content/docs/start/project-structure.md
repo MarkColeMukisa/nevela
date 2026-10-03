@@ -1,20 +1,20 @@
 ---
 title: "Project structure"
-description: "What is in the repository, and where your own code goes."
+description: "What is in a new Nevela app, and where your own code goes."
 ---
 
-Nevela is one repository with three apps and one package.
+`pnpm create nevela my-app` gives you two apps in one folder.
 
 ```
-nevela/
+my-app/
 ├─ apps/
-│  ├─ api/     the Laravel app
-│  ├─ web/     the Next.js dashboard
-│  └─ docs/    this documentation site
+│  ├─ api/      the Laravel app
+│  └─ web/      the Next.js dashboard
 ├─ packages/
-│  └─ laravel/ the nevela/laravel Composer package
-├─ scripts/    the release script
-└─ CHANGELOG.md
+│  └─ nevela-laravel/   the Nevela package (see below)
+├─ scripts/
+│  └─ dev.mjs   runs both apps together
+└─ package.json
 ```
 
 ## apps/api, the Laravel app
@@ -41,20 +41,25 @@ An ordinary Laravel app. These are the parts Nevela adds to it:
 | `app/sign-in/` | The sign-in page. |
 | `lib/laravel.ts` | The one place that calls Laravel. |
 | `lib/site.ts` | The app's name, text and theme. |
-| `components/` | Flare's tables, forms and fields. |
+| `components/` | The tables, forms and fields. |
 | `policies/` | Optional: hide buttons by role. |
+| `.env.local` | `NEVELA_API_URL`, the address of the Laravel API. |
 
 See [The web app](/guides/web-app/) for how these fit together.
 
-## packages/laravel, the package
+## packages/nevela-laravel
 
-| Path | What it holds |
+The Nevela package itself: the generator, the commands and the code behind the REST API. Composer installs it into `apps/api` from this folder.
+
+It is here because the package is not on Packagist yet. Once it is, new apps install it from Packagist like any other dependency and this folder is not created. Treat it as a dependency: don't edit it, so that updating later stays simple.
+
+## The root
+
+| File | What it does |
 |---|---|
-| `src/Console/` | The three artisan commands. |
-| `src/Generator/` | The templates, and the writer that keeps your code. |
-| `src/Http/` | The base form request, the error format and the token endpoints. |
-| `src/Support/` | Descriptors, fields, list-query parsing and seed values. Plain PHP, tested without Laravel. |
-| `tests/` | The unit tests. |
+| `package.json` | `dev` runs both apps; `dev:api` and `dev:web` run one. |
+| `scripts/dev.mjs` | Starts `php artisan serve` and the dashboard's dev server, and stops both together. |
+| `.gitignore` | Keeps `vendor`, `node_modules`, `.env` files and build output out of git. |
 
 ## Where your code goes
 

@@ -91,3 +91,62 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile --filter nevela-docs
       - run: pnpm docs:build
+
+  create:
+    name: create-nevela (new app, end to end)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: pdo_sqlite
+          coverage: none
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Run it the way people get it: from the packed npm tarball, not from the repository.
+      - name: Pack create-nevela
+        working-directory: packages/create-nevela
+        run: |
+          npm pack
+          mkdir "$RUNNER_TEMP/create-nevela"
+          tar -xzf create-nevela-*.tgz -C "$RUNNER_TEMP/create-nevela"
+          test -f "$RUNNER_TEMP/create-nevela/package/template/web/_gitignore"
+      - name: Create an app
+        working-directory: ${{ runner.temp }}
+        run: node create-nevela/package/index.mjs demo-app --yes --pm pnpm
+      - name: The new app has what it should, and none of the examples
+        working-directory: ${{ runner.temp }}/demo-app
+        run: |
+          test -f apps/web/.gitignore
+          test -f apps/web/.env.local
+          test -f apps/api/routes/nevela.php
+          grep -q "export const resources = \[\] as const;" apps/web/resources/index.ts
+          grep -q "HasApiTokens, HasFactory" apps/api/app/Models/User.php
+          test ! -e apps/web/app/dashboard/products
+          test ! -e apps/web/resources/product.resource.ts
+      - name: Build the dashboard before any resource exists
+        working-directory: ${{ runner.temp }}/demo-app/apps/web
+        run: pnpm exec tsc --noEmit
+      - name: Add a resource, a user and data
+        working-directory: ${{ runner.temp }}/demo-app/apps/api
+        run: |
+          php artisan nevela:resource Product --fields="name:string, sku:string!, price:money, kind:enum(stock|digital), notes:text?" --icon=package
+          php artisan migrate --force
+          php artisan nevela:seed Product --count=100
+          php artisan nevela:user --name="CI" --email=ci@example.test --password=ci-password-123
+          php artisan test
+      - name: Build the dashboard with the resource
+        working-directory: ${{ runner.temp }}/demo-app/apps/web
+        run: |
+          pnpm exec tsc --noEmit
+          pnpm run build
+      - name: Sign in and read the resource over HTTP
+        working-directory: ${{ runner.temp }}/demo-app/apps/api
+        run: |
+          php artisan serve --port=8000 > /dev/null 2>&1 &
+          for i in $(seq 1 20); do curl -s -o /dev/null http://127.0.0.1:8000/api/auth/me && break; sleep 1; done
+          token="$(curl -s -X POST http://127.0.0.1:8000/api/auth/token -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{"email":"ci@example.test","password":"ci-password-123"}' | sed -E 's/.*"token":"([^"]+)".*/\1/')"
+          curl -s -g "http://127.0.0.1:8000/api/products?perPage=1" -H 'Accept: application/json' -H "Authorization: Bearer $token" | tee /dev/stderr | grep -q '"total":100'
