@@ -10,6 +10,7 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 - `pnpm create nevela my-app`: create a new app, a Laravel API and a Next.js dashboard installed and connected, with one command.
 - `php artisan nevela:user`: create someone who can sign in to the dashboard.
+- The MIT license, and `nevela/laravel` published from its own repository so Composer can install it.
 - `php artisan nevela:resource`: describe a resource once and generate its Laravel model, migration, form request, API resource, controller, policy and routes.
 - `php artisan nevela:generate`: regenerate from the descriptors. Only code between the `nevela:generated` markers is rewritten; a file edited inside its markers is skipped and reported.
 - `php artisan nevela:seed`: fill a resource with plausible records and print how long it took.

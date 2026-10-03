@@ -16,7 +16,7 @@ nevela/
 ├─ packages/
 │  ├─ laravel/         the nevela/laravel Composer package
 │  └─ create-nevela/   the `pnpm create nevela` command
-├─ scripts/    the release script
+├─ scripts/    the release and split scripts
 └─ CHANGELOG.md
 ```
 
@@ -89,5 +89,7 @@ Pages are Markdown in `apps/docs/src/content/docs`. The sidebar is in `apps/docs
 
 - Add a line to `CHANGELOG.md` under "Unreleased" if a user would notice the change.
 - CI runs the package tests on PHP 8.3 and 8.4, generates and seeds in `apps/api`, builds the dashboard and the docs, and creates a new app with `create-nevela` and builds it.
+
+`packages/laravel` is also published on its own, from a read-only copy at [MarkColeMukisa/nevela-laravel](https://github.com/MarkColeMukisa/nevela-laravel). Change it here, never there.
 
 [Releasing](/contributing/releasing/) covers versions and publishing.

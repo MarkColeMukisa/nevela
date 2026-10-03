@@ -51,7 +51,7 @@ See [The web app](/guides/web-app/) for how these fit together.
 
 The Nevela package itself: the generator, the commands and the code behind the REST API. Composer installs it into `apps/api` from this folder.
 
-It is here because the package is not on Packagist yet. Once it is, new apps install it from Packagist like any other dependency and this folder is not created. Treat it as a dependency: don't edit it, so that updating later stays simple.
+It is here because Nevela has no tagged release on Packagist yet. Once it has, new apps install the package from Packagist like any other dependency and this folder is not created. Treat it as a dependency: don't edit it, so that updating later stays simple.
 
 ## The root
 

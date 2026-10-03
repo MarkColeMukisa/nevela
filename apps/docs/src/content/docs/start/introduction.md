@@ -46,7 +46,7 @@ The dashboard is [Flare](https://github.com/MUKE-coder/flare-framework)'s Next.j
 
 - Relations between resources (`belongsTo`, `hasMany`) and file uploads are not generated.
 - Sign-up, password reset and account pages are not part of the web app. Users are created in Laravel.
-- The Laravel package is not on Packagist yet. A new app carries its own copy in `packages/nevela-laravel`.
+- There is no tagged release yet. Until the first one, a new app carries its own copy of the Laravel package in `packages/nevela-laravel` instead of installing it from Packagist.
 
 The [roadmap](/concepts/architecture/#roadmap) lists what is planned.
 
