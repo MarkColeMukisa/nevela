@@ -10,7 +10,7 @@ cd my-app
 pnpm run dev
 ```
 
-You need PHP 8.3+, Composer and Node.js 20+. Until `create-nevela` is on npm, run `npx github:MarkColeMukisa/nevela my-app` instead. The docs are at https://nevela-docs.vercel.app.
+You need PHP 8.3+, Composer and Node.js 20+. Until `create-nevela` is on npm, run `pnpm dlx github:MarkColeMukisa/nevela my-app` instead. The docs are at https://nevela-docs.vercel.app.
 
 ## Add a resource
 

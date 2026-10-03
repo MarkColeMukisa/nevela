@@ -23,8 +23,10 @@ pnpm create nevela my-app
 `create-nevela` is not on npm yet. Until it is, run it straight from GitHub:
 
 ```sh
-npx github:MarkColeMukisa/nevela my-app
+pnpm dlx github:MarkColeMukisa/nevela my-app
 ```
+
+With npm the same thing is `npx --allow-git=all github:MarkColeMukisa/nevela my-app`. Recent versions of npm refuse packages from git unless you allow them.
 :::
 
 It does the setup for you:
