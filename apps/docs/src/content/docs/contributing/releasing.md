@@ -152,7 +152,7 @@ npm pack --dry-run
 
 Its version is the repository's version, so publish once per release. An installer already on someone's machine fetches the newest one from npm before it runs, so a published fix reaches people at once.
 
-`php nevela update` gets dashboards from npm when it can and from the release tag on GitHub otherwise, so it works in the gap between tagging and publishing.
+`php nevela upgrade` gets dashboards from npm when it can and from the release tag on GitHub otherwise, so it works in the gap between tagging and publishing.
 
 ## Publishing the Laravel package to Packagist
 

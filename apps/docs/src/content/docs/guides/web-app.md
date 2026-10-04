@@ -42,7 +42,7 @@ Do not edit fields in the `.resource.ts` file. Change the JSON descriptor in the
 
 ## Getting dashboard fixes later
 
-The dashboard's files are yours to change. `php artisan nevela:update` brings the ones you have not changed up to a newer version, and leaves the ones you changed alone. See [Updating](/guides/updating/).
+The dashboard's files are yours to change. `php nevela upgrade` brings the ones you have not changed up to a newer version, and leaves the ones you changed alone. See [Upgrading an app](/guides/updating/#upgrading-an-app).
 
 ## Changing how a resource looks
 

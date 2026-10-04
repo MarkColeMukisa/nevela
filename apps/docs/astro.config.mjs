@@ -59,7 +59,7 @@ export default defineConfig({
             { label: "Authentication", slug: "guides/authentication" },
             { label: "Roles and policies", slug: "guides/policies" },
             { label: "Seeding data", slug: "guides/seeding" },
-            { label: "Updating", slug: "guides/updating" },
+            { label: "Updating and upgrading", slug: "guides/updating" },
             { label: "Configuration", slug: "guides/configuration" },
             { label: "Deploying", slug: "guides/deploying" },
           ],

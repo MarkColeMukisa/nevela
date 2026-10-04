@@ -2,7 +2,7 @@
 //
 // The same commands as the app's own `php nevela`, but started from Node. That matters in
 // shells where typing `php` doesn't work (Git Bash with Laravel Herd, where PHP is
-// php.bat), and for `update`, which has to work on an app of any age, including one from
+// php.bat), and for `upgrade`, which has to work on an app of any age, including one from
 // before the app had a launcher at all.
 
 import fs from 'node:fs';
@@ -11,7 +11,7 @@ import { isNewer, satisfiesCaret } from './packagist.mjs';
 import { spawnCommand } from './shell.mjs';
 
 /** What `nevela <name>` runs: these go to `php artisan nevela:<name>`. */
-const NEVELA = ['update', 'dev', 'status', 'version', 'resource', 'generate', 'seed', 'user'];
+const NEVELA = ['upgrade', 'dev', 'status', 'version', 'resource', 'generate', 'seed', 'user'];
 /** These go to the artisan command of the same name. */
 const ARTISAN = ['migrate', 'tinker', 'test', 'serve'];
 
@@ -108,8 +108,13 @@ function inApp(project, command, args) {
   return result.status ?? 1;
 }
 
-/** `nevela update`: bring an app of any age to the latest Nevela. */
-export async function update(project, args, { latest, say }) {
+/**
+ * `nevela upgrade`: bring an app of any age to the latest Nevela.
+ *
+ * The artisan command is called by its older name, nevela:update, which every version of
+ * the package answers to (from 0.3.0 it is an alias of nevela:upgrade).
+ */
+export async function upgrade(project, args, { latest, say }) {
   const check = args.includes('--check');
   const manifestFile = path.join(project.api, 'composer.json');
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));

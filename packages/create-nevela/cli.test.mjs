@@ -5,13 +5,48 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import zlib from 'node:zlib';
-import { artisanArguments, findProject, repairManifest, repairScripts } from './project.mjs';
+import { artisanArguments, COMMANDS, findProject, repairManifest, repairScripts } from './project.mjs';
 import { untar } from './selfupdate.mjs';
 import { quote } from './shell.mjs';
+import { globalInstall } from './tool.mjs';
 
 const scratch = () => fs.mkdtempSync(path.join(os.tmpdir(), 'nevela-test-'));
 
+test('the installed nevela command knows how it was installed, and a fetched one knows it was not', () => {
+  const installed = {
+    'C:\\Users\\ada\\AppData\\Roaming\\npm\\node_modules\\create-nevela': 'npm',
+    '/usr/local/lib/node_modules/create-nevela': 'npm',
+    '/home/ada/.nvm/versions/node/v22.4.0/lib/node_modules/create-nevela': 'npm',
+    'C:\\Users\\ada\\AppData\\Local\\pnpm\\global\\5\\.pnpm\\create-nevela@0.3.0\\node_modules\\create-nevela': 'pnpm',
+    '/home/ada/.local/share/pnpm/global/5/.pnpm/create-nevela@0.3.0/node_modules/create-nevela': 'pnpm',
+    '/home/ada/.bun/install/global/node_modules/create-nevela': 'bun',
+    '/home/ada/.config/yarn/global/node_modules/create-nevela': 'yarn',
+    'C:\\Users\\ada\\AppData\\Local\\Yarn\\Data\\global\\node_modules\\create-nevela': 'yarn',
+  };
+  for (const [dir, manager] of Object.entries(installed)) {
+    const install = globalInstall(dir);
+    assert.equal(install?.manager, manager, dir);
+    assert.equal(install.command.at(-1), 'create-nevela@latest');
+  }
+  assert.deepEqual(globalInstall('/usr/local/lib/node_modules/create-nevela').command, ['npm', 'install', '-g', 'create-nevela@latest']);
+
+  // Fetched for one run, or the repository itself: nothing installed to update.
+  for (const dir of [
+    'C:\\Users\\ada\\AppData\\Local\\npm-cache\\_npx\\3f2a9c\\node_modules\\create-nevela',
+    '/home/ada/.npm/_npx/3f2a9c/node_modules/create-nevela',
+    '/home/ada/.cache/pnpm/dlx/abc123/node_modules/.pnpm/create-nevela@0.3.0/node_modules/create-nevela',
+    'C:\\Users\\ada\\AppData\\Local\\pnpm-cache\\dlx-1234\\node_modules\\create-nevela',
+    'C:\\Users\\ada\\AppData\\Local\\Temp\\create-nevela-0.3.0-4242\\package',
+    '/tmp/create-nevela-0.3.0-4242/package',
+    'D:\\nevela\\packages\\create-nevela',
+  ]) {
+    assert.equal(globalInstall(dir), null, dir);
+  }
+});
+
 test('commands map onto artisan the way the php launcher maps them', () => {
+  assert.deepEqual(artisanArguments('upgrade', ['--check']), ['nevela:upgrade', '--check']);
+  assert.ok(COMMANDS.includes('upgrade') && !COMMANDS.includes('update'), 'update is the nevela command updating itself, handled before these');
   assert.deepEqual(artisanArguments('update', ['--check']), ['nevela:update', '--check']);
   assert.deepEqual(artisanArguments('resource', ['Product', '--fields=name:string']), ['nevela:resource', 'Product', '--fields=name:string', '--migrate']);
   assert.deepEqual(artisanArguments('resource', ['Product', '--no-migrate']), ['nevela:resource', 'Product']);

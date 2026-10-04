@@ -14,6 +14,7 @@
     "selfupdate.mjs",
     "shell.mjs",
     "project.mjs",
+    "tool.mjs",
     "template",
     "LICENSE"
   ],
