@@ -23,12 +23,13 @@ test('the installed nevela command knows how it was installed, and a fetched one
     '/home/ada/.config/yarn/global/node_modules/create-nevela': 'yarn',
     'C:\\Users\\ada\\AppData\\Local\\Yarn\\Data\\global\\node_modules\\create-nevela': 'yarn',
   };
+  const noProjectHere = () => false;
   for (const [dir, manager] of Object.entries(installed)) {
-    const install = globalInstall(dir);
+    const install = globalInstall(dir, noProjectHere);
     assert.equal(install?.manager, manager, dir);
     assert.equal(install.command.at(-1), 'create-nevela@latest');
   }
-  assert.deepEqual(globalInstall('/usr/local/lib/node_modules/create-nevela').command, ['npm', 'install', '-g', 'create-nevela@latest']);
+  assert.deepEqual(globalInstall('/usr/local/lib/node_modules/create-nevela', noProjectHere).command, ['npm', 'install', '-g', 'create-nevela@latest']);
 
   // Fetched for one run, or the repository itself: nothing installed to update.
   for (const dir of [
@@ -40,8 +41,18 @@ test('the installed nevela command knows how it was installed, and a fetched one
     '/tmp/create-nevela-0.3.0-4242/package',
     'D:\\nevela\\packages\\create-nevela',
   ]) {
-    assert.equal(globalInstall(dir), null, dir);
+    assert.equal(globalInstall(dir, noProjectHere), null, dir);
   }
+
+  // A copy in a project's own node_modules is not the global command: updating the global
+  // one would not change the copy that is running.
+  const projects = ['/home/ada/shop/package.json', 'C:/Users/ada/shop/package.json'];
+  const inAProject = (file) => projects.includes(file);
+  assert.equal(globalInstall('/home/ada/shop/node_modules/create-nevela', inAProject), null);
+  assert.equal(globalInstall('C:\\Users\\ada\\shop\\node_modules\\create-nevela', inAProject), null);
+  // pnpm's store inside a project, and a dependency of a dependency.
+  assert.equal(globalInstall('/home/ada/shop/node_modules/.pnpm/create-nevela@0.3.0/node_modules/create-nevela', noProjectHere), null);
+  assert.equal(globalInstall('/usr/local/lib/node_modules/some-tool/node_modules/create-nevela', noProjectHere), null);
 });
 
 test('commands map onto artisan the way the php launcher maps them', () => {

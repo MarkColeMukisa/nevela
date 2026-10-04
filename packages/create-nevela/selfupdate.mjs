@@ -14,15 +14,25 @@ import { isNewer } from './packagist.mjs';
 
 const REGISTRY = 'https://registry.npmjs.org/create-nevela';
 
-/** The newest create-nevela on npm when it is newer than `current`, else null. Never throws. */
-export async function newerVersion(current) {
+/** The newest create-nevela on npm, or null when npm couldn't be asked. Never throws. */
+export async function latestVersion() {
   try {
     const response = await fetch(`${REGISTRY}/latest`, { signal: AbortSignal.timeout(4000) });
     const latest = (await response.json()).version;
-    return isNewer(latest, current) ? latest : null;
+    return typeof latest === 'string' && /^\d+\.\d+\.\d+$/.test(latest) ? latest : null;
   } catch {
     return null;
   }
+}
+
+/**
+ * The newest create-nevela on npm when it is newer than `current`, else null. Never throws.
+ * Null also when npm couldn't be asked: callers that only want to run the newest carry on
+ * with what they have.
+ */
+export async function newerVersion(current) {
+  const latest = await latestVersion();
+  return latest !== null && isNewer(latest, current) ? latest : null;
 }
 
 /**

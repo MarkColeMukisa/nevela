@@ -12,10 +12,10 @@ import os from 'node:os';
 import path from 'node:path';
 import readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
-import { latestRelease, onPackagist } from './packagist.mjs';
+import { isNewer, latestRelease, onPackagist } from './packagist.mjs';
 import { COMMANDS, findProject, forward, upgrade } from './project.mjs';
 import { shellLine, spawnCommand, windows } from './shell.mjs';
-import { newerVersion, runVersion } from './selfupdate.mjs';
+import { latestVersion, newerVersion, runVersion } from './selfupdate.mjs';
 import { globalInstall, INSTALL_COMMAND } from './tool.mjs';
 import { copyLaravelPackage, copyWebTemplate, fromRepository, templateRecord } from './template.mjs';
 
@@ -364,9 +364,9 @@ async function updateTool(args) {
   const install = fromRepository ? null : globalInstall(here);
 
   if (!install) {
-    // Run through npx or `pnpm dlx`, which fetch the latest every time, or started by an
-    // older nevela command that fetched this one to do its work. There is no installed
-    // command to update. Inside an app, "update" used to mean "upgrade this app", and
+    // Run through npx or `pnpm dlx`, which fetch the latest every time, started by an
+    // older nevela command that fetched this one to do its work, or a copy in a project's
+    // own node_modules. There is no installed command to update. Inside an app, "update" used to mean "upgrade this app", and
     // instructions saying so are still around, so that is what it does.
     if (project) {
       console.log(`\n  ${dim(`"update" now updates the nevela command, and an app is brought up to date with "upgrade". Upgrading this app.`)}`);
@@ -380,8 +380,14 @@ async function updateTool(args) {
   }
 
   console.log(`\n  ${indigo(bold('Nevela'))} ${dim('update')}\n`);
-  const newer = await newerVersion(VERSION);
-  if (!newer) {
+  const latest = await latestVersion();
+  const newer = latest !== null && isNewer(latest, VERSION) ? latest : null;
+  if (latest === null) {
+    // Not the same as being up to date, so it isn't reported as that.
+    console.log(`  ${red('!')} Couldn't reach npm to see whether there is a newer nevela than ${bold(VERSION)}. Nothing was changed.`);
+    console.log(`    Try again when you are online, or run:  ${install.command.join(' ')}`);
+    process.exitCode = 1;
+  } else if (!newer) {
     console.log(`  ${green('✔')} nevela ${bold(VERSION)} is the latest.`);
   } else {
     console.log(`  Updating the nevela command ${bold(VERSION)} → ${bold(newer)} ${dim(`(${install.command.join(' ')})`)}\n`);

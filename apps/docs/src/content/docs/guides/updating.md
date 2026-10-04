@@ -144,7 +144,7 @@ The `.nevela/` folder (backups and incoming files) ignores itself, so none of it
 
 **An app from before the record existed** (created with 0.1.3 or earlier) has no fingerprints yet. On its first update, Nevela downloads the dashboard version the app started from and compares against that instead, then writes the record. From then on it works as described above.
 
-**An app pinned to one exact version.** Apps created on Windows with 0.1.0 have `"nevela/laravel": "0.1"` in `apps/api/composer.json`, which stops Composer from updating. `npx create-nevela upgrade` fixes it. By hand, change it to `"^0.1"`.
+**An app pinned to one exact version.** Apps created on Windows with 0.1.0 have `"nevela/laravel": "0.1"` in `apps/api/composer.json`, which stops Composer from updating. `npx create-nevela upgrade` fixes it. By hand, change it to the range that has the release you want: `"^0.3"` for 0.3.x. Below 1.0, a range such as `^0.1` stops at 0.1.x.
 
 **An app with a `packages/nevela-laravel` folder** installs the package from that folder, because it was created before the package was on Packagist. `npx create-nevela upgrade` moves it to Packagist. Afterwards you can delete the folder.
 
