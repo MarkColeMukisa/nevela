@@ -16,6 +16,8 @@ If a token is revoked in Laravel, the next page load finds `GET /auth/me` answer
 
 ## Creating users
 
+A new app starts with one account, `admin@example.com` with the password `password`, so you can sign in straight away. It is created in your local database only. Replace it before anyone else can reach the app.
+
 The dashboard has no sign-up page yet. Create users in the Laravel app:
 
 ```sh
