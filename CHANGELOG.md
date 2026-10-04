@@ -6,6 +6,10 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Added
+
+- Grit's and Flare's ways of writing a field are understood: `image:file:image`, `image:file:[image]`, `category:belongs_to:Category` and `status:enum:draft|live` mean the same as `image:image`, `category:belongsTo(Category)` and `status:enum(draft|live)`.
+
 ## [0.2.1] - 2026-10-04
 
 ### Fixed

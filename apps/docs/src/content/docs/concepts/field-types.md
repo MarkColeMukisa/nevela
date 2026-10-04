@@ -49,6 +49,18 @@ The dashboard picks the input and the table column from the type.
 
 `category:belongsTo(Category)` links a record to one of another resource. It is stored as `category_id` and called `categoryId` in the API. See [Relationships](/guides/relationships/).
 
+### Coming from Grit or Flare
+
+The spellings those two use are understood, so you can type what you know:
+
+| You write | Nevela reads it as |
+|---|---|
+| `image:file:image` (Grit) | `image:image` |
+| `image:file:[image]` (Flare) | `image:image` |
+| `docs:file:[pdf, image]` | `docs:file(pdf\|image)` |
+| `category:belongs_to:Category` | `category:belongsTo(Category)` |
+| `status:enum:draft\|live` | `status:enum(draft\|live)` |
+
 `image:image` takes a picture and optimises it as it arrives; `image:image(product)` names the profile it is optimised with. `manual:file(pdf|document)` takes other files and stores them as they are. Neither can be unique, sorted by or filtered on. See [Files and images](/guides/images/).
 
 `integer`, `bool` and `decimal` are accepted as other spellings of `int`, `boolean` and `money`.
