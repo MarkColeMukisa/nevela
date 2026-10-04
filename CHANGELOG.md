@@ -6,6 +6,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-04
+
 ### Changed
 
 - **Breaking, for the `nevela` command only:** `update` and `upgrade` are now two commands, the same two Grit has. `nevela update`, from anywhere, updates the `nevela` command itself. `nevela upgrade`, inside an app, brings that app to the latest Nevela, which is what `update` did before. Inside an app, `php nevela update`, `pnpm nevela update` and `npx create-nevela update` still upgrade the app, so instructions written for older versions keep working.
@@ -147,7 +149,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.5...v0.2.0
 [0.1.5]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.4...v0.1.5
