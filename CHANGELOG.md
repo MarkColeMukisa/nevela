@@ -6,6 +6,15 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Fixed
+
+- The dashboard reported "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties" on a full page load, with a different `radix-…` id on each account menu. The React bundled with Next.js 16.0.4 loses a component's place in a list when its code arrives a moment after the page starts up, so every id beneath it comes out different in the browser. The dashboard now uses Next.js 16.3.8, which has the fix. `nevela update` moves an existing app to it; run the install command it prints afterwards.
+- With the device in dark mode and the dashboard's theme left to follow it, the page the browser built differed from the one the server sent, and React threw the server's away and rendered the dashboard again. The theme button now starts from what the server sent and switches straight after.
+
+### Security
+
+- Next.js 16.0.4 is marked by its maintainers as having a security vulnerability (CVE-2025-66478). 16.3.8 is a patched version.
+
 ## [0.1.4] - 2026-10-04
 
 ### Added

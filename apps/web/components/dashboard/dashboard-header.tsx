@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { BellIcon, MoonIcon, SunIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,9 +30,31 @@ function applyTheme(theme: Theme) {
   if (theme !== "system") root.classList.add(theme);
 }
 
+const DARK_QUERY = "(prefers-color-scheme: dark)";
+
+function watchSystemTheme(onChange: () => void) {
+  const query = window.matchMedia(DARK_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+/**
+ * Whether the device prefers dark. The server can't know, so it and the first render in
+ * the browser both say no, and the real answer follows straight after: reading it during
+ * that first render would give the browser a different page from the one the server sent.
+ */
+function useSystemDark() {
+  return useSyncExternalStore(
+    watchSystemTheme,
+    () => window.matchMedia(DARK_QUERY).matches,
+    () => false,
+  );
+}
+
 export function DashboardHeader({ user, initialTheme, notices = [] }: { user: DashboardUser; initialTheme: Theme; notices?: Notice[] }) {
   const [theme, setTheme] = useState<Theme>(initialTheme);
-  const dark = theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const systemDark = useSystemDark();
+  const dark = theme === "dark" || (theme === "system" && systemDark);
   const needsAttention = notices.some((notice) => notice.tone === "warning");
 
   return (
