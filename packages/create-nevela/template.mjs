@@ -24,7 +24,7 @@ export const sources = {
 };
 
 /** Never part of a new app: build output, installs and local settings. */
-const NEVER = new Set(['node_modules', '.next', '.env.local', 'tsconfig.tsbuildinfo', 'next-env.d.ts', 'vendor', '.phpunit.result.cache', '.phpunit.cache', 'composer.lock']);
+const NEVER = new Set(['node_modules', '.next', '.env.local', 'tsconfig.tsbuildinfo', 'next-env.d.ts', 'AGENTS.md', 'CLAUDE.md', 'vendor', '.phpunit.result.cache', '.phpunit.cache', 'composer.lock']);
 
 function copyTree(from, to, skip = () => false, relative = '') {
   fs.mkdirSync(to, { recursive: true });

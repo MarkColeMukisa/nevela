@@ -39,8 +39,17 @@ Both can be combined: `code:string?!`.
 | `date` | `date` | a date as `YYYY-MM-DD` |
 | `datetime` | `dateTime` | a date and time |
 | `enum(a\|b\|c)` | `string`, indexed | one of the listed values |
+| `belongsTo(Resource)` | a foreign key, indexed | the id of a record that exists |
+| `image` | `string` (the file's key) | a picture uploaded to this field |
+| `file(pdf\|image)` | `string` (the file's key) | a file of a listed kind, uploaded to this field |
 
 The dashboard picks the input and the table column from the type.
+
+## Relations and files
+
+`category:belongsTo(Category)` links a record to one of another resource. It is stored as `category_id` and called `categoryId` in the API. See [Relationships](/guides/relationships/).
+
+`image:image` takes a picture and optimises it as it arrives; `image:image(product)` names the profile it is optimised with. `manual:file(pdf|document)` takes other files and stores them as they are. Neither can be unique, sorted by or filtered on. See [Files and images](/guides/images/).
 
 `integer`, `bool` and `decimal` are accepted as other spellings of `int`, `boolean` and `money`.
 

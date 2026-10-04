@@ -25,6 +25,8 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
+          # gd and exif: the image optimiser's tests are skipped without them.
+          extensions: gd, exif, fileinfo
           coverage: none
       - run: composer install --no-interaction --no-progress --prefer-dist
       - run: vendor/bin/phpunit
@@ -40,7 +42,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.4"
-          extensions: pdo_sqlite
+          extensions: pdo_sqlite, gd, exif, fileinfo
           coverage: none
       - run: composer install --no-interaction --no-progress --prefer-dist
       - name: Prepare environment
@@ -60,7 +62,14 @@ jobs:
             git diff -- . ../web ../../nevela
             exit 1
           fi
+      # A product belongs to a category, so the categories come first.
+      - run: php artisan nevela:seed Category --count=8
       - run: php artisan nevela:seed Product --count=1000
+      - name: Seeded images were optimised and their renditions made
+        run: |
+          ls storage/app/public/products/image/*/*/ | grep -q '\.thumb\.'
+          ls storage/app/public/products/image/*/*/ | grep -q '\.card\.'
+          ls storage/app/private/nevela/originals/products/image/*/*/ | grep -q '\.png$'
       - run: php artisan test
 
   web:
@@ -102,7 +111,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.4"
-          extensions: pdo_sqlite
+          extensions: pdo_sqlite, gd, exif, fileinfo
           coverage: none
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
@@ -148,7 +157,16 @@ jobs:
           php nevela | grep -q "php nevela update"
           php nevela version | grep -q "^Nevela [0-9]"
           # One command: the code, the table and the records.
-          php nevela resource Product --fields="name:string, sku:string!, price:money, kind:enum(stock|digital), notes:text?" --icon=package --seed=100
+          php nevela resource Category --fields="name:string, slug:slug!, image:image?" --icon=tags --seed=6
+          # A relation and an optimised image, as in the shop guide.
+          php nevela resource Product --fields="name:string, sku:string!, price:money, image:image(product)?, category:belongsTo(Category), kind:enum(stock|digital), notes:text?" --icon=package --seed=100
+          grep -q 'products: field.hasMany("Product", { foreignKey: "categoryId" })' apps/web/resources/category.resource.ts
+          grep -q 'categoryId: field.belongsTo("Category")' apps/web/resources/product.resource.ts
+          grep -q "function products()" apps/api/app/Models/Category.php
+          ls apps/api/storage/app/public/products/image/*/*/ | grep -q '\.thumb\.'
+          # A relation to a resource that doesn't exist is refused before anything is written.
+          if php nevela resource Review --fields="body:text, author:belongsTo(Author)"; then echo "a relation to a missing resource was accepted"; exit 1; fi
+          test ! -e apps/api/nevela/resources/review.json
           php nevela status | tee status.log
           grep -q "none pending" status.log
           grep -q "Resource: Product" status.log

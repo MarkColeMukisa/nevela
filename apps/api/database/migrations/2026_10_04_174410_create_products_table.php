@@ -14,6 +14,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('sku')->unique();
             $table->decimal('price', 12, 2);
+            $table->string('image', 512)->nullable();
+            $table->foreignUuid('category_id')->index()->constrained('categories');
             $table->boolean('active')->default(false);
             $table->string('kind')->index();
             $table->text('notes')->nullable();

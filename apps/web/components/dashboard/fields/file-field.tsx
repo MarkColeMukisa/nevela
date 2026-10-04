@@ -11,9 +11,10 @@ import {
   sniffMatches,
   type FileField as FileFieldDef,
 } from "@flaredev/core";
-import { createReadUrlAction, createUploadUrlAction } from "@/app/dashboard/actions";
+import { createUploadUrlAction } from "@/app/dashboard/actions";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { fileName, fileUrl, isImageKey } from "@/lib/files";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -29,11 +30,7 @@ interface Props {
 
 type Upload = { name: string; loaded: number; total: number; abort: () => void };
 
-/** "contacts/avatar/2026/09/<uuid>-me.png" → "me.png" */
-const fileName = (key: string) => key.split("/").pop()!.replace(/^[0-9a-f-]{36}-/, "");
-
 const IMAGE_TYPES = new Set<string>(FILE_CATEGORIES.image);
-const isImageKey = (key: string) => /\.(png|jpe?g|gif|webp|avif)$/i.test(key);
 
 const oneDecimal = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
 const whole = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
@@ -58,21 +55,26 @@ const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1
 /** "image/png" → "PNG", used when a file's contents don't match its type. */
 const typeName = (type: string) => (type.split("/")[1] ?? type).replace(/^vnd\..*\./, "").toUpperCase();
 
-/** PUT with progress events, which fetch() can't report for uploads. */
+/**
+ * PUT with progress events, which fetch() can't report for uploads.
+ *
+ * Resolves with the key the file was stored under. Laravel chooses it, because an image
+ * is optimised on the way in and may come out as a different type from the one sent.
+ */
 function put(url: string, file: File, onProgress: (loaded: number) => void, signal: { abort?: () => void }) {
-  return new Promise<void>((resolve, reject) => {
+  return new Promise<string | undefined>((resolve, reject) => {
     const request = new XMLHttpRequest();
     signal.abort = () => request.abort();
     request.upload.onprogress = (event) => onProgress(event.loaded);
     request.onload = () => {
-      if (request.status >= 200 && request.status < 300) return resolve();
-      let message = `Upload failed (${request.status}).`;
+      let answer: { error?: string; key?: string } = {};
       try {
-        message = (JSON.parse(request.responseText) as { error?: string }).error ?? message;
+        answer = JSON.parse(request.responseText) as typeof answer;
       } catch {
-        // Not JSON: keep the status message.
+        // Not JSON: the status says what happened.
       }
-      reject(new Error(message));
+      if (request.status >= 200 && request.status < 300) return resolve(answer.key);
+      reject(new Error(answer.error ?? `Upload failed (${request.status}).`));
     };
     request.onerror = () => reject(new Error("Upload failed. Check your connection and try again."));
     request.onabort = () => reject(new DOMException("Upload cancelled.", "AbortError"));
@@ -83,9 +85,10 @@ function put(url: string, file: File, onProgress: (loaded: number) => void, sign
 }
 
 /**
- * Upload widget for a `file:[…]` field. Checks type, size and contents in the browser
- * first (the server repeats every check), uploads straight to storage through a signed
- * URL with progress, and stores the object key in the form.
+ * Upload widget for a file or image field. Checks type, size and contents in the browser
+ * first (Laravel repeats every check), uploads with progress, and stores the key Laravel
+ * answers with in the form. An image is optimised as it arrives: resized to the field's
+ * profile, with its smaller renditions made alongside.
  */
 export function FileField({ id, value, onChange, invalid, disabled, field, resourceName, fieldKey }: Props) {
   const input = useRef<HTMLInputElement>(null);
@@ -104,15 +107,8 @@ export function FileField({ id, value, onChange, invalid, disabled, field, resou
 
   // Thumbnail for a stored image (a local preview replaces it while uploading).
   useEffect(() => {
-    if (!value || !isImageKey(value)) return setPreview(null);
-    let cancelled = false;
-    void createReadUrlAction(resourceName, fieldKey, value).then((result) => {
-      if (!cancelled && result.ok) setPreview(result.data.url);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [value, resourceName, fieldKey]);
+    setPreview(value && isImageKey(value) ? fileUrl(value, "thumb") : null);
+  }, [value]);
 
   async function check(file: File): Promise<string | null> {
     const type = file.type || "application/octet-stream";
@@ -142,8 +138,8 @@ export function FileField({ id, value, onChange, invalid, disabled, field, resou
     try {
       const signed = await createUploadUrlAction(resourceName, fieldKey, { name: file.name, type: contentType, size: file.size });
       if (!signed.ok) throw new Error(signed.error);
-      await put(signed.data.url, file, (loaded) => setUpload((current) => current && { ...current, loaded }), signal);
-      onChange(signed.data.key);
+      const stored = await put(signed.data.url, file, (loaded) => setUpload((current) => current && { ...current, loaded }), signal);
+      onChange(stored ?? signed.data.key);
       setStatus(`${file.name} uploaded`);
     } catch (cause) {
       const cancelled = cause instanceof DOMException && cause.name === "AbortError";
@@ -157,10 +153,8 @@ export function FileField({ id, value, onChange, invalid, disabled, field, resou
     }
   }
 
-  async function open() {
-    const result = await createReadUrlAction(resourceName, fieldKey, value);
-    if (result.ok) window.open(result.data.url, "_blank", "noopener");
-    else setError(result.error);
+  function open() {
+    window.open(fileUrl(value), "_blank", "noopener");
   }
 
   function remove() {
@@ -191,7 +185,7 @@ export function FileField({ id, value, onChange, invalid, disabled, field, resou
   const thumbnail = (
     <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
       {preview ? (
-        // eslint-disable-next-line @next/next/no-img-element -- signed, short-lived URL
+        // eslint-disable-next-line @next/next/no-img-element -- a local preview, or a thumbnail already the right size
         <img src={preview} alt="" width={64} height={64} className="size-full object-cover" />
       ) : (
         <FileIcon aria-hidden="true" className="size-6 text-muted-foreground" />

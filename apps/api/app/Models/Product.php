@@ -11,8 +11,8 @@ class Product extends Model
 
     protected $table = 'products';
 
-    // nevela:generated:start hash=8e8c02392131
-    protected $fillable = ['name', 'sku', 'price', 'active', 'kind', 'notes'];
+    // nevela:generated:start hash=e7474ea126e1
+    protected $fillable = ['name', 'sku', 'price', 'image', 'category_id', 'active', 'kind', 'notes'];
 
     protected function casts(): array
     {
@@ -20,6 +20,11 @@ class Product extends Model
             'price' => 'float',
             'active' => 'boolean',
         ];
+    }
+
+    public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'category_id');
     }
     // nevela:generated:end
 

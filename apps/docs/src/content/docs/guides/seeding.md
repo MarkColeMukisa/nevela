@@ -29,6 +29,9 @@ How the values are chosen:
 - They follow the descriptor: enum fields use their options, money has two decimals, percents stay between 0 and 100.
 - A field's name is used as a hint, so `email`, `phone`, `city`, `company` and `sku` look like what they are.
 - Optional fields are left empty about one time in five.
+- A `belongsTo` field is given a record that exists, picked at random. Seed the resource it points at first.
+- An image field is given one of a few placeholder pictures made for the run. They go through the same optimiser as an upload, so their renditions exist too. This is the slow part: about a quarter of a second per picture, six per image field.
+- A resource called Category, Collection, Department, Tag, Genre or Brand gets names like Kitchen and Outdoor.
 - Creation dates are spread over the last 60 days, so the dashboard's weekly numbers and trends have something to show.
 
 What to know before using it:

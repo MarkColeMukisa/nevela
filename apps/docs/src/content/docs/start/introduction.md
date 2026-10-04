@@ -44,7 +44,8 @@ The dashboard is [Flare](https://github.com/MUKE-coder/flare-framework)'s Next.j
 
 ## What Nevela does not do yet
 
-- Relations between resources (`belongsTo`, `hasMany`) and file uploads are not generated.
+- Many-to-many relations are not generated. One-to-many is: see [Relationships](/guides/relationships/).
+- Uploaded files are not deleted when their record is.
 - Sign-up, password reset and account pages are not part of the web app. Users are created in Laravel.
 
 The [roadmap](/concepts/architecture/#roadmap) lists what is planned.

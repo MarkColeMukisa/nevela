@@ -6,6 +6,25 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Added
+
+- Relationships. `category:belongsTo(Category)` links a record to one of another resource. It generates the foreign key, the check that the record exists, `$product->category` and `$category->products`, and in the dashboard a picker that searches, the related name in tables, and a parent's page listing its children. Deleting a parent that records are required to belong to answers 409 with how many there are; an optional link is cleared instead.
+- Image fields, optimised on upload the way Grit does it. `image:image` takes a picture, turns it the right way up, removes its metadata, scales it to fit, picks the format from the pixels (WebP; lossless when there is transparency to keep) and makes named renditions beside it. A 1.2 MB 4000×3000 photo is stored as 85 KB, with a 22 KB thumbnail. The original is kept privately.
+- Image profiles in `config/nevela.php`: `default`, `product`, `avatar` and `cover`, and your own. A field names one with `image:image(product)`.
+- File fields for anything else: `manual:file(pdf|document)`. The contents are checked against what the field accepts, and files a browser would run are never stored.
+- `PUT /api/_nevela/uploads/{Resource}/{field}` and `GET /api/_nevela/files/{key}`. A record's API response carries a file's address, dimensions and renditions beside its key, as `<field>File`.
+- `php nevela seed` fills relations from the records that exist and image fields with placeholder pictures, and names categories like categories.
+- The dashboard's upload box, thumbnails and relation picker now work against Laravel, through a new `/api/…` route in the web app that passes the browser's reads and uploads on with the person's token.
+- Three guides in the docs: Build a shop, Relationships, and Files and images.
+
+### Changed
+
+- `php nevela update` says when the new version has migrations that have not been run. This one has: the table that records uploads. Run `php nevela migrate` after updating.
+
+### Fixed
+
+- Any request body over 16 KB failed under `php artisan serve` on Windows: Laravel starts PHP there without the temporary folder's location, so PHP had nowhere to buffer it. Nevela now passes it through.
+
 ## [0.1.5] - 2026-10-04
 
 ### Fixed

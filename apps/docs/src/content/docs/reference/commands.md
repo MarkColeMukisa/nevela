@@ -31,7 +31,7 @@ php artisan nevela:resource Product --fields="name:string, price:money, kind:enu
 | Argument or option | Meaning |
 |---|---|
 | `name` | The resource name, PascalCase and singular. |
-| `--fields=` | The fields, as `name:type` separated by commas. See [field types](/concepts/field-types/). If left out, the command asks for them. |
+| `--fields=` | The fields, as `name:type` separated by commas. See [field types](/concepts/field-types/), including `category:belongsTo(Category)` and `image:image`. If left out, the command asks for them. |
 | `--icon=` | A Lucide icon name for the dashboard sidebar. |
 | `--group=` | The sidebar heading to put the resource under. |
 | `--force` | Replace the descriptor if the resource already exists. |
