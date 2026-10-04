@@ -6,6 +6,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-04
+
 ### Added
 
 - `php nevela <command>` from the top of the project, so there is no `cd apps/api` first: `php nevela resource …`, `php nevela seed …`, `php nevela user`, `php nevela update`, `php nevela dev`. The file is written and kept current by `nevela:generate`.
@@ -55,6 +57,7 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/MarkColeMukisa/nevela/releases/tag/v0.1.0
