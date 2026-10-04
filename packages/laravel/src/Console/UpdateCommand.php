@@ -57,6 +57,23 @@ final class UpdateCommand extends Command
         return $status;
     }
 
+    /** What the app's composer.json asks for, or an empty string when it can't be read. */
+    public static function rootConstraint(string $composerJson): string
+    {
+        $manifest = json_decode($composerJson, true);
+
+        return is_array($manifest) && is_string($manifest['require']['nevela/laravel'] ?? null) ? trim($manifest['require']['nevela/laravel']) : '';
+    }
+
+    /**
+     * Whether a constraint is the kind the installer writes ("^0.1", "^0.1.3") and nothing
+     * more: the only kind an update moves on its own.
+     */
+    public static function isPlainCaret(string $constraint): bool
+    {
+        return preg_match('/^\^\d+\.\d+(\.\d+)?$/', $constraint) === 1;
+    }
+
     private function pendingMigrations(): int
     {
         try {
@@ -139,9 +156,29 @@ final class UpdateCommand extends Command
         $source = (string) @file_get_contents(base_path('vendor/nevela/laravel/src/Nevela.php'));
         $now = preg_match("/const VERSION = '([^']+)'/", $source, $m) ? $m[1] : $installed;
         if ($now === $installed) {
-            $this->components->warn("Composer kept {$installed}: the constraint in composer.json doesn't allow {$latest}. Set \"nevela/laravel\" to \"^".implode('.', array_slice(explode('.', $latest), 0, 2)).'" there and run this again.');
+            // composer.json's range doesn't reach the new version: below 1.0, "^0.1" stops
+            // at 0.1.x. Updating is asking for the newest, so ask Composer for the range
+            // that has it. `require` rewrites composer.json and installs in one step.
+            $range = '^'.implode('.', array_slice(explode('.', $latest), 0, 2));
+            $current = self::rootConstraint((string) @file_get_contents(base_path('composer.json')));
+            if (! self::isPlainCaret($current)) {
+                // A pin, a branch or a hand-written range is somebody's decision. It is left
+                // as it is, and the update stops here.
+                $this->components->warn("Composer kept {$installed}: composer.json asks for \"{$current}\", which doesn't allow {$latest}. That looks deliberate, so it was left alone. To move, set \"nevela/laravel\" to \"{$range}\" there and run this again.");
 
-            return null;
+                return null;
+            }
+            $this->components->info("composer.json asks for \"{$current}\", which doesn't reach {$latest}. Moving \"nevela/laravel\" to \"{$range}\".");
+            $require = new Process(['composer', 'require', "nevela/laravel:{$range}", '--no-interaction', '--no-progress', '--update-with-dependencies'], base_path(), null, null, null);
+            $require->run(fn ($type, $buffer) => $this->output->write($buffer));
+
+            $source = (string) @file_get_contents(base_path('vendor/nevela/laravel/src/Nevela.php'));
+            $now = preg_match("/const VERSION = '([^']+)'/", $source, $m) ? $m[1] : $installed;
+            if (! $require->isSuccessful() || $now === $installed) {
+                $this->components->warn("Composer kept {$installed}. Set \"nevela/laravel\" to \"{$range}\" in composer.json, see what Composer says about it, and run this again.");
+
+                return null;
+            }
         }
 
         // The package's own files have just been replaced. Finish in a new process, so the

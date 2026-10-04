@@ -41,6 +41,26 @@ test('a version pinned by the Windows bug gets its caret back', () => {
   assert.equal(fine.require['nevela/laravel'], '^0.1');
 });
 
+test('a range that stops short of the newest release is moved to the one that has it', () => {
+  // Below 1.0, ^0.1 means 0.1.x only: without this an update to 0.2.0 changes nothing.
+  const manifest = { require: { 'nevela/laravel': '^0.1' } };
+  const repairs = repairManifest(manifest, '0.2.0');
+  assert.equal(manifest.require['nevela/laravel'], '^0.2');
+  assert.match(repairs[0], /doesn't reach 0\.2\.0/);
+
+  // A caret with a patch number is moved the same way.
+  const patched = { require: { 'nevela/laravel': '^0.1.3' } };
+  repairManifest(patched, '0.2.1');
+  assert.equal(patched.require['nevela/laravel'], '^0.2');
+
+  // Already wide enough (~0.1 reaches every 0.x), or deliberately something else: left alone.
+  for (const [before, latest] of [['^0.2', '0.2.3'], ['^1.2', '1.4.0'], ['^0.3', '0.2.9'], ['~0.1', '0.2.0'], ['dev-main', '0.2.0'], ['>=0.1 <0.2', '0.2.0'], ['@dev', '0.2.0']]) {
+    const kept = { require: { 'nevela/laravel': before } };
+    assert.deepEqual(repairManifest(kept, latest), [], before);
+    assert.equal(kept.require['nevela/laravel'], before);
+  }
+});
+
 test('an app installed from its own packages folder moves to Packagist', () => {
   const manifest = {
     require: { 'nevela/laravel': '@dev' },

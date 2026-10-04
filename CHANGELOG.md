@@ -6,6 +6,10 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Fixed
+
+- `nevela update` stopped short of 0.2.0 on every app created so far. Their `composer.json` asks for `"nevela/laravel": "^0.1"`, and below 1.0 that range means 0.1.x only, so Composer kept the old version and the command asked for a manual edit. The update now moves the range to the one that has the newest release (`^0.2`) and says that it did. From an app on 0.1.x, use `npx create-nevela@latest update`: the fix is in the installer, which runs before the app's own older code.
+
 ## [0.2.0] - 2026-10-04
 
 ### Added
