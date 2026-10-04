@@ -6,6 +6,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-04
+
 ### Added
 
 - Relationships. `category:belongsTo(Category)` links a record to one of another resource. It generates the foreign key, the check that the record exists, `$product->category` and `$category->products`, and in the dashboard a picker that searches, the related name in tables, and a parent's page listing its children. Deleting a parent that records are required to belong to answers 409 with how many there are; an optional link is cleared instead.
@@ -128,7 +130,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.5...v0.2.0
 [0.1.5]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.2...v0.1.3
