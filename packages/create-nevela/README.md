@@ -16,14 +16,14 @@ You need PHP 8.3 or newer, Composer, and Node.js 20 or newer.
 my-app/
 ├─ apps/api/    a Laravel app with Sanctum and Nevela installed
 ├─ apps/web/    the Next.js dashboard, pointed at the API
-└─ scripts/     `dev` runs both together
+└─ nevela       every command, from this folder: php nevela
 ```
 
 Then:
 
 ```sh
 cd my-app
-pnpm run dev
+php nevela dev
 ```
 
 Open http://localhost:3000/sign-in and sign in as `admin@example.com` with the password `password`. That starter account is in your local database only; add your own with `php artisan nevela:user`.

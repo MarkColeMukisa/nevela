@@ -10,8 +10,6 @@ my-app/
 ├─ apps/
 │  ├─ api/      the Laravel app
 │  └─ web/      the Next.js dashboard
-├─ scripts/
-│  └─ dev.mjs   runs both apps together
 ├─ nevela       every Nevela command, from here: php nevela
 └─ package.json
 ```
@@ -68,8 +66,7 @@ There is no `routes/api.php`. Nevela registers its own routes under `/api`, from
 | File | What it does |
 |---|---|
 | `nevela` | The launcher: `php nevela resource …`, `php nevela update` and the rest, without `cd apps/api`. See [Commands](/reference/commands/#the-php-nevela-launcher). |
-| `package.json` | `dev` runs both apps; `dev:api` and `dev:web` run one. |
-| `scripts/dev.mjs` | Starts `php artisan serve` and the dashboard's dev server, and stops both together. |
+| `package.json` | Shortcuts for people who prefer their package manager: `pnpm dev` is `php nevela dev`. |
 | `.gitignore` | Keeps `vendor`, `node_modules`, `.env` files and build output out of git. |
 
 ## Where your code goes

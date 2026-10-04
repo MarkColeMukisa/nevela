@@ -145,8 +145,12 @@ jobs:
         run: |
           test -f nevela
           php nevela | grep -q "php nevela update"
-          php nevela resource Product --fields="name:string, sku:string!, price:money, kind:enum(stock|digital), notes:text?" --icon=package
-          php nevela seed Product --count=100
+          php nevela version | grep -q "^Nevela [0-9]"
+          # One command: the code, the table and the records.
+          php nevela resource Product --fields="name:string, sku:string!, price:money, kind:enum(stock|digital), notes:text?" --icon=package --seed=100
+          php nevela status | tee status.log
+          grep -q "none pending" status.log
+          grep -q "Resource: Product" status.log
           php nevela user --name="CI" --email=ci@example.test --password=ci-password-123
           php nevela artisan test
       - name: Build the dashboard with the resource
@@ -179,4 +183,7 @@ jobs:
           # The starter account the installer made.
           curl -s -X POST http://127.0.0.1:8000/api/auth/token -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{"email":"admin@example.com","password":"password"}' | grep -q '"token"'
           token="$(curl -s -X POST http://127.0.0.1:8000/api/auth/token -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{"email":"ci@example.test","password":"ci-password-123"}' | sed -E 's/.*"token":"([^"]+)".*/\1/')"
+          curl -s http://127.0.0.1:8000/api/_nevela/ping | grep -q '"nevela"'
+          # With the API up, status finds it and says it is this app.
+          (cd .. && cd .. && php nevela status | grep -q 'it is this app')
           curl -s -g "http://127.0.0.1:8000/api/products?perPage=1" -H 'Accept: application/json' -H "Authorization: Bearer $token" | tee /dev/stderr | grep -q '"total":100'

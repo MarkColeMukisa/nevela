@@ -6,6 +6,22 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Added
+
+- `php nevela status`: check the app in one command. It shows the Nevela version, migrations run and pending, how many people can sign in, each resource's record count, and whether the dashboard is reaching this app's API. Problems are marked with the command that fixes them.
+- `php nevela version`.
+- `php nevela dev` now runs the API and the dashboard itself, and checks the API's port first. If another program has port 8000 it uses the next free one and points the dashboard at it.
+- `php nevela resource … --seed` fills the new resource with records in the same command.
+- `GET /api/_nevela/ping`, which identifies a Nevela app and which one it is.
+
+### Changed
+
+- New apps start with `php nevela dev`. They no longer get `scripts/dev.mjs`, which always used port 8000. `php nevela update` points an existing app's `dev` script at `php nevela dev`.
+
+### Fixed
+
+- Sign-in failed with only "Sign-in failed. Try again." when another program was already using port 8000, because the dashboard was talking to that program. The message now says so, and `php nevela dev` avoids it.
+
 ## [0.1.2] - 2026-10-04
 
 ### Added

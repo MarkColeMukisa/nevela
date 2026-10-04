@@ -227,7 +227,7 @@ function writeRootFiles(root, { name, title, pm, admin }) {
     private: true,
     type: 'module',
     scripts: {
-      dev: 'node scripts/dev.mjs',
+      dev: 'php nevela dev',
       nevela: 'php nevela',
       'dev:api': 'cd apps/api && php artisan serve',
       'dev:web': `cd apps/web && ${pm} run dev`,
@@ -236,50 +236,6 @@ function writeRootFiles(root, { name, title, pm, admin }) {
 
   write(path.join(root, '.gitignore'), 'node_modules/\nvendor/\n.env\n.env.*\n!.env.example\n.next/\n*.tsbuildinfo\nnext-env.d.ts\n');
 
-  write(path.join(root, 'scripts', 'dev.mjs'), `// Run the Laravel API and the Next.js dashboard together: \`${pm} run dev\`.
-import { spawn } from 'node:child_process';
-
-const shell = process.platform === 'win32';
-const apps = [
-  { name: 'api', colour: 35, command: 'php', args: ['artisan', 'serve'], cwd: 'apps/api' },
-  { name: 'web', colour: 36, command: '${pm}', args: ['run', 'dev'], cwd: 'apps/web' },
-];
-
-const running = apps.map(({ name, colour, command, args, cwd }) => {
-  // One string when going through a shell: Node warns about (and doesn't escape) separate args there.
-  const child = shell
-    ? spawn([command, ...args].join(' '), { cwd, shell, stdio: ['ignore', 'pipe', 'pipe'] })
-    : spawn(command, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
-  const prefix = \`\\x1b[\${colour}m\${name}\\x1b[0m │ \`;
-  for (const stream of [child.stdout, child.stderr]) {
-    let rest = '';
-    stream.on('data', (chunk) => {
-      const lines = (rest + chunk).split('\\n');
-      rest = lines.pop();
-      for (const line of lines) console.log(prefix + line);
-    });
-  }
-  child.on('exit', (code) => {
-    console.log(\`\${prefix}stopped\${code ? \` (exit \${code})\` : ''}\`);
-    stop();
-  });
-  return child;
-});
-
-let stopping = false;
-function stop() {
-  if (stopping) return;
-  stopping = true;
-  for (const child of running) {
-    // On Windows the child is a shell; killing it alone would leave php and node running.
-    if (shell && child.pid) spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
-    else child.kill();
-  }
-}
-process.on('SIGINT', stop);
-process.on('SIGTERM', stop);
-`);
-
   write(path.join(root, 'README.md'), `# ${title}
 
 A [Nevela](${DOCS}) app: a Laravel API in \`apps/api\` and a Next.js dashboard in \`apps/web\`.
@@ -287,10 +243,16 @@ A [Nevela](${DOCS}) app: a Laravel API in \`apps/api\` and a Next.js dashboard i
 ## Run it
 
 \`\`\`sh
-${pm} run dev
+php nevela dev
 \`\`\`
 
-That starts Laravel on http://127.0.0.1:8000 and the dashboard on http://localhost:3000. Sign in at http://localhost:3000/sign-in.
+That starts the Laravel API and the dashboard together and prints where each is: normally http://127.0.0.1:8000 and http://localhost:3000. If another program already has a port, it uses the next free one. Sign in at http://localhost:3000/sign-in.
+
+To check the app at any time (versions, migrations, users, and whether the dashboard is reaching this API):
+
+\`\`\`sh
+php nevela status
+\`\`\`
 ${admin ? `
 The app starts with one account, in your local database only:
 
@@ -303,6 +265,7 @@ Everything else runs from this folder too, with \`php nevela\`:
 
 \`\`\`sh
 php nevela user        # add someone who can sign in
+php nevela status      # versions, migrations, users, and what the dashboard is talking to
 php nevela update      # update Nevela and the dashboard
 php nevela             # everything it can do
 \`\`\`
@@ -426,7 +389,7 @@ async function main() {
   console.log(`    cd ${name}`);
   if (!options.install) console.log(`    cd apps/web && ${pm} install && cd ../..`);
   if (!admin) console.log(`    php nevela user   ${dim('# someone to sign in as')}`);
-  console.log(`    ${pm} run dev\n`);
+  console.log('    php nevela dev\n');
   console.log(`  Then open ${indigo('http://localhost:3000/sign-in')}${admin ? ' and sign in with:' : ''}`);
   if (admin) {
     console.log(`\n    Email      ${bold(ADMIN.email)}`);
@@ -434,7 +397,7 @@ async function main() {
     console.log(`  ${dim('That account is in this app\'s local database only. Add your own: php nevela user')}`);
   }
   console.log(`\n  Add your first resource: ${dim('php nevela resource Product --fields="name:string, price:money"')}`);
-  console.log(`  Everything runs from this folder: ${dim('php nevela')}`);
+  console.log(`  Check the app any time: ${dim('php nevela status')}   Everything else: ${dim('php nevela')}`);
   console.log(`  Docs: ${DOCS}/start/quickstart/\n`);
   if (outdated) console.log(outdated);
 }
