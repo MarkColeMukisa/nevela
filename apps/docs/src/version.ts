@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "php nevela dev finds a free port, and php nevela status checks your app";
+export const RELEASE_HEADLINE = "Three times faster to create, and updates that keep your changes";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "php nevela dev runs the API and the dashboard on free ports, and php nevela status tells you what state the app is in.",
-  href: "/reference/commands/#neveladev",
-  label: "See the commands",
+  text: "creating an app is three times faster, and nevela update keeps your changes, backs up what it replaces, and can be undone.",
+  href: "/guides/updating/",
+  label: "How updating works",
 };

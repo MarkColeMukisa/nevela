@@ -6,6 +6,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-10-04
+
 ### Added
 
 - `create-nevela --fast` leaves out Laravel's development packages for a quicker install.
@@ -96,7 +98,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.0...v0.1.1
