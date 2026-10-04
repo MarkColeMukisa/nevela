@@ -6,6 +6,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-10-04
+
 ### Added
 
 - `php nevela status`: check the app in one command. It shows the Nevela version, migrations run and pending, how many people can sign in, each resource's record count, and whether the dashboard is reaching this app's API. Problems are marked with the command that fixes them.
@@ -73,7 +75,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/MarkColeMukisa/nevela/releases/tag/v0.1.0
