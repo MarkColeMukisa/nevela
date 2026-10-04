@@ -41,7 +41,8 @@ An ordinary Laravel app. These are the parts Nevela adds to it:
 | `components/` | The tables, forms and fields. |
 | `policies/` | Optional: hide buttons by role. |
 | `.env.local` | `NEVELA_API_URL`, the address of the Laravel API. |
-| `.nevela.json` | Which dashboard version the app is on. `nevela:update` reads and writes it. Commit it. |
+| `.nevela.json` | The dashboard version the app is on, a fingerprint of every file in it, and the history of updates. It is how an update knows which files you changed. Commit it. |
+| `.nevela/` | Backups of files an update replaced, and new versions of files you had changed. It ignores itself in git. Appears after the first update. |
 
 See [The web app](/guides/web-app/) for how these fit together.
 

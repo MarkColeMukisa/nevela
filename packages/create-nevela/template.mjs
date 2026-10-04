@@ -4,13 +4,19 @@
 // Run from the repository, it reads apps/web and packages/laravel directly, so there is
 // one source for the dashboard and nothing to keep in sync by hand.
 
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const bundled = path.join(here, 'template');
-const fromRepo = !fs.existsSync(bundled);
+// In a checkout the dashboard two folders up is the source, even when a template/ folder
+// is lying around from an earlier `npm pack`: that copy may be stale.
+const fromRepo = fs.existsSync(path.resolve(here, '..', '..', 'apps', 'web', 'package.json')) || !fs.existsSync(bundled);
+
+/** True when this is a checkout of the repository rather than the package from npm. */
+export const fromRepository = fromRepo;
 
 export const sources = {
   web: fromRepo ? path.resolve(here, '..', '..', 'apps', 'web') : path.join(bundled, 'web'),
@@ -71,6 +77,33 @@ export function copyWebTemplate(to, { name, title }) {
 
   // The generator fills this in; it has to exist for the first build.
   fs.mkdirSync(path.join(to, 'resources'), { recursive: true });
+}
+
+/**
+ * A fingerprint of every template file, and the template's dependencies: what the app
+ * records in .nevela.json so that `nevela update` can tell, later and exactly, which
+ * files the developer changed. The same fingerprint the Laravel package computes: SHA-1
+ * with line endings ignored.
+ */
+export function templateRecord(version) {
+  const skip = exampleResourceFilter(sources.web);
+  const files = {};
+  const walk = (dir, relative = '') => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const inside = relative ? `${relative}/${entry.name}` : entry.name;
+      if (NEVER.has(entry.name) || skip(inside, entry)) continue;
+      if (entry.isDirectory()) walk(path.join(dir, entry.name), inside);
+      else if (entry.isFile()) {
+        const bytes = fs.readFileSync(path.join(dir, entry.name)).toString('latin1').replace(/\r\n/g, '\n');
+        files[inside.replace(/(^|\/)_gitignore$/, '$1.gitignore')] = crypto.createHash('sha1').update(bytes, 'latin1').digest('hex');
+      }
+    }
+  };
+  walk(sources.web);
+  const manifest = JSON.parse(fs.readFileSync(path.join(sources.web, 'package.json'), 'utf8'));
+  const dependencies = {};
+  for (const section of ['dependencies', 'devDependencies']) if (manifest[section]) dependencies[section] = manifest[section];
+  return { template: version, files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => a.localeCompare(b))), dependencies };
 }
 
 /** The Laravel package, for installing by path until it is on Packagist. */

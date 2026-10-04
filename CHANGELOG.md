@@ -6,6 +6,27 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Added
+
+- `create-nevela --fast` leaves out Laravel's development packages for a quicker install.
+- `nevela update` works from any shell and on an app of any age: `npx create-nevela update`, `pnpm nevela update`, or `nevela update` after `npm install -g create-nevela`. It repairs what stops Composer from updating an older app (an exact version pin, or a package installed from the app's own folder), then updates the package and the dashboard. The same goes for `nevela dev`, `status`, `resource` and the rest.
+- The dashboard's record, `apps/web/.nevela.json`, now holds a fingerprint of every template file, so an update knows exactly which files you changed without downloading anything to compare.
+- `php nevela update` backs up every file before replacing it, saves the new version of any file you had changed to `.nevela/incoming/` for comparison, and records what it did in the history.
+- `php nevela update --undo` puts the dashboard back as it was before the last update.
+- `php nevela status -v` lists the dashboard files you have changed.
+
+### Changed
+
+- Creating an app is about three times faster on Windows: roughly 2m 30s instead of 7m 40s on the machine it was measured on, and about 1m 35s with `--fast`. Laravel's "optimized autoloader" is turned off in a new app, because building it made antivirus software scan all 9,000 freshly unpacked files; Laravel, Sanctum and Nevela are installed in one Composer run; and the setup steps share one Laravel start-up. Use `composer install --no-dev --optimize-autoloader` in production.
+- `create-nevela` fetches and runs its own newest version when the package manager hands it an older one, which pnpm does for a few hours after each release.
+- `php nevela update` gets the dashboard from npm, and from the release tag on GitHub when npm does not have the version yet.
+- The installer shows package-by-package progress during the long step, and prints commands in the form that works in the shell it was run from.
+
+### Fixed
+
+- `php nevela update` failed with "php: command not found" in Git Bash on Windows with Laravel Herd, where PHP is `php.bat`. The commands above work there.
+- `php nevela update` stopped at the dashboard step when a release was on Packagist but not yet on npm.
+
 ## [0.1.3] - 2026-10-04
 
 ### Added

@@ -22,12 +22,11 @@ pnpm create nevela my-app
 It asks nothing and does the setup for you:
 
 ```
-  ✔ Creating the Laravel app
-  ✔ Installing Nevela and token sign-in
-  ✔ Setting up the database
-  ✔ Installing dashboard packages (pnpm)
+  ✔ Creating the Laravel app (1m 58s)
+  ✔ Setting up the database (28s)
+  ✔ Installing dashboard packages (pnpm) (36s)
 
-  ✔ Created my-app in 3m 20s
+  ✔ Created my-app in 2m 26s
 
   Then open http://localhost:3000/sign-in and sign in with:
 
@@ -35,7 +34,17 @@ It asks nothing and does the setup for you:
     Password   password
 ```
 
-Expect it to take a few minutes. Nearly all of that is Composer downloading Laravel, which depends on your connection; the dashboard's packages download at the same time.
+That timing is from a Windows laptop with antivirus running, which is the slow case. Most of it is unpacking Laravel's packages; the dashboard's packages download at the same time. On Linux and macOS it is usually under a minute.
+
+To make it quicker still, leave out the development packages (PHPUnit, Pint and the like) and add them when you need them:
+
+```sh
+pnpm create nevela my-app --fast
+```
+
+About a third quicker. Add them later with `composer install` in `apps/api`.
+
+The installer always uses its newest version. If your package manager hands it an older one, which pnpm does for a few hours after each release, it fetches the latest itself before doing anything.
 
 You get this:
 
@@ -110,7 +119,7 @@ It lists the Nevela version, which migrations have run and which are pending, ho
 
 **"Can't reach the server" on the sign-in page.** The API is not running. Start it with `php nevela dev`.
 
-**It says a newer create-nevela is out.** Your package manager served an older installer: pnpm holds back versions published in the last day, and both pnpm and npm cache. Run the command it prints, which asks for the new version by number, for example `pnpm create nevela@0.1.2 my-app`.
+**"php: command not found" in Git Bash.** With Laravel Herd on Windows, PHP is `php.bat`, and Git Bash does not run that when you type `php`. Use `pnpm nevela dev`, `pnpm nevela update` and so on, which work in every shell, or run `php nevela …` from PowerShell. The installer prints whichever form works in the shell you ran it from.
 
 **The folder already exists.** The command refuses to write into a folder that has files in it. Pick another name or remove the folder.
 
@@ -120,6 +129,7 @@ It lists the Nevela version, which migrations have run and which are pending, ho
 |---|---|
 | `--pm <pnpm\|npm\|yarn\|bun>` | Package manager for the dashboard. Default: the one you ran the command with. |
 | `--no-install` | Don't install the dashboard's dependencies. |
+| `--fast` | Leave out PHPUnit, Pint and Laravel's other development packages. About a third quicker. |
 | `--no-user` | Don't create the starter account. |
 | `--no-git` | Don't run `git init`. |
 | `--bundled-package` | Use the copy of `nevela/laravel` inside the installer instead of the release on Packagist. |

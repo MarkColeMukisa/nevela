@@ -4,12 +4,16 @@
   "description": "Create a new Nevela app: a Laravel API and a Next.js dashboard from one resource description.",
   "type": "module",
   "bin": {
-    "create-nevela": "index.mjs"
+    "create-nevela": "index.mjs",
+    "nevela": "index.mjs"
   },
   "files": [
     "index.mjs",
     "template.mjs",
     "packagist.mjs",
+    "selfupdate.mjs",
+    "shell.mjs",
+    "project.mjs",
     "template",
     "LICENSE"
   ],

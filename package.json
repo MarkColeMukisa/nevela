@@ -18,7 +18,7 @@
     "docs:dev": "pnpm --filter nevela-docs dev",
     "docs:build": "pnpm --filter nevela-docs build",
     "split:laravel": "node scripts/split-laravel.mjs",
-    "test:create": "node --test packages/create-nevela/packagist.test.mjs"
+    "test:create": "node --test packages/create-nevela/packagist.test.mjs packages/create-nevela/cli.test.mjs"
   },
   "license": "MIT",
   "author": "Mark Cole MUKISA"

@@ -117,6 +117,7 @@ jobs:
           tar -xzf create-nevela-*.tgz -C "$RUNNER_TEMP/create-nevela"
           test -f "$RUNNER_TEMP/create-nevela/package/template/web/_gitignore"
           test -f "$RUNNER_TEMP/create-nevela/package/packagist.mjs"
+          for file in selfupdate shell project; do test -f "$RUNNER_TEMP/create-nevela/package/$file.mjs"; done
           test -f "$RUNNER_TEMP/create-nevela/package/LICENSE"
       - name: Create an app
         working-directory: ${{ runner.temp }}
@@ -158,23 +159,70 @@ jobs:
         run: |
           pnpm exec tsc --noEmit
           pnpm run build
-      - name: nevela:update checks the dashboard against a template
+      - name: An update keeps the app's changes, backs up what it replaces, and can be undone
         working-directory: ${{ runner.temp }}/demo-app/apps/api
         env:
           # The tarball packed above stands in for npm at this commit's version.
           NEVELA_TEMPLATE_DIR: ${{ github.workspace }}/packages/create-nevela
         run: |
           version="$(node -p "require('$GITHUB_WORKSPACE/package.json').version")"
-          grep -q "\"template\": \"$version\"" ../web/.nevela.json
-          # Pretend the app started from 0.1.0 (downloaded from npm) and edit one dashboard file.
-          echo '{ "template": "0.1.0" }' > ../web/.nevela.json
+          # The installer recorded a fingerprint of every dashboard file.
+          grep -q '"files"' ../web/.nevela.json
+          php artisan nevela:status -v > fresh.log
+          grep -q 'Your dashboard changes .* none' fresh.log
+
+          # The app edits one file. Status sees exactly that.
           echo '// changed by the app' >> ../web/lib/csv.ts
+          php artisan nevela:status -v | tee status.log
+          grep -q 'changed lib/csv.ts' status.log
+
+          # Pretend the app is on an older template in which lib/number.ts was different,
+          # and that the app never touched it: the file and its recorded fingerprint agree.
+          cp ../web/lib/number.ts number.current
+          printf 'export const old = true;\n' > ../web/lib/number.ts
+          node -e '
+            const fs = require("fs"), crypto = require("crypto");
+            const file = "../web/.nevela.json";
+            const record = JSON.parse(fs.readFileSync(file, "utf8"));
+            record.template = "0.1.0";
+            record.files["lib/number.ts"] = crypto.createHash("sha1").update(fs.readFileSync("../web/lib/number.ts")).digest("hex");
+            fs.writeFileSync(file, JSON.stringify(record, null, 4));
+          '
+
           php artisan nevela:update --check | tee check.log
-          grep -q '"template": "0.1.0"' ../web/.nevela.json
+          grep -q 'lib/number.ts .* would update' check.log
+          grep -q 'export const old' ../web/lib/number.ts
+
           php artisan nevela:update | tee update.log
-          grep -q "\"template\": \"$version\"" ../web/.nevela.json
+          grep -q 'lib/number.ts .* updated' update.log
+          cmp ../web/lib/number.ts number.current
           grep -q 'changed by the app' ../web/lib/csv.ts
-          php artisan nevela:update | grep -q 'latest template'
+          grep -q "\"template\": \"$version\"" ../web/.nevela.json
+          grep -q '"history"' ../web/.nevela.json
+          grep -rq 'export const old' ../web/.nevela/backups
+          test "$(cat ../web/.nevela/.gitignore)" = "*"
+          php artisan nevela:update > again.log
+          grep -q 'latest template' again.log
+
+          php artisan nevela:update --undo | tee undo.log
+          grep -q 'lib/number.ts .* restored' undo.log
+          grep -q 'export const old' ../web/lib/number.ts
+          grep -q '"template": "0.1.0"' ../web/.nevela.json
+          grep -q 'changed by the app' ../web/lib/csv.ts
+
+          # And forward again, so the rest of the job runs on the current dashboard.
+          php artisan nevela:update > /dev/null
+          cmp ../web/lib/number.ts number.current
+      - name: The same commands through the installer, as someone without php on their PATH would run them
+        working-directory: ${{ runner.temp }}/demo-app/apps/web
+        run: |
+          node "$RUNNER_TEMP/create-nevela/package/index.mjs" version | tee version.log
+          grep -q '^create-nevela [0-9]' version.log
+          grep -q '^Nevela [0-9]' version.log
+          node "$RUNNER_TEMP/create-nevela/package/index.mjs" status > cli-status.log
+          grep -q 'Migrations' cli-status.log
+          # Outside an app it says so instead of creating an app called "status".
+          (cd "$RUNNER_TEMP" && ! node create-nevela/package/index.mjs status 2> outside.log; grep -q "isn't in one" outside.log)
       - name: Sign in and read the resource over HTTP
         working-directory: ${{ runner.temp }}/demo-app/apps/api
         run: |
