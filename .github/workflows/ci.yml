@@ -157,7 +157,9 @@ jobs:
           php nevela | grep -q "php nevela update"
           php nevela version | grep -q "^Nevela [0-9]"
           # One command: the code, the table and the records.
-          php nevela resource Category --fields="name:string, slug:slug!, image:image?" --icon=tags --seed=6
+          # Written the way Grit writes an image field, which Nevela also understands.
+          php nevela resource Category --fields="name:string, slug:slug!, image:file:image?" --icon=tags --seed=6
+          grep -q 'image: field.file(\["image"\], { required: false, list: true })' apps/web/resources/category.resource.ts
           # A relation and an optimised image, as in the shop guide.
           php nevela resource Product --fields="name:string, sku:string!, price:money, image:image(product)?, category:belongsTo(Category), kind:enum(stock|digital), notes:text?" --icon=package --seed=100
           grep -q 'products: field.hasMany("Product", { foreignKey: "categoryId" })' apps/web/resources/category.resource.ts
