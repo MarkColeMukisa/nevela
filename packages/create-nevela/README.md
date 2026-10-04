@@ -42,7 +42,15 @@ That writes the Laravel code and the dashboard pages, and creates the table. `ph
 php nevela update
 ```
 
-That updates the Laravel package, regenerates, and updates the dashboard files you have not changed. See https://nevela-docs.vercel.app/guides/updating/.
+That updates the Laravel package, regenerates, and updates the dashboard files you have not changed. Files you changed are kept, and everything it replaces is backed up first.
+
+If `php` is not a command in your shell (Git Bash with Laravel Herd), or the app is an old one, run it through this package instead. It works in any shell and on an app of any age:
+
+```sh
+npx create-nevela update
+```
+
+Installed globally (`npm install -g create-nevela`), it gives you a `nevela` command: `nevela update`, `nevela dev`, `nevela status`, `nevela resource …`. See https://nevela-docs.vercel.app/guides/updating/.
 
 ## Options
 
@@ -50,6 +58,7 @@ That updates the Laravel package, regenerates, and updates the dashboard files y
 |---|---|
 | `--pm <pnpm\|npm\|yarn\|bun>` | Package manager for the dashboard. Default: the one you ran this with. |
 | `--no-install` | Don't install the dashboard's dependencies. |
+| `--fast` | Leave out PHPUnit, Pint and Laravel's other development packages. About a third quicker. |
 | `--no-user` | Don't create the starter account. |
 | `--no-git` | Don't run `git init`. |
 | `--bundled-package` | Use the copy of `nevela/laravel` inside this installer instead of the release on Packagist. |

@@ -10,6 +10,7 @@ Nevela is two apps. Deploy each the way you would deploy any Laravel or Next.js 
 - Use a production database rather than the SQLite file, and run `php artisan migrate --force` on each deploy.
 - Commit the generated code. Nothing is generated at deploy time, so the server does not need the web app's folder.
 - Tighten every policy in `app/Policies` first. They start by allowing any signed-in user.
+- Install with `composer install --no-dev --optimize-autoloader`. A new app has Composer's optimized autoloader turned off, because building it made creating an app take minutes longer; production should have it, and the flag turns it on.
 - Run `php artisan config:cache` and `php artisan route:cache` as usual. Nevela's routes are cached with the rest.
 
 ## The web app

@@ -129,16 +129,18 @@ php artisan nevela:user --name="Ada Okafor" --email=ada@example.com --password="
 Bring the app up to the latest Nevela: the package, the generated code and the dashboard.
 
 ```sh
-php artisan nevela:update
-php artisan nevela:update --check    # show what would change, and change nothing
+php nevela update
+php nevela update --check    # show what would change, and change nothing
+php nevela update --undo     # put the dashboard back as it was before the last update
 ```
 
 | Option | Meaning |
 |---|---|
 | `--check` | Show what would change, and change nothing. |
+| `--undo` | Restore the files the last update replaced, from its backup. |
 | `--skip-package` | Leave `nevela/laravel` as it is. Regenerate and update the dashboard only. |
 
-Dashboard files you have not changed are updated; files you changed are kept and listed. [Updating](/guides/updating/) explains each step and what to do on the first update.
+Dashboard files you have not changed are updated, after being backed up. Files you changed are kept, and the new versions are saved beside them to compare. [Updating](/guides/updating/) explains the record that makes this exact, and what to do with an older app.
 
 ## nevela:dev
 
@@ -183,6 +185,8 @@ php nevela status
   Everything looks right.
 ```
 
+`php nevela status -v` also lists the dashboard files you have changed, which are the ones an update will leave alone.
+
 Anything that needs attention is in red, with the command that fixes it: migrations that have not run, a resource whose table is missing, nobody able to sign in, or the dashboard's API address being answered by a different program. The command exits with an error code when it finds a problem, so it works in scripts.
 
 ## nevela:version
@@ -214,5 +218,19 @@ Prints the version of Nevela the app is on, for example `Nevela 0.1.3`. `php nev
 `php nevela resource` creates the table as well, because a new resource is no use without it. Pass `--no-migrate` to skip that.
 
 The file is written by `nevela:generate` and kept up to date by it. Add your own shortcuts below its generated block.
+
+### When `php` is not a command
+
+In Git Bash on Windows with Laravel Herd, `php` is not found, because PHP there is `php.bat`. Every command also works through your package manager, in any shell:
+
+```sh
+pnpm nevela dev
+pnpm nevela resource Product --fields="name:string, price:money" --seed
+pnpm nevela update
+```
+
+With npm it is `npm run nevela -- <command>`. Or install the command once with `npm install -g create-nevela`, and type `nevela dev`, `nevela update` and so on from anywhere inside an app.
+
+### Where the launcher is written
 
 It is created when the Laravel app sits at `<project>/apps/<name>`, which is how `pnpm create nevela` lays a project out. For another layout, set `root_path` in `config/nevela.php`.

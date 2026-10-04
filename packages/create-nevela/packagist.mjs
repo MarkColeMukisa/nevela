@@ -32,3 +32,20 @@ export async function onPackagist(wanted) {
     return false;
   }
 }
+
+/** The newest stable nevela/laravel on Packagist, as "x.y.z", or null when it can't be reached. */
+export async function latestRelease() {
+  try {
+    const response = await fetch('https://repo.packagist.org/p2/nevela/laravel.json', { signal: AbortSignal.timeout(8000) });
+    if (!response.ok) return null;
+    const releases = (await response.json()).packages?.['nevela/laravel'] ?? [];
+    let latest = null;
+    for (const release of releases) {
+      const version = /^v?(\d+\.\d+\.\d+)$/.exec(release.version)?.[1];
+      if (version && (latest === null || isNewer(version, latest))) latest = version;
+    }
+    return latest;
+  } catch {
+    return null;
+  }
+}

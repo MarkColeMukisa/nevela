@@ -6,19 +6,21 @@
 //
 // No dependencies on purpose: this runs before anything is installed.
 
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
-import { isNewer, onPackagist } from './packagist.mjs';
-import { copyLaravelPackage, copyWebTemplate } from './template.mjs';
+import { latestRelease, onPackagist } from './packagist.mjs';
+import { COMMANDS, findProject, forward, update } from './project.mjs';
+import { shellLine, spawnCommand, windows } from './shell.mjs';
+import { newerVersion, runVersion } from './selfupdate.mjs';
+import { copyLaravelPackage, copyWebTemplate, fromRepository, templateRecord } from './template.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const VERSION = JSON.parse(fs.readFileSync(path.join(here, 'package.json'), 'utf8')).version;
 const DOCS = 'https://nevela-docs.vercel.app';
-const windows = process.platform === 'win32';
 
 /**
  * The account every new app starts with, so there is something to sign in as straight
@@ -39,14 +41,23 @@ const HELP = `
 
   Create a new Nevela app: a Laravel API and a Next.js dashboard.
 
-  ${bold('Usage')}
+  ${bold('Create an app')}
     pnpm create nevela <name> [options]
     npm create nevela@latest <name> -- [options]
+
+  ${bold('Inside an app')}  (also as: nevela <command>, once installed with npm install -g create-nevela)
+    nevela update              Update Nevela and the dashboard to the latest version
+    nevela dev                 Run the API and the dashboard
+    nevela status              Check versions, migrations, users and the dashboard
+    nevela resource <Name> --fields="…" [--seed]
+    nevela seed | user | generate | version | migrate | artisan <command>
 
   ${bold('Options')}
     --pm <pnpm|npm|yarn|bun>   Package manager for the dashboard. Default: the one you ran this with.
     --no-install               Don't install the dashboard's dependencies.
     --no-user                  Don't create the starter admin account.
+    --fast                     Leave out PHPUnit, Pint and Laravel's other development packages.
+                               About a third quicker. Add them later: cd apps/api && composer install
     --no-git                   Don't run git init.
     --bundled-package          Use the copy of nevela/laravel that ships with this installer
                                instead of the release on Packagist.
@@ -70,26 +81,11 @@ function run(command, args, { cwd, interactive = false, allowFailure = false } =
   const result = spawnCommand(command, args, { cwd, stdio: interactive ? 'inherit' : 'pipe', encoding: 'utf8' });
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
   if (result.error || result.status !== 0) {
-    if (allowFailure) return { ok: false, output };
+    if (allowFailure) return { ok: false, output, status: result.status };
     fail(`\`${command} ${args.join(' ')}\` failed.`, output || String(result.error ?? ''));
   }
-  return { ok: true, output };
+  return { ok: true, output, status: 0 };
 }
-
-/**
- * .bat and .cmd shims (composer, pnpm, Herd's php) only resolve through a shell on
- * Windows. A shell takes one command string, so arguments are quoted here; none of them
- * come from anywhere but this file and the validated app name.
- */
-function spawnCommand(command, args, options) {
-  if (!windows) return spawnSync(command, args, options);
-  return spawnSync(shellLine(command, args), { ...options, shell: true });
-}
-
-// `^` is not in the safe list on purpose: unquoted, cmd.exe treats it as an escape
-// character and drops it, which turned the constraint "^0.1" into an exact "0.1".
-const quote = (arg) => (/^[\w./:=@,-]+$/.test(arg) ? arg : `"${arg.replace(/"/g, '\\"')}"`);
-const shellLine = (command, args) => [command, ...args.map(quote)].join(' ');
 
 /**
  * Start a command and carry on. Its output goes to a file rather than a pipe: the steps
@@ -119,6 +115,33 @@ function start(command, args, { cwd }) {
   return { done };
 }
 
+/**
+ * Run a command without blocking, handing each line of its output to `onLine`. For the one
+ * long step, so there is something to show while it works. Fails like run() does.
+ */
+function runLive(command, args, { cwd, onLine }) {
+  return new Promise((resolve) => {
+    const child = windows
+      ? spawn(shellLine(command, args), { cwd, shell: true, stdio: ['ignore', 'pipe', 'pipe'] })
+      : spawn(command, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+    let output = '';
+    let rest = '';
+    const read = (chunk) => {
+      output += chunk;
+      const lines = (rest + chunk).split(/\r?\n/);
+      rest = lines.pop();
+      for (const line of lines) onLine?.(line);
+    };
+    child.stdout.setEncoding('utf8').on('data', read);
+    child.stderr.setEncoding('utf8').on('data', read);
+    child.on('error', (error) => fail(`\`${command} ${args.join(' ')}\` failed.`, String(error)));
+    child.on('close', (code) => {
+      if (code !== 0) fail(`\`${command} ${args.join(' ')}\` failed.`, output);
+      resolve(output);
+    });
+  });
+}
+
 function available(command, args = ['--version']) {
   const result = spawnCommand(command, args, { stdio: 'pipe', encoding: 'utf8' });
   return result.status === 0 ? `${result.stdout}${result.stderr}` : null;
@@ -130,17 +153,21 @@ async function step(label, work) {
   const started = Date.now();
   // The "in progress" line is rewritten in place when the step ends. That only works if
   // it fits on one line; in a narrow terminal it would wrap and be left behind.
-  const inPlace = process.stdout.isTTY && label.length + 16 < (process.stdout.columns ?? 80);
+  const inPlace = process.stdout.isTTY && label.length + 30 < (process.stdout.columns ?? 80);
   if (inPlace) process.stdout.write(`  ${dim('◇')} ${label}…`);
-  const result = await work();
+  // A step may say how far along it is; shown beside the label, rewritten in place.
+  const progress = (text) => {
+    if (inPlace) process.stdout.write(`\r  ${dim('◇')} ${label}… ${dim(text)}   `);
+  };
+  const result = await work(progress);
   const seconds = result?.seconds ?? (Date.now() - started) / 1000;
   const took = seconds >= 1 ? dim(` (${duration(seconds)})`) : '';
-  process.stdout.write(`${inPlace ? '\r' : ''}  ${green('✔')} ${label}${took}   \n`);
+  process.stdout.write(`${inPlace ? '\r' : ''}  ${green('✔')} ${label}${took}${' '.repeat(24)}\n`);
   return result;
 }
 
 function parseArgs(argv) {
-  const options = { name: undefined, pm: undefined, install: true, user: true, git: true, yes: false, bundledPackage: false };
+  const options = { name: undefined, pm: undefined, install: true, user: true, git: true, yes: false, bundledPackage: false, devTools: true };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '-h' || arg === '--help') {
@@ -153,6 +180,7 @@ function parseArgs(argv) {
     else if (arg === '--no-install') options.install = false;
     else if (arg === '--no-user') options.user = false;
     else if (arg === '--no-git') options.git = false;
+    else if (arg === '--no-dev-tools' || arg === '--fast') options.devTools = false;
     else if (arg === '--bundled-package') options.bundledPackage = true;
     else if (arg === '--pm') options.pm = argv[++i];
     else if (arg.startsWith('--pm=')) options.pm = arg.slice(5);
@@ -163,19 +191,26 @@ function parseArgs(argv) {
   return options;
 }
 
+/**
+ * Whether typing `php` works in the shell this was started from. In Git Bash it doesn't
+ * when PHP is a php.bat (Laravel Herd): bash won't run a .bat for the bare name. Windows'
+ * own shells do, and so does this installer, which is why it got this far.
+ */
+function phpIsTypeable() {
+  if (!windows || !process.env.MSYSTEM) return true;
+  const found = spawnCommand('where', ['php'], { stdio: 'pipe', encoding: 'utf8' });
+  const first = `${found.stdout ?? ''}`.split(/\r?\n/)[0].trim().toLowerCase();
+  return first.endsWith('.exe');
+}
+
+/** `nevela <command>` as someone should type it here: through PHP, or through the package manager. */
+function nevelaCommand(pm) {
+  if (phpIsTypeable()) return 'php nevela';
+  return { pnpm: 'pnpm nevela', yarn: 'yarn nevela', bun: 'bun run nevela' }[pm] ?? 'npm run nevela';
+}
+
 /** "my-shop" → "My Shop", for the dashboard's title. */
 const titleCase = (slug) => slug.split(/[-_]+/).filter(Boolean).map((word) => word[0].toUpperCase() + word.slice(1)).join(' ');
-
-/** The newest create-nevela on npm, when it is newer than this one. */
-async function newerVersion() {
-  try {
-    const response = await fetch('https://registry.npmjs.org/create-nevela/latest', { signal: AbortSignal.timeout(4000) });
-    const latest = (await response.json()).version;
-    return isNewer(latest, VERSION) ? latest : null;
-  } catch {
-    return null;
-  }
-}
 
 function detectPackageManager(requested) {
   const known = ['pnpm', 'npm', 'yarn', 'bun'];
@@ -286,18 +321,51 @@ Docs: ${DOCS}
 `);
 }
 
+/** `nevela <command>` inside an existing app. Never returns. */
+async function inProject(name, args) {
+  const project = findProject(process.cwd());
+  if (!project) {
+    fail(`"${name}" runs inside a Nevela app, and this folder isn't in one.`, `To create an app:  pnpm create nevela my-app`);
+  }
+  if (name === 'version') console.log(`create-nevela ${VERSION}`);
+  if (name !== 'update') process.exit(forward(project, name, args));
+
+  // Updating is the one command that must not run on stale code itself.
+  if (!process.env.NEVELA_NO_SELF_UPDATE && !fromRepository) {
+    const newer = await newerVersion(VERSION);
+    if (newer) {
+      const status = await runVersion(newer, ['update', ...args]);
+      if (status !== null) process.exit(status);
+    }
+  }
+  console.log(`\n  ${indigo(bold('Nevela'))} ${dim('update')}\n`);
+  const releases = await latestRelease();
+  const status = await update(project, args, { latest: releases, say: (line) => console.log(`  ${green('✔')} ${line}`) });
+  process.exit(status);
+}
+
 async function main() {
-  const options = parseArgs(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  if (argv[0] === 'new') argv.shift();
+  else if (COMMANDS.includes(argv[0])) await inProject(argv[0], argv.slice(1));
+  const options = parseArgs(argv);
 
   console.log(`\n  ${indigo(bold('Nevela'))} ${dim(`v${VERSION}`)}\n`);
 
-  // A package manager may serve an older installer than the newest one: pnpm holds back
-  // versions published in the last day, and both pnpm and npm cache. Say so, with the fix.
-  const newer = await newerVersion();
-  const outdated = newer
-    ? `  ${red('!')} create-nevela ${bold(newer)} is out, and this is ${VERSION}. To use it: ${bold(`pnpm create nevela@${newer} ${options.name ?? 'my-app'}`)}\n`
-    : null;
-  if (outdated) console.log(outdated);
+  // A package manager may hand over an older installer than the newest: pnpm skips versions
+  // published in the last few hours, and both pnpm and npm cache. Fetch the newest and let
+  // it do the work. Skipped when running from the repository, which is always its own version.
+  let outdated = null;
+  if (!process.env.NEVELA_NO_SELF_UPDATE && !fromRepository) {
+    const newer = await newerVersion(VERSION);
+    if (newer) {
+      console.log(`  ${dim(`Your package manager served ${VERSION}. Fetching ${newer}, the latest…`)}`);
+      const status = await runVersion(newer, argv);
+      if (status !== null) process.exit(status);
+      outdated = `  ${red('!')} Couldn't fetch create-nevela ${bold(newer)}, so this is ${VERSION}. To get it: ${bold(`npm create nevela@latest ${options.name ?? 'my-app'}`)}\n`;
+      console.log(outdated);
+    }
+  }
 
   let name = options.name;
   if (!name) {
@@ -330,41 +398,82 @@ async function main() {
     // Its own workspace file: lets sharp build, and keeps pnpm from adopting a workspace further up.
     write(path.join(web, 'pnpm-workspace.yaml'), 'allowBuilds:\n  sharp: true\n');
   }
-  // Which dashboard this app started from: `php artisan nevela:update` compares against it
-  // to tell the files you changed from the ones you didn't.
-  write(path.join(web, '.nevela.json'), `${JSON.stringify({ template: VERSION }, null, 2)}\n`);
+  // Which dashboard this app started from, with a fingerprint of every file in it.
+  // `nevela update` compares against these to tell the files you changed from the ones
+  // you didn't, so an update never overwrites your work.
+  write(path.join(web, '.nevela.json'), `${JSON.stringify(templateRecord(VERSION), null, 4)}\n`);
   writeRootFiles(root, { name, title, pm, admin: options.user ? ADMIN : null });
   const packages = options.install ? start(pm, ['install'], { cwd: web }) : null;
 
-  await step('Creating the Laravel app', () => {
-    run('composer', ['create-project', 'laravel/laravel', 'apps/api', '--no-interaction', '--no-progress', '--prefer-dist'], { cwd: root });
-  });
+  const tokens = await step('Creating the Laravel app', async (progress) => {
+    // The skeleton only. Its packages are installed below, once, together with Nevela's.
+    run('composer', ['create-project', 'laravel/laravel', 'apps/api', '--no-install', '--no-scripts', '--no-interaction', '--no-progress', '--prefer-dist'], { cwd: root });
 
-  const tokens = await step('Installing Nevela and token sign-in', async () => {
     const wanted = VERSION.split('.').slice(0, 2).map(Number);
-    let nevela = `nevela/laravel:^${wanted.join('.')}`;
+    let nevela = `^${wanted.join('.')}`;
+    const manifestFile = path.join(api, 'composer.json');
+    const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+    // Laravel asks Composer for an "optimized" autoloader, which means reading every file
+    // of every package to index it. On a fresh install each of those ~9,000 files is being
+    // read for the first time, and antivirus software scans each one: that single step
+    // took over five minutes on Windows. An app in development doesn't need the index.
+    // Production gets it with `composer install --no-dev --optimize-autoloader`.
+    manifest.config = { ...manifest.config, 'optimize-autoloader': false };
     if (options.bundledPackage || !(await onPackagist(wanted))) {
       // No matching release on Packagist (or --bundled-package): the copy that travels with
       // this installer is placed in the app and installed by path.
       copyLaravelPackage(path.join(root, 'packages', 'nevela-laravel'));
-      run('composer', ['config', 'repositories.nevela', 'path', '../../packages/nevela-laravel'], { cwd: api });
-      nevela = 'nevela/laravel:@dev';
+      manifest.repositories = [...(manifest.repositories ?? []), { type: 'path', url: '../../packages/nevela-laravel' }];
+      nevela = '@dev';
     }
-    // One Composer run for both. `php artisan install:api` would add Sanctum in a run of
-    // its own, plus a routes/api.php this app doesn't use: Nevela registers its routes itself.
-    run('composer', ['require', 'laravel/sanctum', nevela, '--no-interaction', '--no-progress'], { cwd: api });
-    run('php', ['artisan', 'vendor:publish', '--tag=sanctum-migrations', '--no-interaction'], { cwd: api });
+    // Sanctum and Nevela go into composer.json here, so the one install below does
+    // everything. (`php artisan install:api` would add Sanctum in a Composer run of its own,
+    // plus a routes/api.php this app doesn't use: Nevela registers its routes itself.)
+    manifest.require = { ...manifest.require, 'laravel/sanctum': '^4.0', 'nevela/laravel': nevela };
+    fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 4)}\n`);
+
+    let total = 0;
+    let done = 0;
+    await runLive('composer', ['install', '--no-interaction', '--no-progress', '--no-scripts', ...(options.devTools ? [] : ['--no-dev'])], {
+      cwd: api,
+      onLine: (line) => {
+        const operations = /Package operations: (\d+) installs?/.exec(line);
+        if (operations) total = Number(operations[1]);
+        if (/- Installing .*Extracting archive|- Installing .*Symlinking|- Installing .*Junctioning/.test(line)) done++;
+        if (total) progress(`${Math.min(done, total)}/${total} packages`);
+      },
+    });
+
+    // What Composer's create-project scripts would have done, without starting Composer
+    // again for each: the .env file, the SQLite database and the app key. The first
+    // artisan command is slow for the same reason the index was: files read for the first time.
+    const env = path.join(api, '.env');
+    if (!fs.existsSync(env) && fs.existsSync(`${env}.example`)) fs.copyFileSync(`${env}.example`, env);
+    const sqlite = path.join(api, 'database', 'database.sqlite');
+    if (/^DB_CONNECTION=sqlite\s*$/m.test(fs.readFileSync(env, 'utf8')) && !fs.existsSync(sqlite)) fs.writeFileSync(sqlite, '');
     return addApiTokens(path.join(api, 'app', 'Models', 'User.php'));
   });
 
   let admin = false;
   await step('Setting up the database', () => {
-    // Writes routes/nevela.php and the dashboard's (empty) resource registry.
+    // One artisan process for the app key, Sanctum's migration, the generated files, the
+    // migrations and the starter account: each separate call would start Laravel again.
+    const account = options.user && tokens ? [`--name=${ADMIN.name}`, `--email=${ADMIN.email}`, `--password=${ADMIN.password}`] : [];
+    const setup = run('php', ['artisan', 'nevela:setup', ...account], { cwd: api, allowFailure: true });
+    if (setup.ok) {
+      admin = account.length > 0;
+      return;
+    }
+    // 2: the app is set up and only the starter account could not be created.
+    if (setup.status === 2) return;
+    if (!/"nevela:setup" is not defined/.test(setup.output)) fail('Setting up the database failed.', setup.output);
+
+    // A nevela/laravel from before `nevela:setup` existed: the same steps, one at a time.
+    run('php', ['artisan', 'key:generate', '--force', '--no-interaction'], { cwd: api });
+    run('php', ['artisan', 'vendor:publish', '--tag=sanctum-migrations', '--no-interaction'], { cwd: api });
     run('php', ['artisan', 'nevela:generate'], { cwd: api });
     run('php', ['artisan', 'migrate', '--force', '--no-interaction'], { cwd: api });
-    if (options.user && tokens) {
-      admin = run('php', ['artisan', 'nevela:user', `--name=${ADMIN.name}`, `--email=${ADMIN.email}`, `--password=${ADMIN.password}`], { cwd: api, allowFailure: true }).ok;
-    }
+    if (account.length) admin = run('php', ['artisan', 'nevela:user', ...account], { cwd: api, allowFailure: true }).ok;
   });
 
   let installed = false;
@@ -382,22 +491,29 @@ async function main() {
     console.log(`  ${red('!')} I couldn't add Sanctum's trait to apps/api/app/Models/User.php. Add it by hand:`);
     console.log(`    ${dim('use Laravel\\Sanctum\\HasApiTokens;  and  use HasApiTokens;  inside the class')}\n`);
   }
+  if (!options.devTools) {
+    console.log(`  ${dim('PHPUnit, Pint and the other development packages were left out. Add them: cd apps/api && composer install')}\n`);
+  }
   if (packages && !installed) {
     console.log(`  ${red('!')} The dashboard's packages didn't install. Run it yourself to see why: cd ${name}/apps/web && ${pm} install\n`);
   }
   console.log('  Next:\n');
   console.log(`    cd ${name}`);
   if (!options.install) console.log(`    cd apps/web && ${pm} install && cd ../..`);
-  if (!admin) console.log(`    php nevela user   ${dim('# someone to sign in as')}`);
-  console.log('    php nevela dev\n');
+  const nevela = nevelaCommand(pm);
+  if (!admin) console.log(`    ${nevela} user   ${dim('# someone to sign in as')}`);
+  console.log(`    ${nevela} dev\n`);
   console.log(`  Then open ${indigo('http://localhost:3000/sign-in')}${admin ? ' and sign in with:' : ''}`);
   if (admin) {
     console.log(`\n    Email      ${bold(ADMIN.email)}`);
     console.log(`    Password   ${bold(ADMIN.password)}\n`);
-    console.log(`  ${dim('That account is in this app\'s local database only. Add your own: php nevela user')}`);
+    console.log(`  ${dim(`That account is in this app's local database only. Add your own: ${nevela} user`)}`);
   }
-  console.log(`\n  Add your first resource: ${dim('php nevela resource Product --fields="name:string, price:money"')}`);
-  console.log(`  Check the app any time: ${dim('php nevela status')}   Everything else: ${dim('php nevela')}`);
+  console.log(`\n  Add your first resource: ${dim(`${nevela} resource Product --fields="name:string, price:money"`)}`);
+  console.log(`  Check the app: ${dim(`${nevela} status`)}   Update it later: ${dim(`${nevela} update`)}   Everything: ${dim(nevela)}`);
+  if (nevela !== 'php nevela') {
+    console.log(`\n  ${dim(`In this shell "php" isn't a command (your PHP is php.bat), so use ${nevela}. In PowerShell, php nevela works too.`)}`);
+  }
   console.log(`  Docs: ${DOCS}/start/quickstart/\n`);
   if (outdated) console.log(outdated);
 }
