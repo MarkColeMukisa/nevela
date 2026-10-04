@@ -6,6 +6,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-10-04
+
 ### Fixed
 
 - The dashboard reported "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties" on a full page load, with a different `radix-…` id on each account menu. The React bundled with Next.js 16.0.4 loses a component's place in a list when its code arrives a moment after the page starts up, so every id beneath it comes out different in the browser. The dashboard now uses Next.js 16.3.8, which has the fix. `nevela update` moves an existing app to it; run the install command it prints afterwards.
@@ -107,7 +109,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/MarkColeMukisa/nevela/compare/v0.1.1...v0.1.2

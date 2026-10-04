@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "Three times faster to create, and updates that keep your changes";
+export const RELEASE_HEADLINE = "No more hydration errors in the dashboard, on a patched Next.js";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "creating an app is three times faster, and nevela update keeps your changes, backs up what it replaces, and can be undone.",
+  text: "the dashboard no longer reports hydration errors, and moves to Next.js 16.3.8, a patched version. Run nevela update to get it.",
   href: "/guides/updating/",
-  label: "How updating works",
+  label: "How to update",
 };
