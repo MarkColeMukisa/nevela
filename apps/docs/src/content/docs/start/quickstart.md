@@ -43,6 +43,7 @@ You get this:
 my-app/
 ├─ apps/api/    a Laravel app with Sanctum and Nevela installed
 ├─ apps/web/    the Next.js dashboard, pointed at the API
+├─ nevela       every Nevela command, from this folder: php nevela
 └─ scripts/     runs both together
 ```
 
@@ -66,27 +67,27 @@ That starts Laravel on http://127.0.0.1:8000 and the dashboard on http://localho
 It exists only in your local database. It is not in the code or in a migration, so it does not follow the app to a server. Still, don't keep a password everyone knows: add your own account and remove this one before anyone else can reach the app.
 
 ```sh
-cd apps/api
-php artisan nevela:user
+php nevela user
 ```
 :::
 
 ## 3. Add a resource
 
-In `apps/api`:
+Stay in `my-app`. Everything runs from there with `php nevela`:
 
 ```sh
-php artisan nevela:resource Contact --fields="name:string, email:email!, company:string?, status:enum(lead|customer)" --icon=users
-php artisan migrate
+php nevela resource Contact --fields="name:string, email:email!, company:string?, status:enum(lead|customer)" --icon=users
 ```
 
-Reload the dashboard. Contacts is in the sidebar, with a table, a form and a detail page.
+That one command writes the Laravel code and the dashboard pages, and creates the table. Reload the dashboard. Contacts is in the sidebar, with a table, a form and a detail page.
 
 To have something to look at:
 
 ```sh
-php artisan nevela:seed Contact --count=1000
+php nevela seed Contact --count=1000
 ```
+
+Run `php nevela` on its own to see everything it can do.
 
 ## 4. Lock down who can do what
 

@@ -15,6 +15,7 @@ php artisan vendor:publish --tag=nevela-config
 |---|---|---|
 | `descriptors_path` | `base_path('nevela/resources')` | Where the resource descriptors are kept. |
 | `web_path` | `base_path('../web')`, or `NEVELA_WEB_PATH` | The web app's folder. Generated web files are written here. If the folder does not exist, web files are skipped. Set to `null` to never write them. |
+| `root_path` | worked out, or `NEVELA_ROOT_PATH` | The top of the project, where the `php nevela` launcher is written. By default two folders up, when the app is at `<project>/apps/<name>`. Set to `false` for no launcher. |
 | `prefix` | `api` | The URL prefix for every Nevela route. |
 | `middleware` | `['api', 'auth:sanctum']` | Middleware on the resource routes. |
 | `auth.enabled` | `true` | Whether Nevela registers the token endpoints. Turn off to provide your own. |

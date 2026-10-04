@@ -53,11 +53,11 @@ jobs:
         run: |
           php artisan nevela:generate
           # --porcelain also lists files the generator created that were never committed.
-          changed="$(git status --porcelain -- . ../web)"
+          changed="$(git status --porcelain -- . ../web ../../nevela)"
           if [ -n "$changed" ]; then
             echo "Generated files are out of date. Run php artisan nevela:generate and commit:"
             echo "$changed"
-            git diff -- . ../web
+            git diff -- . ../web ../../nevela
             exit 1
           fi
       - run: php artisan nevela:seed Product --count=1000
@@ -139,14 +139,16 @@ jobs:
       - name: Build the dashboard before any resource exists
         working-directory: ${{ runner.temp }}/demo-app/apps/web
         run: pnpm exec tsc --noEmit
-      - name: Add a resource, a user and data
-        working-directory: ${{ runner.temp }}/demo-app/apps/api
+      # From the top of the project, the way the docs say: no cd, and resource migrates.
+      - name: Add a resource, a user and data with php nevela
+        working-directory: ${{ runner.temp }}/demo-app
         run: |
-          php artisan nevela:resource Product --fields="name:string, sku:string!, price:money, kind:enum(stock|digital), notes:text?" --icon=package
-          php artisan migrate --force
-          php artisan nevela:seed Product --count=100
-          php artisan nevela:user --name="CI" --email=ci@example.test --password=ci-password-123
-          php artisan test
+          test -f nevela
+          php nevela | grep -q "php nevela update"
+          php nevela resource Product --fields="name:string, sku:string!, price:money, kind:enum(stock|digital), notes:text?" --icon=package
+          php nevela seed Product --count=100
+          php nevela user --name="CI" --email=ci@example.test --password=ci-password-123
+          php nevela artisan test
       - name: Build the dashboard with the resource
         working-directory: ${{ runner.temp }}/demo-app/apps/web
         run: |

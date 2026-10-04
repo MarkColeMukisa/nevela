@@ -10,7 +10,7 @@ cd my-app
 pnpm run dev
 ```
 
-You need PHP 8.3+, Composer and Node.js 20+. Sign in at http://localhost:3000/sign-in as `admin@example.com` with the password `password`. The docs are at https://nevela-docs.vercel.app.
+You need PHP 8.3+, Composer and Node.js 20+. Sign in at http://localhost:3000/sign-in as `admin@example.com` with the password `password`. Everything else runs from that folder with `php nevela`: `php nevela resource …`, `php nevela seed …`, `php nevela update`. The docs are at https://nevela-docs.vercel.app.
 
 ## Add a resource
 

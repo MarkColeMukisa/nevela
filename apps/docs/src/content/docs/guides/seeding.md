@@ -6,7 +6,7 @@ description: "Fill a resource with plausible records in one command, and see how
 Fill a resource with plausible records, and print how long it took.
 
 ```sh
-php artisan nevela:seed Product --count=1000
+php nevela seed Product --count=1000
 ```
 
 ```

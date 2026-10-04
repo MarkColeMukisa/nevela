@@ -3,7 +3,17 @@ title: "Commands"
 description: "nevela:resource, nevela:generate, nevela:seed, nevela:user and nevela:update, with every option."
 ---
 
-Nevela adds five commands to `php artisan`. Run them in the Laravel app (`apps/api`).
+Nevela has five commands. Run them from the top of your project with `php nevela`:
+
+```sh
+php nevela resource Product --fields="name:string, price:money"
+php nevela generate
+php nevela seed Product
+php nevela user
+php nevela update
+```
+
+Each one is an artisan command underneath, and this page documents them under those names: `php nevela seed Product` is `php artisan nevela:seed Product`, run in `apps/api`. Use whichever you prefer. [The launcher](#the-php-nevela-launcher) at the end of this page lists what else `php nevela` does.
 
 To create a new app in the first place, see the [quickstart](/start/quickstart/): `pnpm create nevela my-app`.
 
@@ -22,8 +32,9 @@ php artisan nevela:resource Product --fields="name:string, price:money, kind:enu
 | `--icon=` | A Lucide icon name for the dashboard sidebar. |
 | `--group=` | The sidebar heading to put the resource under. |
 | `--force` | Replace the descriptor if the resource already exists. |
+| `--migrate` | Run the new migration straight away. `php nevela resource` always does. |
 
-It writes the descriptor to `nevela/resources/<name>.json`, then generates the files listed in [What gets generated](/concepts/resources/#what-gets-generated). Run `php artisan migrate` afterwards.
+It writes the descriptor to `nevela/resources/<name>.json`, then generates the files listed in [What gets generated](/concepts/resources/#what-gets-generated). Run `php artisan migrate` afterwards, or pass `--migrate`.
 
 If the resource already exists, the command stops and points you at `nevela:generate`, so a typo cannot wipe out an existing descriptor.
 
@@ -124,3 +135,25 @@ php artisan nevela:update --check    # show what would change, and change nothin
 | `--skip-package` | Leave `nevela/laravel` as it is. Regenerate and update the dashboard only. |
 
 Dashboard files you have not changed are updated; files you changed are kept and listed. [Updating](/guides/updating/) explains each step and what to do on the first update.
+
+## The php nevela launcher
+
+`nevela` is a small PHP file at the top of your project. It saves the `cd apps/api`, and it hands your command to artisan in the same process, so arguments arrive exactly as you typed them.
+
+| You type | It runs |
+|---|---|
+| `php nevela resource …` | `php artisan nevela:resource … --migrate` |
+| `php nevela generate` | `php artisan nevela:generate` |
+| `php nevela seed …` | `php artisan nevela:seed …` |
+| `php nevela user` | `php artisan nevela:user` |
+| `php nevela update` | `php artisan nevela:update` |
+| `php nevela migrate` | `php artisan migrate` |
+| `php nevela artisan <command>` | any other artisan command, for example `php nevela artisan route:list` |
+| `php nevela dev` | the API and the dashboard together |
+| `php nevela` | the list of commands |
+
+`php nevela resource` creates the table as well, because a new resource is no use without it. Pass `--no-migrate` to skip that.
+
+The file is written by `nevela:generate` and kept up to date by it. Add your own shortcuts below its generated block.
+
+It is created when the Laravel app sits at `<project>/apps/<name>`, which is how `pnpm create nevela` lays a project out. For another layout, set `root_path` in `config/nevela.php`.
