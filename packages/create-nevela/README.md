@@ -36,21 +36,32 @@ php nevela resource Product --fields="name:string, sku:string!, price:money"
 
 That writes the Laravel code and the dashboard pages, and creates the table. `php nevela` lists everything else.
 
-## Updating an app later
+## The nevela command
+
+Install this package once and you have a `nevela` command, in every shell:
 
 ```sh
-php nevela update
+npm install -g create-nevela
 ```
-
-That updates the Laravel package, regenerates, and updates the dashboard files you have not changed. Files you changed are kept, and everything it replaces is backed up first.
-
-If `php` is not a command in your shell (Git Bash with Laravel Herd), or the app is an old one, run it through this package instead. It works in any shell and on an app of any age:
 
 ```sh
-npx create-nevela update
+nevela new my-app      # anywhere: create an app
+nevela update          # anywhere: update the nevela command itself
+nevela dev             # inside an app: run the API and the dashboard
+nevela upgrade         # inside an app: bring it to the latest Nevela
 ```
 
-Installed globally (`npm install -g create-nevela`), it gives you a `nevela` command: `nevela update`, `nevela dev`, `nevela status`, `nevela resource …`. See https://nevela-docs.vercel.app/guides/updating/.
+As in Grit, `update` is for the tool and `upgrade` is for an app.
+
+## Upgrading an app later
+
+```sh
+nevela upgrade
+```
+
+That updates the Laravel package, regenerates, and upgrades the dashboard files you have not changed. Files you changed are kept, and everything it replaces is backed up first.
+
+Without the command installed, `npx create-nevela upgrade` does the same, in any shell and on an app of any age. So does the app's own launcher, `php nevela upgrade`. See https://nevela-docs.vercel.app/guides/updating/.
 
 ## Options
 

@@ -12,7 +12,7 @@ php nevela resource Product --fields="name:string, price:money" --seed
 php nevela generate
 php nevela seed Product
 php nevela user
-php nevela update
+php nevela upgrade
 php nevela version
 ```
 
@@ -124,20 +124,22 @@ Pass all three to create a user without being asked anything, for example in a d
 php artisan nevela:user --name="Ada Okafor" --email=ada@example.com --password="$ADMIN_PASSWORD"
 ```
 
-## nevela:update
+## nevela:upgrade
 
 Bring the app up to the latest Nevela: the package, the generated code and the dashboard.
 
 ```sh
-php nevela update
-php nevela update --check    # show what would change, and change nothing
-php nevela update --undo     # put the dashboard back as it was before the last update
+php nevela upgrade
+php nevela upgrade --check    # show what would change, and change nothing
+php nevela upgrade --undo     # put the dashboard back as it was before the last upgrade
 ```
+
+Before 0.3.0 this was `nevela:update`, and `php nevela update` still runs it. The name changed to match Grit: `nevela update` now updates the `nevela` command itself, and `nevela upgrade` brings an app up to date. See [Updating and upgrading](/guides/updating/).
 
 | Option | Meaning |
 |---|---|
 | `--check` | Show what would change, and change nothing. |
-| `--undo` | Restore the files the last update replaced, from its backup. |
+| `--undo` | Restore the files the last upgrade replaced, from its backup. |
 | `--skip-package` | Leave `nevela/laravel` as it is. Regenerate and update the dashboard only. |
 
 Dashboard files you have not changed are updated, after being backed up. Files you changed are kept, and the new versions are saved beside them to compare. [Updating](/guides/updating/) explains the record that makes this exact, and what to do with an older app.
@@ -210,7 +212,8 @@ Prints the version of Nevela the app is on, for example `Nevela 0.1.3`. `php nev
 | `php nevela generate` | `php artisan nevela:generate` |
 | `php nevela seed …` | `php artisan nevela:seed …` |
 | `php nevela user` | `php artisan nevela:user` |
-| `php nevela update` | `php artisan nevela:update` |
+| `php nevela upgrade` | `php artisan nevela:upgrade` |
+| `php nevela update` | the same: the name it had before 0.3.0 |
 | `php nevela migrate` | `php artisan migrate` |
 | `php nevela artisan <command>` | any other artisan command, for example `php nevela artisan route:list` |
 | `php nevela` | the list of commands |
@@ -226,10 +229,24 @@ In Git Bash on Windows with Laravel Herd, `php` is not found, because PHP there 
 ```sh
 pnpm nevela dev
 pnpm nevela resource Product --fields="name:string, price:money" --seed
-pnpm nevela update
+pnpm nevela upgrade
 ```
 
-With npm it is `npm run nevela -- <command>`. Or install the command once with `npm install -g create-nevela`, and type `nevela dev`, `nevela update` and so on from anywhere inside an app.
+With npm it is `npm run nevela -- <command>`.
+
+### The shortest form: the nevela command
+
+Install it once with `npm install -g create-nevela`, and drop the `php` and the `pnpm`:
+
+```sh
+nevela new my-app          # anywhere: create an app
+nevela update              # anywhere: update the nevela command itself
+nevela dev                 # inside an app, from any folder in it
+nevela resource Product --fields="name:string, price:money" --seed
+nevela upgrade             # inside an app: bring it to the latest Nevela
+```
+
+It works in every shell, including Git Bash.
 
 ### Where the launcher is written
 

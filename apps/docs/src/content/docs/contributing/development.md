@@ -81,14 +81,14 @@ node /path/to/nevela/packages/create-nevela/index.mjs test-app --bundled-package
 
 ## The update command
 
-`nevela:update` normally downloads dashboard templates from npm. To test it against your working copy, pack the installer into a folder and point the command at it:
+`nevela:upgrade` normally downloads dashboard templates from npm. To test it against your working copy, pack the installer into a folder and point the command at it:
 
 ```sh
 cd packages/create-nevela
 npm pack --pack-destination /tmp/templates
 
 cd /path/to/a/test-app/apps/api
-NEVELA_TEMPLATE_DIR=/tmp/templates php artisan nevela:update --check
+NEVELA_TEMPLATE_DIR=/tmp/templates php artisan nevela:upgrade --check
 ```
 
 The command looks in that folder for `create-nevela-<version>.tgz` before it asks npm.

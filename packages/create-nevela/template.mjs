@@ -81,7 +81,7 @@ export function copyWebTemplate(to, { name, title }) {
 
 /**
  * A fingerprint of every template file, and the template's dependencies: what the app
- * records in .nevela.json so that `nevela update` can tell, later and exactly, which
+ * records in .nevela.json so that `nevela upgrade` can tell, later and exactly, which
  * files the developer changed. The same fingerprint the Laravel package computes: SHA-1
  * with line endings ignored.
  */

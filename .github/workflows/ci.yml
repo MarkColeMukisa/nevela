@@ -126,7 +126,7 @@ jobs:
           tar -xzf create-nevela-*.tgz -C "$RUNNER_TEMP/create-nevela"
           test -f "$RUNNER_TEMP/create-nevela/package/template/web/_gitignore"
           test -f "$RUNNER_TEMP/create-nevela/package/packagist.mjs"
-          for file in selfupdate shell project; do test -f "$RUNNER_TEMP/create-nevela/package/$file.mjs"; done
+          for file in selfupdate shell project tool; do test -f "$RUNNER_TEMP/create-nevela/package/$file.mjs"; done
           test -f "$RUNNER_TEMP/create-nevela/package/LICENSE"
       - name: Create an app
         working-directory: ${{ runner.temp }}
@@ -154,7 +154,7 @@ jobs:
         working-directory: ${{ runner.temp }}/demo-app
         run: |
           test -f nevela
-          php nevela | grep -q "php nevela update"
+          php nevela | grep -q "php nevela upgrade"
           php nevela version | grep -q "^Nevela [0-9]"
           # One command: the code, the table and the records.
           # Written the way Grit writes an image field, which Nevela also understands.
@@ -209,11 +209,11 @@ jobs:
             fs.writeFileSync(file, JSON.stringify(record, null, 4));
           '
 
-          php artisan nevela:update --check | tee check.log
+          php artisan nevela:upgrade --check | tee check.log
           grep -q 'lib/number.ts .* would update' check.log
           grep -q 'export const old' ../web/lib/number.ts
 
-          php artisan nevela:update | tee update.log
+          php artisan nevela:upgrade | tee update.log
           grep -q 'lib/number.ts .* updated' update.log
           cmp ../web/lib/number.ts number.current
           grep -q 'changed by the app' ../web/lib/csv.ts
@@ -221,10 +221,12 @@ jobs:
           grep -q '"history"' ../web/.nevela.json
           grep -rq 'export const old' ../web/.nevela/backups
           test "$(cat ../web/.nevela/.gitignore)" = "*"
+          # The name it had before 0.3.0 still works.
           php artisan nevela:update > again.log
           grep -q 'latest template' again.log
+          (cd ../.. && php nevela update | grep -q 'latest template')
 
-          php artisan nevela:update --undo | tee undo.log
+          php artisan nevela:upgrade --undo | tee undo.log
           grep -q 'lib/number.ts .* restored' undo.log
           grep -q 'export const old' ../web/lib/number.ts
           grep -q '"template": "0.1.0"' ../web/.nevela.json
@@ -243,6 +245,17 @@ jobs:
           grep -q 'Migrations' cli-status.log
           # Outside an app it says so instead of creating an app called "status".
           (cd "$RUNNER_TEMP" && ! node create-nevela/package/index.mjs status 2> outside.log; grep -q "isn't in one" outside.log)
+          # upgrade is the app's command. Checked, not run: nothing newer than this commit exists.
+          NEVELA_NO_SELF_UPDATE=1 node "$RUNNER_TEMP/create-nevela/package/index.mjs" upgrade --check | tee cli-upgrade.log
+          grep -q 'latest template' cli-upgrade.log
+          # update is the nevela command updating itself. This copy was unpacked, not installed,
+          # so outside an app it says how to install it and changes nothing,
+          (cd "$RUNNER_TEMP" && node create-nevela/package/index.mjs update | tee tool-update.log)
+          grep -q 'npm install -g create-nevela' "$RUNNER_TEMP/tool-update.log"
+          # and inside one it does what "update" used to mean there: upgrade the app.
+          NEVELA_NO_SELF_UPDATE=1 node "$RUNNER_TEMP/create-nevela/package/index.mjs" update --check | tee cli-update.log
+          grep -q 'Upgrading this app' cli-update.log
+          grep -q 'latest template' cli-update.log
       - name: Sign in and read the resource over HTTP
         working-directory: ${{ runner.temp }}/demo-app/apps/api
         run: |

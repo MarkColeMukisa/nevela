@@ -1,41 +1,80 @@
 ---
-title: "Updating"
-description: "Bring an existing app up to the latest Nevela without losing anything you changed."
+title: "Updating and upgrading"
+description: "Update the nevela command, and upgrade an existing app to the latest Nevela without losing anything you changed."
 ---
 
-One command updates an existing app. Run it from anywhere inside the project:
+Two things get newer, and each has its own command. If you have used Grit, these are the same two.
+
+| Command | What it brings up to date | Where you run it |
+|---|---|---|
+| `nevela update` | the `nevela` command on your computer | anywhere |
+| `nevela upgrade` | the app you are in: its Nevela package and its dashboard | inside the app |
 
 ```sh
-php nevela update
+nevela update        # anywhere
+cd my-app
+nevela upgrade       # inside the app
+```
+
+## The nevela command
+
+Install it once, and every command is this short, in every shell:
+
+```sh
+npm install -g create-nevela
+```
+
+| | |
+|---|---|
+| `nevela new my-app` | create an app |
+| `nevela dev` | run the API and the dashboard |
+| `nevela resource Product --fields="name:string, price:money" --seed` | add a resource |
+| `nevela upgrade` | bring the app to the latest Nevela |
+| `nevela update` | update the command itself |
+
+`nevela update` asks the package manager that installed the command (npm, pnpm, yarn or bun) for the latest version. It does not touch any app.
+
+You do not have to update the command before upgrading an app. `nevela upgrade` fetches the newest version of itself for that one run, so an app is always upgraded by the latest code, whatever is installed.
+
+## Upgrading an app
+
+From anywhere inside the app:
+
+```sh
+nevela upgrade
 ```
 
 It does three things, in order:
 
-1. **Updates the package.** `nevela/laravel` is moved to the newest release with Composer.
+1. **Updates the package.** `nevela/laravel` is moved to the newest release with Composer. If the app's `composer.json` asks for a range that stops short of it (`^0.2` when 0.3.0 is out), the range is moved too, and the command says so.
 2. **Regenerates.** The generated blocks in your models, requests, controllers and routes are rewritten from your descriptors. Your own code outside them is kept.
-3. **Updates the dashboard.** Files in `apps/web` that you have not changed are brought up to the new version. Files you changed are left alone.
+3. **Upgrades the dashboard.** Files in `apps/web` that you have not changed are brought up to the new version. Files you changed are left alone.
+
+It ends by telling you if the new version has migrations to run (`nevela migrate`) or dashboard packages to install.
 
 To see what it would do without changing anything:
 
 ```sh
-php nevela update --check
+nevela upgrade --check
 ```
 
-## If `php` is not a command in your shell
+### Without the nevela command
 
-In Git Bash on Windows with Laravel Herd, typing `php` gives "command not found", because Herd provides PHP as `php.bat` and Git Bash does not run that for the bare name. Use any of these instead. They all do the same thing:
+The same thing, if you have not installed the command:
 
 ```sh
-pnpm nevela update           # through your package manager; works in every shell
-npx create-nevela update     # no setup needed, and works on an app of any age
-nevela update                # after: npm install -g create-nevela
+php nevela upgrade             # the app's own launcher
+pnpm nevela upgrade            # through your package manager; works in every shell
+npx create-nevela upgrade      # nothing to install, and works on an app of any age
 ```
 
-`npx create-nevela update` is the one to reach for on an older app. It repairs what would stop Composer from updating (see below), updates the package, then updates the dashboard.
+In Git Bash on Windows with Laravel Herd, typing `php` gives "command not found", because Herd provides PHP as `php.bat`. Use one of the other two there, or the `nevela` command.
+
+An app created before 0.3.0 calls this `update`: `php nevela update`. That name still works inside an app. For an app that old, prefer `nevela upgrade` or `npx create-nevela upgrade`: they run the newest code, which repairs what would stop an older app from upgrading (see below).
 
 ## Your changes are kept
 
-The dashboard is copied into your app when it is created, so that you can change it freely. Nevela keeps a record of it so that an update never overwrites that work.
+The dashboard is copied into your app when it is created, so that you can change it freely. Nevela keeps a record of it so that an upgrade never overwrites that work.
 
 ### The record
 
@@ -80,7 +119,7 @@ Your resources are not part of this. Their descriptors and pages are generated f
 Before an update replaces a file, it copies the old one to `apps/web/.nevela/backups/<date>-<from>-to-<to>/`. If an update turns out to be wrong for you, put everything back:
 
 ```sh
-php nevela update --undo
+nevela upgrade --undo
 ```
 
 That restores every file the last update replaced, removes the files it added (unless you have changed them since), and puts the record back, so the update can be applied again later. It does not change the Composer package; the command prints how to go back a version there if you need to.
@@ -105,9 +144,9 @@ The `.nevela/` folder (backups and incoming files) ignores itself, so none of it
 
 **An app from before the record existed** (created with 0.1.3 or earlier) has no fingerprints yet. On its first update, Nevela downloads the dashboard version the app started from and compares against that instead, then writes the record. From then on it works as described above.
 
-**An app pinned to one exact version.** Apps created on Windows with 0.1.0 have `"nevela/laravel": "0.1"` in `apps/api/composer.json`, which stops Composer from updating. `npx create-nevela update` fixes it. By hand, change it to `"^0.1"`.
+**An app pinned to one exact version.** Apps created on Windows with 0.1.0 have `"nevela/laravel": "0.1"` in `apps/api/composer.json`, which stops Composer from updating. `npx create-nevela upgrade` fixes it. By hand, change it to the range that has the release you want: `"^0.3"` for 0.3.x. Below 1.0, a range such as `^0.1` stops at 0.1.x.
 
-**An app with a `packages/nevela-laravel` folder** installs the package from that folder, because it was created before the package was on Packagist. `npx create-nevela update` moves it to Packagist. Afterwards you can delete the folder.
+**An app with a `packages/nevela-laravel` folder** installs the package from that folder, because it was created before the package was on Packagist. `npx create-nevela upgrade` moves it to Packagist. Afterwards you can delete the folder.
 
 ## Where the new dashboard comes from
 

@@ -12,10 +12,11 @@ import os from 'node:os';
 import path from 'node:path';
 import readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
-import { latestRelease, onPackagist } from './packagist.mjs';
-import { COMMANDS, findProject, forward, update } from './project.mjs';
+import { isNewer, latestRelease, onPackagist } from './packagist.mjs';
+import { COMMANDS, findProject, forward, upgrade } from './project.mjs';
 import { shellLine, spawnCommand, windows } from './shell.mjs';
-import { newerVersion, runVersion } from './selfupdate.mjs';
+import { latestVersion, newerVersion, runVersion } from './selfupdate.mjs';
+import { globalInstall, INSTALL_COMMAND } from './tool.mjs';
 import { copyLaravelPackage, copyWebTemplate, fromRepository, templateRecord } from './template.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -41,12 +42,15 @@ const HELP = `
 
   Create a new Nevela app: a Laravel API and a Next.js dashboard.
 
-  ${bold('Create an app')}
-    pnpm create nevela <name> [options]
-    npm create nevela@latest <name> -- [options]
+  ${bold('Get the nevela command')}  (once; everything below is then this short)
+    npm install -g create-nevela
 
-  ${bold('Inside an app')}  (also as: nevela <command>, once installed with npm install -g create-nevela)
-    nevela update              Update Nevela and the dashboard to the latest version
+  ${bold('Anywhere')}
+    nevela new <name> [options]   Create an app. Without the command: pnpm create nevela <name>
+    nevela update                 Update the nevela command itself to the latest version
+
+  ${bold('Inside an app')}
+    nevela upgrade             Bring this app to the latest Nevela: the package and the dashboard
     nevela dev                 Run the API and the dashboard
     nevela status              Check versions, migrations, users and the dashboard
     nevela resource <Name> --fields="…" [--seed]
@@ -301,7 +305,7 @@ Everything else runs from this folder too, with \`php nevela\`:
 \`\`\`sh
 php nevela user        # add someone who can sign in
 php nevela status      # versions, migrations, users, and what the dashboard is talking to
-php nevela update      # update Nevela and the dashboard
+php nevela upgrade     # bring this app to the latest Nevela
 php nevela             # everything it can do
 \`\`\`
 
@@ -328,25 +332,82 @@ async function inProject(name, args) {
     fail(`"${name}" runs inside a Nevela app, and this folder isn't in one.`, `To create an app:  pnpm create nevela my-app`);
   }
   if (name === 'version') console.log(`create-nevela ${VERSION}`);
-  if (name !== 'update') process.exit(forward(project, name, args));
+  if (name !== 'upgrade') process.exit(forward(project, name, args));
 
-  // Updating is the one command that must not run on stale code itself.
+  // Upgrading is the one command that must not run on stale code itself: it is the newest
+  // installer that knows what an older app needs repaired. So even a nevela command that
+  // hasn't been updated in a while upgrades an app correctly.
   if (!process.env.NEVELA_NO_SELF_UPDATE && !fromRepository) {
     const newer = await newerVersion(VERSION);
     if (newer) {
-      const status = await runVersion(newer, ['update', ...args]);
+      const status = await runVersion(newer, ['upgrade', ...args]);
       if (status !== null) process.exit(status);
     }
   }
-  console.log(`\n  ${indigo(bold('Nevela'))} ${dim('update')}\n`);
+  console.log(`\n  ${indigo(bold('Nevela'))} ${dim('upgrade')}\n`);
   const releases = await latestRelease();
-  const status = await update(project, args, { latest: releases, say: (line) => console.log(`  ${green('✔')} ${line}`) });
+  const status = await upgrade(project, args, { latest: releases, say: (line) => console.log(`  ${green('✔')} ${line}`) });
   process.exit(status);
+}
+
+/**
+ * `nevela update`, from anywhere: update the nevela command itself.
+ *
+ * As in Grit, updating the tool and upgrading an app are two commands. This one doesn't
+ * touch any app; it ends by saying how to upgrade the one you are in, if you are in one.
+ *
+ * It returns instead of calling process.exit(): on Windows, exiting in the same moment a
+ * fetch() has just finished trips an assertion inside Node and prints a crash.
+ */
+async function updateTool(args) {
+  const project = findProject(process.cwd());
+  const install = fromRepository ? null : globalInstall(here);
+
+  if (!install) {
+    // Run through npx or `pnpm dlx`, which fetch the latest every time, started by an
+    // older nevela command that fetched this one to do its work, or a copy in a project's
+    // own node_modules. There is no installed command to update. Inside an app, "update" used to mean "upgrade this app", and
+    // instructions saying so are still around, so that is what it does.
+    if (project) {
+      console.log(`\n  ${dim(`"update" now updates the nevela command, and an app is brought up to date with "upgrade". Upgrading this app.`)}`);
+      await inProject('upgrade', args);
+    }
+    console.log(`\n  ${indigo(bold('Nevela'))} ${dim(`v${VERSION}`)}\n`);
+    console.log(`  The nevela command isn't installed on this computer, so there is nothing to update.`);
+    console.log(`  To install it:  ${bold(INSTALL_COMMAND)}`);
+    console.log(`  Then, anywhere: ${bold('nevela new my-app')}   and inside an app: ${bold('nevela upgrade')}, ${bold('nevela dev')}\n`);
+    return;
+  }
+
+  console.log(`\n  ${indigo(bold('Nevela'))} ${dim('update')}\n`);
+  const latest = await latestVersion();
+  const newer = latest !== null && isNewer(latest, VERSION) ? latest : null;
+  if (latest === null) {
+    // Not the same as being up to date, so it isn't reported as that.
+    console.log(`  ${red('!')} Couldn't reach npm to see whether there is a newer nevela than ${bold(VERSION)}. Nothing was changed.`);
+    console.log(`    Try again when you are online, or run:  ${install.command.join(' ')}`);
+    process.exitCode = 1;
+  } else if (!newer) {
+    console.log(`  ${green('✔')} nevela ${bold(VERSION)} is the latest.`);
+  } else {
+    console.log(`  Updating the nevela command ${bold(VERSION)} → ${bold(newer)} ${dim(`(${install.command.join(' ')})`)}\n`);
+    const [command, ...rest] = install.command;
+    const result = spawnCommand(command, rest, { stdio: 'inherit' });
+    if (result.error || result.status !== 0) {
+      fail(`Couldn't update the nevela command.`, `Run it yourself to see why:  ${install.command.join(' ')}`);
+    }
+    console.log(`\n  ${green('✔')} nevela is now ${bold(newer)}.`);
+  }
+  if (project) {
+    console.log(`  ${dim('This app is not changed by that. To bring it to the latest Nevela:')} ${bold('nevela upgrade')}`);
+  }
+  console.log('');
 }
 
 async function main() {
   const argv = process.argv.slice(2);
   if (argv[0] === 'new') argv.shift();
+  else if (argv[0] === 'update') return updateTool(argv.slice(1));
   else if (COMMANDS.includes(argv[0])) await inProject(argv[0], argv.slice(1));
   const options = parseArgs(argv);
 
@@ -399,7 +460,7 @@ async function main() {
     write(path.join(web, 'pnpm-workspace.yaml'), 'allowBuilds:\n  sharp: true\n');
   }
   // Which dashboard this app started from, with a fingerprint of every file in it.
-  // `nevela update` compares against these to tell the files you changed from the ones
+  // `nevela upgrade` compares against these to tell the files you changed from the ones
   // you didn't, so an update never overwrites your work.
   write(path.join(web, '.nevela.json'), `${JSON.stringify(templateRecord(VERSION), null, 4)}\n`);
   writeRootFiles(root, { name, title, pm, admin: options.user ? ADMIN : null });
@@ -510,7 +571,7 @@ async function main() {
     console.log(`  ${dim(`That account is in this app's local database only. Add your own: ${nevela} user`)}`);
   }
   console.log(`\n  Add your first resource: ${dim(`${nevela} resource Product --fields="name:string, price:money"`)}`);
-  console.log(`  Check the app: ${dim(`${nevela} status`)}   Update it later: ${dim(`${nevela} update`)}   Everything: ${dim(nevela)}`);
+  console.log(`  Check the app: ${dim(`${nevela} status`)}   Upgrade it later: ${dim(`${nevela} upgrade`)}   Everything: ${dim(nevela)}`);
   if (nevela !== 'php nevela') {
     console.log(`\n  ${dim(`In this shell "php" isn't a command (your PHP is php.bat), so use ${nevela}. In PowerShell, php nevela works too.`)}`);
   }

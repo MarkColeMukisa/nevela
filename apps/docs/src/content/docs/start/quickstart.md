@@ -119,7 +119,7 @@ It lists the Nevela version, which migrations have run and which are pending, ho
 
 **"Can't reach the server" on the sign-in page.** The API is not running. Start it with `php nevela dev`.
 
-**"php: command not found" in Git Bash.** With Laravel Herd on Windows, PHP is `php.bat`, and Git Bash does not run that when you type `php`. Use `pnpm nevela dev`, `pnpm nevela update` and so on, which work in every shell, or run `php nevela …` from PowerShell. The installer prints whichever form works in the shell you ran it from.
+**"php: command not found" in Git Bash.** With Laravel Herd on Windows, PHP is `php.bat`, and Git Bash does not run that when you type `php`. Use `pnpm nevela dev`, `pnpm nevela upgrade` and so on, which work in every shell, or install the `nevela` command (`npm install -g create-nevela`) and type `nevela dev`, or run `php nevela …` from PowerShell. The installer prints whichever form works in the shell you ran it from.
 
 **The folder already exists.** The command refuses to write into a folder that has files in it. Pick another name or remove the folder.
 
@@ -142,5 +142,5 @@ With npm, put options after `--`: `npm create nevela@latest my-app -- --no-insta
 - [Build a shop](/guides/shop/): two linked resources, with images that are optimised on upload
 - [Resources](/concepts/resources/): the field types and how regeneration works
 - [REST API](/reference/api/): calling the API directly
-- [Updating](/guides/updating/): bring the app up to a newer Nevela later
+- [Updating and upgrading](/guides/updating/): bring the app up to a newer Nevela later
 - [Deploying](/guides/deploying/): what each app needs in production

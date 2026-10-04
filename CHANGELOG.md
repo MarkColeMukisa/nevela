@@ -6,8 +6,15 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking, for the `nevela` command only:** `update` and `upgrade` are now two commands, the same two Grit has. `nevela update`, from anywhere, updates the `nevela` command itself. `nevela upgrade`, inside an app, brings that app to the latest Nevela, which is what `update` did before. Inside an app, `php nevela update`, `pnpm nevela update` and `npx create-nevela update` still upgrade the app, so instructions written for older versions keep working.
+- The artisan command is `nevela:upgrade`. `nevela:update` is kept as an alias.
+
 ### Added
 
+- `nevela update` updates the installed command with the package manager that installed it: npm, pnpm, yarn or bun.
+- The command's help leads with the short forms: `npm install -g create-nevela` once, then `nevela new my-app`, `nevela dev`, `nevela upgrade`.
 - Grit's and Flare's ways of writing a field are understood: `image:file:image`, `image:file:[image]`, `category:belongs_to:Category` and `status:enum:draft|live` mean the same as `image:image`, `category:belongsTo(Category)` and `status:enum(draft|live)`.
 
 ## [0.2.1] - 2026-10-04
