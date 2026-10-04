@@ -35,6 +35,16 @@ php artisan nevela:resource Product --fields="name:string, sku:string!, price:mo
 php artisan migrate
 ```
 
+## Updating an app later
+
+In `apps/api`:
+
+```sh
+php artisan nevela:update
+```
+
+That updates the Laravel package, regenerates, and updates the dashboard files you have not changed. See https://nevela-docs.vercel.app/guides/updating/.
+
 ## Options
 
 | Option | Meaning |

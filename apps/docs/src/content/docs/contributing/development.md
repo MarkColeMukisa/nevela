@@ -79,6 +79,20 @@ node /path/to/nevela/packages/create-nevela/index.mjs test-app --bundled-package
 
 `--bundled-package` makes the new app use `packages/laravel` from your working copy. Without it, the app installs the last release from Packagist and your changes to the package are not in it.
 
+## The update command
+
+`nevela:update` normally downloads dashboard templates from npm. To test it against your working copy, pack the installer into a folder and point the command at it:
+
+```sh
+cd packages/create-nevela
+npm pack --pack-destination /tmp/templates
+
+cd /path/to/a/test-app/apps/api
+NEVELA_TEMPLATE_DIR=/tmp/templates php artisan nevela:update --check
+```
+
+The command looks in that folder for `create-nevela-<version>.tgz` before it asks npm.
+
 ## The docs site
 
 ```sh

@@ -1,6 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { satisfiesCaret } from './packagist.mjs';
+import { isNewer, satisfiesCaret } from './packagist.mjs';
+
+test('a newer installer is only announced for a higher stable version', () => {
+  assert.equal(isNewer('0.1.2', '0.1.1'), true);
+  assert.equal(isNewer('0.2.0', '0.1.9'), true);
+  assert.equal(isNewer('1.0.0', '0.9.9'), true);
+  assert.equal(isNewer('0.1.10', '0.1.9'), true);
+  assert.equal(isNewer('0.1.1', '0.1.1'), false);
+  assert.equal(isNewer('0.1.0', '0.1.1'), false);
+  assert.equal(isNewer('0.0.0-stage', '0.1.1'), false);
+  assert.equal(isNewer(undefined, '0.1.1'), false);
+});
 
 test('below 1.0, only the same minor version is accepted', () => {
   assert.equal(satisfiesCaret('v0.1.0', [0, 1]), true);

@@ -6,6 +6,16 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Added
+
+- `php artisan nevela:update`: update an existing app in one command. It updates `nevela/laravel`, regenerates, and brings the dashboard files you have not changed up to the new version. Files you changed are kept and listed. `--check` shows what would change.
+- New apps record which dashboard version they are on, in `apps/web/.nevela.json`.
+- `create-nevela` says when a newer installer exists and prints the command to use it. pnpm can serve an older one for about a day after a release.
+
+### Fixed
+
+- Generated files could be written with Windows line endings when the package itself was checked out that way.
+
 ## [0.1.1] - 2026-10-04
 
 ### Added

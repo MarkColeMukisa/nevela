@@ -9,6 +9,15 @@ export function satisfiesCaret(candidate, [major, minor]) {
   return major === 0 ? theirMajor === 0 && theirMinor === minor : theirMajor === major && theirMinor >= minor;
 }
 
+/** Whether stable version `a` is newer than `b`. Anything that isn't x.y.z is never newer. */
+export function isNewer(a, b) {
+  const parse = (version) => /^(\d+)\.(\d+)\.(\d+)$/.exec(String(version))?.slice(1).map(Number);
+  const [left, right] = [parse(a), parse(b)];
+  if (!left || !right) return false;
+  for (let i = 0; i < 3; i++) if (left[i] !== right[i]) return left[i] > right[i];
+  return false;
+}
+
 /**
  * Whether Packagist has a release of nevela/laravel that goes with this installer. Being
  * listed isn't enough: with no tagged release yet, `composer require` would fail.
