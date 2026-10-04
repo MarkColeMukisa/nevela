@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { laravel, TOKEN_COOKIE } from "@/lib/laravel";
+import { API_URL, laravel, TOKEN_COOKIE } from "@/lib/laravel";
 
 export type SignInResult = { ok: true } | { ok: false; error: string };
 
@@ -17,12 +17,20 @@ export async function signInAction(email: string, password: string): Promise<Sig
   try {
     response = await laravel("auth/token", { method: "POST", body: { email, password }, token: null });
   } catch {
-    return { ok: false, error: "Can't reach the server. Check that the Laravel app is running." };
+    return { ok: false, error: `Can't reach the server at ${API_URL}. Start it with: php nevela dev` };
   }
   if (!response.ok) {
-    const body = (response.body ?? {}) as { error?: string; issues?: { message: string }[] };
+    const body = (response.body ?? {}) as { error?: string; message?: string; issues?: { message: string }[] };
     if (response.status === 429) return { ok: false, error: "Too many attempts. Wait a minute and try again." };
-    return { ok: false, error: body.issues?.[0]?.message ?? body.error ?? "Sign-in failed. Try again." };
+    if (response.status === 404 || response.status === 405) {
+      // Something answered, but it has no sign-in route: it isn't this app's API. Usually
+      // another program already had the port when the API was started.
+      return {
+        ok: false,
+        error: `${API_URL} is answered by a different program, not this app's API. Stop what is using that port, or start both with "php nevela dev", which picks a free one.`,
+      };
+    }
+    return { ok: false, error: body.issues?.[0]?.message ?? body.error ?? body.message ?? "Sign-in failed. Try again." };
   }
 
   const { token } = response.body as { token: string };

@@ -43,8 +43,7 @@ You get this:
 my-app/
 ├─ apps/api/    a Laravel app with Sanctum and Nevela installed
 ├─ apps/web/    the Next.js dashboard, pointed at the API
-├─ nevela       every Nevela command, from this folder: php nevela
-└─ scripts/     runs both together
+└─ nevela       every Nevela command, from this folder: php nevela
 ```
 
 [Project structure](/start/project-structure/) explains what is where.
@@ -53,10 +52,12 @@ my-app/
 
 ```sh
 cd my-app
-pnpm run dev
+php nevela dev
 ```
 
-That starts Laravel on http://127.0.0.1:8000 and the dashboard on http://localhost:3000. Open http://localhost:3000/sign-in and sign in with the starter account:
+That starts the Laravel API and the dashboard together and prints where each one is: normally http://127.0.0.1:8000 and http://localhost:3000. If another program is already using a port, it takes the next free one and tells the dashboard, so the two always find each other.
+
+Open http://localhost:3000/sign-in and sign in with the starter account:
 
 | | |
 |---|---|
@@ -97,7 +98,17 @@ Every generated policy starts by allowing any signed-in user. Before real use, o
 
 **"PHP isn't installed" or "Composer isn't installed".** The command checks for both before it starts. Install them, open a new terminal so they are on your `PATH`, and run it again.
 
-**"Can't reach the server" on the sign-in page.** The dashboard cannot reach Laravel. Check that `pnpm run dev` is still running and that `NEVELA_API_URL` in `apps/web/.env.local` matches Laravel's address, including the `/api` at the end.
+**Not sure what state the app is in.** Ask it:
+
+```sh
+php nevela status
+```
+
+It lists the Nevela version, which migrations have run and which are pending, how many people can sign in, each resource and its record count, and whether the dashboard is reaching this app's API. Anything wrong is marked in red with the command that fixes it.
+
+**Sign-in says the address "is answered by a different program".** Another program on your machine, often another Laravel project's `php artisan serve`, already had port 8000, and the dashboard reached that instead of this app. Start both with `php nevela dev`, which checks the port first and moves to a free one.
+
+**"Can't reach the server" on the sign-in page.** The API is not running. Start it with `php nevela dev`.
 
 **It says a newer create-nevela is out.** Your package manager served an older installer: pnpm holds back versions published in the last day, and both pnpm and npm cache. Run the command it prints, which asks for the new version by number, for example `pnpm create nevela@0.1.2 my-app`.
 
