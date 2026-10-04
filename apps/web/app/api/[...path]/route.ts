@@ -19,8 +19,11 @@ export const dynamic = "force-dynamic";
 /** Larger than any field allows; Laravel enforces the real limit. This only stops a runaway request early. */
 const MAX_UPLOAD_BYTES = 64 * 1024 * 1024;
 
-/** What is passed back from Laravel's answer. */
-const RESPONSE_HEADERS = ["content-type", "content-length", "cache-control", "etag", "last-modified", "location", "x-content-type-options"];
+/**
+ * What is passed back from Laravel's answer. Not its length or encoding: fetch() hands
+ * over the body already decompressed, so the length Laravel gave may no longer be true.
+ */
+const RESPONSE_HEADERS = ["content-type", "cache-control", "etag", "last-modified", "location", "x-content-type-options"];
 
 type Context = { params: Promise<{ path: string[] }> };
 

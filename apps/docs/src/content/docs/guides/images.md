@@ -23,7 +23,7 @@ The approach is [Grit](https://github.com/MUKE-coder/grit)'s: optimise once, whe
 1. **It is checked.** The contents have to be an image, whatever the file is called. One that would decode to more than 50 million pixels is refused from its header, before memory is spent on it.
 2. **It is turned the right way up.** A phone stores a portrait photo sideways with a note saying so. The note is applied, then removed with the rest of the metadata, including where the photo was taken.
 3. **It is scaled down to fit** the profile's box, 1600×1600 by default. Never up.
-4. **The format is chosen from the pixels.** Transparency is kept (lossless WebP). Everything else becomes WebP at quality 82, about a quarter smaller than a JPEG that looks the same. A transparent logo cannot end up as a JPEG with a black box behind it.
+4. **The format is chosen from the pixels.** Transparency is kept (lossless WebP). Everything else becomes WebP at quality 82, about a quarter smaller than a JPEG that looks the same. A transparent logo cannot end up as a JPEG with a black box behind it. A diagram or screenshot uploaded as a PNG stays a PNG when that is the smaller file.
 5. **Renditions are made**: by default a 400×400 `thumb`.
 6. **The original is kept**, privately, so the image can be optimised again with other settings.
 
@@ -115,6 +115,8 @@ curl -X POST http://127.0.0.1:8000/api/products -H "Authorization: Bearer $TOKEN
 
 A record only accepts a key that was uploaded to that same field, so a record cannot be pointed at another resource's file.
 
+Uploading takes the permission to create records of that resource (the policy's `create`). Being allowed to read them is not enough.
+
 ## Where files are kept
 
 | Setting | Default | What it is |
@@ -125,7 +127,7 @@ A record only accepts a key that was uploaded to that same field, so a record ca
 | `uploads.max_bytes` | 10 MB | The largest file a field takes. |
 | `uploads.memory` | `512M` | Memory allowed while an image is optimised. |
 
-Files are handed out by `GET /api/_nevela/files/<key>`, so nothing needs linking or publishing for it to work. The response may be cached for good: a key is never reused.
+Files are handed out by `GET /api/_nevela/files/<key>`, so nothing needs linking or publishing for it to work. Only files uploaded through Nevela are served this way, whatever else is on the disk. The response may be cached for good: a key is never reused.
 
 :::caution
 A file's key is unguessable, but anyone who has it can fetch the file. Do not use these fields for documents that must stay private.

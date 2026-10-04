@@ -6,12 +6,27 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Nevela\Laravel\Media\ImageOptimizer;
 use Nevela\Laravel\Media\Uploads;
 use Nevela\Laravel\Models\Upload;
 use Tests\TestCase;
+
+/** A role that may look at products and nothing more. */
+class ReadOnlyProducts
+{
+    public function viewAny(User $user): bool
+    {
+        return true;
+    }
+
+    public function create(User $user): bool
+    {
+        return false;
+    }
+}
 
 /**
  * The example shop, over HTTP: a Category has many Products, and both have an image
@@ -92,8 +107,11 @@ class ShopTest extends TestCase
     {
         $category = $this->category();
         $id = $this->postJson('/api/products', $this->product($category))->json('id');
+        $second = $this->postJson('/api/products', $this->product($category))->json('id');
 
-        $this->deleteJson("/api/categories/{$category->id}")->assertStatus(409)->assertJsonPath('error', '1 products belong to this category. Move or delete them first.');
+        $this->deleteJson("/api/categories/{$category->id}")->assertStatus(409)->assertJsonPath('error', '2 products belong to this category. Move or delete them first.');
+        $this->deleteJson("/api/products/{$second}")->assertNoContent();
+        $this->deleteJson("/api/categories/{$category->id}")->assertStatus(409)->assertJsonPath('error', '1 product belongs to this category. Move or delete it first.');
         $this->deleteJson("/api/products/{$id}")->assertNoContent();
         $this->deleteJson("/api/categories/{$category->id}")->assertNoContent();
     }
@@ -161,5 +179,44 @@ class ShopTest extends TestCase
         $this->app['auth']->forgetGuards();
 
         $this->upload('Product', 'image', 'x.jpg', 'image/jpeg', 'x')->assertUnauthorized();
+    }
+
+    public function test_uploading_takes_permission_to_create_not_just_to_read(): void
+    {
+        Gate::policy(Product::class, ReadOnlyProducts::class);
+
+        $this->getJson('/api/products')->assertOk();
+        $this->upload('Product', 'image', 'kettle.jpg', 'image/jpeg', $this->photo(200, 200))
+            ->assertForbidden()->assertJsonPath('error', "You can't upload files to Products.");
+        $this->assertSame(0, Upload::count());
+    }
+
+    public function test_only_files_uploaded_through_nevela_are_served(): void
+    {
+        // Something else on the same disk, and a path that was never a key.
+        Storage::disk('public')->put('reports/secret.txt', 'not an upload');
+        Storage::disk('public')->put('products/image/2026/10/stray.webp', 'not an upload either');
+
+        $this->get('/api/_nevela/files/reports/secret.txt')->assertNotFound();
+        $this->get('/api/_nevela/files/products/image/2026/10/stray.webp')->assertNotFound();
+        $this->get('/api/_nevela/files/products/image/2026/10/stray.thumb.webp')->assertNotFound();
+        $this->get('/api/_nevela/files/..%2F..%2F.env')->assertNotFound();
+        $this->get('/api/_nevela/files/products/%25')->assertNotFound();
+    }
+
+    public function test_a_rendition_that_was_never_made_gets_the_file_itself(): void
+    {
+        // A GIF is stored as it is, so it has no thumbnail of its own.
+        $image = imagecreatetruecolor(40, 30);
+        ob_start();
+        imagegif($image);
+        $gif = (string) ob_get_clean();
+        $file = $this->upload('Product', 'image', 'spinner.gif', 'image/gif', $gif)->assertCreated()->json();
+
+        $this->assertFalse($file['optimised']);
+        $this->assertSame([40, 30], [$file['width'], $file['height']]);
+        $thumb = preg_replace('/\.gif$/', '.thumb.gif', $file['key']);
+        $response = $this->get("/api/_nevela/files/{$thumb}")->assertOk()->assertHeader('Content-Type', 'image/gif');
+        $this->assertStringContainsString('max-age=300', (string) $response->headers->get('Cache-Control'));
     }
 }

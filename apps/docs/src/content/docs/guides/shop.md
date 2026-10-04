@@ -91,18 +91,22 @@ GET /api/products?filter[categoryId]=01a10804-7b04-72d6-aabf-a2113b9b6bc5&sort=n
 In a page, use the dimensions so nothing moves when the picture arrives, and let the browser pick a size:
 
 ```tsx
-<img
-  src={product.imageFile.renditions.card.url}
-  srcSet={`${product.imageFile.renditions.card.url} 600w, ${product.imageFile.url} 1000w`}
-  sizes="(max-width: 640px) 50vw, 300px"
-  width={product.imageFile.renditions.card.width}
-  height={product.imageFile.renditions.card.height}
-  alt={product.name}
-  loading="lazy"
-/>
+{product.imageFile && (
+  <img
+    src={product.imageFile.renditions.card.url}
+    srcSet={`${product.imageFile.renditions.card.url} 600w, ${product.imageFile.url} 1000w`}
+    sizes="(max-width: 640px) 50vw, 300px"
+    width={product.imageFile.renditions.card.width}
+    height={product.imageFile.renditions.card.height}
+    alt={product.name}
+    loading="lazy"
+  />
+)}
 ```
 
-Every route needs a signed-in user by default. To let a storefront read products without one, add your own public routes in `routes/nevela.php`, or change who may read in the [policy](/guides/policies/).
+The image is optional here, so `imageFile` is `null` for a product without one.
+
+Every Nevela route needs a signed-in user, and a policy cannot change that: the request is turned away before the policy is asked. For a storefront, either call the API from the storefront's server with a token, or add read-only routes of your own in `routes/api.php`, which is outside Nevela's signed-in group.
 
 ## Next
 

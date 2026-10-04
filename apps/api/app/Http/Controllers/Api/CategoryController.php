@@ -18,7 +18,7 @@ use Nevela\Laravel\Nevela;
  */
 class CategoryController extends Controller
 {
-    // nevela:generated:start hash=f86eea4a4720
+    // nevela:generated:start hash=c6cab1b691fb
     public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Category::class);
@@ -61,7 +61,9 @@ class CategoryController extends Controller
     {
         Gate::authorize('delete', $category);
         if (($count = \App\Models\Product::query()->where('category_id', $category->getKey())->count()) > 0) {
-            return response()->json(['error' => "{$count} products belong to this category. Move or delete them first."], 409);
+            return response()->json(['error' => $count === 1
+                ? '1 product belongs to this category. Move or delete it first.'
+                : "{$count} products belong to this category. Move or delete them first."], 409);
         }
         $category->delete();
 
