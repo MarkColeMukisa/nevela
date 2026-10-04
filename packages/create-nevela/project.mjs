@@ -7,6 +7,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { isNewer, satisfiesCaret } from './packagist.mjs';
 import { spawnCommand } from './shell.mjs';
 
 /** What `nevela <name>` runs: these go to `php artisan nevela:<name>`. */
@@ -64,6 +65,16 @@ export function repairManifest(manifest, latest) {
   if (typeof current === 'string' && /^\d+\.\d+(\.\d+)?$/.test(current)) {
     manifest.require['nevela/laravel'] = caret ?? `^${current.split('.').slice(0, 2).join('.')}`;
     repairs.push(`"nevela/laravel": "${current}" pinned one exact version; it is now "${manifest.require['nevela/laravel']}"`);
+    return repairs;
+  }
+
+  // Below 1.0 a caret holds the minor version: "^0.1" never reaches 0.2.0, so an update
+  // would finish having changed nothing. Updating is asking for the newest, so the range
+  // is moved to the one that has it.
+  const range = typeof current === 'string' ? /^\^(\d+)\.(\d+)(?:\.\d+)?$/.exec(current) : null;
+  if (range && caret && caret !== current && !satisfiesCaret(latest, [Number(range[1]), Number(range[2])]) && isNewer(latest, `${range[1]}.${range[2]}.0`)) {
+    manifest.require['nevela/laravel'] = caret;
+    repairs.push(`"nevela/laravel": "${current}" doesn't reach ${latest}; it is now "${caret}"`);
   }
   return repairs;
 }
