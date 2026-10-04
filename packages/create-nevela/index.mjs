@@ -12,7 +12,7 @@ import os from 'node:os';
 import path from 'node:path';
 import readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
-import { onPackagist } from './packagist.mjs';
+import { isNewer, onPackagist } from './packagist.mjs';
 import { copyLaravelPackage, copyWebTemplate } from './template.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -166,6 +166,17 @@ function parseArgs(argv) {
 /** "my-shop" → "My Shop", for the dashboard's title. */
 const titleCase = (slug) => slug.split(/[-_]+/).filter(Boolean).map((word) => word[0].toUpperCase() + word.slice(1)).join(' ');
 
+/** The newest create-nevela on npm, when it is newer than this one. */
+async function newerVersion() {
+  try {
+    const response = await fetch('https://registry.npmjs.org/create-nevela/latest', { signal: AbortSignal.timeout(4000) });
+    const latest = (await response.json()).version;
+    return isNewer(latest, VERSION) ? latest : null;
+  } catch {
+    return null;
+  }
+}
+
 function detectPackageManager(requested) {
   const known = ['pnpm', 'npm', 'yarn', 'bun'];
   if (requested) {
@@ -317,6 +328,14 @@ async function main() {
 
   console.log(`\n  ${indigo(bold('Nevela'))} ${dim(`v${VERSION}`)}\n`);
 
+  // A package manager may serve an older installer than the newest one: pnpm holds back
+  // versions published in the last day, and both pnpm and npm cache. Say so, with the fix.
+  const newer = await newerVersion();
+  const outdated = newer
+    ? `  ${red('!')} create-nevela ${bold(newer)} is out, and this is ${VERSION}. To use it: ${bold(`pnpm create nevela@${newer} ${options.name ?? 'my-app'}`)}\n`
+    : null;
+  if (outdated) console.log(outdated);
+
   let name = options.name;
   if (!name) {
     // The only question this ever asks, and only when the name was left off.
@@ -348,6 +367,9 @@ async function main() {
     // Its own workspace file: lets sharp build, and keeps pnpm from adopting a workspace further up.
     write(path.join(web, 'pnpm-workspace.yaml'), 'allowBuilds:\n  sharp: true\n');
   }
+  // Which dashboard this app started from: `php artisan nevela:update` compares against it
+  // to tell the files you changed from the ones you didn't.
+  write(path.join(web, '.nevela.json'), `${JSON.stringify({ template: VERSION }, null, 2)}\n`);
   writeRootFiles(root, { name, title, pm, admin: options.user ? ADMIN : null });
   const packages = options.install ? start(pm, ['install'], { cwd: web }) : null;
 
@@ -413,6 +435,7 @@ async function main() {
   }
   console.log(`\n  Add your first resource: ${dim('cd apps/api && php artisan nevela:resource Product --fields="name:string, price:money"')}`);
   console.log(`  Docs: ${DOCS}/start/quickstart/\n`);
+  if (outdated) console.log(outdated);
 }
 
 main().catch((error) => fail(error?.message ?? String(error)));

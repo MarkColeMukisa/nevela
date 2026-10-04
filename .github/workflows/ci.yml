@@ -152,6 +152,23 @@ jobs:
         run: |
           pnpm exec tsc --noEmit
           pnpm run build
+      - name: nevela:update checks the dashboard against a template
+        working-directory: ${{ runner.temp }}/demo-app/apps/api
+        env:
+          # The tarball packed above stands in for npm at this commit's version.
+          NEVELA_TEMPLATE_DIR: ${{ github.workspace }}/packages/create-nevela
+        run: |
+          version="$(node -p "require('$GITHUB_WORKSPACE/package.json').version")"
+          grep -q "\"template\": \"$version\"" ../web/.nevela.json
+          # Pretend the app started from 0.1.0 (downloaded from npm) and edit one dashboard file.
+          echo '{ "template": "0.1.0" }' > ../web/.nevela.json
+          echo '// changed by the app' >> ../web/lib/csv.ts
+          php artisan nevela:update --check | tee check.log
+          grep -q '"template": "0.1.0"' ../web/.nevela.json
+          php artisan nevela:update | tee update.log
+          grep -q "\"template\": \"$version\"" ../web/.nevela.json
+          grep -q 'changed by the app' ../web/lib/csv.ts
+          php artisan nevela:update | grep -q 'latest template'
       - name: Sign in and read the resource over HTTP
         working-directory: ${{ runner.temp }}/demo-app/apps/api
         run: |

@@ -98,6 +98,8 @@ Every generated policy starts by allowing any signed-in user. Before real use, o
 
 **"Can't reach the server" on the sign-in page.** The dashboard cannot reach Laravel. Check that `pnpm run dev` is still running and that `NEVELA_API_URL` in `apps/web/.env.local` matches Laravel's address, including the `/api` at the end.
 
+**It says a newer create-nevela is out.** Your package manager served an older installer: pnpm holds back versions published in the last day, and both pnpm and npm cache. Run the command it prints, which asks for the new version by number, for example `pnpm create nevela@0.1.2 my-app`.
+
 **The folder already exists.** The command refuses to write into a folder that has files in it. Pick another name or remove the folder.
 
 ## Options
@@ -117,4 +119,5 @@ With npm, put options after `--`: `npm create nevela@latest my-app -- --no-insta
 
 - [Resources](/concepts/resources/): the field types and how regeneration works
 - [REST API](/reference/api/): calling the API directly
+- [Updating](/guides/updating/): bring the app up to a newer Nevela later
 - [Deploying](/guides/deploying/): what each app needs in production

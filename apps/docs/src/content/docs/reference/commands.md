@@ -1,9 +1,9 @@
 ---
 title: "Commands"
-description: "nevela:resource, nevela:generate, nevela:seed and nevela:user, with every option."
+description: "nevela:resource, nevela:generate, nevela:seed, nevela:user and nevela:update, with every option."
 ---
 
-Nevela adds four commands to `php artisan`. Run them in the Laravel app (`apps/api`).
+Nevela adds five commands to `php artisan`. Run them in the Laravel app (`apps/api`).
 
 To create a new app in the first place, see the [quickstart](/start/quickstart/): `pnpm create nevela my-app`.
 
@@ -108,3 +108,19 @@ Pass all three to create a user without being asked anything, for example in a d
 ```sh
 php artisan nevela:user --name="Ada Okafor" --email=ada@example.com --password="$ADMIN_PASSWORD"
 ```
+
+## nevela:update
+
+Bring the app up to the latest Nevela: the package, the generated code and the dashboard.
+
+```sh
+php artisan nevela:update
+php artisan nevela:update --check    # show what would change, and change nothing
+```
+
+| Option | Meaning |
+|---|---|
+| `--check` | Show what would change, and change nothing. |
+| `--skip-package` | Leave `nevela/laravel` as it is. Regenerate and update the dashboard only. |
+
+Dashboard files you have not changed are updated; files you changed are kept and listed. [Updating](/guides/updating/) explains each step and what to do on the first update.

@@ -42,6 +42,7 @@ An ordinary Laravel app. These are the parts Nevela adds to it:
 | `components/` | The tables, forms and fields. |
 | `policies/` | Optional: hide buttons by role. |
 | `.env.local` | `NEVELA_API_URL`, the address of the Laravel API. |
+| `.nevela.json` | Which dashboard version the app is on. `nevela:update` reads and writes it. Commit it. |
 
 See [The web app](/guides/web-app/) for how these fit together.
 
@@ -51,8 +52,10 @@ The generator, the commands and the code behind the REST API are a Composer pack
 
 ```sh
 cd apps/api
-composer update nevela/laravel
+php artisan nevela:update
 ```
+
+That also updates the dashboard files you have not changed. See [Updating](/guides/updating/).
 
 If your app has a `packages/nevela-laravel` folder instead, it was created with `--bundled-package`, or before a matching release existed. Composer installs the package from that folder. Treat it as a dependency and don't edit it.
 

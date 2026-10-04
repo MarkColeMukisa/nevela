@@ -150,7 +150,7 @@ npm publish
 npm pack --dry-run
 ```
 
-Its version is the repository's version, so publish once per release.
+Its version is the repository's version, so publish once per release. Don't skip a release: `php artisan nevela:update` downloads `create-nevela` at the app's old version and at the new one to compare the dashboards, so every released version has to be on npm.
 
 ## Publishing the Laravel package to Packagist
 
