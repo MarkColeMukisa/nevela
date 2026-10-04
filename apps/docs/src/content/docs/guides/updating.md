@@ -3,10 +3,10 @@ title: "Updating"
 description: "Bring an existing app up to the latest Nevela: the package, the generated code and the dashboard."
 ---
 
-One command updates an existing app. Run it in `apps/api`:
+One command updates an existing app, from the top of the project:
 
 ```sh
-php artisan nevela:update
+php nevela update
 ```
 
 It does three things, in order:
@@ -18,7 +18,7 @@ It does three things, in order:
 To see what it would do without changing anything:
 
 ```sh
-php artisan nevela:update --check
+php nevela update --check
 ```
 
 ## What happens to the dashboard
@@ -65,13 +65,15 @@ Apps created before this file existed are treated as starting from 0.1.1, which 
 
 ## Your first update
 
-`nevela:update` arrived in 0.1.2. An app created with 0.1.0 or 0.1.1 does not have the command yet. Get it once with Composer, then use the command from then on:
+`nevela:update` and the `php nevela` launcher arrived in 0.1.2. An app created with 0.1.0 or 0.1.1 has neither yet. Get them once with Composer:
 
 ```sh
 cd apps/api
 composer update nevela/laravel
 php artisan nevela:update
 ```
+
+That writes the `nevela` file at the top of your project. From then on it is `php nevela update`, with no `cd`.
 
 ### If Composer says there is nothing to update
 

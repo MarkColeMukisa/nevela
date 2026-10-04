@@ -228,6 +228,7 @@ function writeRootFiles(root, { name, title, pm, admin }) {
     type: 'module',
     scripts: {
       dev: 'node scripts/dev.mjs',
+      nevela: 'php nevela',
       'dev:api': 'cd apps/api && php artisan serve',
       'dev:web': `cd apps/web && ${pm} run dev`,
     },
@@ -298,22 +299,21 @@ The app starts with one account, in your local database only:
 | Email | \`${admin.email}\` |
 | Password | \`${admin.password}\` |
 ` : ''}
-To add someone who can sign in:
+Everything else runs from this folder too, with \`php nevela\`:
 
 \`\`\`sh
-cd apps/api
-php artisan nevela:user
+php nevela user        # add someone who can sign in
+php nevela update      # update Nevela and the dashboard
+php nevela             # everything it can do
 \`\`\`
 
 ## Add a resource
 
 \`\`\`sh
-cd apps/api
-php artisan nevela:resource Product --fields="name:string, sku:string!, price:money, notes:text?"
-php artisan migrate
+php nevela resource Product --fields="name:string, sku:string!, price:money, notes:text?"
 \`\`\`
 
-Reload the dashboard: Products is in the sidebar. Fill it with \`php artisan nevela:seed Product\`.
+That creates the table as well. Reload the dashboard: Products is in the sidebar. Fill it with \`php nevela seed Product\`.
 
 ## Before real use
 
@@ -425,15 +425,16 @@ async function main() {
   console.log('  Next:\n');
   console.log(`    cd ${name}`);
   if (!options.install) console.log(`    cd apps/web && ${pm} install && cd ../..`);
-  if (!admin) console.log(`    cd apps/api && php artisan nevela:user && cd ../..   ${dim('# someone to sign in as')}`);
+  if (!admin) console.log(`    php nevela user   ${dim('# someone to sign in as')}`);
   console.log(`    ${pm} run dev\n`);
   console.log(`  Then open ${indigo('http://localhost:3000/sign-in')}${admin ? ' and sign in with:' : ''}`);
   if (admin) {
     console.log(`\n    Email      ${bold(ADMIN.email)}`);
     console.log(`    Password   ${bold(ADMIN.password)}\n`);
-    console.log(`  ${dim('That account is in this app\'s local database only. Add your own: cd apps/api && php artisan nevela:user')}`);
+    console.log(`  ${dim('That account is in this app\'s local database only. Add your own: php nevela user')}`);
   }
-  console.log(`\n  Add your first resource: ${dim('cd apps/api && php artisan nevela:resource Product --fields="name:string, price:money"')}`);
+  console.log(`\n  Add your first resource: ${dim('php nevela resource Product --fields="name:string, price:money"')}`);
+  console.log(`  Everything runs from this folder: ${dim('php nevela')}`);
   console.log(`  Docs: ${DOCS}/start/quickstart/\n`);
   if (outdated) console.log(outdated);
 }

@@ -21,7 +21,7 @@ A new app starts with one account, `admin@example.com` with the password `passwo
 The dashboard has no sign-up page yet. Create users in the Laravel app:
 
 ```sh
-php artisan nevela:user
+php nevela user
 ```
 
 It asks for a name, an email and a password, and the password is not shown as you type. See [Commands](/reference/commands/#nevelauser) for the options.

@@ -12,6 +12,7 @@ my-app/
 │  └─ web/      the Next.js dashboard
 ├─ scripts/
 │  └─ dev.mjs   runs both apps together
+├─ nevela       every Nevela command, from here: php nevela
 └─ package.json
 ```
 
@@ -51,8 +52,7 @@ See [The web app](/guides/web-app/) for how these fit together.
 The generator, the commands and the code behind the REST API are a Composer package, `nevela/laravel`. It is installed into `apps/api/vendor` like any other dependency, and updated the same way:
 
 ```sh
-cd apps/api
-php artisan nevela:update
+php nevela update
 ```
 
 That also updates the dashboard files you have not changed. See [Updating](/guides/updating/).
@@ -67,6 +67,7 @@ There is no `routes/api.php`. Nevela registers its own routes under `/api`, from
 
 | File | What it does |
 |---|---|
+| `nevela` | The launcher: `php nevela resource …`, `php nevela update` and the rest, without `cd apps/api`. See [Commands](/reference/commands/#the-php-nevela-launcher). |
 | `package.json` | `dev` runs both apps; `dev:api` and `dev:web` run one. |
 | `scripts/dev.mjs` | Starts `php artisan serve` and the dashboard's dev server, and stops both together. |
 | `.gitignore` | Keeps `vendor`, `node_modules`, `.env` files and build output out of git. |

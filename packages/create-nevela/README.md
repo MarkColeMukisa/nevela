@@ -28,19 +28,18 @@ pnpm run dev
 
 Open http://localhost:3000/sign-in and sign in as `admin@example.com` with the password `password`. That starter account is in your local database only; add your own with `php artisan nevela:user`.
 
-Add your first resource from `apps/api`:
+Add your first resource, from the same folder:
 
 ```sh
-php artisan nevela:resource Product --fields="name:string, sku:string!, price:money"
-php artisan migrate
+php nevela resource Product --fields="name:string, sku:string!, price:money"
 ```
+
+That writes the Laravel code and the dashboard pages, and creates the table. `php nevela` lists everything else.
 
 ## Updating an app later
 
-In `apps/api`:
-
 ```sh
-php artisan nevela:update
+php nevela update
 ```
 
 That updates the Laravel package, regenerates, and updates the dashboard files you have not changed. See https://nevela-docs.vercel.app/guides/updating/.

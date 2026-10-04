@@ -9,9 +9,9 @@ import { NEVELA_VERSION, RELEASE_HEADLINE, RELEASE_URL, REPO_URL } from "../vers
 const install = [
   { id: "pnpm", label: "pnpm", command: "pnpm create nevela my-app" },
   { id: "npm", label: "npm", command: "npm create nevela@latest my-app" },
-  { id: "resource", label: "Add a resource", command: 'php artisan nevela:resource Product --fields="name:string, sku:string!, price:money"' },
-  { id: "generate", label: "Regenerate", command: "php artisan nevela:generate" },
-  { id: "seed", label: "Seed", command: "php artisan nevela:seed Product --count=1000" },
+  { id: "resource", label: "Add a resource", command: 'php nevela resource Product --fields="name:string, sku:string!, price:money"' },
+  { id: "seed", label: "Seed", command: "php nevela seed Product --count=1000" },
+  { id: "update", label: "Update", command: "php nevela update" },
 ];
 
 const generated = [

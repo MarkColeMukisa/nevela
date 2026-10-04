@@ -8,6 +8,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ### Added
 
+- `php nevela <command>` from the top of the project, so there is no `cd apps/api` first: `php nevela resource …`, `php nevela seed …`, `php nevela user`, `php nevela update`, `php nevela dev`. The file is written and kept current by `nevela:generate`.
+- `php nevela resource` creates the table too. On the artisan command that is the new `--migrate` option.
 - `php artisan nevela:update`: update an existing app in one command. It updates `nevela/laravel`, regenerates, and brings the dashboard files you have not changed up to the new version. Files you changed are kept and listed. `--check` shows what would change.
 - New apps record which dashboard version they are on, in `apps/web/.nevela.json`.
 - `create-nevela` says when a newer installer exists and prints the command to use it. pnpm can serve an older one for about a day after a release.
