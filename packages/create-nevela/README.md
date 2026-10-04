@@ -26,7 +26,9 @@ cd my-app
 pnpm run dev
 ```
 
-Open http://localhost:3000/sign-in. Add your first resource from `apps/api`:
+Open http://localhost:3000/sign-in and sign in as `admin@example.com` with the password `password`. That starter account is in your local database only; add your own with `php artisan nevela:user`.
+
+Add your first resource from `apps/api`:
 
 ```sh
 php artisan nevela:resource Product --fields="name:string, sku:string!, price:money"
@@ -39,10 +41,10 @@ php artisan migrate
 |---|---|
 | `--pm <pnpm\|npm\|yarn\|bun>` | Package manager for the dashboard. Default: the one you ran this with. |
 | `--no-install` | Don't install the dashboard's dependencies. |
-| `--no-user` | Don't ask to create the first user. |
+| `--no-user` | Don't create the starter account. |
 | `--no-git` | Don't run `git init`. |
 | `--bundled-package` | Use the copy of `nevela/laravel` inside this installer instead of the release on Packagist. |
-| `-y`, `--yes` | Ask nothing; take the defaults. |
+| `-y`, `--yes` | Ask nothing. Only the app name is ever asked for. |
 
 With npm, put options after `--`: `npm create nevela@latest my-app -- --no-install`.
 

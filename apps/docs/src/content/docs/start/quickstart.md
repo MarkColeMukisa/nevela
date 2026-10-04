@@ -19,29 +19,23 @@ pnpm create nevela my-app
 
 `npm create nevela@latest my-app` works too. The dashboard is installed with whichever package manager you run this with.
 
-:::note[Before the first npm release]
-`create-nevela` is not on npm yet. Until it is, run it straight from GitHub:
-
-```sh
-pnpm dlx github:MarkColeMukisa/nevela my-app
-```
-
-With npm the same thing is `npx --allow-git=all github:MarkColeMukisa/nevela my-app`. Recent versions of npm refuse packages from git unless you allow them.
-:::
-
-It does the setup for you:
+It asks nothing and does the setup for you:
 
 ```
   ✔ Creating the Laravel app
-  ✔ Adding token sign-in (Sanctum)
-  ✔ Installing Nevela
-  ✔ Adding the dashboard
-  ✔ Installing the dashboard's dependencies with pnpm
+  ✔ Installing Nevela and token sign-in
+  ✔ Setting up the database
+  ✔ Installing dashboard packages (pnpm)
 
-  Create a user to sign in with now? (Y/n)
+  ✔ Created my-app in 3m 20s
+
+  Then open http://localhost:3000/sign-in and sign in with:
+
+    Email      admin@example.com
+    Password   password
 ```
 
-Answer yes and it asks for a name, an email and a password. That is the account you sign in with.
+Expect it to take a few minutes. Nearly all of that is Composer downloading Laravel, which depends on your connection; the dashboard's packages download at the same time.
 
 You get this:
 
@@ -61,14 +55,21 @@ cd my-app
 pnpm run dev
 ```
 
-That starts Laravel on http://127.0.0.1:8000 and the dashboard on http://localhost:3000. Open http://localhost:3000/sign-in and sign in.
+That starts Laravel on http://127.0.0.1:8000 and the dashboard on http://localhost:3000. Open http://localhost:3000/sign-in and sign in with the starter account:
 
-If you skipped creating a user, do it now, in a second terminal:
+| | |
+|---|---|
+| Email | `admin@example.com` |
+| Password | `password` |
+
+:::caution[The starter account is for your machine]
+It exists only in your local database. It is not in the code or in a migration, so it does not follow the app to a server. Still, don't keep a password everyone knows: add your own account and remove this one before anyone else can reach the app.
 
 ```sh
 cd apps/api
 php artisan nevela:user
 ```
+:::
 
 ## 3. Add a resource
 
@@ -105,10 +106,10 @@ Every generated policy starts by allowing any signed-in user. Before real use, o
 |---|---|
 | `--pm <pnpm\|npm\|yarn\|bun>` | Package manager for the dashboard. Default: the one you ran the command with. |
 | `--no-install` | Don't install the dashboard's dependencies. |
-| `--no-user` | Don't ask to create the first user. |
+| `--no-user` | Don't create the starter account. |
 | `--no-git` | Don't run `git init`. |
 | `--bundled-package` | Use the copy of `nevela/laravel` inside the installer instead of the release on Packagist. |
-| `-y`, `--yes` | Ask nothing; take the defaults. |
+| `-y`, `--yes` | Ask nothing. Only the app name is ever asked for, and only if you leave it off. |
 
 With npm, put options after `--`: `npm create nevela@latest my-app -- --no-install`.
 

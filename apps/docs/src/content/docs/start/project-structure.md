@@ -56,6 +56,10 @@ composer update nevela/laravel
 
 If your app has a `packages/nevela-laravel` folder instead, it was created with `--bundled-package`, or before a matching release existed. Composer installs the package from that folder. Treat it as a dependency and don't edit it.
 
+## What is not there
+
+There is no `routes/api.php`. Nevela registers its own routes under `/api`, from `routes/nevela.php`, so the app does not need one. If you want Laravel's usual API routes file as well, run `php artisan install:api`; the two work side by side.
+
 ## The root
 
 | File | What it does |

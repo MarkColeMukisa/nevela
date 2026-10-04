@@ -6,8 +6,9 @@
 //
 // No dependencies on purpose: this runs before anything is installed.
 
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +19,13 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const VERSION = JSON.parse(fs.readFileSync(path.join(here, 'package.json'), 'utf8')).version;
 const DOCS = 'https://nevela-docs.vercel.app';
 const windows = process.platform === 'win32';
+
+/**
+ * The account every new app starts with, so there is something to sign in as straight
+ * away. It is created in the app's local database, never in code or a migration, so it
+ * does not follow the app to a server.
+ */
+const ADMIN = { name: 'Admin', email: 'admin@example.com', password: 'password' };
 
 const colour = (code) => (text) => (process.stdout.isTTY ? `\x1b[${code}m${text}\x1b[0m` : text);
 const bold = colour(1);
@@ -38,11 +46,11 @@ const HELP = `
   ${bold('Options')}
     --pm <pnpm|npm|yarn|bun>   Package manager for the dashboard. Default: the one you ran this with.
     --no-install               Don't install the dashboard's dependencies.
-    --no-user                  Don't ask to create the first user.
+    --no-user                  Don't create the starter admin account.
     --no-git                   Don't run git init.
     --bundled-package          Use the copy of nevela/laravel that ships with this installer
                                instead of the release on Packagist.
-    -y, --yes                  Ask nothing; take the defaults.
+    -y, --yes                  Ask nothing. (Only the app name is ever asked for.)
     -h, --help                 Show this.
     -v, --version              Show the version.
 
@@ -75,10 +83,40 @@ function run(command, args, { cwd, interactive = false, allowFailure = false } =
  */
 function spawnCommand(command, args, options) {
   if (!windows) return spawnSync(command, args, options);
-  // `^` is not in the safe list on purpose: unquoted, cmd.exe treats it as an escape
-  // character and drops it, which turned the constraint "^0.1" into an exact "0.1".
-  const quote = (arg) => (/^[\w./:=@,-]+$/.test(arg) ? arg : `"${arg.replace(/"/g, '\\"')}"`);
-  return spawnSync([command, ...args.map(quote)].join(' '), { ...options, shell: true });
+  return spawnSync(shellLine(command, args), { ...options, shell: true });
+}
+
+// `^` is not in the safe list on purpose: unquoted, cmd.exe treats it as an escape
+// character and drops it, which turned the constraint "^0.1" into an exact "0.1".
+const quote = (arg) => (/^[\w./:=@,-]+$/.test(arg) ? arg : `"${arg.replace(/"/g, '\\"')}"`);
+const shellLine = (command, args) => [command, ...args.map(quote)].join(' ');
+
+/**
+ * Start a command and carry on. Its output goes to a file rather than a pipe: the steps
+ * that follow block this process for minutes, and a pipe nobody is reading fills up and
+ * stalls the command.
+ */
+function start(command, args, { cwd }) {
+  const log = path.join(os.tmpdir(), `create-nevela-${process.pid}-${command}.log`);
+  const out = fs.openSync(log, 'w');
+  const started = Date.now();
+  const child = windows
+    ? spawn(shellLine(command, args), { cwd, shell: true, stdio: ['ignore', out, out] })
+    : spawn(command, args, { cwd, stdio: ['ignore', out, out] });
+  const done = new Promise((resolve) => {
+    const finish = (ok) => {
+      fs.closeSync(out);
+      const output = fs.readFileSync(log, 'utf8');
+      // This process hears about the exit only once the blocking steps let it. The log's
+      // last write is when the command really finished.
+      const ended = Math.max(started, Math.min(Date.now(), fs.statSync(log).mtimeMs));
+      fs.rmSync(log, { force: true });
+      resolve({ ok, output, seconds: (ended - started) / 1000 });
+    };
+    child.on('error', () => finish(false));
+    child.on('close', (code) => finish(code === 0));
+  });
+  return { done };
 }
 
 function available(command, args = ['--version']) {
@@ -86,13 +124,18 @@ function available(command, args = ['--version']) {
   return result.status === 0 ? `${result.stdout}${result.stderr}` : null;
 }
 
+const duration = (seconds) => (seconds >= 60 ? `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s` : `${seconds.toFixed(1)}s`);
+
 async function step(label, work) {
   const started = Date.now();
-  process.stdout.write(`  ${dim('◇')} ${label}…`);
+  // The "in progress" line is rewritten in place when the step ends. That only works if
+  // it fits on one line; in a narrow terminal it would wrap and be left behind.
+  const inPlace = process.stdout.isTTY && label.length + 16 < (process.stdout.columns ?? 80);
+  if (inPlace) process.stdout.write(`  ${dim('◇')} ${label}…`);
   const result = await work();
-  const seconds = (Date.now() - started) / 1000;
-  const took = seconds >= 1 ? dim(` (${seconds >= 60 ? `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s` : `${seconds.toFixed(1)}s`})`) : '';
-  process.stdout.write(`\r  ${green('✔')} ${label}${took}   \n`);
+  const seconds = result?.seconds ?? (Date.now() - started) / 1000;
+  const took = seconds >= 1 ? dim(` (${duration(seconds)})`) : '';
+  process.stdout.write(`${inPlace ? '\r' : ''}  ${green('✔')} ${label}${took}   \n`);
   return result;
 }
 
@@ -166,7 +209,7 @@ function write(file, contents) {
   fs.writeFileSync(file, contents);
 }
 
-function writeRootFiles(root, { name, title, pm }) {
+function writeRootFiles(root, { name, title, pm, admin }) {
   write(path.join(root, 'package.json'), `${JSON.stringify({
     name,
     version: '0.1.0',
@@ -236,8 +279,15 @@ ${pm} run dev
 \`\`\`
 
 That starts Laravel on http://127.0.0.1:8000 and the dashboard on http://localhost:3000. Sign in at http://localhost:3000/sign-in.
+${admin ? `
+The app starts with one account, in your local database only:
 
-To create someone who can sign in:
+| | |
+|---|---|
+| Email | \`${admin.email}\` |
+| Password | \`${admin.password}\` |
+` : ''}
+To add someone who can sign in:
 
 \`\`\`sh
 cd apps/api
@@ -268,11 +318,12 @@ async function main() {
   console.log(`\n  ${indigo(bold('Nevela'))} ${dim(`v${VERSION}`)}\n`);
 
   let name = options.name;
-  const interactive = !options.yes && process.stdin.isTTY;
-  const prompt = interactive ? readline.createInterface({ input: process.stdin, output: process.stdout }) : null;
   if (!name) {
-    if (!prompt) fail('Give the app a name: pnpm create nevela my-app');
+    // The only question this ever asks, and only when the name was left off.
+    if (options.yes || !process.stdin.isTTY) fail('Give the app a name: pnpm create nevela my-app');
+    const prompt = readline.createInterface({ input: process.stdin, output: process.stdout });
     name = (await prompt.question('  What is the app called? ')).trim();
+    prompt.close();
   }
   if (!/^[a-z0-9][a-z0-9-_]*$/.test(name)) {
     fail(`"${name}" can't be used as a name. Use lowercase letters, numbers and dashes, for example my-app.`);
@@ -286,77 +337,81 @@ async function main() {
   const title = titleCase(name);
   const api = path.join(root, 'apps', 'api');
   const web = path.join(root, 'apps', 'web');
+  const began = Date.now();
   fs.mkdirSync(path.join(root, 'apps'), { recursive: true });
+
+  // The dashboard first, so its packages can download while Composer works on Laravel.
+  // The two don't touch each other, and Composer is the long part.
+  copyWebTemplate(web, { name, title });
+  write(path.join(web, '.env.local'), '# Where the Laravel API is, including its prefix.\nNEVELA_API_URL=http://127.0.0.1:8000/api\n');
+  if (pm === 'pnpm') {
+    // Its own workspace file: lets sharp build, and keeps pnpm from adopting a workspace further up.
+    write(path.join(web, 'pnpm-workspace.yaml'), 'allowBuilds:\n  sharp: true\n');
+  }
+  writeRootFiles(root, { name, title, pm, admin: options.user ? ADMIN : null });
+  const packages = options.install ? start(pm, ['install'], { cwd: web }) : null;
 
   await step('Creating the Laravel app', () => {
     run('composer', ['create-project', 'laravel/laravel', 'apps/api', '--no-interaction', '--no-progress', '--prefer-dist'], { cwd: root });
   });
 
-  const tokens = await step('Adding token sign-in (Sanctum)', () => {
-    run('php', ['artisan', 'install:api', '--no-interaction'], { cwd: api });
+  const tokens = await step('Installing Nevela and token sign-in', async () => {
+    const wanted = VERSION.split('.').slice(0, 2).map(Number);
+    let nevela = `nevela/laravel:^${wanted.join('.')}`;
+    if (options.bundledPackage || !(await onPackagist(wanted))) {
+      // No matching release on Packagist (or --bundled-package): the copy that travels with
+      // this installer is placed in the app and installed by path.
+      copyLaravelPackage(path.join(root, 'packages', 'nevela-laravel'));
+      run('composer', ['config', 'repositories.nevela', 'path', '../../packages/nevela-laravel'], { cwd: api });
+      nevela = 'nevela/laravel:@dev';
+    }
+    // One Composer run for both. `php artisan install:api` would add Sanctum in a run of
+    // its own, plus a routes/api.php this app doesn't use: Nevela registers its routes itself.
+    run('composer', ['require', 'laravel/sanctum', nevela, '--no-interaction', '--no-progress'], { cwd: api });
+    run('php', ['artisan', 'vendor:publish', '--tag=sanctum-migrations', '--no-interaction'], { cwd: api });
     return addApiTokens(path.join(api, 'app', 'Models', 'User.php'));
   });
 
-  await step('Installing Nevela', async () => {
-    const wanted = VERSION.split('.').slice(0, 2).map(Number);
-    if (!options.bundledPackage && (await onPackagist(wanted))) {
-      run('composer', ['require', `nevela/laravel:^${wanted.join('.')}`, '--no-interaction', '--no-progress'], { cwd: api });
-    } else {
-      // No matching release there (or --bundled-package): the copy that travels with this
-      // installer is placed in the app and installed by path.
-      copyLaravelPackage(path.join(root, 'packages', 'nevela-laravel'));
-      run('composer', ['config', 'repositories.nevela', 'path', '../../packages/nevela-laravel'], { cwd: api });
-      run('composer', ['require', 'nevela/laravel:@dev', '--no-interaction', '--no-progress'], { cwd: api });
-    }
-  });
-
-  await step('Adding the dashboard', () => {
-    copyWebTemplate(web, { name, title });
-    write(path.join(web, '.env.local'), '# Where the Laravel API is, including its prefix.\nNEVELA_API_URL=http://127.0.0.1:8000/api\n');
-    if (pm === 'pnpm') {
-      // Its own workspace file: lets sharp build, and keeps pnpm from adopting a workspace further up.
-      write(path.join(web, 'pnpm-workspace.yaml'), 'allowBuilds:\n  sharp: true\n');
-    }
-    writeRootFiles(root, { name, title, pm });
+  let admin = false;
+  await step('Setting up the database', () => {
     // Writes routes/nevela.php and the dashboard's (empty) resource registry.
     run('php', ['artisan', 'nevela:generate'], { cwd: api });
     run('php', ['artisan', 'migrate', '--force', '--no-interaction'], { cwd: api });
+    if (options.user && tokens) {
+      admin = run('php', ['artisan', 'nevela:user', `--name=${ADMIN.name}`, `--email=${ADMIN.email}`, `--password=${ADMIN.password}`], { cwd: api, allowFailure: true }).ok;
+    }
   });
 
-  if (options.install) {
-    await step(`Installing the dashboard's dependencies with ${pm}`, () => {
-      run(pm, ['install'], { cwd: web });
-    });
+  let installed = false;
+  if (packages) {
+    // Usually finished long before Composer; the time shown is how long it took, not how long we waited here.
+    installed = (await step(`Installing dashboard packages (${pm})`, () => packages.done)).ok;
   }
 
   if (options.git && available('git') && !run('git', ['rev-parse', '--is-inside-work-tree'], { cwd: root, allowFailure: true }).ok) {
     run('git', ['init', '--quiet'], { cwd: root, allowFailure: true });
   }
 
-  let userCreated = false;
-  if (options.user && prompt) {
-    const answer = (await prompt.question(`\n  Create a user to sign in with now? ${dim('(Y/n)')} `)).trim().toLowerCase();
-    prompt.close();
-    if (answer === '' || answer === 'y' || answer === 'yes') {
-      console.log('');
-      userCreated = run('php', ['artisan', 'nevela:user'], { cwd: api, interactive: true, allowFailure: true }).ok;
-    }
-  } else {
-    prompt?.close();
-  }
-
-  console.log(`\n  ${green('✔')} ${bold(`Created ${name}`)}\n`);
+  console.log(`\n  ${green('✔')} ${bold(`Created ${name}`)} ${dim(`in ${duration((Date.now() - began) / 1000)}`)}\n`);
   if (!tokens) {
     console.log(`  ${red('!')} I couldn't add Sanctum's trait to apps/api/app/Models/User.php. Add it by hand:`);
     console.log(`    ${dim('use Laravel\\Sanctum\\HasApiTokens;  and  use HasApiTokens;  inside the class')}\n`);
   }
+  if (packages && !installed) {
+    console.log(`  ${red('!')} The dashboard's packages didn't install. Run it yourself to see why: cd ${name}/apps/web && ${pm} install\n`);
+  }
   console.log('  Next:\n');
   console.log(`    cd ${name}`);
   if (!options.install) console.log(`    cd apps/web && ${pm} install && cd ../..`);
-  if (!userCreated) console.log(`    cd apps/api && php artisan nevela:user && cd ../..   ${dim('# someone to sign in as')}`);
+  if (!admin) console.log(`    cd apps/api && php artisan nevela:user && cd ../..   ${dim('# someone to sign in as')}`);
   console.log(`    ${pm} run dev\n`);
-  console.log(`  Then open ${indigo('http://localhost:3000/sign-in')}`);
-  console.log(`  Add your first resource: ${dim('cd apps/api && php artisan nevela:resource Product --fields="name:string, price:money"')}`);
+  console.log(`  Then open ${indigo('http://localhost:3000/sign-in')}${admin ? ' and sign in with:' : ''}`);
+  if (admin) {
+    console.log(`\n    Email      ${bold(ADMIN.email)}`);
+    console.log(`    Password   ${bold(ADMIN.password)}\n`);
+    console.log(`  ${dim('That account is in this app\'s local database only. Add your own: cd apps/api && php artisan nevela:user')}`);
+  }
+  console.log(`\n  Add your first resource: ${dim('cd apps/api && php artisan nevela:resource Product --fields="name:string, price:money"')}`);
   console.log(`  Docs: ${DOCS}/start/quickstart/\n`);
 }
 

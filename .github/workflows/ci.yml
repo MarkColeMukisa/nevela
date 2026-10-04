@@ -132,6 +132,10 @@ jobs:
           grep -q "HasApiTokens, HasFactory" apps/api/app/Models/User.php
           test ! -e apps/web/app/dashboard/products
           test ! -e apps/web/resources/product.resource.ts
+          test -d apps/web/node_modules
+          grep -q '"nevela/laravel"' apps/api/composer.json
+          grep -q '"laravel/sanctum"' apps/api/composer.json
+          grep -q 'admin@example.com' README.md
       - name: Build the dashboard before any resource exists
         working-directory: ${{ runner.temp }}/demo-app/apps/web
         run: pnpm exec tsc --noEmit
@@ -153,5 +157,7 @@ jobs:
         run: |
           php artisan serve --port=8000 > /dev/null 2>&1 &
           for i in $(seq 1 20); do curl -s -o /dev/null http://127.0.0.1:8000/api/auth/me && break; sleep 1; done
+          # The starter account the installer made.
+          curl -s -X POST http://127.0.0.1:8000/api/auth/token -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{"email":"admin@example.com","password":"password"}' | grep -q '"token"'
           token="$(curl -s -X POST http://127.0.0.1:8000/api/auth/token -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{"email":"ci@example.test","password":"ci-password-123"}' | sed -E 's/.*"token":"([^"]+)".*/\1/')"
           curl -s -g "http://127.0.0.1:8000/api/products?perPage=1" -H 'Accept: application/json' -H "Authorization: Bearer $token" | tee /dev/stderr | grep -q '"total":100'
