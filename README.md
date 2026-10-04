@@ -92,7 +92,14 @@ curl -g "localhost:8000/api/products?sort=-price&filter[kind]=digital" -H "Autho
 
 `name:type`, comma-separated. Suffix `?` = optional (nullable), `!` = unique.
 
-`string text email url tel slug color int float money percent rating boolean date datetime enum(a|b|c)`
+`string text email url tel slug color int float money percent rating boolean date datetime enum(a|b|c) belongsTo(Resource) image file(pdf|…)`
+
+A shop in two commands: categories, and products that belong to one, each with an image that is resized and compressed when it is uploaded.
+
+```sh
+php nevela resource Category --fields="name:string, slug:slug!, image:image?" --seed=8
+php nevela resource Product --fields="name:string, price:money, image:image(product)?, category:belongsTo(Category)" --seed=40
+```
 
 ## Changing a resource
 

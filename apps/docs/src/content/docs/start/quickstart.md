@@ -139,6 +139,7 @@ With npm, put options after `--`: `npm create nevela@latest my-app -- --no-insta
 
 ## Next
 
+- [Build a shop](/guides/shop/): two linked resources, with images that are optimised on upload
 - [Resources](/concepts/resources/): the field types and how regeneration works
 - [REST API](/reference/api/): calling the API directly
 - [Updating](/guides/updating/): bring the app up to a newer Nevela later

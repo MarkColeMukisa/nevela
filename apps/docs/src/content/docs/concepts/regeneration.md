@@ -19,7 +19,7 @@ Generated code sits between two marker comments:
 protected $fillable = ['name', 'sku', 'price'];
 // nevela:generated:end
 
-// Relationships, scopes and accessors go here.
+// Your own relationships, scopes and accessors go here.
 ```
 
 Regeneration rewrites only what is between the markers. Anything outside them is never touched.

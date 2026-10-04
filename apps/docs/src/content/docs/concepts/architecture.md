@@ -86,7 +86,7 @@ Errors (only under the Nevela prefix):
 
 1. **Auth beyond sign-in.** Sign-up, password reset and an account page, backed by Laravel. Roles on the user, and policies generated from a descriptor `policy` block.
 2. **Contract test.** Run the web app's store against `php artisan serve` in CI. Bring back saved views, audit history and the per-day chart with Laravel endpoints.
-3. **Relations** (`belongsTo`, `hasMany`) → foreign keys, `exists:` rules, the Flare relation field and an options endpoint.
-4. **Files** → Laravel filesystem (S3/R2) + Flare's file field.
+3. **Relations.** One-to-many is done ([Relationships](/guides/relationships/)). Many-to-many is next.
+4. **Files.** Uploads and image optimisation are done ([Files and images](/guides/images/)). Next: deleting a file with its record, private files with signed links, and uploads sent straight to S3 or R2.
 5. **`nevela new`**: scaffold the monorepo (Laravel app + Flare web overlay) in one command. **`nevela dev`**: run both apps together.
 6. **Ship**: Laravel Cloud for `apps/api`, Vercel for `apps/web`, with preview environments.

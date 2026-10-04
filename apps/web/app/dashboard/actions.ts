@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { can, storedFields, type PolicyAction } from "@flaredev/core";
 import type { FieldIssue } from "@/lib/resource/store";
 import { toCsv } from "@/lib/csv";
+import { fileUrl } from "@/lib/files";
 import { resourcePath, dashboardSession, dashboardStore, policyFor } from "@/lib/dashboard";
 
 export type ActionResult<T = unknown> =
@@ -111,17 +112,33 @@ export async function updateRecordAction(resourceName: string, id: string, input
   return result;
 }
 
-const NO_FILES: ActionResult<never> = { ok: false, status: 501, error: "File fields aren't supported by Nevela yet." };
-
-/** File uploads go through Laravel's filesystem once Nevela generates file fields (see the roadmap). */
+/**
+ * Where the browser sends a file for a file or image field.
+ *
+ * The address is this app's own /api route, which passes the file to Laravel with the
+ * person's token. Laravel checks the type, the size and the contents, optimises an image,
+ * and answers with the key it stored the file under: that key, not the empty one here, is
+ * what the form keeps.
+ */
 export async function createUploadUrlAction(
-  _resourceName: string,
-  _fieldKey: string,
-  _file: { name: string; type: string; size: number },
+  resourceName: string,
+  fieldKey: string,
+  file: { name: string; type: string; size: number },
 ): Promise<ActionResult<{ url: string; key: string }>> {
-  return NO_FILES;
+  const { allowed: inAdmin, role } = await dashboardSession();
+  const policy = policyFor(resourceName);
+  if (!inAdmin || !(can(policy, role, "create") || can(policy, role, "update"))) return forbidden("Your role can't add files to this record.");
+
+  const field = dashboardStore(resourceName).resource.fields[fieldKey];
+  if (!field || field.kind !== "file") return { ok: false, status: 404, error: "That isn't a file field." };
+
+  const query = new URLSearchParams({ name: file.name });
+  return { ok: true, data: { url: `/api/_nevela/uploads/${encodeURIComponent(resourceName)}/${encodeURIComponent(fieldKey)}?${query}`, key: "" } };
 }
 
-export async function createReadUrlAction(_resourceName: string, _fieldKey: string, _key: string, _downloadAs?: string): Promise<ActionResult<{ url: string }>> {
-  return NO_FILES;
+/** The address of a stored file. Kept for code that asks for one; the dashboard builds it with fileUrl(). */
+export async function createReadUrlAction(_resourceName: string, _fieldKey: string, key: string): Promise<ActionResult<{ url: string }>> {
+  const { allowed: inAdmin } = await dashboardSession();
+  if (!inAdmin) return forbidden();
+  return { ok: true, data: { url: fileUrl(key) } };
 }

@@ -136,6 +136,58 @@ GET /products/_stats?field=kind&days=7
 
 `days` is 1 to 365, default 7. `field` must be an enum or boolean field.
 
+## Relations
+
+A `belongsTo` field is the related record's id, in what you send and in what comes back:
+
+```json
+{ "name": "Smart Kettle", "categoryId": "01a10804-7b04-72d6-aabf-a2113b9b6bc5" }
+```
+
+An id that is not a record of that resource is a 422. Filter a list by it with `filter[categoryId]=…`.
+
+Deleting a record that others are required to belong to is a 409:
+
+```json
+{ "error": "8 products belong to this category. Move or delete them first." }
+```
+
+## Files
+
+| Method | Path | Does |
+|---|---|---|
+| `PUT` | `/api/_nevela/uploads/{Resource}/{field}?name=kettle.jpg` | Stores a file. The request body is the file itself. |
+| `GET` | `/api/_nevela/files/{key}` | The stored file. No token needed. |
+| `GET` | `/api/_nevela/profiles` | The image profiles and their renditions. |
+
+An upload answers 201 with the file's details:
+
+```json
+{
+  "key": "products/image/2026/10/778e5b3c-5a55-4b18-bdfa-4da5f1151a93-kettle.webp",
+  "url": "http://127.0.0.1:8000/api/_nevela/files/products/image/2026/10/778e5b3c-5a55-4b18-bdfa-4da5f1151a93-kettle.webp",
+  "name": "kettle.jpg",
+  "mime": "image/webp",
+  "size": 87040,
+  "width": 1000,
+  "height": 750,
+  "optimised": true,
+  "renditions": {
+    "thumb": { "url": "…-kettle.thumb.webp", "width": 300, "height": 300, "size": 22118 }
+  }
+}
+```
+
+Send the `key` as the field's value when you create or change the record. A record comes back with the key in the field and these details beside it, as `<field>File` (`imageFile` for `image`), or `null` when the field is empty.
+
+| Status | When |
+|---|---|
+| 404 | The resource, or a file field of that name, does not exist. |
+| 413 | The file is larger than `uploads.max_bytes`. |
+| 422 | The contents are not a kind the field accepts, or do not match what the file was sent as. |
+
+A record refuses a key that was not uploaded to that same field.
+
 ## Errors
 
 Every error is JSON with an `error` message.

@@ -19,6 +19,18 @@
             "kind": "float",
             "format": "money"
         },
+        "image": {
+            "kind": "file",
+            "accept": [
+                "image"
+            ],
+            "profile": "product",
+            "required": false
+        },
+        "categoryId": {
+            "kind": "belongsTo",
+            "target": "Category"
+        },
         "active": {
             "kind": "boolean"
         },

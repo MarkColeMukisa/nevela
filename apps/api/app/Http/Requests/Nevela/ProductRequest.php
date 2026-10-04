@@ -22,7 +22,7 @@ class ProductRequest extends ResourceRequest
             : Gate::allows('create', Product::class);
     }
 
-    // nevela:generated:start hash=e4890746eba8
+    // nevela:generated:start hash=540d0a71d511
     public function rules(): array
     {
         $product = $this->route('product');
@@ -31,6 +31,8 @@ class ProductRequest extends ResourceRequest
             'name' => ['required', 'string', 'max:255'],
             'sku' => ['required', 'string', 'max:255', Rule::unique('products', 'sku')->ignore($product)],
             'price' => ['required', 'numeric'],
+            'image' => ['nullable', 'string', 'max:512', new \Nevela\Laravel\Rules\UploadKey('Product', 'image')],
+            'categoryId' => ['required', 'uuid', Rule::exists('categories', 'id')],
             'active' => ['required', 'boolean'],
             'kind' => ['required', Rule::in(['stock', 'digital'])],
             'notes' => ['nullable', 'string', 'max:65535'],
@@ -39,7 +41,7 @@ class ProductRequest extends ResourceRequest
 
     protected function columns(): array
     {
-        return ['name' => 'name', 'sku' => 'sku', 'price' => 'price', 'active' => 'active', 'kind' => 'kind', 'notes' => 'notes'];
+        return ['name' => 'name', 'sku' => 'sku', 'price' => 'price', 'image' => 'image', 'categoryId' => 'category_id', 'active' => 'active', 'kind' => 'kind', 'notes' => 'notes'];
     }
     // nevela:generated:end
 }

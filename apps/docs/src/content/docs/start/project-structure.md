@@ -74,7 +74,7 @@ There is no `routes/api.php`. Nevela registers its own routes under `/api`, from
 
 | You want to | Put it |
 |---|---|
-| Add a relationship, scope or accessor | In the model, outside the generated block |
+| Add a scope, an accessor or a relationship of your own | In the model, outside the generated block |
 | Change who may do what | In the policy |
 | Change the table after the first migration | In a new migration |
 | Add an API endpoint | In `routes/nevela.php`, below the generated block |

@@ -69,4 +69,14 @@ To change a page's layout, edit the page under `app/dashboard/<slug>/`. For exam
 
 These parts depended on Flare's own database or its auth library, and Laravel has no endpoints for them yet: sign-up, password reset, two-factor sign-in, passkeys, account pages, saved table views, the change history on a record, the records-per-day chart, product search, and the costs and observability pages.
 
-File and relation fields are still in the code but Nevela does not generate them.
+## Talking to Laravel from the browser
+
+Almost everything goes through server actions, which run on the web app's server and call Laravel with the person's token. Three things are done by the browser itself, through the web app's own `/api/…` route (`app/api/[...path]/route.ts`), which adds the token and passes the request on:
+
+- the relation picker's search, `GET /api/categories?q=…`,
+- showing stored files, `GET /api/_nevela/files/<key>`, and
+- uploading one, `PUT /api/_nevela/uploads/<Resource>/<field>`.
+
+Nothing else that changes data is let through that route. The token stays in its httpOnly cookie either way.
+
+`lib/files.ts` has `fileUrl(key, "thumb")`, which gives the address of a stored file or one of its renditions.
