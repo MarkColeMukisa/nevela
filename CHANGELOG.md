@@ -6,6 +6,10 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Fixed
+
+- Upgrading an app to 0.4.0 left `components/auth/sign-in-form.tsx` behind, and it no longer compiled, so `next build` failed. An upgrade used to leave a file in place when the template dropped it. It now removes such a file when you never changed it, after copying it to the backup, and `upgrade --undo` brings it back. A file you changed is still always kept. An app already upgraded with 0.4.0 has that one file removed by the next upgrade.
+
 ## [0.4.0] - 2026-10-05
 
 ### Added
