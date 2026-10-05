@@ -6,6 +6,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-05
+
 ### Fixed
 
 - Upgrading an app to 0.4.0 left `components/auth/sign-in-form.tsx` behind, and it no longer compiled, so `next build` failed. An upgrade used to leave a file in place when the template dropped it. It now removes such a file when you never changed it, after copying it to the backup, and `upgrade --undo` brings it back. A file you changed is still always kept. An app already upgraded with 0.4.0 has that one file removed by the next upgrade.
@@ -182,7 +184,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.2.0...v0.2.1
