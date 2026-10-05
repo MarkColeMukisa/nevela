@@ -102,7 +102,8 @@ php nevela status -v
 | Changed by you | Unchanged | Nothing. Yours stands. |
 | Changed by you | Changed too | **Yours is kept.** The new version is saved beside it for you to compare. |
 | Deleted by you | Anything | Stays deleted |
-| Unchanged by you | Removed | Left in place, and listed |
+| Unchanged by you | Removed | **Removed**. It is backed up first, and `--undo` brings it back. |
+| Changed by you | Removed | Kept. It is yours now. |
 
 ```
   lib/csv.ts ................................................... updated

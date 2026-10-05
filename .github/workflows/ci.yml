@@ -200,18 +200,27 @@ jobs:
           # and that the app never touched it: the file and its recorded fingerprint agree.
           cp ../web/lib/number.ts number.current
           printf 'export const old = true;\n' > ../web/lib/number.ts
+          # And that the older template had two files this one doesn't: one the app left
+          # alone, which imports something that no longer exists, and one the app changed.
+          printf 'import { gone } from "@/lib/nothing";\nexport const dropped = gone;\n' > ../web/lib/dropped.ts
+          printf 'export const mine = 1;\n' > ../web/lib/dropped-but-mine.ts
           node -e '
             const fs = require("fs"), crypto = require("crypto");
             const file = "../web/.nevela.json";
             const record = JSON.parse(fs.readFileSync(file, "utf8"));
+            const print = (path) => crypto.createHash("sha1").update(fs.readFileSync(path)).digest("hex");
             record.template = "0.1.0";
-            record.files["lib/number.ts"] = crypto.createHash("sha1").update(fs.readFileSync("../web/lib/number.ts")).digest("hex");
+            record.files["lib/number.ts"] = print("../web/lib/number.ts");
+            record.files["lib/dropped.ts"] = print("../web/lib/dropped.ts");
+            record.files["lib/dropped-but-mine.ts"] = "0000000000000000000000000000000000000000";
             fs.writeFileSync(file, JSON.stringify(record, null, 4));
           '
 
           php artisan nevela:upgrade --check | tee check.log
           grep -q 'lib/number.ts .* would update' check.log
+          grep -q 'lib/dropped.ts .* would remove' check.log
           grep -q 'export const old' ../web/lib/number.ts
+          test -f ../web/lib/dropped.ts
 
           php artisan nevela:upgrade | tee update.log
           grep -q 'lib/number.ts .* updated' update.log
@@ -220,6 +229,11 @@ jobs:
           grep -q "\"template\": \"$version\"" ../web/.nevela.json
           grep -q '"history"' ../web/.nevela.json
           grep -rq 'export const old' ../web/.nevela/backups
+          # A file the template dropped is removed when the app never changed it (it is in the
+          # backup), and kept when the app did. Left behind, the first would break the build.
+          test ! -e ../web/lib/dropped.ts
+          grep -rq 'export const dropped' ../web/.nevela/backups
+          test -f ../web/lib/dropped-but-mine.ts
           test "$(cat ../web/.nevela/.gitignore)" = "*"
           # The name it had before 0.3.0 still works.
           php artisan nevela:update > again.log
@@ -228,6 +242,8 @@ jobs:
 
           php artisan nevela:upgrade --undo | tee undo.log
           grep -q 'lib/number.ts .* restored' undo.log
+          # Undo brings the removed file back.
+          grep -q 'export const dropped' ../web/lib/dropped.ts
           grep -q 'export const old' ../web/lib/number.ts
           grep -q '"template": "0.1.0"' ../web/.nevela.json
           grep -q 'changed by the app' ../web/lib/csv.ts
@@ -235,6 +251,8 @@ jobs:
           # And forward again, so the rest of the job runs on the current dashboard.
           php artisan nevela:update > /dev/null
           cmp ../web/lib/number.ts number.current
+          test ! -e ../web/lib/dropped.ts
+          rm ../web/lib/dropped-but-mine.ts
       - name: The same commands through the installer, as someone without php on their PATH would run them
         working-directory: ${{ runner.temp }}/demo-app/apps/web
         run: |
