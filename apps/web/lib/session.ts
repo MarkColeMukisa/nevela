@@ -43,7 +43,8 @@ export async function requireSession(returnTo?: string) {
 
 /** Only allow same-site relative redirect targets, to avoid open redirects via `?next=`. */
 export function safeRedirectPath(value: unknown, fallback = "/dashboard"): string {
-  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") && !value.startsWith("/\\")
-    ? value
-    : fallback;
+  // One leading slash, and no backslash or control character anywhere. Browsers drop tabs
+  // and newlines from an address, which would turn "/<tab>/evil.example" into "//evil.example".
+  // eslint-disable-next-line no-control-regex -- control characters are exactly what is refused
+  return typeof value === "string" && /^\/(?!\/)[^\\\u0000-\u001f\u007f]*$/.test(value) ? value : fallback;
 }

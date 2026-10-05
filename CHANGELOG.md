@@ -17,7 +17,7 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
   - **Sign-up**, switched off until you set `NEVELA_REGISTRATION=true`. A generated policy lets every signed-in user do everything until you tighten it, so open sign-up on an untouched app would be an open door.
 - Account pages at `/dashboard/account`: profile, password, security and devices.
 - A profile picture, optimised with the image pipeline's `avatar` profile: a 400×400 square with an 80×80 thumbnail.
-- A list of the devices signed in to an account, each with its browser and address, and signing them out.
+- A list of the devices signed in to an account, each with its browser and address, and signing them out. New apps get a `NEVELA_PROXY_SECRET` shared by the dashboard and the API, so that list can't be dressed up by someone calling the API directly.
 - `auth` settings in `config/nevela.php` switch each method on or off. `nevela generate` writes them to `apps/web/lib/auth-config.ts`, so the screens offer only what Laravel will accept.
 - In development, emailed codes and links are also printed in the terminal running `nevela dev`, because the default mailer sends nothing.
 

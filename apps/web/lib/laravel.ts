@@ -34,6 +34,9 @@ export async function callerHeaders(): Promise<Record<string, string>> {
   if (agent) sent["X-Nevela-User-Agent"] = agent.slice(0, 500);
   const address = (incoming.get("x-forwarded-for") ?? "").split(",")[0]?.trim() || incoming.get("x-real-ip");
   if (address) sent["X-Nevela-Ip"] = address.replace(/^::ffff:/, "");
+  // Proves to Laravel that this is the dashboard speaking for a browser, and not someone
+  // calling the API with made-up headers. The same value is in the Laravel app's .env.
+  if (process.env.NEVELA_PROXY_SECRET) sent["X-Nevela-Proxy-Secret"] = process.env.NEVELA_PROXY_SECRET;
   return sent;
 }
 

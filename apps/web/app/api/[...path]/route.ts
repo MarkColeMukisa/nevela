@@ -73,7 +73,11 @@ export async function PUT(request: NextRequest, context: Context) {
   if (!url || path[0] !== "_nevela" || path[1] !== "uploads") {
     return Response.json({ error: "Only uploads are sent this way. Records are saved through the dashboard." }, { status: 405 });
   }
-  if (Number(request.headers.get("content-length") ?? 0) > MAX_UPLOAD_BYTES) {
+  // Nothing is read until it is known who is sending it and how much there is.
+  if (!(await sessionToken())) return Response.json({ error: "Sign in first." }, { status: 401 });
+  const length = Number(request.headers.get("content-length"));
+  if (!Number.isFinite(length) || length <= 0) return Response.json({ error: "The upload didn't say how large it is." }, { status: 411 });
+  if (length > MAX_UPLOAD_BYTES) {
     return Response.json({ error: "That file is too large to upload." }, { status: 413 });
   }
 

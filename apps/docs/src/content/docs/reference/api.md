@@ -52,7 +52,9 @@ curl -X POST http://127.0.0.1:8000/api/auth/two-factor/verify \
   -d '{"challenge": "Lh8IN0Fh…", "method": "totp", "code": "482913"}'
 ```
 
-That answers 201 with the token. For `email`, ask for the code first with `POST /auth/two-factor/send` and the same `challenge`. The challenge lasts ten minutes and allows five wrong codes.
+That answers 201 with the token. For `email`, ask for the code first with `POST /auth/two-factor/send` and the same `challenge`. The challenge lasts ten minutes and allows five wrong codes. Only the methods the answer listed are accepted, and an authenticator code works once.
+
+An emailed sign-in link or code can get the same answer, when the account has an authenticator app: `methods` then leaves out `email`.
 
 ### Every auth endpoint
 

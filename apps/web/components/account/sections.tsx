@@ -533,8 +533,13 @@ export function Sessions() {
     void load();
   }, [load]);
 
+  const [failed, setFailed] = useState<string | null>(null);
   const signOutOthers = async () => {
-    await authClient.revokeOtherSessions();
+    setMessage(null);
+    setFailed(null);
+    const { error } = await authClient.revokeOtherSessions();
+    // Saying "signed out" when it didn't happen would leave someone believing a device they don't trust is gone.
+    if (error) return setFailed(authErrorMessage(error, "The other devices could not be signed out. Try again."));
     setMessage("Signed out of every other device.");
     await load();
   };
@@ -557,6 +562,7 @@ export function Sessions() {
         ))}
       </ul>
       {message && <FormMessage tone="success">{message}</FormMessage>}
+      {failed && <FormMessage>{failed}</FormMessage>}
       {list && list.length > 1 && (
         <SecondaryButton className="w-fit" onClick={signOutOthers}>
           Sign out of other devices

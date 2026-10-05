@@ -129,9 +129,10 @@ export function SignInFlow({ providers, socialPlacement, socialStyle, methods, n
   // Resending leaves the code already in their inbox working; it just sends another.
   const codeResend = useResend(sendCode);
 
-  const signInWithCode = () =>
+  // `value` is the code as just completed: the field reports it before `code` has caught up.
+  const signInWithCode = (value: string = code) =>
     run("verify", async () => {
-      const { error } = await authClient.signIn.emailOtp({ email, otp: code.trim() });
+      const { error } = await authClient.signIn.emailOtp({ email, otp: value.trim() });
       if (error) return setError(authErrorMessage(error));
       go(next);
     });
@@ -187,7 +188,7 @@ export function SignInFlow({ providers, socialPlacement, socialStyle, methods, n
         <p className="text-sm text-foreground-muted">
           Enter the 6-digit code we sent to <span className="font-medium text-foreground">{email}</span>.
         </p>
-        <OtpInput value={code} onChange={setCode} onComplete={() => void signInWithCode()} label="Sign-in code" autoFocus disabled={pending === "verify"} />
+        <OtpInput value={code} onChange={setCode} onComplete={(value) => void signInWithCode(value)} label="Sign-in code" autoFocus disabled={pending === "verify"} />
         <FormMessage>{error}</FormMessage>
         <PrimaryButton type="submit" pending={pending === "verify"} disabled={code.length !== 6}>
           Sign in

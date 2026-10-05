@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import { API_URL, callerHeaders, sessionToken, TOKEN_COOKIE } from "@/lib/laravel";
+import { encodePending, PENDING_COOKIE, PENDING_MAX_AGE, pendingSecondStep, type SecondStepMethod } from "@/lib/second-step";
+import { safeRedirectPath } from "@/lib/session";
 
 /**
  * Signing in and looking after an account, for the browser.
@@ -21,9 +23,6 @@ export const dynamic = "force-dynamic";
 
 /** Sanctum tokens don't expire unless Laravel is told to; the cookie lasts 30 days. */
 const TOKEN_MAX_AGE = 60 * 60 * 24 * 30;
-/** A sign-in waiting for its code. Laravel forgets it after the same ten minutes. */
-const PENDING_COOKIE = "nevela_2fa";
-const PENDING_MAX_AGE = 60 * 10;
 /** The largest profile picture passed on; Laravel enforces its own limit. */
 const MAX_UPLOAD_BYTES = 64 * 1024 * 1024;
 
@@ -87,9 +86,25 @@ async function callLaravel(request: NextRequest, method: string, path: string, b
   return { status: response.status, body: parsed };
 }
 
-/** Keep a token Laravel issued in the cookie, and hand the rest of the answer to the browser. */
+/** A sign-in that needs its second step: Laravel answered with a challenge instead of a token. */
+function secondStep(body: Body): { challenge: string; methods: SecondStepMethod[] } | null {
+  if (body.twoFactor !== true || typeof body.challenge !== "string") return null;
+  return { challenge: body.challenge, methods: (Array.isArray(body.methods) ? body.methods : []) as SecondStepMethod[] };
+}
+
+/**
+ * Keep a token Laravel issued in the cookie, and hand the rest of the answer to the browser.
+ * When Laravel asks for a second step instead (after a password, or an emailed link or code,
+ * on an account with two-factor on), the pending sign-in is remembered here and the browser
+ * is told to ask for the code.
+ */
 async function finish(result: { status: number; body: Body }): Promise<Response> {
   const jar = await cookies();
+  const waiting = result.status === 200 ? secondStep(result.body) : null;
+  if (waiting) {
+    jar.set(PENDING_COOKIE, encodePending(waiting), cookieOptions(PENDING_MAX_AGE));
+    return Response.json({ twoFactorRedirect: true, methods: waiting.methods });
+  }
   const { token, ...rest } = result.body;
   if (typeof token === "string" && token) {
     jar.set(TOKEN_COOKIE, token, cookieOptions(TOKEN_MAX_AGE));
@@ -105,13 +120,20 @@ async function handle(request: NextRequest, context: Context, method: string): P
 
   // The link in a sign-in email opens here.
   if (method === "GET" && action === "magic-link") {
-    const next = request.nextUrl.searchParams.get("next") ?? "/dashboard";
-    const safe = next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/dashboard";
+    const safe = safeRedirectPath(request.nextUrl.searchParams.get("next"));
     const result = await callLaravel(request, "POST", "magic-link/verify", { token: request.nextUrl.searchParams.get("token") ?? "" });
+    // An account with an authenticator app still owes its second step.
+    const waiting = result.status === 200 ? secondStep(result.body) : null;
+    if (waiting) {
+      jar.set(PENDING_COOKIE, encodePending(waiting), cookieOptions(PENDING_MAX_AGE));
+      return Response.redirect(new URL(`/two-factor?next=${encodeURIComponent(safe)}`, request.url), 303);
+    }
     const token = result.body.token;
     if (result.status >= 400 || typeof token !== "string") return Response.redirect(new URL("/sign-in?error=link", request.url), 303);
     jar.set(TOKEN_COOKIE, token, cookieOptions(TOKEN_MAX_AGE));
-    return Response.redirect(new URL(safe, request.url), 303);
+    const destination = new URL(safe, request.url);
+    // Belt and braces: whatever the path was, the destination is this site.
+    return Response.redirect(destination.origin === new URL(request.url).origin ? destination : new URL("/dashboard", request.url), 303);
   }
 
   if (method !== "GET" && !fromThisSite(request)) {
@@ -120,8 +142,13 @@ async function handle(request: NextRequest, context: Context, method: string): P
 
   // The profile picture is the request body, not JSON.
   if (method === "PUT" && action === "avatar") {
-    if (Number(request.headers.get("content-length") ?? 0) > MAX_UPLOAD_BYTES) return Response.json({ error: "That picture is too large." }, { status: 413 });
+    // Nothing is read until it is known who is sending it and how much there is.
+    if (!(await sessionToken())) return Response.json({ error: "Sign in first.", code: "UNAUTHENTICATED" }, { status: 401 });
+    const length = Number(request.headers.get("content-length"));
+    if (!Number.isFinite(length) || length <= 0) return Response.json({ error: "The upload didn't say how large it is." }, { status: 411 });
+    if (length > MAX_UPLOAD_BYTES) return Response.json({ error: "That picture is too large." }, { status: 413 });
     const file = await request.arrayBuffer();
+    if (file.byteLength > MAX_UPLOAD_BYTES) return Response.json({ error: "That picture is too large." }, { status: 413 });
     return finish(await callLaravel(request, "PUT", "avatar", file, request.headers.get("content-type") ?? "application/octet-stream"));
   }
 
@@ -144,29 +171,19 @@ async function handle(request: NextRequest, context: Context, method: string): P
     return Response.json({}, { status: result.status === 204 || result.status === 401 ? 200 : result.status });
   }
 
-  // A password sign-in. With a second step set up there is no token yet: the pending
-  // sign-in is remembered here, and the browser is told to ask for the code.
-  if (method === "POST" && action === "token") {
-    const result = await callLaravel(request, "POST", "token", body);
-    if (result.status === 200 && result.body.twoFactor === true && typeof result.body.challenge === "string") {
-      jar.set(PENDING_COOKIE, result.body.challenge, cookieOptions(PENDING_MAX_AGE));
-      return Response.json({ twoFactorRedirect: true, methods: result.body.methods ?? [] });
-    }
-    return finish(result);
-  }
-
   // The second step. The browser sends only the code; which sign-in it belongs to is in the cookie.
   if (method === "POST" && (action === "two-factor/send" || action === "two-factor/verify")) {
-    const challenge = jar.get(PENDING_COOKIE)?.value;
-    if (!challenge) return Response.json({ error: "That sign-in has expired. Start again.", code: "SESSION_EXPIRED" }, { status: 401 });
-    const result = await callLaravel(request, "POST", action, { ...body, challenge });
+    const waiting = await pendingSecondStep();
+    if (!waiting) return Response.json({ error: "That sign-in has expired. Start again.", code: "SESSION_EXPIRED" }, { status: 401 });
+    const result = await callLaravel(request, "POST", action, { ...body, challenge: waiting.challenge });
     if (result.body.code === "SESSION_EXPIRED" || result.body.code === "TOO_MANY_ATTEMPTS") jar.set(PENDING_COOKIE, "", cookieOptions(0));
     return finish(result);
   }
 
   // Whether a sign-in is waiting for its second step, and how it can be completed.
   if (method === "GET" && action === "two-factor/pending") {
-    return Response.json({ pending: Boolean(jar.get(PENDING_COOKIE)?.value) });
+    const waiting = await pendingSecondStep();
+    return Response.json({ pending: waiting !== null, methods: waiting?.methods ?? [] });
   }
 
   return finish(await callLaravel(request, method, action, body));

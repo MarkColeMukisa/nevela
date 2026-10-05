@@ -3,7 +3,7 @@ title: "Authentication"
 description: "Signing in with a password, a passkey, an emailed link or code, with two-factor, a profile picture and a list of devices. Laravel holds the accounts; the screens are Flare's."
 ---
 
-Laravel holds the accounts and decides who gets in. The sign-in and account screens are Flare's, unchanged, and talk to Laravel through the web app. A signed-in browser holds a [Sanctum](https://laravel.com/docs/sanctum) token in a cookie that scripts on the page cannot read.
+Laravel holds the accounts and decides who gets in. The sign-in and account screens are Flare's, unchanged, and talk to Laravel through the web app. A signed-in browser keeps a [Sanctum](https://laravel.com/docs/sanctum) token in an httpOnly cookie: the browser sends it, and scripts on the page cannot read it.
 
 ## What is included
 
@@ -75,11 +75,21 @@ From **Account → Security**, a person can add a second step to password sign-i
 
 Turning two-factor on, off, or replacing the backup codes asks for the password again.
 
-The second step follows a password. Signing in with a passkey does not ask for it: a passkey is already something the person has, unlocked by something they are or know. Signing in by emailed link or code does not ask for it either.
+When the second step is asked for:
+
+| Signed in with | Account has an authenticator app | Account's second step is email only |
+|---|---|---|
+| a password | asked: the app, an emailed code or a backup code | asked: an emailed code or a backup code |
+| an emailed link or code | asked: the app or a backup code, not another email | signed in |
+| a passkey | signed in | signed in |
+
+An emailed link followed by an emailed code would be the same proof twice, so someone who had only got into the mailbox would be let in. That is why email is not offered as the second step after an email. A passkey is not asked for more: it is something the person has, unlocked by something they are or know.
+
+A code from the app works once. Typing the same six digits again, in the same half minute, is refused.
 
 ## Passkeys
 
-A passkey is a key pair. The private half stays on the person's device and never leaves it; Laravel keeps the public half. To sign in, the device signs a random challenge and Laravel checks the signature.
+A passkey is a key pair. The private half stays with the person: on one device, or synced between their own devices by their password manager (iCloud Keychain, Google Password Manager and the like). It is never sent to your app. Laravel keeps the public half. To sign in, the device signs a random challenge and Laravel checks the signature.
 
 From **Account → Security → Add a passkey**, the browser asks the device to create one. After that, **Sign in with a passkey** on the sign-in page signs in with no email and no password. Browsers that support it also offer saved passkeys in the email field.
 
@@ -96,7 +106,7 @@ Change the sizes under `uploads.profiles.avatar` in `config/nevela.php`.
 
 ## Devices
 
-Each sign-in creates a token, and each token is a device in **Account → Devices**, with its browser, its address and when it was last used. The page can sign out every other device. Changing the password does the same, and resetting a forgotten password signs out every device, this one included.
+Each sign-in creates a token, and each token is a device in **Account → Devices**, with its browser, its address and when it was last used. The browser and address are what the dashboard reports about the visitor, which Laravel believes because the two share a secret (`NEVELA_PROXY_SECRET`, written into both apps when the app is created). Someone calling the API directly cannot choose how their device is listed. The page can sign out every other device. Changing the password does the same, and resetting a forgotten password signs out every device, this one included.
 
 ## Switching methods on and off
 
@@ -132,11 +142,11 @@ A new password is also checked against [Have I Been Pwned](https://haveibeenpwne
 - **Links and codes work once** and expire: sign-in links and codes in 5 minutes, reset and verification in an hour.
 - **Nothing says whether an address has an account.** Asking for a reset link, a sign-in link or a code gets the same answer either way, and a wrong password and an unknown address get the same answer in the same time.
 - **Secrets are not readable in the database.** Authenticator secrets are encrypted with the app key, backup codes are stored as hashes, and a passkey's stored half is public by design.
-- **Emails only link to your dashboard.** The address in a link is the one you configured, never one a request supplied.
+- **Emails only link to your dashboard.** The address in a link is the one you configured, never one a request supplied. Where to go after signing in is a path on the dashboard and nothing else.
 
 ## Going to production
 
-Three settings in `apps/api/.env`:
+In `apps/api/.env`:
 
 ```sh
 # Where the dashboard is. Links in emails point here, and passkeys are tied to it.
@@ -145,7 +155,12 @@ NEVELA_WEB_URL=https://app.example.com
 # A real mailer, as for any Laravel app.
 MAIL_MAILER=smtp
 MAIL_FROM_ADDRESS=hello@example.com
+
+# The same value as in the dashboard's environment. See Devices, above.
+NEVELA_PROXY_SECRET=a-long-random-string
 ```
+
+And `NEVELA_PROXY_SECRET` with the same value wherever the dashboard runs. An app created with 0.4.0 or later has one in both `.env` files already; copy it to your hosts. Without it, a device is listed with the address the request reached Laravel from, which in production is your dashboard's server.
 
 In development you do not need `NEVELA_WEB_URL`: any `localhost` address is accepted, because the dashboard moves to another port when 3000 is taken.
 
@@ -167,7 +182,7 @@ Send it as `Authorization: Bearer <token>` on every other request. If the accoun
 
 ## How the browser stays signed in
 
-The browser never holds the token. The auth screens call the web app's own `/api/auth/…` route, which passes each request to Laravel. When Laravel answers with a token, the route puts it in a cookie named `nevela_token` that scripts cannot read, and removes it from the answer. It lasts 30 days. Signing out revokes the token in Laravel and removes the cookie.
+Scripts on the page never see the token. The auth screens call the web app's own `/api/auth/…` route, which passes each request to Laravel. When Laravel answers with a token, the route puts it in an httpOnly cookie named `nevela_token`, which the browser stores and sends but page scripts cannot read, and removes it from the answer. It lasts 30 days. Signing out revokes the token in Laravel and removes the cookie.
 
 `lib/auth-client.ts` in the web app has the browser's side of this, under the method names Flare's screens call. That is why the screens could be copied without changes.
 

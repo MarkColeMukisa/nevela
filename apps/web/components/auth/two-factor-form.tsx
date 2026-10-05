@@ -12,17 +12,18 @@ type Method = "authenticator" | "email" | "backup";
 
 interface Props {
   methods: { authenticator: boolean; email: boolean };
+  /** Whether the account has backup codes left to use. */
+  backup?: boolean;
   next: string;
 }
 
 const LABELS: Record<Method, string> = { authenticator: "Authenticator app", email: "Email code", backup: "Backup code" };
 
 /** The second step of a password sign-in: an authenticator code, an emailed code, or a backup code. */
-export function TwoFactorForm({ methods, next }: Props) {
-  const available: Method[] = [...(methods.authenticator ? (["authenticator"] as const) : []), ...(methods.email ? (["email"] as const) : []), "backup"];
+export function TwoFactorForm({ methods, backup = true, next }: Props) {
+  const available: Method[] = [...(methods.authenticator ? (["authenticator"] as const) : []), ...(methods.email ? (["email"] as const) : []), ...(backup ? (["backup"] as const) : [])];
   const [method, setMethod] = useState<Method>(available[0]!);
   const [code, setCode] = useState("");
-  const [trust, setTrust] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -44,11 +45,13 @@ export function TwoFactorForm({ methods, next }: Props) {
 
   const emailResend = useResend(sendEmail);
 
-  const verify = async (event?: React.FormEvent) => {
-    event?.preventDefault();
+  // `value` is the code as just completed. The field calls this in the same moment it
+  // reports the last digit, before `code` has caught up, so reading `code` here would
+  // send the five digits typed so far and waste one of the five attempts.
+  const verify = async (value: string = code) => {
     setPending(true);
     setError(null);
-    const body = { code: code.trim(), trustDevice: trust };
+    const body = { code: value.trim() };
     const { error } =
       method === "authenticator"
         ? await authClient.twoFactor.verifyTotp(body)
@@ -63,7 +66,13 @@ export function TwoFactorForm({ methods, next }: Props) {
   const waitingForEmail = method === "email" && !sent;
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={verify}>
+    <form
+      className="flex flex-col gap-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void verify();
+      }}
+    >
       {available.length > 1 && (
         <div role="tablist" aria-label="Verify with" className="grid auto-cols-fr grid-flow-col gap-1 rounded-[calc(var(--radius)+2px)] bg-surface-muted p-1">
           {available.map((item) => (
@@ -113,16 +122,12 @@ export function TwoFactorForm({ methods, next }: Props) {
             <OtpInput
               value={code}
               onChange={setCode}
-              onComplete={() => void verify()}
+              onComplete={(value) => void verify(value)}
               label={method === "authenticator" ? "Authenticator code" : "Emailed code"}
               autoFocus
               disabled={pending}
             />
           )}
-          <label className="flex items-center gap-2 text-sm text-foreground-muted">
-            <input type="checkbox" checked={trust} onChange={(event) => setTrust(event.target.checked)} className="size-4 accent-[var(--brand)]" />
-            Trust this device for 30 days
-          </label>
           <FormMessage>{error}</FormMessage>
           <PrimaryButton type="submit" pending={pending}>
             Verify

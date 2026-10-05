@@ -27,6 +27,7 @@ php artisan vendor:publish --tag=nevela-config
 | `auth.check_breached_passwords` | `true` | Refuse a new password found in a known breach. |
 | `auth.web_url` | `http://localhost:3000`, or `NEVELA_WEB_URL` | Where the dashboard is: for links in emails, and for passkeys. |
 | `auth.attempts_per_address` | `300` | Sign-in attempts a minute from one address, on top of ten per account. |
+| `auth.proxy_secret` | none, or `NEVELA_PROXY_SECRET` | Shared with the dashboard, so Laravel believes what it says about a visitor's browser. See [Devices](/guides/authentication/#devices). |
 | `auth.default_role` | none | The role a self-registered account starts with. |
 | `auth.issuer` | the app's name | The name an authenticator app and a passkey prompt show. |
 | `per_page` | `25` | Records per page when a list request does not say. |

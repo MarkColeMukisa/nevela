@@ -191,9 +191,50 @@ class AuthTest extends TestCase
         $challenge = $first->json('challenge');
 
         $this->postJson('/api/auth/two-factor/verify', ['challenge' => $challenge, 'method' => 'totp', 'code' => '000000'])->assertStatus(401)->assertJsonPath('code', 'INVALID_TWO_FACTOR_CODE');
-        $this->postJson('/api/auth/two-factor/verify', ['challenge' => $challenge, 'method' => 'totp', 'code' => Totp::code($setup['secret'])])->assertCreated()->assertJsonStructure(['token']);
-        // A finished challenge can't be replayed.
-        $this->postJson('/api/auth/two-factor/verify', ['challenge' => $challenge, 'method' => 'totp', 'code' => Totp::code($setup['secret'])])->assertStatus(401)->assertJsonPath('code', 'SESSION_EXPIRED');
+        // The code that confirmed the app is spent, so it can't also sign in.
+        $this->postJson('/api/auth/two-factor/verify', ['challenge' => $challenge, 'method' => 'totp', 'code' => Totp::code($setup['secret'])])->assertStatus(401);
+        // The app's next code can.
+        $next = Totp::code($setup['secret'], time() + 30);
+        $this->postJson('/api/auth/two-factor/verify', ['challenge' => $challenge, 'method' => 'totp', 'code' => $next])->assertCreated()->assertJsonStructure(['token']);
+        // A finished challenge can't be replayed,
+        $this->postJson('/api/auth/two-factor/verify', ['challenge' => $challenge, 'method' => 'totp', 'code' => $next])->assertStatus(401)->assertJsonPath('code', 'SESSION_EXPIRED');
+        // and neither can the code, in a new sign-in: someone who watched it typed has nothing.
+        $again = $this->postJson('/api/auth/token', ['email' => $user->email, 'password' => self::PASSWORD])->json('challenge');
+        $this->postJson('/api/auth/two-factor/verify', ['challenge' => $again, 'method' => 'totp', 'code' => $next])->assertStatus(401)->assertJsonPath('code', 'INVALID_TWO_FACTOR_CODE');
+    }
+
+    public function test_an_emailed_link_or_code_still_owes_the_authenticator_app(): void
+    {
+        $user = $this->user();
+        $headers = $this->signedIn($user);
+        $setup = $this->postJson('/api/auth/two-factor/enable', ['password' => self::PASSWORD, 'method' => 'totp'], $headers)->json();
+        $this->postJson('/api/auth/two-factor/confirm', ['code' => Totp::code($setup['secret'])], $headers)->assertOk();
+        $this->app['auth']->forgetGuards();
+
+        // Getting into the mailbox is not enough: the app is asked for, and email isn't offered again.
+        $this->postJson('/api/auth/email-code', ['email' => $user->email])->assertOk();
+        $byCode = $this->postJson('/api/auth/email-code/verify', ['email' => $user->email, 'code' => $this->emailedCode()])->assertOk();
+        $byCode->assertJsonMissingPath('token')->assertJsonPath('twoFactor', true)->assertJsonPath('methods', ['totp', 'backup']);
+        $this->postJson('/api/auth/two-factor/send', ['challenge' => $byCode->json('challenge')])->assertStatus(422)->assertJsonPath('code', 'METHOD_NOT_ALLOWED');
+        $this->postJson('/api/auth/two-factor/verify', ['challenge' => $byCode->json('challenge'), 'method' => 'email', 'code' => '123456'])->assertStatus(422);
+        $this->postJson('/api/auth/two-factor/verify', ['challenge' => $byCode->json('challenge'), 'method' => 'totp', 'code' => Totp::code($setup['secret'], time() + 30)])->assertCreated();
+
+        $this->postJson('/api/auth/magic-link', ['email' => $user->email])->assertOk();
+        parse_str((string) parse_url($this->emailedLink(), PHP_URL_QUERY), $query);
+        $this->postJson('/api/auth/magic-link/verify', ['token' => $query['token']])->assertOk()->assertJsonMissingPath('token')->assertJsonPath('methods', ['totp', 'backup']);
+    }
+
+    public function test_an_account_whose_second_step_is_email_signs_in_by_email_alone(): void
+    {
+        $user = $this->user();
+        $this->postJson('/api/auth/two-factor/enable', ['password' => self::PASSWORD, 'method' => 'email'], $this->signedIn($user))->assertOk();
+        $this->app['auth']->forgetGuards();
+
+        // Their second step is the mailbox, and the mailbox is what they just proved.
+        $this->postJson('/api/auth/email-code', ['email' => $user->email])->assertOk();
+        $this->postJson('/api/auth/email-code/verify', ['email' => $user->email, 'code' => $this->emailedCode()])->assertCreated()->assertJsonStructure(['token']);
+        // A password still asks for it.
+        $this->postJson('/api/auth/token', ['email' => $user->email, 'password' => self::PASSWORD])->assertOk()->assertJsonPath('twoFactor', true);
     }
 
     public function test_the_second_step_can_be_an_emailed_code_or_a_backup_code_used_once(): void
@@ -258,6 +299,15 @@ class AuthTest extends TestCase
         $this->postJson('/api/auth/magic-link', ['email' => 'ada@example.com', 'next' => 'https://evil.example/x'], ['X-Nevela-Origin' => self::ORIGIN])->assertOk();
         parse_str((string) parse_url($this->emailedLink(), PHP_URL_QUERY), $query);
         $this->assertSame('/dashboard', $query['next']);
+        // A tab or a backslash is dropped by browsers, which would make these "//evil.example".
+        foreach (["/\t/evil.example", '/\\evil.example', "/\n/evil.example", '//evil.example'] as $next) {
+            $this->postJson('/api/auth/magic-link', ['email' => 'ada@example.com', 'next' => $next], ['X-Nevela-Origin' => self::ORIGIN])->assertOk();
+            parse_str((string) parse_url($this->emailedLink(), PHP_URL_QUERY), $bent);
+            $this->assertSame('/dashboard', $bent['next'], json_encode($next));
+        }
+        $this->postJson('/api/auth/magic-link', ['email' => 'ada@example.com', 'next' => '/dashboard/products?q=tea'], ['X-Nevela-Origin' => self::ORIGIN])->assertOk();
+        parse_str((string) parse_url($this->emailedLink(), PHP_URL_QUERY), $query);
+        $this->assertSame('/dashboard/products?q=tea', $query['next']);
 
         $this->postJson('/api/auth/magic-link/verify', ['token' => $query['token']])->assertCreated()->assertJsonPath('user.emailVerified', true);
         $this->postJson('/api/auth/magic-link/verify', ['token' => $query['token']])->assertStatus(401);
@@ -375,7 +425,14 @@ class AuthTest extends TestCase
     public function test_devices_are_listed_with_the_browser_they_signed_in_from_and_can_be_signed_out(): void
     {
         $user = $this->user();
-        $phone = $this->postJson('/api/auth/token', ['email' => $user->email, 'password' => self::PASSWORD], ['X-Nevela-User-Agent' => 'Mozilla/5.0 (iPhone) Safari/605', 'X-Nevela-Ip' => '203.0.113.9'])->json('token');
+        // The dashboard speaks for the browser, and proves it is the dashboard with the shared secret.
+        config(['nevela.auth.proxy_secret' => 'shared-with-the-dashboard']);
+        $phone = $this->postJson('/api/auth/token', ['email' => $user->email, 'password' => self::PASSWORD], ['X-Nevela-User-Agent' => 'Mozilla/5.0 (iPhone) Safari/605', 'X-Nevela-Ip' => '203.0.113.9', 'X-Nevela-Proxy-Secret' => 'shared-with-the-dashboard'])->json('token');
+        $this->app['auth']->forgetGuards();
+        // Someone calling the API directly can send the same headers, and is not believed.
+        $this->postJson('/api/auth/token', ['email' => $user->email, 'password' => self::PASSWORD], ['X-Nevela-User-Agent' => 'Trusted Laptop', 'X-Nevela-Ip' => '198.51.100.7', 'X-Nevela-Proxy-Secret' => 'a guess']);
+        $this->assertSame(0, \Illuminate\Support\Facades\DB::table('personal_access_tokens')->where('ip_address', '198.51.100.7')->orWhere('user_agent', 'Trusted Laptop')->count());
+        \Illuminate\Support\Facades\DB::table('personal_access_tokens')->whereNull('user_agent')->orWhere('user_agent', 'Symfony')->delete();
         $this->app['auth']->forgetGuards();
         $laptop = $this->signedIn($user);
 

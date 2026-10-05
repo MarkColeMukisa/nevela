@@ -37,6 +37,19 @@ async function call<T = Record<string, unknown>>(method: string, path: string, b
 }
 
 const post = <T = Record<string, unknown>>(path: string, body: unknown = {}) => call<T>("POST", path, body);
+
+/**
+ * Laravel may answer a sign-in with "now the second step" instead of signing in. The
+ * pending sign-in is already in an httpOnly cookie; this sends the browser to the page
+ * that asks for the code, and never resolves, so the caller doesn't carry on as if signed in.
+ */
+async function orSecondStep<T extends AuthResult<{ twoFactorRedirect?: boolean }>>(pending: Promise<T>): Promise<T> {
+  const result = await pending;
+  if (!result.data?.twoFactorRedirect) return result;
+  const next = new URLSearchParams(window.location.search).get("next");
+  window.location.href = `/two-factor${next ? `?next=${encodeURIComponent(next)}` : ""}`;
+  return new Promise<T>(() => {});
+}
 const unsupported = async (what: string): Promise<AuthResult<never>> => ({ data: null, error: { message: `${what} isn't available in this app.`, code: "NOT_ENABLED", status: 404 } });
 
 /* --- Passkeys: the browser's WebAuthn calls, with their binary fields as base64url text. --- */
@@ -161,17 +174,10 @@ export interface SessionUser {
 
 export const authClient = {
   signIn: {
-    /** With a second step set up, this resolves with `twoFactorRedirect` and the browser is sent to /two-factor. */
-    async email({ email, password }: { email: string; password: string }) {
-      const result = await post<{ twoFactorRedirect?: boolean }>("token", { email, password });
-      if (result.data?.twoFactorRedirect) {
-        const next = new URLSearchParams(window.location.search).get("next");
-        window.location.href = `/two-factor${next ? `?next=${encodeURIComponent(next)}` : ""}`;
-      }
-      return result;
-    },
+    /** With a second step set up, the browser is sent to /two-factor instead. */
+    email: ({ email, password }: { email: string; password: string }) => orSecondStep(post<{ twoFactorRedirect?: boolean }>("token", { email, password })),
     magicLink: ({ email, callbackURL }: { email: string; callbackURL?: string; errorCallbackURL?: string }) => post("magic-link", { email, next: callbackURL }),
-    emailOtp: ({ email, otp }: { email: string; otp: string }) => post("email-code/verify", { email, code: otp }),
+    emailOtp: ({ email, otp }: { email: string; otp: string }) => orSecondStep(post<{ twoFactorRedirect?: boolean }>("email-code/verify", { email, code: otp })),
     passkey: signInWithPasskey,
     social: (_options: { provider: string; callbackURL?: string; errorCallbackURL?: string }) => unsupported("Signing in with that provider"),
   },
@@ -184,7 +190,7 @@ export const authClient = {
   emailOtp: {
     sendVerificationOtp: ({ email, type }: { email: string; type: "sign-in" | "email-verification" | "forget-password" }) =>
       type === "sign-in" ? post("email-code", { email }) : post("email/send", { email }),
-    verifyEmail: ({ email, otp }: { email: string; otp: string }) => post("email/verify", { email, code: otp }),
+    verifyEmail: ({ email, otp }: { email: string; otp: string }) => orSecondStep(post<{ twoFactorRedirect?: boolean }>("email/verify", { email, code: otp })),
   },
   sendVerificationEmail: ({ email, callbackURL }: { email: string; callbackURL?: string }) => post("email/send", { email, next: callbackURL }),
 

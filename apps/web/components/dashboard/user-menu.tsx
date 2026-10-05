@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { KeyRoundIcon, LogOutIcon, MonitorSmartphoneIcon, ShieldCheckIcon, UserIcon } from "lucide-react";
 import { signOutAction } from "@/app/auth-actions";
+import { authConfig, twoFactorAvailable } from "@/lib/auth-config";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenuGroup,
@@ -66,12 +67,15 @@ export function UserMenuItems({ user }: { user: DashboardUser }) {
             Password
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/dashboard/account/security">
-            <ShieldCheckIcon />
-            Security
-          </Link>
-        </DropdownMenuItem>
+        {/* Only when there is something on that page: two-factor or passkeys, switched on in Laravel. */}
+        {(twoFactorAvailable || authConfig.passkeys || authConfig.social.length > 0) && (
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/account/security">
+              <ShieldCheckIcon />
+              Security
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
           <Link href="/dashboard/account/sessions">
             <MonitorSmartphoneIcon />
