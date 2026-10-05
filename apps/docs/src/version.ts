@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "nevela update and nevela upgrade, as in Grit";
+export const RELEASE_HEADLINE = "Two-factor, passkeys and account pages";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "nevela update updates the command, nevela upgrade brings an app to the latest, and fields can be written the way Grit and Flare write them.",
-  href: "/guides/updating/",
-  label: "Updating and upgrading",
+  text: "full authentication: two-factor, passkeys, emailed sign-in links, password reset, a profile picture and a list of devices.",
+  href: "/guides/authentication/",
+  label: "Authentication",
 };
