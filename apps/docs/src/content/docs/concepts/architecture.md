@@ -84,7 +84,7 @@ Errors (only under the Nevela prefix):
 
 ## Roadmap
 
-1. **Auth beyond sign-in.** Sign-up, password reset and an account page, backed by Laravel. Roles on the user, and policies generated from a descriptor `policy` block.
+1. **Auth.** Sign-up, password reset, two-factor, passkeys and the account pages are done ([Authentication](/guides/authentication/)). Next: signing in with Google, GitHub and other providers, roles on the user, and policies generated from a descriptor `policy` block.
 2. **Contract test.** Run the web app's store against `php artisan serve` in CI. Bring back saved views, audit history and the per-day chart with Laravel endpoints.
 3. **Relations.** One-to-many is done ([Relationships](/guides/relationships/)). Many-to-many is next.
 4. **Files.** Uploads and image optimisation are done ([Files and images](/guides/images/)). Next: deleting a file with its record, private files with signed links, and uploads sent straight to S3 or R2.

@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 /**
  * The one place the web app talks to Laravel.
@@ -14,6 +14,27 @@ export const API_URL = (process.env.NEVELA_API_URL ?? "http://127.0.0.1:8000/api
 
 export async function sessionToken(): Promise<string | undefined> {
   return (await cookies()).get(TOKEN_COOKIE)?.value;
+}
+
+/**
+ * What Laravel can't see for itself, because this server makes the call and not the
+ * browser: where the dashboard is being served from (for the links in emails, and for
+ * passkeys, which are tied to that address), and the person's own browser and address
+ * (for the list of devices signed in to an account).
+ */
+export async function callerHeaders(): Promise<Record<string, string>> {
+  const incoming = await headers();
+  const sent: Record<string, string> = {};
+  const host = incoming.get("x-forwarded-host") ?? incoming.get("host");
+  if (host) {
+    const local = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host);
+    sent["X-Nevela-Origin"] = `${incoming.get("x-forwarded-proto")?.split(",")[0] ?? (local ? "http" : "https")}://${host}`;
+  }
+  const agent = incoming.get("user-agent");
+  if (agent) sent["X-Nevela-User-Agent"] = agent.slice(0, 500);
+  const address = (incoming.get("x-forwarded-for") ?? "").split(",")[0]?.trim() || incoming.get("x-real-ip");
+  if (address) sent["X-Nevela-Ip"] = address.replace(/^::ffff:/, "");
+  return sent;
 }
 
 export interface LaravelRequest {
@@ -37,6 +58,7 @@ export async function laravel(path: string, { method = "GET", body, token }: Lar
     method,
     headers: {
       Accept: "application/json",
+      ...(await callerHeaders()),
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
       ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },

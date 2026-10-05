@@ -6,6 +6,33 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Added
+
+- Full authentication, with Flare's screens backed by Laravel. Password sign-in is joined by:
+  - **Two-factor:** a code from an authenticator app or by email after the password, with ten backup codes.
+  - **Passkeys:** Face ID, Touch ID, Windows Hello or a security key, with no password to type.
+  - **Emailed sign-in links and codes.**
+  - **Forgot and reset password**, and changing it from the account page.
+  - **Email verification**, by a six-digit code or the link that carries it.
+  - **Sign-up**, switched off until you set `NEVELA_REGISTRATION=true`. A generated policy lets every signed-in user do everything until you tighten it, so open sign-up on an untouched app would be an open door.
+- Account pages at `/dashboard/account`: profile, password, security and devices.
+- A profile picture, optimised with the image pipeline's `avatar` profile: a 400×400 square with an 80×80 thumbnail.
+- A list of the devices signed in to an account, each with its browser and address, and signing them out.
+- `auth` settings in `config/nevela.php` switch each method on or off. `nevela generate` writes them to `apps/web/lib/auth-config.ts`, so the screens offer only what Laravel will accept.
+- In development, emailed codes and links are also printed in the terminal running `nevela dev`, because the default mailer sends nothing.
+
+### Changed
+
+- Sign-in attempts are limited to ten a minute per account, not six a minute per address. The dashboard's server makes these calls, so every person arrived from the same address and shared one limit.
+- A wrong password now answers 401 with `code: INVALID_EMAIL_OR_PASSWORD`. It was a 422 validation error.
+- `GET /auth/me` also returns `emailVerified`, `twoFactorEnabled`, the avatar, and which device is asking.
+- The package now requires `lbuchs/webauthn`, which checks passkey signatures.
+- Run `nevela migrate` after upgrading: there are new tables for two-factor and passkeys, and columns for the profile picture and a device's browser.
+
+### Fixed
+
+- Signing out did not remove the cookie on a production build served over plain http, because a cookie marked Secure can only be removed by one that is also marked Secure.
+
 ## [0.3.0] - 2026-10-04
 
 ### Changed

@@ -7,10 +7,16 @@ export interface SessionUser {
   name: string | null;
   email: string;
   role: string | null;
+  emailVerified: boolean;
+  twoFactorEnabled: boolean;
+  /** The key of the profile picture (an optimised upload), or null. Show it with fileUrl(). */
+  avatar: string | null;
 }
 
 export interface Session {
   user: SessionUser;
+  /** Which of the account's devices this is: its id in the list of devices. */
+  session: { id: string | null };
 }
 
 /**
@@ -22,7 +28,8 @@ export const getSession = cache(async (): Promise<Session | null> => {
   if (!(await sessionToken())) return null;
   const response = await laravel("auth/me");
   if (!response.ok) return null;
-  return { user: (response.body as { user: SessionUser }).user };
+  const body = response.body as { user: SessionUser; session?: { id: string | null } };
+  return { user: body.user, session: body.session ?? { id: null } };
 });
 
 /** The current session; redirects to /sign-in (returning to `returnTo` afterwards) when signed out. */

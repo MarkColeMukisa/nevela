@@ -1,6 +1,7 @@
 "use client";
 
-import { LogOutIcon } from "lucide-react";
+import Link from "next/link";
+import { KeyRoundIcon, LogOutIcon, MonitorSmartphoneIcon, ShieldCheckIcon, UserIcon } from "lucide-react";
 import { signOutAction } from "@/app/auth-actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -51,6 +52,33 @@ export function UserMenuItems({ user }: { user: DashboardUser }) {
           <span className="truncate text-xs text-muted-foreground">{user.email}</span>
         </span>
       </DropdownMenuLabel>
+      <DropdownMenuSeparator />
+      <DropdownMenuGroup>
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard/account">
+            <UserIcon />
+            Profile
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard/account/password">
+            <KeyRoundIcon />
+            Password
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard/account/security">
+            <ShieldCheckIcon />
+            Security
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard/account/sessions">
+            <MonitorSmartphoneIcon />
+            Devices
+          </Link>
+        </DropdownMenuItem>
+      </DropdownMenuGroup>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
         <DropdownMenuItem variant="destructive" onSelect={signOut}>
