@@ -20,6 +20,16 @@ php artisan vendor:publish --tag=nevela-config
 | `middleware` | `['api', 'auth:sanctum']` | Middleware on the resource routes. |
 | `auth.enabled` | `true` | Whether Nevela registers the token endpoints. Turn off to provide your own. |
 | `auth.token_name` | `nevela-web` | The name given to tokens when the request sends no `deviceName`. |
+| `auth.registration` | `false`, or `NEVELA_REGISTRATION` | Whether people can create their own account. See [Letting people sign up](/guides/authentication/#letting-people-sign-up). |
+| `auth.magic_link`, `auth.email_code`, `auth.passkeys` | `true` | Ways of signing in beside the password. |
+| `auth.two_factor.authenticator`, `auth.two_factor.email` | `true` | What the second step can be. |
+| `auth.require_email_verification` | `false` | Refuse password sign-in until the address is verified. |
+| `auth.check_breached_passwords` | `true` | Refuse a new password found in a known breach. |
+| `auth.web_url` | `http://localhost:3000`, or `NEVELA_WEB_URL` | Where the dashboard is: for links in emails, and for passkeys. |
+| `auth.attempts_per_address` | `300` | Sign-in attempts a minute from one address, on top of ten per account. |
+| `auth.proxy_secret` | none, or `NEVELA_PROXY_SECRET` | Shared with the dashboard, so Laravel believes what it says about a visitor's browser. See [Devices](/guides/authentication/#devices). |
+| `auth.default_role` | none | The role a self-registered account starts with. |
+| `auth.issuer` | the app's name | The name an authenticator app and a passkey prompt show. |
 | `per_page` | `25` | Records per page when a list request does not say. |
 | `max_per_page` | `100` | The most a list request may ask for. |
 | `uploads.disk` | `public`, or `NEVELA_UPLOADS_DISK` | The disk file and image fields store on. |

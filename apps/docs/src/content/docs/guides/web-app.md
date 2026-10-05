@@ -67,7 +67,9 @@ To change a page's layout, edit the page under `app/dashboard/<slug>/`. For exam
 
 ## What was removed from Flare's app
 
-These parts depended on Flare's own database or its auth library, and Laravel has no endpoints for them yet: sign-up, password reset, two-factor sign-in, passkeys, account pages, saved table views, the change history on a record, the records-per-day chart, product search, and the costs and observability pages.
+These parts depended on Flare's own database, and Laravel has no endpoints for them yet: saved table views, the change history on a record, the records-per-day chart, product search, and the costs and observability pages. Signing in with Google, GitHub and other providers is not there either.
+
+Sign-up, password reset, two-factor, passkeys and the account pages are Flare's screens, backed by Laravel. See [Authentication](/guides/authentication/).
 
 ## Talking to Laravel from the browser
 

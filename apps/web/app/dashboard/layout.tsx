@@ -5,6 +5,7 @@ import { DashboardHeader, type Theme } from "@/components/dashboard/dashboard-he
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { dashboardLinks } from "@/lib/dashboard-nav";
 import { ADMIN_ROLES, visibleResources } from "@/lib/dashboard";
+import { fileUrl } from "@/lib/files";
 import { requireSession } from "@/lib/session";
 import { site } from "@/lib/site";
 import { listViews } from "@/lib/views";
@@ -29,7 +30,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     views: views.filter((view) => view.resource === resource.name).map(({ id, name, query }) => ({ id, name, query })),
   }));
 
-  const account = { name: user.name, email: user.email };
+  const account = { name: user.name, email: user.email, image: user.avatar ? fileUrl(user.avatar, "thumb") : null };
 
   return (
     <SidebarProvider defaultOpen={!collapsed}>

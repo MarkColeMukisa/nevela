@@ -1542,6 +1542,51 @@
             "time": "2026-03-17T14:54:13+00:00"
         },
         {
+            "name": "lbuchs/webauthn",
+            "version": "v2.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/lbuchs/WebAuthn.git",
+                "reference": "20adb4a240c3997bd8cac7dc4dde38ab0bea0ed1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/lbuchs/WebAuthn/zipball/20adb4a240c3997bd8cac7dc4dde38ab0bea0ed1",
+                "reference": "20adb4a240c3997bd8cac7dc4dde38ab0bea0ed1",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.0.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "lbuchs\\WebAuthn\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Lukas Buchs",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A simple PHP WebAuthn (FIDO2) server library",
+            "homepage": "https://github.com/lbuchs/webauthn",
+            "keywords": [
+                "Authentication",
+                "webauthn"
+            ],
+            "support": {
+                "issues": "https://github.com/lbuchs/WebAuthn/issues",
+                "source": "https://github.com/lbuchs/WebAuthn/tree/v2.2.0"
+            },
+            "time": "2024-07-04T07:17:40+00:00"
+        },
+        {
             "name": "league/commonmark",
             "version": "2.10.3",
             "source": {
@@ -2470,21 +2515,27 @@
         },
         {
             "name": "nevela/laravel",
-            "version": "dev-main",
+            "version": "dev-full-auth",
             "dist": {
                 "type": "path",
                 "url": "../../packages/laravel",
-                "reference": "c81c767ba82449e2e8b63010d7d826167af3f604"
+                "reference": "08e953c7bacaee824da067e43ead2e431cb694be"
             },
             "require": {
                 "illuminate/console": "^11.0|^12.0|^13.0",
                 "illuminate/database": "^11.17|^12.0|^13.0",
                 "illuminate/http": "^11.0|^12.0|^13.0",
                 "illuminate/support": "^11.0|^12.0|^13.0",
+                "lbuchs/webauthn": "^2.2",
                 "php": "^8.2"
             },
             "require-dev": {
                 "phpunit/phpunit": "^11.0"
+            },
+            "suggest": {
+                "ext-exif": "Turns phone photos the right way up before their metadata is removed.",
+                "ext-gd": "Optimises uploaded images: resizing, WebP and renditions. Without it images are stored as uploaded.",
+                "laravel/sanctum": "Required for the token sign-in endpoints and the default auth:sanctum middleware (php artisan install:api)."
             },
             "type": "library",
             "extra": {
@@ -2507,7 +2558,29 @@
             "license": [
                 "MIT"
             ],
-            "description": "Nevela: Laravel as the authority behind Flare's Next.js frontend. Resource-driven generation and a Flare-compatible REST contract.",
+            "authors": [
+                {
+                    "name": "Mark Cole MUKISA",
+                    "homepage": "https://github.com/MarkColeMukisa"
+                }
+            ],
+            "description": "Nevela for Laravel: describe a resource once and generate its model, migration, validation, policy and REST API, plus the Next.js dashboard screens for it.",
+            "homepage": "https://nevela-docs.vercel.app",
+            "keywords": [
+                "crud",
+                "dashboard",
+                "generator",
+                "laravel",
+                "nevela",
+                "nextjs",
+                "rest-api",
+                "scaffold"
+            ],
+            "support": {
+                "issues": "https://github.com/MarkColeMukisa/nevela/issues",
+                "source": "https://github.com/MarkColeMukisa/nevela",
+                "docs": "https://nevela-docs.vercel.app"
+            },
             "transport-options": {
                 "relative": true
             }

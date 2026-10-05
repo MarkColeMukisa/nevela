@@ -7,6 +7,7 @@
 // No dependencies on purpose: this runs before anything is installed.
 
 import { spawn } from 'node:child_process';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -454,7 +455,14 @@ async function main() {
   // The dashboard first, so its packages can download while Composer works on Laravel.
   // The two don't touch each other, and Composer is the long part.
   copyWebTemplate(web, { name, title });
-  write(path.join(web, '.env.local'), '# Where the Laravel API is, including its prefix.\nNEVELA_API_URL=http://127.0.0.1:8000/api\n');
+  // Shared by the dashboard and the API, so the API can believe what the dashboard tells it
+  // about a person's browser (for the list of devices signed in to an account). Made here,
+  // per app, and never the same twice.
+  const proxySecret = crypto.randomBytes(24).toString('hex');
+  write(
+    path.join(web, '.env.local'),
+    `# Where the Laravel API is, including its prefix.\nNEVELA_API_URL=http://127.0.0.1:8000/api\n\n# The same value as in apps/api/.env. It lets the API trust this app's word on a visitor's browser.\nNEVELA_PROXY_SECRET=${proxySecret}\n`,
+  );
   if (pm === 'pnpm') {
     // Its own workspace file: lets sharp build, and keeps pnpm from adopting a workspace further up.
     write(path.join(web, 'pnpm-workspace.yaml'), 'allowBuilds:\n  sharp: true\n');
@@ -510,6 +518,9 @@ async function main() {
     // artisan command is slow for the same reason the index was: files read for the first time.
     const env = path.join(api, '.env');
     if (!fs.existsSync(env) && fs.existsSync(`${env}.example`)) fs.copyFileSync(`${env}.example`, env);
+    if (fs.existsSync(env) && !/^NEVELA_PROXY_SECRET=/m.test(fs.readFileSync(env, 'utf8'))) {
+      fs.appendFileSync(env, `\n# The same value as in apps/web/.env.local.\nNEVELA_PROXY_SECRET=${proxySecret}\n`);
+    }
     const sqlite = path.join(api, 'database', 'database.sqlite');
     if (/^DB_CONNECTION=sqlite\s*$/m.test(fs.readFileSync(env, 'utf8')) && !fs.existsSync(sqlite)) fs.writeFileSync(sqlite, '');
     return addApiTokens(path.join(api, 'app', 'Models', 'User.php'));

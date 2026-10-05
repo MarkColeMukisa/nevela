@@ -54,8 +54,8 @@ function byGroup(resources: NavResource[]): [string, NavResource[]][] {
  * current path.
  */
 /** Sections every dashboard has, whatever resources the app defines. */
-const ACCOUNT_LINKS: { href: string; label: string; icon: typeof ActivityIcon }[] = [];
-// Empty for now: account and observability pages return once Laravel serves them.
+const ACCOUNT_LINKS: { href: string; label: string; icon: typeof ActivityIcon }[] = [{ href: "/dashboard/account", label: "Account", icon: UserCircleIcon }];
+// Empty for now: the observability pages return once Laravel serves them.
 const ADMIN_LINKS: typeof ACCOUNT_LINKS = [];
 
 export function DashboardSidebar({

@@ -9,7 +9,7 @@ All paths below are under the prefix `/api`. Send `Accept: application/json` on 
 
 ## Signing in
 
-Every endpoint except `POST /auth/token` needs a token.
+Every resource endpoint needs a token. The endpoints that get you one (a password, a passkey, an emailed link or code) do not: they are listed under [Every auth endpoint](#every-auth-endpoint). The [Authentication guide](/guides/authentication/) describes what each is for.
 
 ### Get a token
 
@@ -26,7 +26,7 @@ curl -X POST http://127.0.0.1:8000/api/auth/token \
 }
 ```
 
-The response status is 201. Wrong credentials give 422 with the message on the `email` field. This endpoint allows six attempts a minute.
+The response status is 201. Wrong credentials give 401 with `code: INVALID_EMAIL_OR_PASSWORD`, and the same answer whether or not the address has an account. Ten attempts a minute are allowed per account.
 
 `deviceName` is an optional third field that names the token.
 
@@ -36,11 +36,56 @@ The response status is 201. Wrong credentials give 422 with the message on the `
 curl http://127.0.0.1:8000/api/products -H "Accept: application/json" -H "Authorization: Bearer 1|x8Jq…"
 ```
 
+### When the account has two-factor on
+
+`POST /auth/token` answers 200 with no token:
+
+```json
+{ "twoFactor": true, "challenge": "Lh8IN0Fh…", "methods": ["totp", "email", "backup"] }
+```
+
+Finish with the code. `method` is `totp` (an authenticator app), `email` or `backup`:
+
+```sh
+curl -X POST http://127.0.0.1:8000/api/auth/two-factor/verify \
+  -H 'Accept: application/json' -H 'Content-Type: application/json' \
+  -d '{"challenge": "Lh8IN0Fh…", "method": "totp", "code": "482913"}'
+```
+
+That answers 201 with the token. For `email`, ask for the code first with `POST /auth/two-factor/send` and the same `challenge`. The challenge lasts ten minutes and allows five wrong codes. Only the methods the answer listed are accepted, and an authenticator code works once.
+
+An emailed sign-in link or code can get the same answer, when the account has an authenticator app: `methods` then leaves out `email`.
+
+### Every auth endpoint
+
+All are under `/api/auth`. The ones marked 🔒 need a token.
+
+| | Endpoint | Does |
+|---|---|---|
+| | `GET /config` | Which sign-in methods are switched on. |
+| | `POST /token` | Sign in with `email` and `password`. |
+| | `POST /two-factor/send`, `/two-factor/verify` | The second step of a password sign-in. |
+| | `POST /passkey/options`, `/passkey` | Sign in with a passkey. |
+| | `POST /magic-link`, `/magic-link/verify` | Email a sign-in link; sign in with its `token`. |
+| | `POST /email-code`, `/email-code/verify` | Email a sign-in code; sign in with `email` and `code`. |
+| | `POST /register` | Create an account, when registration is on. |
+| | `POST /email/send`, `/email/verify` | Send the verification email; verify with `email` and `code`. |
+| | `POST /password/forgot`, `/password/reset` | Email a reset link; set `newPassword` with its `token`. |
+| 🔒 | `GET /me`, `PATCH /me` | The signed-in user; change `name` or `avatar`. |
+| 🔒 | `PUT /avatar?name=me.jpg` | Upload a profile picture. The body is the file. |
+| 🔒 | `POST /password` | Change the password: `currentPassword`, `newPassword`. |
+| 🔒 | `GET /sessions`, `DELETE /sessions`, `DELETE /sessions/{id}` | List devices; sign out the others, or one. |
+| 🔒 | `POST /two-factor/enable`, `/confirm`, `/disable`, `/backup-codes` | Set up and manage the second step. |
+| 🔒 | `GET /passkeys`, `POST /passkeys/options`, `POST /passkeys`, `PATCH`/`DELETE /passkeys/{id}` | List, add, rename and remove passkeys. |
+| 🔒 | `DELETE /token` | Sign out: the token stops working. |
+
+An error has a `code` beside its message, such as `INVALID_EMAIL_OR_PASSWORD`, `INVALID_TWO_FACTOR_CODE`, `OTP_EXPIRED` or `TOO_MANY_ATTEMPTS`. A method that is switched off answers 404. Attempts are limited to ten a minute per account, after which the answer is 429.
+
 ### Other auth endpoints
 
 | Request | Response |
 |---|---|
-| `GET /auth/me` | `200 { "user": { id, name, email, role } }` |
+| `GET /auth/me` | `200 { "user": { id, name, email, role, emailVerified, twoFactorEnabled, avatar, avatarFile, image }, "session": { id } }` |
 | `DELETE /auth/token` | `204`. The token used for the request stops working. |
 
 ## Resource endpoints

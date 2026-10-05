@@ -27,6 +27,10 @@ That one command writes:
 | Controller speaking Flare's REST contract, policy | `app/dashboard/products/…`: list, new, detail and edit pages |
 | `routes/nevela.php`: loaded automatically under `/api` + `auth:sanctum` | |
 
+## Signing in
+
+Accounts live in Laravel; the screens are Flare's. Beside the password there is two-factor (an authenticator app or emailed codes, with backup codes), passkeys, emailed sign-in links and codes, password reset and email verification. Each account has a profile with a picture, and a list of the devices signed in to it. Sign-up is off until you set `NEVELA_REGISTRATION=true`. See https://nevela-docs.vercel.app/guides/authentication/.
+
 ## Layout
 
 ```

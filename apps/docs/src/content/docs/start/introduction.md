@@ -46,7 +46,7 @@ The dashboard is [Flare](https://github.com/MUKE-coder/flare-framework)'s Next.j
 
 - Many-to-many relations are not generated. One-to-many is: see [Relationships](/guides/relationships/).
 - Uploaded files are not deleted when their record is.
-- Sign-up, password reset and account pages are not part of the web app. Users are created in Laravel.
+- Signing in with Google, GitHub and other providers. Passwords, passkeys, two-factor and emailed links are there: see [Authentication](/guides/authentication/).
 
 The [roadmap](/concepts/architecture/#roadmap) lists what is planned.
 
