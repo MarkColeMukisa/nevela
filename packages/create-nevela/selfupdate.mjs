@@ -10,19 +10,15 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
+import { get, getJson } from './net.mjs';
 import { isNewer } from './packagist.mjs';
 
 const REGISTRY = 'https://registry.npmjs.org/create-nevela';
 
 /** The newest create-nevela on npm, or null when npm couldn't be asked. Never throws. */
 export async function latestVersion() {
-  try {
-    const response = await fetch(`${REGISTRY}/latest`, { signal: AbortSignal.timeout(4000) });
-    const latest = (await response.json()).version;
-    return typeof latest === 'string' && /^\d+\.\d+\.\d+$/.test(latest) ? latest : null;
-  } catch {
-    return null;
-  }
+  const latest = (await getJson(`${REGISTRY}/latest`, 4000))?.version;
+  return typeof latest === 'string' && /^\d+\.\d+\.\d+$/.test(latest) ? latest : null;
 }
 
 /**
@@ -84,16 +80,17 @@ export function untar(buffer, dir) {
 export async function runVersion(version, args) {
   const dir = path.join(os.tmpdir(), `create-nevela-${version}-${process.pid}`);
   try {
-    const response = await fetch(`${REGISTRY}/-/create-nevela-${version}.tgz`, { signal: AbortSignal.timeout(30000) });
-    if (!response.ok) return null;
-    untar(zlib.gunzipSync(Buffer.from(await response.arrayBuffer())), dir);
+    const response = await get(`${REGISTRY}/-/create-nevela-${version}.tgz`, 30000);
+    if (!response?.ok) return null;
+    untar(zlib.gunzipSync(response.body), dir);
     const entry = path.join(dir, 'package', 'index.mjs');
     if (!fs.existsSync(entry)) return null;
 
     const result = spawnSync(process.execPath, [entry, ...args], {
       stdio: 'inherit',
-      // The newer one must not go looking for a newer one in turn.
-      env: { ...process.env, NEVELA_NO_SELF_UPDATE: '1' },
+      // The newer one must not go looking for a newer one in turn, and the name has
+      // already been printed large once.
+      env: { ...process.env, NEVELA_NO_SELF_UPDATE: '1', NEVELA_HANDED_OVER: '1' },
     });
     return result.status ?? 1;
   } catch {

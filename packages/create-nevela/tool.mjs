@@ -54,5 +54,50 @@ export function globalInstall(dir, exists = fs.existsSync) {
   return { manager: 'npm', command: INSTALL.npm };
 }
 
+/**
+ * Every folder on the PATH that holds a nevela command, in the order the shell looks.
+ *
+ * More than one means it was installed more than once, say with npm and with pnpm. The
+ * shell runs the first and never mentions the rest, so updating one of the others changes
+ * nothing you can see: `npm install -g create-nevela@latest` succeeds and `nevela` is
+ * still the old one.
+ *
+ * @param {Record<string, string | undefined>} env
+ * @param {object} [system]  Replaceable in tests
+ */
+export function copiesOnPath(env = process.env, { exists = fs.existsSync, real = fs.realpathSync, windows = process.platform === 'win32' } = {}) {
+  const names = windows ? ['nevela.cmd', 'nevela.exe', 'nevela.ps1', 'nevela'] : ['nevela'];
+  const separator = windows ? '\\' : '/';
+  const found = [];
+  const seen = new Set();
+  for (const entry of String(env.PATH ?? env.Path ?? '').split(windows ? ';' : ':')) {
+    const dir = entry.trim().replace(/^"|"$/g, '').replace(/[\\/]+$/, '');
+    if (!dir) continue;
+    const file = names.map((name) => `${dir}${separator}${name}`).find((candidate) => exists(candidate));
+    if (!file) continue;
+    // The same folder listed twice, or two names for one folder (/bin and /usr/bin), is one copy.
+    let target = file;
+    try {
+      target = real(file);
+    } catch {
+      // Left as it is.
+    }
+    const key = windows ? target.toLowerCase() : target;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    found.push(dir);
+  }
+  return found;
+}
+
+/** What removes the copy whose command is in `dir`, judged by the folder. */
+export function removeCommand(dir) {
+  const where = dir.replace(/\\/g, '/').toLowerCase();
+  if (/\/pnpm(\/|$)/.test(where)) return 'pnpm remove -g create-nevela';
+  if (/\/\.bun\//.test(where)) return 'bun remove -g create-nevela';
+  if (/\/yarn\/|\/\.yarn\//.test(where)) return 'yarn global remove create-nevela';
+  return 'npm uninstall -g create-nevela';
+}
+
 /** What to type to get the `nevela` command, for someone who doesn't have it yet. */
 export const INSTALL_COMMAND = INSTALL.npm.join(' ').replace('@latest', '');

@@ -45,8 +45,10 @@ npm install -g create-nevela
 ```
 
 ```sh
-nevela new my-app      # anywhere: create an app
+nevela                 # anywhere: everything it can do
+nevela new my-app      # anywhere: create an app (leave the name off and it asks)
 nevela update          # anywhere: update the nevela command itself
+nevela version         # anywhere: the command's version, and the app's when in one
 nevela dev             # inside an app: run the API and the dashboard
 nevela upgrade         # inside an app: bring it to the latest Nevela
 ```

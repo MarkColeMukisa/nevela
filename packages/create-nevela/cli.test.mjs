@@ -4,11 +4,14 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
+import { banner, ROWS, TAGLINE, WIDTH } from './banner.mjs';
+import { get } from './net.mjs';
 import { artisanArguments, COMMANDS, findProject, repairManifest, repairScripts } from './project.mjs';
 import { untar } from './selfupdate.mjs';
 import { quote } from './shell.mjs';
-import { globalInstall } from './tool.mjs';
+import { copiesOnPath, globalInstall, removeCommand } from './tool.mjs';
 
 const scratch = () => fs.mkdtempSync(path.join(os.tmpdir(), 'nevela-test-'));
 
@@ -53,6 +56,77 @@ test('the installed nevela command knows how it was installed, and a fetched one
   // pnpm's store inside a project, and a dependency of a dependency.
   assert.equal(globalInstall('/home/ada/shop/node_modules/.pnpm/create-nevela@0.3.0/node_modules/create-nevela', noProjectHere), null);
   assert.equal(globalInstall('/usr/local/lib/node_modules/some-tool/node_modules/create-nevela', noProjectHere), null);
+});
+
+test('the name is drawn large in a terminal, in colours it can show, and plainly anywhere else', () => {
+  // Six rows of one width, or the letters lean.
+  assert.equal(ROWS.length, 6);
+  for (const row of ROWS) assert.equal([...row].length, WIDTH);
+
+  const escapes = (text) => [...text.matchAll(/\x1b\[([0-9;]+)m/g)].map((match) => match[1]).filter((code) => code !== '0');
+  const full = banner({ version: '1.2.3', depth: 24, columns: 120 });
+  assert.ok(full.includes(ROWS[0]) && full.includes(ROWS[5]) && full.includes(`${TAGLINE} v1.2.3`));
+  // A colour to a row: the gradient.
+  assert.equal(new Set(escapes(full).filter((code) => code.startsWith('38;2;'))).size, 6);
+  // 256 colours, and 16: still drawn, in codes those terminals understand.
+  assert.equal(new Set(escapes(banner({ version: '1.2.3', depth: 8, columns: 120 })).filter((code) => code.startsWith('38;5;'))).size, 6);
+  assert.deepEqual([...new Set(escapes(banner({ version: '1.2.3', depth: 4, columns: 120 })))], ['94', '95', '2']);
+  // A terminal with colour switched off (NO_COLOR): the letters, no codes.
+  const plain = banner({ version: '1.2.3', depth: 1, columns: 120 });
+  assert.ok(plain.includes(ROWS[2]) && !plain.includes('\x1b'));
+
+  // Into a pipe or a file, in a narrow terminal, or after a handover: one line.
+  assert.equal(banner({ version: '1.2.3', depth: 0, columns: 120 }), '\n  Nevela v1.2.3\n');
+  for (const small of [banner({ version: '1.2.3', depth: 24, columns: WIDTH + 3 }), banner({ version: '1.2.3', depth: 24, columns: 120, compact: true })]) {
+    assert.ok(!small.includes('█') && small.includes('Nevela') && small.includes('v1.2.3'));
+  }
+});
+
+test('a second copy of the nevela command on the PATH is found, and the same copy is not counted twice', () => {
+  const windowsFiles = [
+    'C:\\Users\\ada\\AppData\\Local\\pnpm\\bin\\nevela.cmd',
+    'C:\\Users\\ada\\AppData\\Roaming\\npm\\nevela.cmd',
+    'C:\\Users\\ada\\AppData\\Roaming\\npm\\nevela',
+  ];
+  const onWindows = { exists: (file) => windowsFiles.includes(file), real: (file) => file, windows: true };
+  const path = 'C:\\Windows;"C:\\Users\\ada\\AppData\\Local\\pnpm\\bin";C:\\Users\\ada\\AppData\\Roaming\\npm\\;c:\\users\\ada\\appdata\\roaming\\npm;;';
+  assert.deepEqual(copiesOnPath({ Path: path }, onWindows), ['C:\\Users\\ada\\AppData\\Local\\pnpm\\bin', 'C:\\Users\\ada\\AppData\\Roaming\\npm']);
+  assert.deepEqual(copiesOnPath({ PATH: 'C:\\Windows;C:\\Users\\ada\\AppData\\Roaming\\npm' }, onWindows), ['C:\\Users\\ada\\AppData\\Roaming\\npm']);
+  assert.deepEqual(copiesOnPath({}, onWindows), []);
+
+  // /bin is a link to /usr/bin on most Linux systems: one copy, seen through two names.
+  const links = { '/bin/nevela': '/usr/lib/node_modules/create-nevela/nevela.mjs', '/usr/bin/nevela': '/usr/lib/node_modules/create-nevela/nevela.mjs', '/home/ada/.local/share/pnpm/nevela': '/home/ada/.local/share/pnpm/nevela' };
+  const onLinux = { exists: (file) => file in links, real: (file) => links[file], windows: false };
+  assert.deepEqual(copiesOnPath({ PATH: '/home/ada/.local/share/pnpm:/usr/local/bin:/bin:/usr/bin' }, onLinux), ['/home/ada/.local/share/pnpm', '/bin']);
+
+  assert.equal(removeCommand('C:\\Users\\ada\\AppData\\Local\\pnpm\\bin'), 'pnpm remove -g create-nevela');
+  assert.equal(removeCommand('/home/ada/.local/share/pnpm'), 'pnpm remove -g create-nevela');
+  assert.equal(removeCommand('C:\\Users\\ada\\AppData\\Roaming\\npm'), 'npm uninstall -g create-nevela');
+  assert.equal(removeCommand('/usr/local/bin'), 'npm uninstall -g create-nevela');
+  assert.equal(removeCommand('/home/ada/.bun/bin'), 'bun remove -g create-nevela');
+  assert.equal(removeCommand('/home/ada/.yarn/bin'), 'yarn global remove create-nevela');
+});
+
+test('every file the program is made of is published with it', () => {
+  // A file left out of "files" works here and is missing for everyone who installs it.
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const manifest = JSON.parse(fs.readFileSync(path.join(here, 'package.json'), 'utf8'));
+  const published = new Set(manifest.files);
+  const seen = new Set();
+  const follow = (file) => {
+    if (seen.has(file)) return;
+    seen.add(file);
+    assert.ok(published.has(file), `${file} is imported but is not in package.json "files"`);
+    const source = fs.readFileSync(path.join(here, file), 'utf8');
+    for (const match of source.matchAll(/(?:from|import\()\s*'\.\/([^']+)'/g)) follow(match[1]);
+  };
+  for (const entry of Object.values(manifest.bin)) follow(entry);
+  assert.ok(seen.has('banner.mjs') && seen.has('net.mjs') && seen.has('index.mjs'));
+});
+
+test('a request that cannot be made is an answer of null, not an error', async () => {
+  assert.equal(await get('not a url', 1000), null);
+  assert.equal(await get('http://example.com/', 1000), null); // https only
 });
 
 test('commands map onto artisan the way the php launcher maps them', () => {

@@ -1,5 +1,9 @@
 // Deciding where a new app gets nevela/laravel from.
 
+import { getJson } from './net.mjs';
+
+const RELEASES = 'https://repo.packagist.org/p2/nevela/laravel.json';
+
 /** Whether `candidate` is a stable release Composer's `^major.minor` would accept. */
 export function satisfiesCaret(candidate, [major, minor]) {
   const match = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(candidate);
@@ -23,29 +27,18 @@ export function isNewer(a, b) {
  * listed isn't enough: with no tagged release yet, `composer require` would fail.
  */
 export async function onPackagist(wanted) {
-  try {
-    const response = await fetch('https://repo.packagist.org/p2/nevela/laravel.json', { signal: AbortSignal.timeout(8000) });
-    if (!response.ok) return false;
-    const releases = (await response.json()).packages?.['nevela/laravel'] ?? [];
-    return releases.some((release) => satisfiesCaret(release.version, wanted));
-  } catch {
-    return false;
-  }
+  const releases = (await getJson(RELEASES, 8000))?.packages?.['nevela/laravel'];
+  return Array.isArray(releases) && releases.some((release) => satisfiesCaret(release.version, wanted));
 }
 
 /** The newest stable nevela/laravel on Packagist, as "x.y.z", or null when it can't be reached. */
 export async function latestRelease() {
-  try {
-    const response = await fetch('https://repo.packagist.org/p2/nevela/laravel.json', { signal: AbortSignal.timeout(8000) });
-    if (!response.ok) return null;
-    const releases = (await response.json()).packages?.['nevela/laravel'] ?? [];
-    let latest = null;
-    for (const release of releases) {
-      const version = /^v?(\d+\.\d+\.\d+)$/.exec(release.version)?.[1];
-      if (version && (latest === null || isNewer(version, latest))) latest = version;
-    }
-    return latest;
-  } catch {
-    return null;
+  const releases = (await getJson(RELEASES, 8000))?.packages?.['nevela/laravel'];
+  if (!Array.isArray(releases)) return null;
+  let latest = null;
+  for (const release of releases) {
+    const version = /^v?(\d+\.\d+\.\d+)$/.exec(String(release?.version))?.[1];
+    if (version && (latest === null || isNewer(version, latest))) latest = version;
   }
+  return latest;
 }
