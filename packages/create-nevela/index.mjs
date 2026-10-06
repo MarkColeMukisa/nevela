@@ -29,6 +29,10 @@ const DOCS = 'https://nevela-docs.vercel.app';
  * The account every new app starts with, so there is something to sign in as straight
  * away. It is created in the app's local database, never in code or a migration, so it
  * does not follow the app to a server.
+ *
+ * It is the app's administrator. Ten sample users are made beside it, with the same
+ * password: two editors and eight users, so the Users screen, the roles and what each
+ * of them is allowed to see have something to show on the first run.
  */
 const ADMIN = { name: 'Admin', email: 'admin@example.com', password: 'password' };
 
@@ -76,7 +80,8 @@ const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
   ${bold('Options')}
     --pm <pnpm|npm|yarn|bun>   Package manager for the dashboard. Default: the one you ran this with.
     --no-install               Don't install the dashboard's dependencies.
-    --no-user                  Don't create the starter admin account.
+    --no-user                  Don't create the starter admin account, or the sample users.
+    --no-sample-users          Create the admin only, without the ten sample users.
     --fast                     Leave out PHPUnit, Pint and Laravel's other development packages.
                                About a third quicker. Add them later: cd apps/api && composer install
     --no-git                   Don't run git init.
@@ -188,7 +193,7 @@ async function step(label, work) {
 }
 
 function parseArgs(argv) {
-  const options = { name: undefined, pm: undefined, install: true, user: true, git: true, yes: false, bundledPackage: false, devTools: true };
+  const options = { name: undefined, pm: undefined, install: true, user: true, samples: true, git: true, yes: false, bundledPackage: false, devTools: true };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '-h' || arg === '--help') {
@@ -201,6 +206,7 @@ function parseArgs(argv) {
     } else if (arg === '-y' || arg === '--yes') options.yes = true;
     else if (arg === '--no-install') options.install = false;
     else if (arg === '--no-user') options.user = false;
+    else if (arg === '--no-sample-users') options.samples = false;
     else if (arg === '--no-git') options.git = false;
     else if (arg === '--no-dev-tools' || arg === '--fast') options.devTools = false;
     else if (arg === '--bundled-package') options.bundledPackage = true;
@@ -279,7 +285,7 @@ function write(file, contents) {
   fs.writeFileSync(file, contents);
 }
 
-function writeRootFiles(root, { name, title, pm, admin }) {
+function writeRootFiles(root, { name, title, pm, admin, samples }) {
   write(path.join(root, 'package.json'), `${JSON.stringify({
     name,
     version: '0.1.0',
@@ -313,13 +319,15 @@ To check the app at any time (versions, migrations, users, and whether the dashb
 php nevela status
 \`\`\`
 ${admin ? `
-The app starts with one account, in your local database only:
+The app starts with an administrator, in your local database only:
 
 | | |
 |---|---|
 | Email | \`${admin.email}\` |
 | Password | \`${admin.password}\` |
-` : ''}
+${samples ? `
+Ten sample users are there as well, with the same password: two editors and eight users, one of them switched off. They are under **Users** in the dashboard, and what each role may do is under **Roles**. Delete them before real use.
+` : ''}` : ''}
 Everything else runs from this folder too, with \`php nevela\`:
 
 \`\`\`sh
@@ -633,7 +641,7 @@ async function main() {
   // `nevela upgrade` compares against these to tell the files you changed from the ones
   // you didn't, so an update never overwrites your work.
   write(path.join(web, '.nevela.json'), `${JSON.stringify(templateRecord(VERSION), null, 4)}\n`);
-  writeRootFiles(root, { name, title, pm, admin: options.user ? ADMIN : null });
+  writeRootFiles(root, { name, title, pm, admin: options.user ? ADMIN : null, samples: options.user && options.samples });
   const packages = options.install ? start(pm, ['install'], { cwd: web }) : null;
 
   const tokens = await step('Creating the Laravel app', async (progress) => {
@@ -689,13 +697,16 @@ async function main() {
   });
 
   let admin = false;
+  let samples = false;
   await step('Setting up the database', () => {
     // One artisan process for the app key, Sanctum's migration, the generated files, the
-    // migrations and the starter account: each separate call would start Laravel again.
-    const account = options.user && tokens ? [`--name=${ADMIN.name}`, `--email=${ADMIN.email}`, `--password=${ADMIN.password}`] : [];
+    // migrations, the starter account and the sample users: each separate call would
+    // start Laravel again.
+    const account = options.user && tokens ? [`--name=${ADMIN.name}`, `--email=${ADMIN.email}`, `--password=${ADMIN.password}`, ...(options.samples ? [] : ['--no-sample-users'])] : [];
     const setup = run('php', ['artisan', 'nevela:setup', ...account], { cwd: api, allowFailure: true });
     if (setup.ok) {
       admin = account.length > 0;
+      samples = admin && options.samples;
       return;
     }
     // 2: the app is set up and only the starter account could not be created.
@@ -707,7 +718,7 @@ async function main() {
     run('php', ['artisan', 'vendor:publish', '--tag=sanctum-migrations', '--no-interaction'], { cwd: api });
     run('php', ['artisan', 'nevela:generate'], { cwd: api });
     run('php', ['artisan', 'migrate', '--force', '--no-interaction'], { cwd: api });
-    if (account.length) admin = run('php', ['artisan', 'nevela:user', ...account], { cwd: api, allowFailure: true }).ok;
+    if (account.length) admin = run('php', ['artisan', 'nevela:user', ...account.filter((arg) => arg !== '--no-sample-users')], { cwd: api, allowFailure: true }).ok;
   });
 
   let installed = false;
@@ -741,7 +752,10 @@ async function main() {
   if (admin) {
     console.log(`\n    Email      ${bold(ADMIN.email)}`);
     console.log(`    Password   ${bold(ADMIN.password)}\n`);
-    console.log(`  ${dim(`That account is in this app's local database only. Add your own: ${nevela} user`)}`);
+    console.log(`  ${dim(`That account is the administrator, and is in this app's local database only. Add your own: ${nevela} user`)}`);
+    if (samples) {
+      console.log(`  ${dim(`Ten sample users are there too, with the same password: 2 editors and 8 users. See them under Users, and what each may do under Roles.`)}`);
+    }
   }
   console.log(`\n  Add your first resource: ${dim(`${nevela} resource Product --fields="name:string, price:money"`)}`);
   console.log(`  Check the app: ${dim(`${nevela} status`)}   Upgrade it later: ${dim(`${nevela} upgrade`)}   Everything: ${dim(nevela)}`);

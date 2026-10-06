@@ -28,7 +28,8 @@ php artisan vendor:publish --tag=nevela-config
 | `auth.web_url` | `http://localhost:3000`, or `NEVELA_WEB_URL` | Where the dashboard is: for links in emails, and for passkeys. |
 | `auth.attempts_per_address` | `300` | Sign-in attempts a minute from one address, on top of ten per account. |
 | `auth.proxy_secret` | none, or `NEVELA_PROXY_SECRET` | Shared with the dashboard, so Laravel believes what it says about a visitor's browser. See [Devices](/guides/authentication/#devices). |
-| `auth.default_role` | none | The role a self-registered account starts with. |
+| `auth.default_role` | `USER` | The [role](/guides/policies/) someone who signs up starts with. `null` gives none. |
+| `permissions` | `[]` | Permissions of your own, beside the ones every resource gets. See [Permissions of your own](/guides/policies/#permissions-of-your-own). |
 | `auth.issuer` | the app's name | The name an authenticator app and a passkey prompt show. |
 | `per_page` | `25` | Records per page when a list request does not say. |
 | `max_per_page` | `100` | The most a list request may ask for. |

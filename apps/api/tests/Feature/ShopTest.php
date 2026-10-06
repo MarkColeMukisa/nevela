@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Nevela\Laravel\Access\Access;
 use Nevela\Laravel\Media\ImageOptimizer;
 use Nevela\Laravel\Media\Uploads;
 use Nevela\Laravel\Models\Upload;
@@ -42,7 +43,11 @@ class ShopTest extends TestCase
         Storage::fake('public');
         Storage::fake('local');
         Uploads::forget();
-        Sanctum::actingAs(User::factory()->create());
+        // An administrator: what a person's roles allow is AccessTest's subject, not this one's.
+        Access::reset();
+        $user = User::factory()->create();
+        Access::grant($user, 'ADMIN');
+        Sanctum::actingAs($user);
     }
 
     private function category(string $name = 'Kitchen'): Category

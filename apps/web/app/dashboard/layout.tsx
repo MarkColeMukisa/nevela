@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { DashboardHeader, type Theme } from "@/components/dashboard/dashboard-header";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { dashboardLinks } from "@/lib/dashboard-nav";
-import { ADMIN_ROLES, visibleResources } from "@/lib/dashboard";
+import { dashboardSession, visibleResources } from "@/lib/dashboard";
 import { fileUrl } from "@/lib/files";
 import { requireSession } from "@/lib/session";
 import { site } from "@/lib/site";
@@ -31,10 +31,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }));
 
   const account = { name: user.name, email: user.email, image: user.avatar ? fileUrl(user.avatar, "thumb") : null };
+  // The screens for managing people, for those whose roles allow it.
+  const { isAdmin, may } = await dashboardSession();
+  const access = { users: may("users.view"), roles: may("roles.view") };
 
   return (
     <SidebarProvider defaultOpen={!collapsed}>
-      <DashboardSidebar appName={site.name} resources={resources} links={dashboardLinks} isAdmin={ADMIN_ROLES.includes(user.role ?? "")} user={account} />
+      <DashboardSidebar appName={site.name} resources={resources} links={dashboardLinks} isAdmin={isAdmin} access={access} user={account} />
       <SidebarInset>
         <DashboardHeader user={account} initialTheme={theme} notices={[]} />
         <main className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">{children}</main>

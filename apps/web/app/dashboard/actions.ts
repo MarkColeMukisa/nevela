@@ -1,11 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { can, storedFields, type PolicyAction } from "@flaredev/core";
+import { storedFields, type PolicyAction } from "@flaredev/core";
 import type { FieldIssue } from "@/lib/resource/store";
 import { toCsv } from "@/lib/csv";
 import { fileUrl } from "@/lib/files";
-import { resourcePath, dashboardSession, dashboardStore, policyFor } from "@/lib/dashboard";
+import { allResources, resourcePath, dashboardSession, dashboardStore, mayDo } from "@/lib/dashboard";
 
 export type ActionResult<T = unknown> =
   | { ok: true; data: T }
@@ -14,13 +14,14 @@ export type ActionResult<T = unknown> =
 const forbidden = (message = "You don't have access to this."): ActionResult<never> => ({ ok: false, status: 403, error: message });
 
 /**
- * Session check, plus the display policy when the resource has one. Laravel's policy
- * is the real decision and answers 403 itself; this only saves a round trip.
+ * Session check, plus what the person's roles allow. Laravel's policy is the real
+ * decision and answers 403 itself; this only saves a round trip.
  */
 async function allowed(resourceName: string, action: PolicyAction): Promise<ActionResult<never> | undefined> {
-  const { allowed: inAdmin, role } = await dashboardSession();
+  const { allowed: inAdmin } = await dashboardSession();
   if (!inAdmin) return forbidden();
-  if (!can(policyFor(resourceName), role, action)) return forbidden(`Your role can't ${action} this record.`);
+  const resource = allResources().find((item) => item.name === resourceName);
+  if (!resource || !(await mayDo(resource, action))) return forbidden(`Your role can't ${action} this record.`);
 }
 
 export async function deleteRecordAction(resourceName: string, id: string): Promise<ActionResult<{ id: string }>> {
@@ -125,9 +126,9 @@ export async function createUploadUrlAction(
   fieldKey: string,
   file: { name: string; type: string; size: number },
 ): Promise<ActionResult<{ url: string; key: string }>> {
-  const { allowed: inAdmin, role } = await dashboardSession();
-  const policy = policyFor(resourceName);
-  if (!inAdmin || !(can(policy, role, "create") || can(policy, role, "update"))) return forbidden("Your role can't add files to this record.");
+  const { allowed: inAdmin } = await dashboardSession();
+  const target = allResources().find((item) => item.name === resourceName);
+  if (!inAdmin || !target || !((await mayDo(target, "create")) || (await mayDo(target, "update")))) return forbidden("Your role can't add files to this record.");
 
   const field = dashboardStore(resourceName).resource.fields[fieldKey];
   if (!field || field.kind !== "file") return { ok: false, status: 404, error: "That isn't a file field." };

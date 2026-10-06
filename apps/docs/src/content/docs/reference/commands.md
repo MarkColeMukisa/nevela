@@ -110,18 +110,22 @@ Create someone who can sign in to the dashboard.
 php artisan nevela:user
 ```
 
-It asks for a name, an email and a password. The password is not shown as you type.
+It asks for a name, an email, a password and a role. The password is not shown as you type.
 
 | Option | Meaning |
 |---|---|
 | `--name=` | The person's name. |
 | `--email=` | The address they sign in with. Must not be in use already. |
 | `--password=` | Their password, at least 8 characters. Leave it out to be asked for it, which keeps it out of your shell history. |
+| `--role=` | Their [role](/guides/policies/): `ADMIN`, `EDITOR`, `USER` or one you have made. |
+| `--sample` | Create the ten sample users instead: two editors and eight users, one switched off. Their password is `password`, or `--password`. |
 
-Pass all three to create a user without being asked anything, for example in a deploy script:
+The first account in an app is its `ADMIN`, whatever `--role` is left out. After that, an account made without `--role` and without being asked is a `USER`, which allows nothing beyond its own account.
+
+Pass the options to create a user without being asked anything, for example in a deploy script:
 
 ```sh
-php artisan nevela:user --name="Ada Okafor" --email=ada@example.com --password="$ADMIN_PASSWORD"
+php artisan nevela:user --name="Ada Okafor" --email=ada@example.com --password="$ADMIN_PASSWORD" --role=ADMIN
 ```
 
 ## nevela:upgrade

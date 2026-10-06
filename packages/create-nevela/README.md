@@ -28,6 +28,8 @@ php nevela dev
 
 Open http://localhost:3000/sign-in and sign in as `admin@example.com` with the password `password`. That starter account is in your local database only; add your own with `php artisan nevela:user`.
 
+The app starts with an administrator and ten sample users (two editors, eight users), in your local database only, so its Users and Roles screens have something to show. Leave the samples out with `--no-sample-users`.
+
 Add your first resource, from the same folder:
 
 ```sh

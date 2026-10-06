@@ -57,7 +57,7 @@ export default defineConfig({
             { label: "Files and images", slug: "guides/images" },
             { label: "The web app", slug: "guides/web-app" },
             { label: "Authentication", slug: "guides/authentication" },
-            { label: "Roles and policies", slug: "guides/policies" },
+            { label: "Users, roles and permissions", slug: "guides/policies" },
             { label: "Seeding data", slug: "guides/seeding" },
             { label: "Updating and upgrading", slug: "guides/updating" },
             { label: "Configuration", slug: "guides/configuration" },

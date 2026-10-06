@@ -22,7 +22,10 @@ curl -X POST http://127.0.0.1:8000/api/auth/token \
 ```json
 {
   "token": "1|x8Jq…",
-  "user": { "id": "1", "name": "Admin", "email": "admin@example.com", "role": null }
+  "user": {
+    "id": "1", "name": "Admin", "email": "admin@example.com",
+    "roles": ["ADMIN"], "permissions": ["products.create", "products.view", "…"], "isAdmin": true
+  }
 }
 ```
 
@@ -241,7 +244,7 @@ Every error is JSON with an `error` message.
 |---|---|---|
 | 400 | A bad list parameter, such as sorting by an unknown field | `{ error, issues: [{ param, message }] }` |
 | 401 | No token, or one that is no longer valid | `{ error }` |
-| 403 | The policy says no | `{ error }` |
+| 403 | The policy says no: the person's [roles](/guides/policies/) don't include the permission | `{ error }` |
 | 404 | No record with that id | `{ error }` |
 | 409 | A unique value was taken between validation and saving | `{ error, field }` |
 | 422 | Validation failed | `{ error, issues: [{ path, message }] }` |

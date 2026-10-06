@@ -1,20 +1,24 @@
 import Link from "next/link";
 import { ArrowRightIcon, PlusIcon } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { resourceIcon } from "@/components/dashboard/resource-icon";
 import { StatCards, type Stat } from "@/components/dashboard/stat-card";
-import { adminPermissions, resourcePath, resourceStats, trend, visibleResources } from "@/lib/dashboard";
+import { adminPermissions, allResources, resourcePath, resourceStats, trend, visibleResources } from "@/lib/dashboard";
 import { requireSession } from "@/lib/session";
 
 export const metadata = { title: "Dashboard" };
 
 /** The first thing you see when you sign in: how much data there is, and what's left to set up. */
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { user } = await requireSession("/dashboard");
   const resources = await visibleResources();
+  // Resources exist, and this person's roles show them none: not the same as an empty app.
+  const noneForYou = resources.length === 0 && allResources().length > 0;
+  const turnedBack = (await searchParams).error === "forbidden";
 
   const cards = await Promise.all(
     resources.map(async (resource) => {
@@ -37,12 +41,31 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title={`Welcome${user.name ? `, ${user.name.split(" ")[0]}` : ""}`}
-        description={resources.length > 0 ? "Everything in your app, and how it's moving." : "Your app is running. Add a resource to fill this page."}
+        description={resources.length > 0 ? "Everything in your app, and how it's moving." : noneForYou ? "You're signed in." : "Your app is running. Add a resource to fill this page."}
       />
+
+      {turnedBack && (
+        <Alert>
+          <AlertTitle>Your role doesn&apos;t include that page</AlertTitle>
+          <AlertDescription>If you need it, ask an administrator to add it to your role.</AlertDescription>
+        </Alert>
+      )}
 
       <StatCards stats={stats} />
 
-      {resources.length === 0 && (
+      {noneForYou && (
+        <Empty className="rounded-xl border border-dashed">
+          <EmptyHeader>
+            <EmptyTitle>Nothing to show yet</EmptyTitle>
+            <EmptyDescription>
+              Your role doesn&apos;t include any of this app&apos;s data. You can manage <Link href="/dashboard/account" className="underline">your account</Link>, and an
+              administrator can give you access to more.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      )}
+
+      {resources.length === 0 && !noneForYou && (
         <Empty className="rounded-xl border border-dashed">
           <EmptyHeader>
             <EmptyTitle>No resources yet</EmptyTitle>
