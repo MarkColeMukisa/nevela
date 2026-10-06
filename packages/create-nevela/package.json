@@ -1,6 +1,6 @@
 {
   "name": "create-nevela",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Create a new Nevela app: a Laravel API and a Next.js dashboard from one resource description.",
   "type": "module",
   "bin": {
