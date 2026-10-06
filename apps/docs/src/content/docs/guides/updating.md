@@ -43,13 +43,23 @@ npm install -g create-nevela
 
 ```
 ! The nevela command is installed 2 times. Typing nevela runs the first of these:
-    C:\Users\you\AppData\Local\pnpm\bin
-    C:\Users\you\AppData\Roaming\npm
-  Keep that one and remove the rest, so there is one to keep up to date:
-    npm uninstall -g create-nevela
+    C:\Users\you\AppData\Local\pnpm\bin    v0.3.0
+    C:\Users\you\AppData\Roaming\npm        v0.4.2
+  The one that runs is not the newest. Remove the others, and v0.4.2 is what nevela runs:
+    pnpm remove -g create-nevela
 ```
 
-Your shell runs the first copy it finds and never mentions the others. So `npm install -g create-nevela@latest` can succeed while `nevela` stays on the old version, because the copy pnpm installed comes first. Remove the extra copy with the command it prints. `nevela update` always updates the copy that is running, so it is not caught by this.
+Your shell runs the first copy it finds and never mentions the others. So `npm install -g create-nevela@latest` can succeed while `nevela` stays on the old version, because the copy pnpm installed comes first. Run the command it prints, which removes every copy but the newest.
+
+`nevela update` updates the copy that is running, and then asks the `nevela` command for its version to make sure. If the answer is still the old version, it says so instead of reporting success.
+
+### pnpm and the newest release
+
+pnpm (from version 11) does not install a version in its first day after release when you ask for the latest: `pnpm add -g create-nevela@latest` gives you the one before. `nevela update` asks for the new version by number, which pnpm installs. To do the same by hand:
+
+```sh
+pnpm add -g create-nevela@0.4.3
+```
 
 You do not have to update the command before upgrading an app. `nevela upgrade` fetches the newest version of itself for that one run, so an app is always upgraded by the latest code, whatever is installed.
 

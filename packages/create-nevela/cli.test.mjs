@@ -30,9 +30,30 @@ test('the installed nevela command knows how it was installed, and a fetched one
   for (const [dir, manager] of Object.entries(installed)) {
     const install = globalInstall(dir, noProjectHere);
     assert.equal(install?.manager, manager, dir);
-    assert.equal(install.command.at(-1), 'create-nevela@latest');
+    assert.equal(install.command().at(-1), 'create-nevela@latest');
+    // An update names the version: pnpm holds "latest" back for a day after a release.
+    assert.equal(install.command('1.2.3').at(-1), 'create-nevela@1.2.3');
   }
-  assert.deepEqual(globalInstall('/usr/local/lib/node_modules/create-nevela', noProjectHere).command, ['npm', 'install', '-g', 'create-nevela@latest']);
+  assert.deepEqual(globalInstall('/usr/local/lib/node_modules/create-nevela', noProjectHere).command(), ['npm', 'install', '-g', 'create-nevela@latest']);
+  assert.deepEqual(globalInstall('/home/ada/.local/share/pnpm/global/5/.pnpm/create-nevela@0.3.0/node_modules/create-nevela', noProjectHere).command('0.4.2'), ['pnpm', 'add', '-g', 'create-nevela@0.4.2']);
+
+  // pnpm 11 keeps the files in its store and a link in its global folder. Node reports the
+  // store, which says nothing of pnpm's global folder; the folder it was started through does.
+  const store = {
+    windows: 'C:\\Users\\ada\\AppData\\Local\\pnpm\\store\\v11\\links\\@\\create-nevela\\0.3.0\\f3af82bf\\node_modules\\create-nevela',
+    linux: '/home/ada/.local/share/pnpm/store/v11/links/@/create-nevela/0.3.0/f3af82bf/node_modules/create-nevela',
+  };
+  assert.equal(globalInstall(store.windows, noProjectHere, 'C:\\Users\\ada\\AppData\\Local\\pnpm\\global\\v11\\9c74-1a10ebfb15d\\node_modules\\create-nevela')?.manager, 'pnpm');
+  assert.equal(globalInstall(store.linux, noProjectHere, '/home/ada/.local/share/pnpm/global/v11/9c74-1a10ebfb15d/node_modules/create-nevela')?.manager, 'pnpm');
+  // A pnpm home somewhere of its own choosing.
+  assert.equal(globalInstall('D:\\tools\\pn\\store\\v11\\links\\@\\create-nevela\\0.3.0\\f3af\\node_modules\\create-nevela', noProjectHere, 'D:\\tools\\pn\\global\\v11\\8754-1a10\\node_modules\\create-nevela')?.manager, 'pnpm');
+  // The same store reached from a project is that project's dependency, and never npm's.
+  assert.equal(globalInstall(store.linux, noProjectHere, '/home/ada/shop/node_modules/create-nevela'), null);
+  assert.equal(globalInstall(store.windows, noProjectHere), null);
+  // npm's command is started through a link in a bin folder; its files say it is npm's.
+  assert.equal(globalInstall('/usr/local/lib/node_modules/create-nevela', noProjectHere, '/usr/local/bin')?.manager, 'npm');
+  // Fetched for one run, however it was reached.
+  assert.equal(globalInstall(store.linux, noProjectHere, '/home/ada/.cache/pnpm/dlx/abc123/node_modules/create-nevela'), null);
 
   // Fetched for one run, or the repository itself: nothing installed to update.
   for (const dir of [
@@ -108,6 +129,9 @@ test('a second copy of the nevela command on the PATH is found, and the same cop
   assert.equal(removeCommand('/usr/local/bin'), 'npm uninstall -g create-nevela');
   assert.equal(removeCommand('/home/ada/.bun/bin'), 'bun remove -g create-nevela');
   assert.equal(removeCommand('/home/ada/.yarn/bin'), 'yarn global remove create-nevela');
+  // A pnpm home under another name: its launcher still points into pnpm's global folder.
+  assert.equal(removeCommand('D:\\tools\\pn\\bin', 'node  "%~dp0\\..\\global\\v11\\9c74-1a10ebfb15d\\node_modules\\create-nevela\\index.mjs" %*'), 'pnpm remove -g create-nevela');
+  assert.equal(removeCommand('C:\\Users\\ada\\AppData\\Roaming\\npm', '"%_prog%"  "%dp0%\\node_modules\\create-nevela\\nevela.mjs" %*'), 'npm uninstall -g create-nevela');
 });
 
 test('every file the program is made of is published with it', () => {
