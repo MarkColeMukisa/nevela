@@ -8,17 +8,17 @@ Nevela is a Laravel-first fullstack framework. Laravel owns the data, the rules 
 ## The idea in one example
 
 ```sh
-pnpm create nevela my-app
+npm install -g create-nevela    # once
+nevela new my-app
 ```
 
 That gives you a Laravel API and a Next.js dashboard, set up and connected. Then, for each kind of record your app keeps:
 
 ```sh
-php artisan nevela:resource Product --fields="name:string, sku:string!, price:money, kind:enum(stock|digital), notes:text?"
-php artisan migrate
+nevela resource Product --fields="name:string, sku:string!, price:money, kind:enum(stock|digital), notes:text?"
 ```
 
-After those two commands you have:
+After that one command you have:
 
 - a `products` table, an Eloquent model, validation, a policy and a REST API at `/api/products`
 - a Products section in the dashboard with a table, search, filters, forms, import and export
@@ -35,7 +35,7 @@ After those two commands you have:
 
 | Part | What it is |
 |---|---|
-| `create-nevela` | The command that creates a new app: `pnpm create nevela my-app`. |
+| `create-nevela` | The `nevela` command: `nevela new my-app` creates an app, and `nevela dev`, `nevela resource` and the rest work inside one. |
 | `nevela/laravel` | A Laravel package: the generator, the commands and the runtime behind the REST API. |
 | The Laravel app | An ordinary Laravel app that uses the package. Your models, policies and migrations live here. |
 | The web app | A Next.js dashboard. It has no database; it calls the Laravel API. |

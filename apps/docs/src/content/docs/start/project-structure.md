@@ -3,14 +3,14 @@ title: "Project structure"
 description: "What is in a new Nevela app, and where your own code goes."
 ---
 
-`pnpm create nevela my-app` gives you two apps in one folder.
+`nevela new my-app` gives you two apps in one folder.
 
 ```
 my-app/
 ├─ apps/
 │  ├─ api/      the Laravel app
 │  └─ web/      the Next.js dashboard
-├─ nevela       every Nevela command, from here: php nevela
+├─ nevela       the app's own launcher: php nevela does what nevela does
 └─ package.json
 ```
 
@@ -51,7 +51,7 @@ See [The web app](/guides/web-app/) for how these fit together.
 The generator, the commands and the code behind the REST API are a Composer package, `nevela/laravel`. It is installed into `apps/api/vendor` like any other dependency, and updated the same way:
 
 ```sh
-php nevela upgrade
+nevela upgrade
 ```
 
 That also updates the dashboard files you have not changed. See [Updating](/guides/updating/).
@@ -66,8 +66,8 @@ There is no `routes/api.php`. Nevela registers its own routes under `/api`, from
 
 | File | What it does |
 |---|---|
-| `nevela` | The launcher: `php nevela resource …`, `php nevela upgrade` and the rest, without `cd apps/api`. See [Commands](/reference/commands/#the-php-nevela-launcher). |
-| `package.json` | Shortcuts for people who prefer their package manager: `pnpm dev` is `php nevela dev`. |
+| `nevela` | The app's own launcher, for anyone without the `nevela` command installed: `php nevela resource …`, `php nevela upgrade` and the rest, without `cd apps/api`. See [Commands](/reference/commands/#the-php-nevela-launcher). |
+| `package.json` | Shortcuts for people who prefer their package manager: `pnpm dev` is `nevela dev`, and `pnpm nevela <command>` is `nevela <command>`. |
 | `.gitignore` | Keeps `vendor`, `node_modules`, `.env` files and build output out of git. |
 
 ## Where your code goes

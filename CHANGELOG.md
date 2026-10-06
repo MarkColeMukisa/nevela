@@ -6,6 +6,11 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Changed
+
+- `nevela --version` shows what `nevela version` shows: the command's version and how it was installed, and the app's version when you are in one. Piped or captured, it still prints the number alone, for scripts. The docs use `nevela --version`.
+- The docs lead with the `nevela` command throughout: `nevela new`, `nevela dev`, `nevela resource` and the rest, where they said `pnpm create nevela`, `php nevela …` and `php artisan nevela:…`. The longer forms still work and are listed once, under "Without the nevela command".
+
 ## [0.5.0] - 2026-10-06
 
 ### Added

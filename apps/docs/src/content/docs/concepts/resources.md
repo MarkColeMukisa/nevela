@@ -6,7 +6,7 @@ description: "What a resource is, how to describe one, and what Nevela generates
 ## Describing a resource
 
 ```sh
-php artisan nevela:resource Product --fields="name:string, sku:string!, price:money, active:boolean, kind:enum(stock|digital), notes:text?"
+nevela resource Product --fields="name:string, sku:string!, price:money, active:boolean, kind:enum(stock|digital), notes:text?"
 ```
 
 The name is PascalCase and singular (`Product`, `BlogPost`). Fields are `name:type`, separated by commas. Field names are camelCase.

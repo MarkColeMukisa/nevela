@@ -1,31 +1,90 @@
 ---
 title: "Commands"
-description: "Every Nevela command and option: resource, generate, seed, user, update, dev, status and version."
+description: "Every nevela command and option: new, update, resource, generate, seed, user, upgrade, dev, status and --version."
 ---
 
-Run Nevela's commands from the top of your project with `php nevela`:
+Install the `nevela` command once, and everything is this short, in every shell:
 
 ```sh
-php nevela dev                       # run the API and the dashboard
-php nevela status                    # check the app
-php nevela resource Product --fields="name:string, price:money" --seed
-php nevela generate
-php nevela seed Product
-php nevela user
-php nevela upgrade
-php nevela version
+npm install -g create-nevela
 ```
 
-Each one is an artisan command underneath, and this page documents them under those names: `php nevela seed Product` is `php artisan nevela:seed Product`, run in `apps/api`. Use whichever you prefer. [The launcher](#the-php-nevela-launcher) at the end of this page lists what else `php nevela` does.
+Anywhere:
 
-To create a new app in the first place, see the [quickstart](/start/quickstart/): `pnpm create nevela my-app`.
+```sh
+nevela new my-app          # create an app
+nevela update              # update the nevela command itself
+nevela --version           # which version it is
+nevela                     # everything it can do
+```
 
-## nevela:resource
+Inside an app, from any folder in it:
+
+```sh
+nevela dev                 # run the API and the dashboard
+nevela status              # check the app
+nevela resource Product --fields="name:string, price:money" --seed
+nevela generate
+nevela seed Product
+nevela user
+nevela upgrade             # bring the app to the latest Nevela
+nevela migrate
+```
+
+You don't have to install it. [Without the nevela command](#without-the-nevela-command), at the end of this page, has the longer forms that do the same.
+
+## nevela new
+
+Create an app: a Laravel API in `apps/api` and the dashboard in `apps/web`.
+
+```sh
+nevela new my-app
+```
+
+Leave the name off and it asks for one. The [quickstart](/start/quickstart/) walks through what it does.
+
+| Option | Meaning |
+|---|---|
+| `--pm <pnpm\|npm\|yarn\|bun>` | Package manager for the dashboard. Default: pnpm when you have it, and npm otherwise. |
+| `--no-install` | Don't install the dashboard's dependencies. |
+| `--fast` | Leave out PHPUnit, Pint and Laravel's other development packages. About a third quicker. |
+| `--no-user` | Don't create the starter account, or the sample users. |
+| `--no-sample-users` | Create the administrator only, without the ten sample users. |
+| `--no-git` | Don't run `git init`. |
+| `--bundled-package` | Use the copy of `nevela/laravel` inside the installer instead of the release on Packagist. |
+| `-y`, `--yes` | Ask nothing. Only the app name is ever asked for, and only if you leave it off. |
+
+## nevela update
+
+Update the `nevela` command itself. It does not touch any app.
+
+```sh
+nevela update
+```
+
+It asks the package manager that installed the command for the newest version, then asks the command for its version to make sure. See [Updating and upgrading](/guides/updating/).
+
+## nevela --version
+
+```sh
+nevela --version
+```
+
+```
+  Nevela command   v0.5.0  installed with npm
+  This app         v0.5.0
+```
+
+The first line is the command on your computer. The second is the app you are in, and is left out anywhere else. `nevela version` does the same.
+
+When its output is piped or captured, it prints the number alone (`0.5.0`), for scripts.
+
+## nevela resource
 
 Describe a new resource and generate everything for it.
 
 ```sh
-php artisan nevela:resource Product --fields="name:string, price:money, kind:enum(stock|digital)" --icon=package --group=Catalogue
+nevela resource Product --fields="name:string, price:money, kind:enum(stock|digital)" --icon=package --group=Catalogue
 ```
 
 | Argument or option | Meaning |
@@ -35,20 +94,20 @@ php artisan nevela:resource Product --fields="name:string, price:money, kind:enu
 | `--icon=` | A Lucide icon name for the dashboard sidebar. |
 | `--group=` | The sidebar heading to put the resource under. |
 | `--force` | Replace the descriptor if the resource already exists. |
-| `--migrate` | Run the new migration straight away. `php nevela resource` always does. |
-| `--seed`, `--seed=100` | Fill the new resource with records as well: 25, or the number you give. Runs the migration first. |
+| `--no-migrate` | Don't create the table yet. Run `nevela migrate` when you are ready. |
+| `--seed`, `--seed=100` | Fill the new resource with records as well: 25, or the number you give. |
 
-It writes the descriptor to `nevela/resources/<name>.json`, then generates the files listed in [What gets generated](/concepts/resources/#what-gets-generated). Run `php artisan migrate` afterwards, or pass `--migrate`.
+It writes the descriptor to `nevela/resources/<name>.json`, generates the files listed in [What gets generated](/concepts/resources/#what-gets-generated), and creates the table, because a new resource is no use without it.
 
-If the resource already exists, the command stops and points you at `nevela:generate`, so a typo cannot wipe out an existing descriptor.
+If the resource already exists, the command stops and points you at `nevela generate`, so a typo cannot wipe out an existing descriptor.
 
-## nevela:generate
+## nevela generate
 
 Regenerate code from the descriptors. Run it after editing a descriptor.
 
 ```sh
-php artisan nevela:generate            # every resource
-php artisan nevela:generate Product    # one resource
+nevela generate            # every resource
+nevela generate Product    # one resource
 ```
 
 | Argument or option | Meaning |
@@ -67,12 +126,12 @@ Each file is reported with what happened to it:
 | `skipped — edited inside generated block` | You changed code between the markers. Move it out, or use `--force`. |
 | `skipped (no web app at nevela.web_path yet)` | The web app folder was not found, so web files were not written. |
 
-## nevela:seed
+## nevela seed
 
 Fill a resource with plausible records, and print how long it took.
 
 ```sh
-php artisan nevela:seed Product --count=1000
+nevela seed Product --count=1000
 ```
 
 ```
@@ -102,12 +161,12 @@ What to know before using it:
 - **It is all or nothing.** The delete from `--fresh` and all the inserts share one transaction. If anything fails, the table is left as it was.
 - **Rows are inserted directly.** That is what makes it fast. It also means the form request, the policy and model events do not run. Use it for development and demo data, not for importing real records.
 
-## nevela:user
+## nevela user
 
 Create someone who can sign in to the dashboard.
 
 ```sh
-php artisan nevela:user
+nevela user
 ```
 
 It asks for a name, an email, a password and a role. The password is not shown as you type.
@@ -118,27 +177,27 @@ It asks for a name, an email, a password and a role. The password is not shown a
 | `--email=` | The address they sign in with. Must not be in use already. |
 | `--password=` | Their password, at least 8 characters. Leave it out to be asked for it, which keeps it out of your shell history. |
 | `--role=` | Their [role](/guides/policies/): `ADMIN`, `EDITOR`, `USER` or one you have made. |
-| `--sample` | Create the ten sample users instead: two editors and eight users, one switched off. Their password is `password`, or `--password`. |
+| `--sample` | Create the ten sample users instead: two editors and eight users, one switched off. Their password is `password`, or `--password`. Refused in production. |
 
 The first account in an app is its `ADMIN`, whatever `--role` is left out. After that, an account made without `--role` and without being asked is a `USER`, which allows nothing beyond its own account.
 
-Pass the options to create a user without being asked anything, for example in a deploy script:
+Pass the options to create a user without being asked anything. On a server, where the `nevela` command usually isn't installed, use the artisan form:
 
 ```sh
 php artisan nevela:user --name="Ada Okafor" --email=ada@example.com --password="$ADMIN_PASSWORD" --role=ADMIN
 ```
 
-## nevela:upgrade
+## nevela upgrade
 
 Bring the app up to the latest Nevela: the package, the generated code and the dashboard.
 
 ```sh
-php nevela upgrade
-php nevela upgrade --check    # show what would change, and change nothing
-php nevela upgrade --undo     # put the dashboard back as it was before the last upgrade
+nevela upgrade
+nevela upgrade --check    # show what would change, and change nothing
+nevela upgrade --undo     # put the dashboard back as it was before the last upgrade
 ```
 
-Before 0.3.0 this was `nevela:update`, and `php nevela update` still runs it. The name changed to match Grit: `nevela update` now updates the `nevela` command itself, and `nevela upgrade` brings an app up to date. See [Updating and upgrading](/guides/updating/).
+`nevela update` and `nevela upgrade` are two commands, as in Grit: `update` is for the `nevela` command itself, and `upgrade` is for the app you are in. See [Updating and upgrading](/guides/updating/).
 
 | Option | Meaning |
 |---|---|
@@ -148,12 +207,12 @@ Before 0.3.0 this was `nevela:update`, and `php nevela update` still runs it. Th
 
 Dashboard files you have not changed are updated, after being backed up. Files you changed are kept, and the new versions are saved beside them to compare. [Updating](/guides/updating/) explains the record that makes this exact, and what to do with an older app.
 
-## nevela:dev
+## nevela dev
 
 Run the API and the dashboard together.
 
 ```sh
-php nevela dev
+nevela dev
 ```
 
 ```
@@ -170,48 +229,62 @@ It checks the API's port before using it. If another program already has port 80
 
 Stopping it with Ctrl+C stops both.
 
-## nevela:status
+## nevela status
 
 Check the app.
 
 ```sh
-php nevela status
+nevela status
 ```
 
 ```
-  Nevela ................................................ 0.1.3 (latest)
+  Nevela ................................................ 0.5.0 (latest)
   Laravel / PHP ....................................... 13.34.0 / 8.5.11
   Database ............................ sqlite · database/database.sqlite
-  Migrations ...................................... 5 ran, none pending
-  Users who can sign in ................................................ 1
+  Migrations ...................................... 8 ran, none pending
+  Users who can sign in ............................................... 11
   Resource: Product ....................................... 1,000 records
-  Dashboard ................................................ template 0.1.3
+  Dashboard ................................................ template 0.5.0
   API ............. http://127.0.0.1:8000/api (running, and it is this app)
 
   Everything looks right.
 ```
 
-`php nevela status -v` also lists the dashboard files you have changed, which are the ones an update will leave alone.
+`nevela status -v` also lists the dashboard files you have changed, which are the ones an upgrade will leave alone.
 
 Anything that needs attention is in red, with the command that fixes it: migrations that have not run, a resource whose table is missing, nobody able to sign in, or the dashboard's API address being answered by a different program. The command exits with an error code when it finds a problem, so it works in scripts.
 
-## nevela:version
+## nevela migrate, and any other artisan command
 
 ```sh
-php nevela version
+nevela migrate                 # php artisan migrate
+nevela artisan route:list      # any artisan command, without cd apps/api
 ```
 
-Prints the version of Nevela the app is on, for example `Nevela 0.1.3`. `php nevela --version` does the same.
+`nevela tinker`, `nevela test` and `nevela serve` are short for the artisan commands of the same names.
 
-## The php nevela launcher
+## Without the nevela command
 
-`nevela` is a small PHP file at the top of your project. It saves the `cd apps/api`, and it hands your command to artisan in the same process, so arguments arrive exactly as you typed them.
+Everything above works without installing anything. There are three longer forms, and they all run the same code.
+
+| | Create an app | Inside an app |
+|---|---|---|
+| The `nevela` command | `nevela new my-app` | `nevela dev` |
+| Your package manager | `pnpm create nevela my-app` | `pnpm nevela dev` |
+| The app's own launcher | | `php nevela dev` |
+| Artisan, in `apps/api` | | `php artisan nevela:dev` |
+
+With npm the first is `npm create nevela@latest my-app`, and the second is `npm run nevela -- dev`.
+
+### The php nevela launcher
+
+`nevela` is also a small PHP file at the top of every app. It saves the `cd apps/api`, and it hands your command to artisan in the same process, so arguments arrive exactly as you typed them. It takes the same commands as the `nevela` command does inside an app:
 
 | You type | It runs |
 |---|---|
 | `php nevela dev` | `php artisan nevela:dev` |
 | `php nevela status` | `php artisan nevela:status` |
-| `php nevela version` | `php artisan nevela:version` |
+| `php nevela --version` | `php artisan nevela:version`: the version of Nevela the app is on |
 | `php nevela resource …` | `php artisan nevela:resource … --migrate` |
 | `php nevela generate` | `php artisan nevela:generate` |
 | `php nevela seed …` | `php artisan nevela:seed …` |
@@ -222,38 +295,16 @@ Prints the version of Nevela the app is on, for example `Nevela 0.1.3`. `php nev
 | `php nevela artisan <command>` | any other artisan command, for example `php nevela artisan route:list` |
 | `php nevela` | the list of commands |
 
-`php nevela resource` creates the table as well, because a new resource is no use without it. Pass `--no-migrate` to skip that.
+Run through artisan directly, `nevela:resource` does not create the table unless you add `--migrate`. The other forms add it for you.
 
-The file is written by `nevela:generate` and kept up to date by it. Add your own shortcuts below its generated block.
+The file is written by `nevela generate` and kept up to date by it. Add your own shortcuts below its generated block. It is created when the Laravel app sits at `<project>/apps/<name>`, which is how `nevela new` lays a project out. For another layout, set `root_path` in `config/nevela.php`.
 
 ### When `php` is not a command
 
-In Git Bash on Windows with Laravel Herd, `php` is not found, because PHP there is `php.bat`. Every command also works through your package manager, in any shell:
+In Git Bash on Windows with Laravel Herd, `php` is not found, because PHP there is `php.bat`. The `nevela` command works in every shell, and so does your package manager:
 
 ```sh
 pnpm nevela dev
 pnpm nevela resource Product --fields="name:string, price:money" --seed
 pnpm nevela upgrade
 ```
-
-With npm it is `npm run nevela -- <command>`.
-
-### The shortest form: the nevela command
-
-Install it once with `npm install -g create-nevela`, and drop the `php` and the `pnpm`:
-
-```sh
-nevela                     # anywhere: everything it can do
-nevela new my-app          # anywhere: create an app (leave the name off and it asks)
-nevela update              # anywhere: update the nevela command itself
-nevela version             # anywhere: the command's version, and the app's when in one
-nevela dev                 # inside an app, from any folder in it
-nevela resource Product --fields="name:string, price:money" --seed
-nevela upgrade             # inside an app: bring it to the latest Nevela
-```
-
-It works in every shell, including Git Bash.
-
-### Where the launcher is written
-
-It is created when the Laravel app sits at `<project>/apps/<name>`, which is how `pnpm create nevela` lays a project out. For another layout, set `root_path` in `config/nevela.php`.

@@ -1,6 +1,13 @@
 # create-nevela
 
-Create a new [Nevela](https://nevela-docs.vercel.app) app: a Laravel API and a Next.js dashboard, generated from one resource description.
+The `nevela` command. It creates a new [Nevela](https://nevela-docs.vercel.app) app, a Laravel API and a Next.js dashboard generated from one resource description, and runs everything inside one.
+
+```sh
+npm install -g create-nevela    # once
+nevela new my-app
+```
+
+Or without installing anything:
 
 ```sh
 pnpm create nevela my-app
@@ -16,41 +23,35 @@ You need PHP 8.3 or newer, Composer, and Node.js 20 or newer.
 my-app/
 ├─ apps/api/    a Laravel app with Sanctum and Nevela installed
 ├─ apps/web/    the Next.js dashboard, pointed at the API
-└─ nevela       every command, from this folder: php nevela
+└─ nevela       the app's own launcher: php nevela does what nevela does
 ```
 
 Then:
 
 ```sh
 cd my-app
-php nevela dev
+nevela dev
 ```
 
-Open http://localhost:3000/sign-in and sign in as `admin@example.com` with the password `password`. That starter account is in your local database only; add your own with `php artisan nevela:user`.
+Open http://localhost:3000/sign-in and sign in as `admin@example.com` with the password `password`. That starter account is in your local database only; add your own with `nevela user`.
 
 The app starts with an administrator and ten sample users (two editors, eight users), in your local database only, so its Users and Roles screens have something to show. Leave the samples out with `--no-sample-users`.
 
 Add your first resource, from the same folder:
 
 ```sh
-php nevela resource Product --fields="name:string, sku:string!, price:money"
+nevela resource Product --fields="name:string, sku:string!, price:money"
 ```
 
-That writes the Laravel code and the dashboard pages, and creates the table. `php nevela` lists everything else.
+That writes the Laravel code and the dashboard pages, and creates the table. `nevela` on its own lists everything else.
 
-## The nevela command
-
-Install this package once and you have a `nevela` command, in every shell:
-
-```sh
-npm install -g create-nevela
-```
+## Every command
 
 ```sh
 nevela                 # anywhere: everything it can do
 nevela new my-app      # anywhere: create an app (leave the name off and it asks)
 nevela update          # anywhere: update the nevela command itself
-nevela version         # anywhere: the command's version, and the app's when in one
+nevela --version       # anywhere: the command's version, and the app's when in one
 nevela dev             # inside an app: run the API and the dashboard
 nevela upgrade         # inside an app: bring it to the latest Nevela
 ```
@@ -79,7 +80,7 @@ Without the command installed, `npx create-nevela upgrade` does the same, in any
 | `--bundled-package` | Use the copy of `nevela/laravel` inside this installer instead of the release on Packagist. |
 | `-y`, `--yes` | Ask nothing. Only the app name is ever asked for. |
 
-With npm, put options after `--`: `npm create nevela@latest my-app -- --no-install`.
+Through npm's `create`, put options after `--`: `npm create nevela@latest my-app -- --no-install`.
 
 ## How it installs the Laravel package
 

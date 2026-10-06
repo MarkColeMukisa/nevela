@@ -7,10 +7,10 @@ import { NEVELA_VERSION, RELEASE_HEADLINE, RELEASE_URL, REPO_URL } from "../vers
  * Flare's landing page (MIT), with Nevela's content.
  */
 const install = [
-  { id: "pnpm", label: "pnpm", command: "pnpm create nevela my-app" },
-  { id: "npm", label: "npm", command: "npm create nevela@latest my-app" },
-  { id: "resource", label: "Add a resource", command: 'php nevela resource Product --fields="name:string, sku:string!, price:money"' },
-  { id: "seed", label: "Seed", command: "php nevela seed Product --count=1000" },
+  { id: "install", label: "Install", command: "npm install -g create-nevela" },
+  { id: "new", label: "New app", command: "nevela new my-app" },
+  { id: "resource", label: "Add a resource", command: 'nevela resource Product --fields="name:string, sku:string!, price:money"' },
+  { id: "seed", label: "Seed", command: "nevela seed Product --count=1000" },
   { id: "upgrade", label: "Upgrade", command: "nevela upgrade" },
 ];
 
@@ -42,8 +42,8 @@ const batteries = [
 const generators = [
   {
     id: "create",
-    label: "create nevela",
-    command: "pnpm create nevela my-app",
+    label: "nevela new",
+    command: "nevela new my-app",
     lead: "A new app in one command: a Laravel API and a Next.js dashboard, installed and connected.",
     out: [
       ["✔", "Creating the Laravel app"],
@@ -57,8 +57,8 @@ const generators = [
   },
   {
     id: "resource",
-    label: "nevela:resource",
-    command: 'php artisan nevela:resource Product --fields="name:string, sku:string!, price:money, kind:enum(stock|digital)"',
+    label: "nevela resource",
+    command: 'nevela resource Product --fields="name:string, sku:string!, price:money, kind:enum(stock|digital)"',
     lead: "Describe a resource once. Nevela writes the Laravel side and the dashboard side from it.",
     out: [
       ["created", "app/Models/Product.php"],
@@ -69,12 +69,12 @@ const generators = [
       ["created", "../web/resources/product.resource.ts"],
       ["created", "../web/app/dashboard/products/page.tsx"],
     ],
-    href: "/reference/commands/#nevelaresource",
+    href: "/reference/commands/#nevela-resource",
   },
   {
     id: "generate",
-    label: "nevela:generate",
-    command: "php artisan nevela:generate",
+    label: "nevela generate",
+    command: "nevela generate",
     lead: "Change the descriptor and run it again. Generated blocks follow; your own code stays where it is.",
     out: [
       ["updated", "app/Models/Product.php"],
@@ -83,18 +83,18 @@ const generators = [
       ["updated", "../web/resources/product.resource.ts"],
       ["exists (yours)", "../web/app/dashboard/products/page.tsx"],
     ],
-    href: "/reference/commands/#nevelagenerate",
+    href: "/reference/commands/#nevela-generate",
   },
   {
     id: "seed",
-    label: "nevela:seed",
-    command: "php artisan nevela:seed Product --count=1000",
+    label: "nevela seed",
+    command: "nevela seed Product --count=1000",
     lead: "Fill a resource with records that follow its descriptor, timed.",
     out: [
       ["info", "Seeded 1,000 Products in 114 ms (8,809 rows/s)."],
       ["", "Products in the database .......... 1,000"],
     ],
-    href: "/reference/commands/#nevelaseed",
+    href: "/reference/commands/#nevela-seed",
   },
 ];
 
@@ -124,10 +124,11 @@ const examples = [
     lang: "php",
     code: `class ProductPolicy
 {
-    // Laravel enforces this on every request. The dashboard shows the answer.
+    // A permission, held through a role. Laravel checks it on every request,
+    // and the dashboard hides what a person can't use.
     public function delete(User $user, Product $product): bool
     {
-        return $user->role === 'admin';
+        return $user->can('products.delete');
     }
 }`,
   },
@@ -208,7 +209,7 @@ const faq = [
     </div>
 
     <div class="fl-install" data-tabs>
-      <div class="fl-install-tabs" role="tablist" aria-label="Create an app, then add to it">
+      <div class="fl-install-tabs" role="tablist" aria-label="Install the command, create an app, then add to it">
         {install.map((item, index) => (
           <button role="tab" id={`fl-i-${item.id}`} aria-controls={`fl-ip-${item.id}`} aria-selected={index === 0 ? "true" : "false"} tabindex={index === 0 ? 0 : -1}>
             {item.label}
@@ -390,8 +391,8 @@ const faq = [
           <div class="fl-share">
             <p class="fl-share-title">Data to look at, straight away</p>
             <p>Seed a thousand records that follow the descriptor, and see the time it took.</p>
-            <code class="fl-share-cmd">php artisan nevela:seed Product</code>
-            <a href="/reference/commands/#nevelaseed" class="fl-link">Seeding</a>
+            <code class="fl-share-cmd">nevela seed Product</code>
+            <a href="/reference/commands/#nevela-seed" class="fl-link">Seeding</a>
           </div>
         </div>
       </div>

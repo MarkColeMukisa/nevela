@@ -27,7 +27,7 @@ npm install -g create-nevela
 | | |
 |---|---|
 | `nevela new my-app` | create an app. Leave the name off and it asks for one. |
-| `nevela version` | which version the command is, and the app's too when you are in one |
+| `nevela --version` | which version the command is, and the app's too when you are in one |
 | `nevela dev` | run the API and the dashboard |
 | `nevela resource Product --fields="name:string, price:money" --seed` | add a resource |
 | `nevela upgrade` | bring the app to the latest Nevela |
@@ -39,7 +39,7 @@ npm install -g create-nevela
 
 ### If an update seems to change nothing
 
-`nevela version` and `nevela update` both say so when the command is installed more than once, for example once with npm and once with pnpm:
+`nevela --version` and `nevela update` both say so when the command is installed more than once, for example once with npm and once with pnpm:
 
 ```
 ! The nevela command is installed 2 times. Typing nevela runs the first of these:
@@ -110,7 +110,7 @@ The dashboard is copied into your app when it is created, so that you can change
 To see what you have changed at any time:
 
 ```sh
-php nevela status -v
+nevela status -v
 ```
 
 ```
@@ -164,7 +164,7 @@ When dependencies change, the command tells you to install them.
 
 ### History
 
-Every update is added to the `history` in `.nevela.json`: the date, the versions, and which files were updated, added and kept. `php nevela status` shows the latest.
+Every update is added to the `history` in `.nevela.json`: the date, the versions, and which files were updated, added and kept. `nevela status` shows the latest.
 
 The `.nevela/` folder (backups and incoming files) ignores itself, so none of it goes into git.
 
@@ -182,7 +182,7 @@ The update downloads the dashboard for the version it is moving to. It tries npm
 
 ## Creating apps is separate
 
-`pnpm create nevela my-app` always creates a new app. It fetches the newest installer itself before doing anything, so it is current even when your package manager hands it an older one.
+`nevela new my-app` (or `pnpm create nevela my-app`) always creates a new app. It fetches the newest installer itself before doing anything, so it is current even when your package manager hands it an older one.
 
 ## Options
 

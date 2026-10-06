@@ -6,7 +6,7 @@ description: "Every field type Nevela accepts, how it is stored, and how it is v
 Fields are written as `name:type`, separated by commas:
 
 ```sh
-php artisan nevela:resource Product --fields="name:string, sku:string!, price:money, notes:text?"
+nevela resource Product --fields="name:string, sku:string!, price:money, notes:text?"
 ```
 
 ## Suffixes

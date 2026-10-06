@@ -15,7 +15,7 @@ description: "Why Nevela is built this way, what is verified, and the roadmap."
 ## Decisions (2026-10-02)
 
 1. **Next.js layer comes from Flare's frontend** (`examples/next-shop` / CLI `next` template). Nevela does not fork JB's components; it replaces only the data and auth seam.
-2. **The generator is a Laravel package** (`php artisan nevela:resource`). A thin Node scaffolder (`nevela new`) comes later.
+2. **The generator is a Laravel package.** `nevela resource` is `php artisan nevela:resource` underneath, and the `nevela` command is a thin Node program that creates apps and hands everything else to artisan.
 3. **Auth is Sanctum personal access tokens (Bearer).** Next.js server code holds the token in an httpOnly cookie; the browser never sees it.
 4. **Monorepo**: `apps/api` (Laravel) + `apps/web` (Next.js) + `apps/docs` (this site) + `packages/*`.
 5. **Single source of input**: `apps/api/nevela/resources/*.json`. Laravel code generated from it is the runtime authority. The Flare `.resource.ts` is derived for rendering only. No validation logic is duplicated in TypeScript.

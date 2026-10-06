@@ -6,7 +6,7 @@ description: "Link one resource to another with belongsTo, and what Nevela gener
 A `belongsTo` field links a record to one record of another resource: a product to its category, a task to its owner.
 
 ```sh
-php nevela resource Product --fields="name:string, category:belongsTo(Category)"
+nevela resource Product --fields="name:string, category:belongsTo(Category)"
 ```
 
 The resource it points at has to exist first. If it does not, nothing is written and you are told the command to create it.
@@ -72,14 +72,14 @@ GET /api/products?filter[categoryId]=01a10804-7b04-72d6-aabf-a2113b9b6bc5
 A task with an owner and a reviewer, both members:
 
 ```sh
-php nevela resource Task --fields="title:string, owner:belongsTo(Member), reviewer:belongsTo(Member)?"
+nevela resource Task --fields="title:string, owner:belongsTo(Member), reviewer:belongsTo(Member)?"
 ```
 
 Member gets two relations, named so they do not collide: `tasks` for the first field and `tasksAsReviewer` for the second.
 
 ## Seeding
 
-`php nevela seed Product` gives each product a category picked from the ones that exist. Seed the parent first; if there are none and the link is required, the command says so and stops.
+`nevela seed Product` gives each product a category picked from the ones that exist. Seed the parent first; if there are none and the link is required, the command says so and stops.
 
 ## Not generated
 
