@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "Two-factor, passkeys and account pages";
+export const RELEASE_HEADLINE = "Users, roles and permissions";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "full authentication: two-factor, passkeys, emailed sign-in links, password reset, a profile picture and a list of devices.",
-  href: "/guides/authentication/",
-  label: "Authentication",
+  text: "users, roles and permissions: a Users screen, a Roles screen, and a dashboard that shows each person only what their role allows.",
+  href: "/guides/policies/",
+  label: "Users, roles and permissions",
 };

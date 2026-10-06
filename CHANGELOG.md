@@ -6,6 +6,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-06
+
 ### Added
 
 - Roles and permissions, on Grit's model. A permission is `feature.action` (`products.view`, `users.edit`), every resource brings its four, and a role is a set of them. An app starts with three roles: `ADMIN` (everything), `EDITOR` (every resource) and `USER` (nothing beyond their own account). Laravel checks the permission on every request: `$user->can('products.view')`, `Gate::authorize()`, `@can` and `can:` middleware all work.
@@ -238,7 +240,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.4.3...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.4.3...v0.5.0
 [0.4.3]: https://github.com/MarkColeMukisa/nevela/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/MarkColeMukisa/nevela/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.4.0...v0.4.1
