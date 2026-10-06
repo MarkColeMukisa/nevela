@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { can, type PolicyAction } from "@flaredev/core";
+import type { PolicyAction } from "@flaredev/core";
 import type { Failure } from "@/lib/resource/store";
-import { resourcePath, dashboardSession, dashboardStore, policyFor } from "@/lib/dashboard";
+import { allResources, resourcePath, dashboardSession, dashboardStore, mayDo } from "@/lib/dashboard";
 import type { ActionResult } from "./actions";
 
 /** One row that couldn't be saved, numbered from 1 within the batch that was sent. */
@@ -26,11 +26,12 @@ const GIVE_UP_AFTER = 25;
 
 const forbidden = (message = "You don't have access to the admin."): ActionResult<never> => ({ ok: false, status: 403, error: message });
 
-/** Session + policy check for one action on one resource. */
+/** Session check, plus what the person's roles allow, for one action on one resource. */
 async function allowed(resourceName: string, action: PolicyAction): Promise<ActionResult<never> | undefined> {
-  const { allowed: inAdmin, role } = await dashboardSession();
+  const { allowed: inAdmin } = await dashboardSession();
   if (!inAdmin) return forbidden();
-  if (!can(policyFor(resourceName), role, action)) return forbidden(`Your role can't ${action} this record.`);
+  const resource = allResources().find((item) => item.name === resourceName);
+  if (!resource || !(await mayDo(resource, action))) return forbidden(`Your role can't ${action} this record.`);
 }
 
 /** A store failure as one line of text, attributed to a field when the issues name one. */

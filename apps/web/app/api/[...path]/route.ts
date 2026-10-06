@@ -64,7 +64,11 @@ export async function GET(request: NextRequest, context: Context) {
     const value = request.headers.get(name);
     if (value) conditional[name] = value;
   }
-  return forward(url, { method: "GET", headers: { Accept: request.headers.get("accept") ?? "application/json", ...conditional } }, !isFile);
+  // The API's answers are JSON, whatever the browser said it would accept. Asked that way,
+  // a request with no session is told 401; asked as a page, Laravel would try to send it
+  // to a sign-in route this app doesn't have. A file is asked for as the browser wants it.
+  const accept = isFile ? (request.headers.get("accept") ?? "*/*") : "application/json";
+  return forward(url, { method: "GET", headers: { Accept: accept, ...conditional } }, !isFile);
 }
 
 export async function PUT(request: NextRequest, context: Context) {

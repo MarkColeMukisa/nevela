@@ -73,8 +73,10 @@ Open http://localhost:3000/sign-in and sign in with the starter account:
 | Email | `admin@example.com` |
 | Password | `password` |
 
-:::caution[The starter account is for your machine]
-It exists only in your local database. It is not in the code or in a migration, so it does not follow the app to a server. Still, don't keep a password everyone knows: add your own account and remove this one before anyone else can reach the app.
+That account is the administrator. Ten sample users are there too, with the same password: two editors and eight users. Open **Users** in the sidebar to see them and **Roles** to see what each may do, or sign in as `amara.okafor@example.com` (an editor) or `sofia.martinez@example.com` (a user) to see the dashboard as they do. [Users, roles and permissions](/guides/policies/) has the rest.
+
+:::caution[These accounts are for your machine]
+They exist only in your local database. They are not in the code or in a migration, so they do not follow the app to a server. Still, don't keep a password everyone knows: add your own account and delete these before anyone else can reach the app.
 
 ```sh
 php nevela user
@@ -130,7 +132,8 @@ It lists the Nevela version, which migrations have run and which are pending, ho
 | `--pm <pnpm\|npm\|yarn\|bun>` | Package manager for the dashboard. Default: the one you ran the command with. |
 | `--no-install` | Don't install the dashboard's dependencies. |
 | `--fast` | Leave out PHPUnit, Pint and Laravel's other development packages. About a third quicker. |
-| `--no-user` | Don't create the starter account. |
+| `--no-user` | Don't create the starter account, or the sample users. |
+| `--no-sample-users` | Create the administrator only, without the ten sample users. |
 | `--no-git` | Don't run `git init`. |
 | `--bundled-package` | Use the copy of `nevela/laravel` inside the installer instead of the release on Packagist. |
 | `-y`, `--yes` | Ask nothing. Only the app name is ever asked for, and only if you leave it off. |

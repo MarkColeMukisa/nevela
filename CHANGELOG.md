@@ -6,6 +6,33 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Added
+
+- Roles and permissions, on Grit's model. A permission is `feature.action` (`products.view`, `users.edit`), every resource brings its four, and a role is a set of them. An app starts with three roles: `ADMIN` (everything), `EDITOR` (every resource) and `USER` (nothing beyond their own account). Laravel checks the permission on every request: `$user->can('products.view')`, `Gate::authorize()`, `@can` and `can:` middleware all work.
+- A **Users** screen: add, edit, switch off, sign out everywhere and delete, with search and filters by role and status.
+- A **Roles** screen: make roles and tick what each allows, on a grid of every permission there is. A section can be granted whole, including what is added to it later.
+- The dashboard hides what the signed-in person can't use: resources they can't view leave the sidebar, and buttons appear only with the matching permission.
+- Three rules on top of the permissions, enforced by Laravel: nobody hands out more than they hold, only an administrator changes an administrator's account, and the last administrator can't be removed, switched off or demoted.
+- Switching an account off: it is kept, signed out everywhere, and refused at sign-in whichever way it comes.
+- A new app starts with ten sample users beside the administrator: two editors and eight users, one switched off. `--no-sample-users` leaves them out, and `nevela user --sample` adds them to an app that has none.
+- `nevela user --role=`. The first account in an app is its `ADMIN`.
+- Permissions of your own, in `config/nevela.php` under `permissions`.
+
+### Changed
+
+- A generated policy asks for the resource's permission, where it used to return `true`. Existing policies are your files and are not touched.
+- Someone who signs up gets the `USER` role (`auth.default_role`, which was unset). Opening sign-up no longer opens your data.
+- An account made with `nevela user` after the first, without `--role` and without being asked, is a `USER`. It used to be able to do everything, as every account could.
+
+### Upgrading
+
+- Run `nevela migrate` after `nevela upgrade`. Every user the app already has becomes an `ADMIN`, so nobody loses access; give people narrower roles from the Users screen. Until the migration runs, everyone can still do everything.
+- Your policies still say `return true`. To put a resource under permissions, change its policy to `return $user->can('products.view');` and so on. See "Upgrading an app from before 0.5.0" in the docs.
+
+### Fixed
+
+- A request through the dashboard's `/api` route with no session was answered 500 when the browser hadn't asked for JSON. It is answered 401.
+
 ## [0.4.3] - 2026-10-06
 
 ### Fixed

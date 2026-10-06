@@ -40,17 +40,24 @@ Not included yet: signing in with Google, GitHub and other providers.
 nevela user
 ```
 
-It asks for a name, an email and a password. Pass them as options to skip the questions: `nevela user --name="Ada Okafor" --email=ada@example.com --password="…"`.
+It asks for a name, an email, a password and a role. Pass them as options to skip the questions: `nevela user --name="Ada Okafor" --email=ada@example.com --password="…" --role=EDITOR`. The first account in an app is its administrator.
+
+People with the permission can also add, change, switch off and delete users from the dashboard's **Users** screen: see [Users, roles and permissions](/guides/policies/).
 
 ### Letting people sign up
 
-Sign-up is off by default, and this is deliberate. A generated [policy](/guides/policies/) lets every signed-in user do everything until you tighten it. With sign-up open on an untouched app, anyone who found the address could create an account and change your data.
+Sign-up is off by default: most dashboards are for a team, not for the public.
+
+Someone who signs up gets the `USER` [role](/guides/policies/), which allows nothing beyond their own account, so opening sign-up doesn't open your data. An administrator gives them more from the Users screen.
 
 To open it:
 
-1. Tighten the policies in `apps/api/app/Policies`.
-2. Add `NEVELA_REGISTRATION=true` to `apps/api/.env`.
-3. Run `nevela generate`, so the sign-in page shows the link.
+1. Add `NEVELA_REGISTRATION=true` to `apps/api/.env`.
+2. Run `nevela generate`, so the sign-in page shows the link.
+
+:::caution[An app from before 0.5.0]
+Its policies still say `return true`, which lets every signed-in user do everything whatever their role. Change them to ask for permissions before opening sign-up: see [Upgrading an app from before 0.5.0](/guides/policies/#upgrading-an-app-from-before-050).
+:::
 
 To have new accounts prove their address before they can sign in, set `require_email_verification` to `true` in `config/nevela.php`.
 

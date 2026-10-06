@@ -172,7 +172,9 @@ jobs:
           php nevela status | tee status.log
           grep -q "none pending" status.log
           grep -q "Resource: Product" status.log
-          php nevela user --name="CI" --email=ci@example.test --password=ci-password-123
+          # The installer made the administrator, so an account made now is a plain USER unless told otherwise.
+          php nevela user --name="CI" --email=ci@example.test --password=ci-password-123 --role=editor | tee user.log
+          grep -q 'as EDITOR' user.log
           php nevela artisan test
       - name: Build the dashboard with the resource
         working-directory: ${{ runner.temp }}/demo-app/apps/web
@@ -294,8 +296,28 @@ jobs:
         run: |
           php artisan serve --port=8000 > /dev/null 2>&1 &
           for i in $(seq 1 20); do curl -s -o /dev/null http://127.0.0.1:8000/api/auth/me && break; sleep 1; done
-          # The starter account the installer made.
-          curl -s -X POST http://127.0.0.1:8000/api/auth/token -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{"email":"admin@example.com","password":"password"}' | grep -q '"token"'
+          # The starter account the installer made: the administrator.
+          signin() { curl -s -X POST http://127.0.0.1:8000/api/auth/token -H 'Accept: application/json' -H 'Content-Type: application/json' -d "{\"email\":\"$1\",\"password\":\"password\"}"; }
+          bearer() { signin "$1" | sed -E 's/.*"token":"([^"]+)".*/\1/'; }
+          signin admin@example.com | tee admin.json | grep -q '"token"'
+          grep -q '"isAdmin":true' admin.json
+          grep -q '"roles":\["ADMIN"\]' admin.json
+          # And the ten sample users beside it: two editors, eight users, one of those switched off.
+          admin="$(bearer admin@example.com)"
+          curl -s "http://127.0.0.1:8000/api/_nevela/users?perPage=100" -H 'Accept: application/json' -H "Authorization: Bearer $admin" > users.json
+          grep -q '"total":12' users.json
+          test "$(grep -o '"name":"EDITOR"' users.json | wc -l)" = 3
+          test "$(grep -o '"active":false' users.json | wc -l)" = 1
+          # Each role gets what it should from the API: an editor the records and no say over users,
+          editor="$(bearer amara.okafor@example.com)"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/products -H 'Accept: application/json' -H "Authorization: Bearer $editor")" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8000/api/_nevela/roles -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: Bearer $editor" -d '{"name":"Mine","grants":["*"]}')" = 403
+          # a user nothing but their own account,
+          plain="$(bearer sofia.martinez@example.com)"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/auth/me -H 'Accept: application/json' -H "Authorization: Bearer $plain")" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/products -H 'Accept: application/json' -H "Authorization: Bearer $plain")" = 403
+          # and a switched-off account no way in.
+          signin noah.williams@example.com | grep -q 'ACCOUNT_DISABLED'
           token="$(curl -s -X POST http://127.0.0.1:8000/api/auth/token -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{"email":"ci@example.test","password":"ci-password-123"}' | sed -E 's/.*"token":"([^"]+)".*/\1/')"
           curl -s http://127.0.0.1:8000/api/_nevela/ping | grep -q '"nevela"'
           # With the API up, status finds it and says it is this app.

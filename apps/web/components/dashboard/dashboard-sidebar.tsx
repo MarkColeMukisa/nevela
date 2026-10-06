@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { ActivityIcon, LayoutDashboardIcon, UserCircleIcon } from "lucide-react";
+import { ActivityIcon, LayoutDashboardIcon, ShieldCheckIcon, UserCircleIcon, UsersIcon } from "lucide-react";
 import { ChevronsUpDownIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
@@ -63,6 +63,7 @@ export function DashboardSidebar({
   resources,
   links = [],
   isAdmin = false,
+  access = { users: false, roles: false },
   user,
 }: {
   appName: string;
@@ -71,12 +72,19 @@ export function DashboardSidebar({
   links?: Array<{ label: string; href: string; icon: string }>;
   /** Whether to show the sections that manage the app itself. */
   isAdmin?: boolean;
+  /** Which of the screens for managing people this person may open. */
+  access?: { users: boolean; roles: boolean };
   user: DashboardUser;
 }) {
   const pathname = usePathname();
   // A saved view is the query it was saved with, so the one you're on is the one that matches.
   const search = useSearchParams().toString();
-  const manage = [...ACCOUNT_LINKS, ...(isAdmin ? ADMIN_LINKS : [])];
+  const manage = [
+    ...ACCOUNT_LINKS,
+    ...(access.users ? [{ href: "/dashboard/access/users", label: "Users", icon: UsersIcon }] : []),
+    ...(access.roles ? [{ href: "/dashboard/access/roles", label: "Roles", icon: ShieldCheckIcon }] : []),
+    ...(isAdmin ? ADMIN_LINKS : []),
+  ];
 
   return (
     <Sidebar collapsible="icon">

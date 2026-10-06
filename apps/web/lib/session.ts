@@ -6,7 +6,18 @@ export interface SessionUser {
   id: string;
   name: string | null;
   email: string;
+  /** The first of their roles, from when an account had one. */
   role: string | null;
+  /** The names of their roles. */
+  roles?: string[];
+  /**
+   * Everything they may do, as "feature.action" ("products.view"). Laravel works it out
+   * from their roles; lib/dashboard.ts uses it to hide what they can't use. Missing when
+   * the API is from before roles, when everyone could do everything.
+   */
+  permissions?: string[];
+  /** Whether their roles come to everything. */
+  isAdmin?: boolean;
   emailVerified: boolean;
   twoFactorEnabled: boolean;
   /** The key of the profile picture (an optimised upload), or null. Show it with fileUrl(). */
