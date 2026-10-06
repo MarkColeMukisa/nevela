@@ -5,17 +5,20 @@ Nevela is a Laravel-first full-stack framework. **Laravel is the authority**: it
 ## Create an app
 
 ```sh
-pnpm create nevela my-app
+npm install -g create-nevela    # once: the nevela command
+nevela new my-app
 cd my-app
-php nevela dev
+nevela dev
 ```
 
-You need PHP 8.3+, Composer and Node.js 20+. Sign in at http://localhost:3000/sign-in as `admin@example.com` with the password `password`. Everything else runs from that folder with `php nevela`: `php nevela resource …`, `php nevela seed …`, `php nevela upgrade`. Install the command once (`npm install -g create-nevela`) and it is shorter still, from any shell: `nevela new my-app`, `nevela dev`, `nevela upgrade`. The docs are at https://nevela-docs.vercel.app.
+You need PHP 8.3+, Composer and Node.js 20+. Sign in at http://localhost:3000/sign-in as `admin@example.com` with the password `password`. Everything else is `nevela` and a word, from anywhere in the app: `nevela resource …`, `nevela seed …`, `nevela user`, `nevela upgrade`. `nevela --version` says which version you have, and `nevela update` brings the command up to date.
+
+Without installing anything, `pnpm create nevela my-app` creates an app, and inside it `php nevela dev` does what `nevela dev` does. The docs are at https://nevela-docs.vercel.app.
 
 ## Add a resource
 
-```
-php artisan nevela:resource Product --fields="name:string, sku:string!, price:money, kind:enum(stock|digital), notes:text?" --icon=package
+```sh
+nevela resource Product --fields="name:string, sku:string!, price:money, kind:enum(stock|digital), notes:text?" --icon=package
 ```
 
 That one command writes:
@@ -36,7 +39,7 @@ Accounts live in Laravel; the screens are Flare's. Beside the password there is 
 ```
 nevela/
 ├─ packages/laravel/        nevela/laravel: Composer package (generator + runtime)
-├─ packages/create-nevela/  the `pnpm create nevela` command
+├─ packages/create-nevela/  the `nevela` command (and `pnpm create nevela`)
 ├─ apps/api/           a Laravel app using the package
 ├─ apps/web/           Flare's Next.js dashboard, backed by Laravel
 ├─ apps/docs/           the documentation site (Astro Starlight)
@@ -101,18 +104,18 @@ curl -g "localhost:8000/api/products?sort=-price&filter[kind]=digital" -H "Autho
 A shop in two commands: categories, and products that belong to one, each with an image that is resized and compressed when it is uploaded.
 
 ```sh
-php nevela resource Category --fields="name:string, slug:slug!, image:image?" --seed=8
-php nevela resource Product --fields="name:string, price:money, image:image(product)?, category:belongsTo(Category)" --seed=40
+nevela resource Category --fields="name:string, slug:slug!, image:image?" --seed=8
+nevela resource Product --fields="name:string, price:money, image:image(product)?, category:belongsTo(Category)" --seed=40
 ```
 
 ## Changing a resource
 
-Edit `nevela/resources/<name>.json`, then `php artisan nevela:generate`. Generated code lives between `// nevela:generated:start` and `// nevela:generated:end`. Code outside that block is yours and is never touched. If you edit *inside* a block, regeneration skips that file and tells you (`--force` overrides). Migrations, policies and dashboard pages are written once and then belong to you; add a new migration when fields change.
+Edit `nevela/resources/<name>.json`, then `nevela generate`. Generated code lives between `// nevela:generated:start` and `// nevela:generated:end`. Code outside that block is yours and is never touched. If you edit *inside* a block, regeneration skips that file and tells you (`--force` overrides). Migrations, policies and dashboard pages are written once and then belong to you; add a new migration when fields change.
 
 ## Seeding
 
 ```sh
-php artisan nevela:seed Product --count=1000
+nevela seed Product --count=1000
 ```
 
 Fills a resource with plausible records made from its descriptor, and prints how long it took:

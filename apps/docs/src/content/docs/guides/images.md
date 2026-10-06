@@ -11,7 +11,7 @@ Two field types store files.
 | `manual:file(pdf)` | the kinds you list, stored as they are | a PDF, a spreadsheet |
 
 ```sh
-php nevela resource Product --fields="name:string, image:image, manual:file(pdf|document)?"
+nevela resource Product --fields="name:string, image:image, manual:file(pdf|document)?"
 ```
 
 The kinds a `file` field can list are `image`, `pdf`, `video`, `audio`, `text`, `csv`, `document`, `spreadsheet`, `archive` and `any`. `file` on its own means `any`.
@@ -36,7 +36,7 @@ GIFs are stored as they are: decoding one keeps only its first frame. If an imag
 A profile says how big, which format and which renditions. They are in `config/nevela.php`, under `uploads.profiles`. Publish the file to change them:
 
 ```sh
-php nevela artisan vendor:publish --tag=nevela-config
+nevela artisan vendor:publish --tag=nevela-config
 ```
 
 Name a profile on the field: `image:image(product)`. A field that names none uses `default`.

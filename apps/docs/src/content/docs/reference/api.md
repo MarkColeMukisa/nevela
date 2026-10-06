@@ -270,7 +270,7 @@ A duplicate value in a unique field is normally a 422 like the one above, becaus
 GET /_nevela/ping
 ```
 
-Needs no token. Returns `{ "nevela": "0.1.3", "app": "3cd733775782" }`: the Nevela version, and a short id for this installation. It is how `php nevela status` and the dashboard tell this app's API from another program on the same port.
+Needs no token. Returns `{ "nevela": "0.1.3", "app": "3cd733775782" }`: the Nevela version, and a short id for this installation. It is how `nevela status` and the dashboard tell this app's API from another program on the same port.
 
 ## Listing the resources
 

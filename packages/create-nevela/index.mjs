@@ -68,14 +68,14 @@ const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
     nevela new [name] [options]   Create an app. It asks for the name if you leave it off.
                                   Without the command: pnpm create nevela <name>
     nevela update                 Update the nevela command itself to the latest version
-    nevela version                Which version the nevela command is, and this app when in one
+    nevela --version              Which version the nevela command is, and this app when in one
 
   ${bold('Inside an app')}
     nevela upgrade             Bring this app to the latest Nevela: the package and the dashboard
     nevela dev                 Run the API and the dashboard
     nevela status              Check versions, migrations, users and the dashboard
     nevela resource <Name> --fields="…" [--seed]
-    nevela seed | user | generate | version | migrate | artisan <command>
+    nevela seed | user | generate | migrate | artisan <command>
 
   ${bold('Options')}
     --pm <pnpm|npm|yarn|bun>   Package manager for the dashboard. Default: the one you ran this with.
@@ -89,7 +89,7 @@ const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
                                instead of the release on Packagist.
     -y, --yes                  Ask nothing. (Only the app name is ever asked for.)
     -h, --help                 Show this.
-    -v, --version              Show the version.
+    -v, --version              Show the version. Piped or captured, the number alone.
 
   ${bold('Needs')}  PHP 8.3+, Composer, Node.js 20+
   ${bold('Docs')}   ${DOCS}
@@ -445,7 +445,10 @@ function appVersion(project) {
   }
 }
 
-/** `nevela version`, from anywhere: the command's version, and the app's when in one. */
+/**
+ * `nevela --version`, from anywhere: the command's version, and the app's when in one.
+ * `nevela version` is the same thing by its older name.
+ */
 function showVersion() {
   const project = findProject(process.cwd());
   const install = installed();
@@ -574,6 +577,13 @@ async function main() {
   if (argv[0] === 'new') argv.shift();
   else if (argv[0] === 'update') return updateTool(argv.slice(1));
   else if (argv[0] === 'version') return showVersion();
+  else if ((argv[0] === '--version' || argv[0] === '-v') && argv.length === 1) {
+    // To a person, the whole answer. To a script (and to `nevela update`, which asks
+    // this of the installed command to check its work), the number and nothing else.
+    if (process.stdout.isTTY) return showVersion();
+    console.log(VERSION);
+    return;
+  }
   else if (COMMANDS.includes(argv[0])) await inProject(argv[0], argv.slice(1));
   else if (argv[0] === 'help' || (startedAsNevela && argv.length === 0)) {
     // `nevela` on its own says what it can do. `pnpm create nevela` on its own starts an

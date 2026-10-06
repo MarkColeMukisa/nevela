@@ -262,6 +262,8 @@ jobs:
           node "$RUNNER_TEMP/create-nevela/package/nevela.mjs" version | tee version.log
           grep -q "Nevela command  *v$version" version.log
           grep -q "This app  *v$version" version.log
+          # Asked by a script, --version is the number and nothing else: `nevela update` reads it to check its work.
+          test "$(node "$RUNNER_TEMP/create-nevela/package/nevela.mjs" --version)" = "$version"
           # version answers anywhere, not only in an app.
           (cd "$RUNNER_TEMP" && node create-nevela/package/nevela.mjs version | tee outside-version.log)
           grep -q "Nevela command  *v$version" "$RUNNER_TEMP/outside-version.log"

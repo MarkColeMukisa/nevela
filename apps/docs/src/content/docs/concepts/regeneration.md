@@ -6,9 +6,9 @@ description: "How to change a resource, and how Nevela keeps the code you wrote.
 ## Changing a resource
 
 1. Edit the descriptor, for example add `"featured": { "kind": "boolean" }` to `fields`.
-2. Run `php artisan nevela:generate`.
-3. Write a migration for the database change. Nevela does not write one for you after the first: `php artisan make:migration add_featured_to_products`.
-4. Run `php artisan migrate`.
+2. Run `nevela generate`.
+3. Write a migration for the database change. Nevela does not write one for you after the first: `nevela artisan make:migration add_featured_to_products`.
+4. Run `nevela migrate`.
 
 ### Your code is kept
 

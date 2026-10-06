@@ -6,10 +6,10 @@ description: "Fill a resource with plausible records in one command, and see how
 Fill a resource with plausible records, and print how long it took.
 
 ```sh
-php nevela seed Product --count=1000
+nevela seed Product --count=1000
 ```
 
-To seed a resource at the moment you create it, add `--seed` to the resource command: `php nevela resource Product --fields="name:string" --seed=100`.
+To seed a resource at the moment you create it, add `--seed` to the resource command: `nevela resource Product --fields="name:string" --seed=100`.
 
 ```
  INFO  Seeded 1,000 Products in 114 ms (8,809 rows/s).

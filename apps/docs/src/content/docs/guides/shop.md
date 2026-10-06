@@ -8,14 +8,14 @@ Two resources, one relationship between them, and images that are resized and co
 ## 1. Create the app
 
 ```sh
-pnpm create nevela my-shop
+nevela new my-shop
 cd my-shop
 ```
 
 ## 2. Categories
 
 ```sh
-php nevela resource Category --fields="name:string, slug:slug!, image:image?" --icon=tags --seed=8
+nevela resource Category --fields="name:string, slug:slug!, image:image?" --icon=tags --seed=8
 ```
 
 `image:image?` is an optional picture. `--seed=8` creates the table and fills it with eight categories, most of them with a placeholder image, so there is something to look at.
@@ -23,7 +23,7 @@ php nevela resource Category --fields="name:string, slug:slug!, image:image?" --
 ## 3. Products
 
 ```sh
-php nevela resource Product --fields="name:string, sku:string!, price:money, image:image(product)?, category:belongsTo(Category), active:boolean" --icon=package --seed=40
+nevela resource Product --fields="name:string, sku:string!, price:money, image:image(product)?, category:belongsTo(Category), active:boolean" --icon=package --seed=40
 ```
 
 Two fields here are new:
@@ -36,7 +36,7 @@ A product has to point at a category, so categories are created first. Asking fo
 ## 4. Run it
 
 ```sh
-php nevela dev
+nevela dev
 ```
 
 Sign in at the address it prints. In the dashboard:
