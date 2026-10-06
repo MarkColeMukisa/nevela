@@ -6,7 +6,7 @@
 //
 // No dependencies on purpose: this runs before anything is installed.
 
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -370,16 +370,61 @@ async function inProject(name, args) {
 }
 
 /**
+ * How the copy that is running was installed, or null when it isn't the installed command.
+ * The folder it was started through is passed as well as the one its files are in: under
+ * pnpm 11 only the first says it is pnpm's.
+ */
+function installed() {
+  if (fromRepository) return null;
+  const startedFrom = process.argv[1] ? path.dirname(path.resolve(process.argv[1])) : here;
+  return globalInstall(here, fs.existsSync, startedFrom);
+}
+
+/** What typing `nevela` runs now, as "x.y.z", or null when that can't be found out. */
+function versionOnPath() {
+  const answer = spawnCommand('nevela', ['--version'], { stdio: 'pipe', encoding: 'utf8' });
+  return /^\d+\.\d+\.\d+$/m.exec(`${answer.stdout ?? ''}`)?.[0] ?? null;
+}
+
+/** The launcher of the nevela command in `dir`: the file the shell runs. */
+const launcherIn = (dir) => path.join(dir, windows ? 'nevela.cmd' : 'nevela');
+
+/** The version of the nevela command in `dir`, as "x.y.z", or null when it won't say. */
+function copyVersion(dir) {
+  const file = launcherIn(dir);
+  const answer = windows
+    ? spawnSync(`"${file}" --version`, { shell: true, stdio: 'pipe', encoding: 'utf8' })
+    : spawnSync(file, ['--version'], { stdio: 'pipe', encoding: 'utf8' });
+  return /^\d+\.\d+\.\d+$/m.exec(`${answer.stdout ?? ''}`)?.[0] ?? null;
+}
+
+/**
  * Say so when the nevela command is installed more than once. Only the first on the PATH
  * ever runs, so an update to one of the others looks like an update that did nothing.
+ * The one to keep is the newest, which is not always the one that runs.
  */
 function otherCopies() {
-  const copies = copiesOnPath();
+  const copies = copiesOnPath().map((dir) => ({ dir, version: copyVersion(dir) }));
   if (copies.length < 2) return;
+  let keep = copies[0];
+  for (const copy of copies) {
+    if (copy.version && (!keep.version || isNewer(copy.version, keep.version))) keep = copy;
+  }
+  const width = Math.max(...copies.map((copy) => copy.dir.length));
   console.log(`\n  ${red('!')} The nevela command is installed ${copies.length} times. Typing ${bold('nevela')} runs the first of these:`);
-  for (const dir of copies) console.log(`      ${dir}`);
-  console.log(`    Keep that one and remove the rest, so there is one to keep up to date:`);
-  for (const dir of copies.slice(1)) console.log(`      ${bold(removeCommand(dir))}`);
+  for (const copy of copies) console.log(`      ${copy.dir.padEnd(width)}  ${copy.version ? `v${copy.version}` : ''}`);
+  console.log(keep === copies[0]
+    ? `    Keep that one and remove the rest, so there is one to keep up to date:`
+    : `    The one that runs is not the newest. Remove the others, and ${bold(`v${keep.version}`)} is what ${bold('nevela')} runs:`);
+  const launcher = (dir) => {
+    try {
+      return fs.readFileSync(launcherIn(dir), 'utf8').slice(0, 4000);
+    } catch {
+      return '';
+    }
+  };
+  const removals = new Set(copies.filter((copy) => copy !== keep).map((copy) => removeCommand(copy.dir, launcher(copy.dir))));
+  for (const removal of removals) console.log(`      ${bold(removal)}`);
 }
 
 /** The version of Nevela an app has installed, read from the package, or null. */
@@ -395,7 +440,7 @@ function appVersion(project) {
 /** `nevela version`, from anywhere: the command's version, and the app's when in one. */
 function showVersion() {
   const project = findProject(process.cwd());
-  const install = fromRepository ? null : globalInstall(here);
+  const install = installed();
   console.log(`\n  ${indigo(bold('Nevela command'))}   ${bold(`v${VERSION}`)}${install ? `  ${dim(`installed with ${install.manager}`)}` : ''}`);
   if (project) {
     const app = appVersion(project);
@@ -459,7 +504,7 @@ async function askName() {
  */
 async function updateTool(args) {
   const project = findProject(process.cwd());
-  const install = fromRepository ? null : globalInstall(here);
+  const install = installed();
 
   if (!install) {
     // Run through npx or `pnpm dlx`, which fetch the latest every time, started by an
@@ -485,18 +530,29 @@ async function updateTool(args) {
   if (latest === null) {
     // Not the same as being up to date, so it isn't reported as that.
     console.log(`  ${red('!')} Couldn't reach npm to see whether there is a newer nevela than ${bold(VERSION)}. Nothing was changed.`);
-    console.log(`    Try again when you are online, or run:  ${install.command.join(' ')}`);
+    console.log(`    Try again when you are online, or run:  ${install.command().join(' ')}`);
     process.exitCode = 1;
   } else if (!newer) {
     console.log(`  ${green(`✔ Already on the latest version (v${VERSION}). Nothing to do.`)}`);
   } else {
-    console.log(`  Updating v${VERSION} → ${bold(`v${newer}`)} ${dim(`(${install.command.join(' ')})`)}\n`);
-    const [command, ...rest] = install.command;
+    // The version by number, not "latest": pnpm holds "latest" back for a day.
+    const [command, ...rest] = install.command(newer);
+    console.log(`  Updating v${VERSION} → ${bold(`v${newer}`)} ${dim(`(${[command, ...rest].join(' ')})`)}\n`);
     const result = spawnCommand(command, rest, { stdio: 'inherit' });
     if (result.error || result.status !== 0) {
-      fail(`Couldn't update the nevela command.`, `Run it yourself to see why:  ${install.command.join(' ')}`);
+      fail(`Couldn't update the nevela command.`, `Run it yourself to see why:  ${[command, ...rest].join(' ')}`);
     }
-    console.log(`\n  ${green(`✔ Updated to v${newer}.`)} ${dim('Every nevela command, and every app you create from now on, uses it.')}`);
+    // The package manager saying so isn't the same as the command being newer: ask it.
+    const now = versionOnPath();
+    if (now === newer || now === null) {
+      console.log(`\n  ${green(`✔ Updated to v${newer}.`)} ${dim('Every nevela command, and every app you create from now on, uses it.')}`);
+    } else {
+      console.log(`\n  ${red('!')} ${install.manager} installed ${bold(`v${newer}`)}, but typing ${bold('nevela')} still runs ${bold(`v${now}`)}.`);
+      if (copiesOnPath().length < 2) {
+        console.log(`    Open a new terminal and run ${bold('nevela version')}. If it still says v${now}, the copy that runs was installed another way.`);
+      }
+      process.exitCode = 1;
+    }
   }
   otherCopies();
   if (project) {

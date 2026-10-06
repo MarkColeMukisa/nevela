@@ -6,6 +6,13 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Fixed
+
+- `nevela update` did nothing for a `nevela` command installed with pnpm 11, and said it had worked. pnpm 11 keeps a global package's files in its store, so the command took its own install for an npm one and updated a different copy. It now goes by the folder the command was started through as well.
+- `nevela update` installs the version it found by number. pnpm holds a version back for a day after release when asked for `@latest`, so within that day it installed the previous one.
+- After updating, `nevela update` asks the `nevela` command for its version. If that is still the old one, it says so, and exits with an error, instead of reporting success.
+- The notice about several installed copies shows each copy's version and tells you to remove the older ones. It used to say to keep the first on the PATH, which could be the oldest.
+
 ## [0.4.2] - 2026-10-06
 
 ### Added
