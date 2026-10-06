@@ -6,7 +6,7 @@ const RELEASES = 'https://repo.packagist.org/p2/nevela/laravel.json';
 
 /** Whether `candidate` is a stable release Composer's `^major.minor` would accept. */
 export function satisfiesCaret(candidate, [major, minor]) {
-  const match = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(candidate);
+  const match = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(String(candidate));
   if (!match) return false;
   const [theirMajor, theirMinor] = match.slice(1).map(Number);
   // Below 1.0 a caret holds the minor version too: ^0.1 means 0.1.x only.
@@ -28,7 +28,7 @@ export function isNewer(a, b) {
  */
 export async function onPackagist(wanted) {
   const releases = (await getJson(RELEASES, 8000))?.packages?.['nevela/laravel'];
-  return Array.isArray(releases) && releases.some((release) => satisfiesCaret(release.version, wanted));
+  return Array.isArray(releases) && releases.some((release) => satisfiesCaret(release?.version, wanted));
 }
 
 /** The newest stable nevela/laravel on Packagist, as "x.y.z", or null when it can't be reached. */

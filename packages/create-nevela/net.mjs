@@ -11,8 +11,11 @@ import https from 'node:https';
 /**
  * GET `url`. Resolves to { ok, status, body } with the body as a Buffer, or to null when
  * the server couldn't be reached within `milliseconds`. Never rejects.
+ *
+ * The time allowed is for the whole exchange, redirects included, and not only for a
+ * silence on the line.
  */
-export function get(url, milliseconds, redirects = 3) {
+export function get(url, milliseconds, redirects = 3, deadline = Date.now() + milliseconds) {
   return new Promise((resolve) => {
     let timer = null;
     const settle = (value) => {
@@ -24,7 +27,7 @@ export function get(url, milliseconds, redirects = 3) {
         const status = response.statusCode ?? 0;
         if (status >= 300 && status < 400 && response.headers.location && redirects > 0) {
           response.resume();
-          settle(get(new URL(response.headers.location, url).href, milliseconds, redirects - 1));
+          settle(get(new URL(response.headers.location, url).href, milliseconds, redirects - 1, deadline));
           return;
         }
         const chunks = [];
@@ -33,8 +36,7 @@ export function get(url, milliseconds, redirects = 3) {
         response.on('error', () => settle(null));
       });
       request.on('error', () => settle(null));
-      // For the whole exchange, not only for a silence on the line.
-      timer = setTimeout(() => request.destroy(new Error('timed out')), milliseconds);
+      timer = setTimeout(() => request.destroy(new Error('timed out')), Math.max(0, deadline - Date.now()));
     } catch {
       settle(null);
     }

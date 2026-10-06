@@ -41,7 +41,8 @@ export function banner({ version, depth, columns = 80, compact = false }) {
   const paint = (code, text) => (depth > 1 ? `\x1b[${code}m${text}\x1b[0m` : text);
   // Into a file or a pipe, or a terminal too narrow for the letters: the name on one line.
   if (compact || depth === 0 || columns < WIDTH + 4) {
-    return `\n  ${paint('1;38;5;99', 'Nevela')} ${paint(2, `v${version}`)}\n`;
+    // Indigo where there are 256 colours to pick it from; magenta where there are 16.
+    return `\n  ${paint(depth >= 8 ? '1;38;5;99' : '1;95', 'Nevela')} ${paint(2, `v${version}`)}\n`;
   }
   const colours = GRADIENT[depth >= 24 ? 24 : depth >= 8 ? 8 : 4];
   const rows = ROWS.map((row, index) => `  ${paint(colours[index], row)}`);

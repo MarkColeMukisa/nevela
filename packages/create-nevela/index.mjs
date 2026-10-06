@@ -39,7 +39,8 @@ const bold = colour(1);
 const dim = colour(2);
 const green = colour(32);
 const red = colour(31);
-const indigo = colour('38;5;99');
+// Indigo where there are 256 colours to pick it from; magenta where there are 16.
+const indigo = colour(depth >= 8 ? '38;5;99' : '95');
 
 /**
  * Whether `nevela` was typed, as opposed to create-nevela (`pnpm create nevela`). Kept in

@@ -33,7 +33,7 @@ npm install -g create-nevela
 | `nevela upgrade` | bring the app to the latest Nevela |
 | `nevela update` | update the command itself |
 
-`nevela update` asks the package manager that installed the command (npm, pnpm, yarn or bun) for the latest version. It does not touch any app. Once it has run, every `nevela` command, and every app you create from then on, uses the new version.
+`nevela update` asks the package manager that installed the command (npm, pnpm, yarn or bun) for the latest version. It does not touch any app, with one exception kept for older instructions: run inside an app through `npx create-nevela update`, where there is no installed command to update, it upgrades that app, which is what `update` meant before 0.3.0. Once it has run, every `nevela` command, and every app you create from then on, uses the new version.
 
 `nevela` on its own lists everything the command can do.
 

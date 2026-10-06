@@ -263,15 +263,17 @@ jobs:
           # version answers anywhere, not only in an app.
           (cd "$RUNNER_TEMP" && node create-nevela/package/nevela.mjs version | tee outside-version.log)
           grep -q "Nevela command  *v$version" "$RUNNER_TEMP/outside-version.log"
-          ! grep -q 'This app' "$RUNNER_TEMP/outside-version.log"
+          if grep -q 'This app' "$RUNNER_TEMP/outside-version.log"; then exit 1; fi
           # nevela on its own says what it can do; it doesn't start creating an app.
           (cd "$RUNNER_TEMP" && node create-nevela/package/nevela.mjs | tee bare.log)
           grep -q 'nevela new \[name\]' "$RUNNER_TEMP/bare.log"
           # A new app with no name and nobody to ask: one clear line, exit 1, and no crash.
-          (cd "$RUNNER_TEMP" && { node create-nevela/package/nevela.mjs new < /dev/null > no-name.log 2>&1; echo "$?" > no-name.exit; }; cat no-name.log)
+          status=0
+          (cd "$RUNNER_TEMP" && node create-nevela/package/nevela.mjs new < /dev/null > no-name.log 2>&1) || status=$?
+          cat "$RUNNER_TEMP/no-name.log"
+          test "$status" = 1
           grep -q 'Give the app a name: nevela new my-app' "$RUNNER_TEMP/no-name.log"
-          test "$(cat "$RUNNER_TEMP/no-name.exit")" = 1
-          ! grep -qi 'assertion' "$RUNNER_TEMP/no-name.log"
+          if grep -qi 'assertion' "$RUNNER_TEMP/no-name.log"; then exit 1; fi
           node "$RUNNER_TEMP/create-nevela/package/index.mjs" status > cli-status.log
           grep -q 'Migrations' cli-status.log
           # Outside an app it says so instead of creating an app called "status".

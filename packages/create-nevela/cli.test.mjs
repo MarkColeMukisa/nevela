@@ -80,6 +80,9 @@ test('the name is drawn large in a terminal, in colours it can show, and plainly
   for (const small of [banner({ version: '1.2.3', depth: 24, columns: WIDTH + 3 }), banner({ version: '1.2.3', depth: 24, columns: 120, compact: true })]) {
     assert.ok(!small.includes('█') && small.includes('Nevela') && small.includes('v1.2.3'));
   }
+  // The one line never asks a 16-colour terminal for a colour it doesn't have.
+  assert.deepEqual(escapes(banner({ version: '1.2.3', depth: 4, columns: 20 })), ['1;95', '2']);
+  assert.deepEqual(escapes(banner({ version: '1.2.3', depth: 8, columns: 20 })), ['1;38;5;99', '2']);
 });
 
 test('a second copy of the nevela command on the PATH is found, and the same copy is not counted twice', () => {
