@@ -12,9 +12,9 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - A **Users** screen: add, edit, switch off, sign out everywhere and delete, with search and filters by role and status.
 - A **Roles** screen: make roles and tick what each allows, on a grid of every permission there is. A section can be granted whole, including what is added to it later.
 - The dashboard hides what the signed-in person can't use: resources they can't view leave the sidebar, and buttons appear only with the matching permission.
-- Three rules on top of the permissions, enforced by Laravel: nobody hands out more than they hold, only an administrator changes an administrator's account, and the last administrator can't be removed, switched off or demoted.
+- Three rules on top of the permissions, enforced by Laravel: nobody hands out more than they hold, nobody changes an account that may do more than they may (so only an administrator changes an administrator's), and the last administrator can't be removed, switched off or demoted.
 - Switching an account off: it is kept, signed out everywhere, and refused at sign-in whichever way it comes.
-- A new app starts with ten sample users beside the administrator: two editors and eight users, one switched off. `--no-sample-users` leaves them out, and `nevela user --sample` adds them to an app that has none.
+- A new app starts with ten sample users beside the administrator: two editors and eight users, one switched off. `--no-sample-users` leaves them out, and `nevela user --sample` adds them to an app that has none. They are never made in production.
 - `nevela user --role=`. The first account in an app is its `ADMIN`.
 - Permissions of your own, in `config/nevela.php` under `permissions`.
 

@@ -290,10 +290,31 @@ class AccessTest extends TestCase
         $this->deleteJson("/api/_nevela/users/{$admin->id}")->assertForbidden();
         $this->deleteJson("/api/_nevela/users/{$admin->id}/sessions")->assertForbidden();
 
-        // What they hold, they can hand out, and a role someone already has isn't being handed out.
-        $this->patchJson("/api/_nevela/users/{$person->id}", ['roles' => [$this->role('People')->id, $this->role('USER')->id]])->assertOk();
+        // Nor anyone else's who may do something they may not: an editor has the records, and they don't.
         $editor = $this->user('EDITOR');
-        $this->patchJson("/api/_nevela/users/{$editor->id}", ['name' => 'Renamed', 'roles' => [$this->role('EDITOR')->id]])->assertOk();
+        $this->patchJson("/api/_nevela/users/{$editor->id}", ['password' => 'a-password-i-know'])->assertForbidden()->assertJsonPath('code', 'ABOVE_YOUR_OWN');
+        $this->patchJson("/api/_nevela/users/{$editor->id}", ['email' => 'mine@example.com'])->assertForbidden();
+        $this->patchJson("/api/_nevela/users/{$editor->id}", ['name' => 'Renamed'])->assertForbidden();
+        $this->patchJson("/api/_nevela/users/{$editor->id}", ['active' => false])->assertForbidden();
+        $this->deleteJson("/api/_nevela/users/{$editor->id}")->assertForbidden()->assertJsonPath('code', 'ABOVE_YOUR_OWN');
+        $this->deleteJson("/api/_nevela/users/{$editor->id}/sessions")->assertForbidden();
+        $this->assertSame($editor->email, User::find($editor->id)->email);
+        // Switched off, an administrator is still not theirs to give a password and switch back on.
+        $off = $this->user('ADMIN');
+        $off->forceFill(['active' => false])->save();
+        $this->patchJson("/api/_nevela/users/{$off->id}", ['password' => 'a-password-i-know', 'active' => true])->assertForbidden()->assertJsonPath('code', 'ADMIN_ONLY');
+
+        // The list says which accounts are theirs to change, so the dashboard offers nothing it would be refused.
+        $listed = collect($this->getJson('/api/_nevela/users')->assertOk()->json('data'))->keyBy('id');
+        $this->assertFalse($listed[(string) $admin->id]['withinYours']);
+        $this->assertFalse($listed[(string) $editor->id]['withinYours']);
+        $this->assertTrue($listed[(string) $person->id]['withinYours']);
+
+        // What they hold, they can hand out, to someone who may do no more than they may.
+        $this->patchJson("/api/_nevela/users/{$person->id}", ['name' => 'Renamed', 'roles' => [$this->role('People')->id, $this->role('USER')->id]])->assertOk();
+        $this->patchJson("/api/_nevela/users/{$person->id}", ['password' => 'a-new-long-password'])->assertOk();
+        // And their own account is theirs, whatever else is.
+        $this->patchJson("/api/_nevela/users/{$manager->id}", ['name' => 'Still me'])->assertOk();
     }
 
     public function test_the_last_administrator_cannot_be_removed_switched_off_or_demoted(): void
@@ -340,6 +361,8 @@ class AccessTest extends TestCase
 
         $this->postJson('/api/_nevela/roles', ['name' => 'support', 'grants' => []])->assertStatus(422);
         $this->postJson('/api/_nevela/roles', ['name' => 'Typo', 'grants' => ['unicorns.view']])->assertStatus(422)->assertJsonPath('issues.0.path', 'grants.0');
+        // Something that isn't text where a grant should be is a mistake to report, not a crash.
+        $this->postJson('/api/_nevela/roles', ['name' => 'Odd', 'grants' => [['products.view'], 7]])->assertStatus(422);
 
         $this->patchJson("/api/_nevela/roles/{$id}", ['grants' => ['products.*']])->assertOk()->assertJsonPath('permissions.0', 'products.create');
         $this->getJson('/api/_nevela/roles')->assertOk()->assertJsonCount(4, 'data')->assertJsonPath('data.0.isSystem', true);
@@ -433,6 +456,23 @@ class AccessTest extends TestCase
         // Run again, it adds nobody.
         $this->artisan('nevela:user', ['--sample' => true])->assertSuccessful();
         $this->assertSame(10, User::query()->count());
+    }
+
+    public function test_sample_users_are_never_made_in_production(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        $this->artisan('nevela:user', ['--sample' => true, '--password' => 'a-long-password'])->assertFailed();
+        $this->assertSame([], SampleUsers::create('a-long-password'));
+        $this->assertSame(0, User::query()->count());
+    }
+
+    public function test_an_email_differing_only_in_capitals_is_the_same_account(): void
+    {
+        $this->artisan('nevela:user', ['--name' => 'Ada', '--email' => 'Ada@Example.com', '--password' => 'password'])->assertSuccessful();
+        $this->artisan('nevela:user', ['--name' => 'Ada again', '--email' => 'ADA@example.com', '--password' => 'password'])->assertFailed();
+
+        $this->assertSame(['ada@example.com'], User::query()->pluck('email')->all());
     }
 
     public function test_someone_who_signs_up_starts_as_a_user(): void

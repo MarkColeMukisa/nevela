@@ -79,7 +79,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                       <UserAvatar user={{ name: user.name, email: user.email, image: user.image }} className="size-8" />
                       <div className="flex min-w-0 flex-col">
                         <span className="flex items-center gap-2 truncate text-sm font-medium">
-                          {may("users.edit") ? (
+                          {may("users.edit") && (user.withinYours || user.isSelf) ? (
                             <Link href={`/dashboard/access/users/${encodeURIComponent(user.id)}`} className="truncate hover:underline">
                               {user.name || user.email}
                             </Link>
@@ -115,7 +115,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{user.lastActiveAt ? <LocalTime value={user.lastActiveAt} /> : "Not yet"}</TableCell>
                   <TableCell>
-                    <UserRowActions user={user} canEdit={may("users.edit")} canDelete={may("users.delete")} />
+                    <UserRowActions user={user} canEdit={may("users.edit") && (user.withinYours || user.isSelf)} canDelete={may("users.delete") && user.withinYours} />
                   </TableCell>
                 </TableRow>
               ))}

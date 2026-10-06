@@ -41,7 +41,7 @@ A new app has an administrator and ten sample users, all in your local database 
 
 They all sign in with the password `password`. Sign in as one of each to see what a role changes: an editor has the resources and a read-only list of users, a user has only their own account, and the switched-off account is turned away.
 
-They are made by the installer, never by a migration, so they don't follow the app to a server. Delete them before real use. To create an app without them:
+They are made by the installer, never by a migration, so they don't follow the app to a server, and `nevela user --sample` refuses to make them in production. Delete them before real use. To create an app without them:
 
 ```sh
 nevela new my-app --no-sample-users
@@ -87,7 +87,7 @@ A role that people hold can't be deleted: give them another first.
 Being allowed to manage users or roles is never a way to get more than you were given.
 
 1. **You hand out only what you hold.** You can give someone a role, or put a permission in a role, only if your own roles already allow everything it does.
-2. **Only an administrator changes an administrator's account.** Someone with `users.edit` can't reset an administrator's password, change their email, or delete them.
+2. **You change only accounts that may do no more than you.** Someone with `users.edit` and nothing else can't set an editor's password, change their email, switch them off or delete them, because signing in as that editor would give them the records. Only an administrator changes an administrator's account.
 3. **The last administrator stays.** The only remaining administrator can't be deleted, switched off, or given a lesser role, by anyone. And you can't switch off or delete your own account.
 
 Laravel enforces these. The dashboard disables what would be refused, and the API refuses it whatever a client sends.
@@ -183,4 +183,4 @@ Between upgrading and running the migration, everyone can still do everything, a
 | `DELETE /api/_nevela/roles/{id}` | Delete, when nobody holds it |
 | `GET /api/_nevela/permissions` | Every permission there is, in the sections the Roles screen shows |
 
-A refusal says why, with a `code`: `BEYOND_YOUR_OWN`, `ADMIN_ONLY`, `LAST_ADMIN`, `SELF`, `BUILT_IN` or `IN_USE`.
+A refusal says why, with a `code`: `BEYOND_YOUR_OWN`, `ABOVE_YOUR_OWN`, `ADMIN_ONLY`, `LAST_ADMIN`, `SELF`, `BUILT_IN` or `IN_USE`.

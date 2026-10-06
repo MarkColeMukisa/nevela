@@ -21,6 +21,8 @@ export interface ManagedUser {
   isAdmin: boolean;
   /** This is the person looking. */
   isSelf: boolean;
+  /** Whether the person looking may change this account: it may do no more than they may. */
+  withinYours: boolean;
   /** How many devices they are signed in on. */
   devices: number;
   lastActiveAt: string | null;
