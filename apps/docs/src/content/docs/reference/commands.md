@@ -239,8 +239,10 @@ With npm it is `npm run nevela -- <command>`.
 Install it once with `npm install -g create-nevela`, and drop the `php` and the `pnpm`:
 
 ```sh
-nevela new my-app          # anywhere: create an app
+nevela                     # anywhere: everything it can do
+nevela new my-app          # anywhere: create an app (leave the name off and it asks)
 nevela update              # anywhere: update the nevela command itself
+nevela version             # anywhere: the command's version, and the app's when in one
 nevela dev                 # inside an app, from any folder in it
 nevela resource Product --fields="name:string, price:money" --seed
 nevela upgrade             # inside an app: bring it to the latest Nevela

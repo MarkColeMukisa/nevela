@@ -27,6 +27,11 @@ test('from 1.0, the same major and an equal or later minor are accepted', () => 
   assert.equal(satisfiesCaret('v2.0.0', [1, 2]), false);
 });
 
+test('an entry with no version is not a release, and is not an error', () => {
+  assert.equal(satisfiesCaret(undefined, [0, 4]), false);
+  assert.equal(satisfiesCaret(null, [1, 0]), false);
+});
+
 test('branches and pre-releases are not releases', () => {
   assert.equal(satisfiesCaret('dev-main', [0, 1]), false);
   assert.equal(satisfiesCaret('v0.1.0-beta.1', [0, 1]), false);

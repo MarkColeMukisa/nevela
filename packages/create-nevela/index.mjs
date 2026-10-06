@@ -13,11 +13,12 @@ import os from 'node:os';
 import path from 'node:path';
 import readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
+import { banner } from './banner.mjs';
 import { isNewer, latestRelease, onPackagist } from './packagist.mjs';
 import { COMMANDS, findProject, forward, upgrade } from './project.mjs';
 import { shellLine, spawnCommand, windows } from './shell.mjs';
 import { latestVersion, newerVersion, runVersion } from './selfupdate.mjs';
-import { globalInstall, INSTALL_COMMAND } from './tool.mjs';
+import { copiesOnPath, globalInstall, INSTALL_COMMAND, removeCommand } from './tool.mjs';
 import { copyLaravelPackage, copyWebTemplate, fromRepository, templateRecord } from './template.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -31,24 +32,39 @@ const DOCS = 'https://nevela-docs.vercel.app';
  */
 const ADMIN = { name: 'Admin', email: 'admin@example.com', password: 'password' };
 
-const colour = (code) => (text) => (process.stdout.isTTY ? `\x1b[${code}m${text}\x1b[0m` : text);
+/** Bits of colour the terminal has: 24, 8, 4, 1 for none, and 0 when this isn't going to a terminal. */
+const depth = process.stdout.isTTY ? process.stdout.getColorDepth() : 0;
+const colour = (code) => (text) => (depth > 1 ? `\x1b[${code}m${text}\x1b[0m` : text);
 const bold = colour(1);
 const dim = colour(2);
 const green = colour(32);
 const red = colour(31);
-const indigo = colour('38;5;99');
+// Indigo where there are 256 colours to pick it from; magenta where there are 16.
+const indigo = colour(depth >= 8 ? '38;5;99' : '95');
 
-const HELP = `
-  ${bold('create-nevela')} ${dim(`v${VERSION}`)}
+/**
+ * Whether `nevela` was typed, as opposed to create-nevela (`pnpm create nevela`). Kept in
+ * the environment so a newer installer this one hands over to knows it too.
+ */
+const startedAsNevela = /^nevela(\.mjs)?$/.test(path.basename(process.argv[1] ?? ''));
+const typedNevela = startedAsNevela || process.env.NEVELA_TYPED === 'nevela';
+if (typedNevela) process.env.NEVELA_TYPED = 'nevela';
 
-  Create a new Nevela app: a Laravel API and a Next.js dashboard.
+/** The name, large. Once per run: an installer that handed over to a newer one has shown it. */
+function showTitle() {
+  console.log(banner({ version: VERSION, depth, columns: process.stdout.columns ?? 80, compact: Boolean(process.env.NEVELA_HANDED_OVER) }));
+}
+
+const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
 
   ${bold('Get the nevela command')}  (once; everything below is then this short)
     npm install -g create-nevela
 
   ${bold('Anywhere')}
-    nevela new <name> [options]   Create an app. Without the command: pnpm create nevela <name>
+    nevela new [name] [options]   Create an app. It asks for the name if you leave it off.
+                                  Without the command: pnpm create nevela <name>
     nevela update                 Update the nevela command itself to the latest version
+    nevela version                Which version the nevela command is, and this app when in one
 
   ${bold('Inside an app')}
     nevela upgrade             Bring this app to the latest Nevela: the package and the dashboard
@@ -176,6 +192,7 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '-h' || arg === '--help') {
+      showTitle();
       console.log(HELP);
       process.exit(0);
     } else if (arg === '-v' || arg === '--version') {
@@ -210,6 +227,8 @@ function phpIsTypeable() {
 
 /** `nevela <command>` as someone should type it here: through PHP, or through the package manager. */
 function nevelaCommand(pm) {
+  // Typed as `nevela`, so the command is installed, and it is the shortest of the three.
+  if (typedNevela) return 'nevela';
   if (phpIsTypeable()) return 'php nevela';
   return { pnpm: 'pnpm nevela', yarn: 'yarn nevela', bun: 'bun run nevela' }[pm] ?? 'npm run nevela';
 }
@@ -330,9 +349,8 @@ Docs: ${DOCS}
 async function inProject(name, args) {
   const project = findProject(process.cwd());
   if (!project) {
-    fail(`"${name}" runs inside a Nevela app, and this folder isn't in one.`, `To create an app:  pnpm create nevela my-app`);
+    fail(`"${name}" runs inside a Nevela app, and this folder isn't in one.`, `To create an app:  ${typedNevela ? 'nevela new my-app' : 'pnpm create nevela my-app'}`);
   }
-  if (name === 'version') console.log(`create-nevela ${VERSION}`);
   if (name !== 'upgrade') process.exit(forward(project, name, args));
 
   // Upgrading is the one command that must not run on stale code itself: it is the newest
@@ -349,6 +367,85 @@ async function inProject(name, args) {
   const releases = await latestRelease();
   const status = await upgrade(project, args, { latest: releases, say: (line) => console.log(`  ${green('✔')} ${line}`) });
   process.exit(status);
+}
+
+/**
+ * Say so when the nevela command is installed more than once. Only the first on the PATH
+ * ever runs, so an update to one of the others looks like an update that did nothing.
+ */
+function otherCopies() {
+  const copies = copiesOnPath();
+  if (copies.length < 2) return;
+  console.log(`\n  ${red('!')} The nevela command is installed ${copies.length} times. Typing ${bold('nevela')} runs the first of these:`);
+  for (const dir of copies) console.log(`      ${dir}`);
+  console.log(`    Keep that one and remove the rest, so there is one to keep up to date:`);
+  for (const dir of copies.slice(1)) console.log(`      ${bold(removeCommand(dir))}`);
+}
+
+/** The version of Nevela an app has installed, read from the package, or null. */
+function appVersion(project) {
+  try {
+    const source = fs.readFileSync(path.join(project.api, 'vendor', 'nevela', 'laravel', 'src', 'Nevela.php'), 'utf8');
+    return /const VERSION = '([^']+)'/.exec(source)?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** `nevela version`, from anywhere: the command's version, and the app's when in one. */
+function showVersion() {
+  const project = findProject(process.cwd());
+  const install = fromRepository ? null : globalInstall(here);
+  console.log(`\n  ${indigo(bold('Nevela command'))}   ${bold(`v${VERSION}`)}${install ? `  ${dim(`installed with ${install.manager}`)}` : ''}`);
+  if (project) {
+    const app = appVersion(project);
+    if (app === null) {
+      console.log(`  ${indigo(bold('This app'))}         ${dim("Nevela isn't installed in it yet. Run: cd apps/api && composer install")}`);
+    } else {
+      const behind = isNewer(VERSION, app);
+      console.log(`  ${indigo(bold('This app'))}         ${bold(`v${app}`)}${behind ? `  ${dim('To bring it to the latest:')} ${bold('nevela upgrade')}` : ''}`);
+    }
+  }
+  otherCopies();
+  console.log('');
+}
+
+/**
+ * Why `name` can't be the new app's name, or null when it can.
+ */
+function nameProblem(name) {
+  if (name === '') return 'Type a name, for example my-app.';
+  if (!/^[a-z0-9][a-z0-9-_]*$/.test(name)) {
+    return `"${name}" can't be used as a name. Use lowercase letters, numbers and dashes, for example my-app.`;
+  }
+  const root = path.resolve(process.cwd(), name);
+  if (fs.existsSync(root) && fs.readdirSync(root).length > 0) return `${root} already exists and isn't empty.`;
+  return null;
+}
+
+/**
+ * Ask what the app is called, until the answer is a name that can be used. The only
+ * question this ever asks, and only when the name was left off.
+ */
+async function askName() {
+  const prompt = readline.createInterface({ input: process.stdin, output: process.stdout });
+  // Ctrl+C or the end of input, at the question: leave, having created nothing.
+  const closed = new Promise((resolve) => prompt.once('close', () => resolve(null)));
+  prompt.on('SIGINT', () => prompt.close());
+  try {
+    for (;;) {
+      const answer = await Promise.race([prompt.question(`  ${green('What is the name of your app?')} `).catch(() => null), closed]);
+      if (answer === null) {
+        console.log('\n');
+        process.exit(130);
+      }
+      const problem = nameProblem(answer.trim());
+      if (problem === null) return answer.trim();
+      console.log(`  ${red('✖')} ${problem}\n`);
+    }
+  } finally {
+    prompt.close();
+  }
 }
 
 /**
@@ -373,14 +470,16 @@ async function updateTool(args) {
       console.log(`\n  ${dim(`"update" now updates the nevela command, and an app is brought up to date with "upgrade". Upgrading this app.`)}`);
       await inProject('upgrade', args);
     }
-    console.log(`\n  ${indigo(bold('Nevela'))} ${dim(`v${VERSION}`)}\n`);
+    showTitle();
     console.log(`  The nevela command isn't installed on this computer, so there is nothing to update.`);
     console.log(`  To install it:  ${bold(INSTALL_COMMAND)}`);
     console.log(`  Then, anywhere: ${bold('nevela new my-app')}   and inside an app: ${bold('nevela upgrade')}, ${bold('nevela dev')}\n`);
     return;
   }
 
-  console.log(`\n  ${indigo(bold('Nevela'))} ${dim('update')}\n`);
+  showTitle();
+  console.log(`  ${indigo(`Nevela self-update — current: v${VERSION}`)}\n`);
+  console.log(`  ${dim('→ Checking npm for the latest release…')}\n`);
   const latest = await latestVersion();
   const newer = latest !== null && isNewer(latest, VERSION) ? latest : null;
   if (latest === null) {
@@ -389,16 +488,17 @@ async function updateTool(args) {
     console.log(`    Try again when you are online, or run:  ${install.command.join(' ')}`);
     process.exitCode = 1;
   } else if (!newer) {
-    console.log(`  ${green('✔')} nevela ${bold(VERSION)} is the latest.`);
+    console.log(`  ${green(`✔ Already on the latest version (v${VERSION}). Nothing to do.`)}`);
   } else {
-    console.log(`  Updating the nevela command ${bold(VERSION)} → ${bold(newer)} ${dim(`(${install.command.join(' ')})`)}\n`);
+    console.log(`  Updating v${VERSION} → ${bold(`v${newer}`)} ${dim(`(${install.command.join(' ')})`)}\n`);
     const [command, ...rest] = install.command;
     const result = spawnCommand(command, rest, { stdio: 'inherit' });
     if (result.error || result.status !== 0) {
       fail(`Couldn't update the nevela command.`, `Run it yourself to see why:  ${install.command.join(' ')}`);
     }
-    console.log(`\n  ${green('✔')} nevela is now ${bold(newer)}.`);
+    console.log(`\n  ${green(`✔ Updated to v${newer}.`)} ${dim('Every nevela command, and every app you create from now on, uses it.')}`);
   }
+  otherCopies();
   if (project) {
     console.log(`  ${dim('This app is not changed by that. To bring it to the latest Nevela:')} ${bold('nevela upgrade')}`);
   }
@@ -409,10 +509,18 @@ async function main() {
   const argv = process.argv.slice(2);
   if (argv[0] === 'new') argv.shift();
   else if (argv[0] === 'update') return updateTool(argv.slice(1));
+  else if (argv[0] === 'version') return showVersion();
   else if (COMMANDS.includes(argv[0])) await inProject(argv[0], argv.slice(1));
+  else if (argv[0] === 'help' || (startedAsNevela && argv.length === 0)) {
+    // `nevela` on its own says what it can do. `pnpm create nevela` on its own starts an
+    // app, and so does a newer installer that an older `nevela new` handed over to.
+    showTitle();
+    console.log(HELP);
+    return;
+  }
   const options = parseArgs(argv);
 
-  console.log(`\n  ${indigo(bold('Nevela'))} ${dim(`v${VERSION}`)}\n`);
+  showTitle();
 
   // A package manager may hand over an older installer than the newest: pnpm skips versions
   // published in the last few hours, and both pnpm and npm cache. Fetch the newest and let
@@ -430,19 +538,17 @@ async function main() {
   }
 
   let name = options.name;
-  if (!name) {
-    // The only question this ever asks, and only when the name was left off.
-    if (options.yes || !process.stdin.isTTY) fail('Give the app a name: pnpm create nevela my-app');
-    const prompt = readline.createInterface({ input: process.stdin, output: process.stdout });
-    name = (await prompt.question('  What is the app called? ')).trim();
-    prompt.close();
-  }
-  if (!/^[a-z0-9][a-z0-9-_]*$/.test(name)) {
-    fail(`"${name}" can't be used as a name. Use lowercase letters, numbers and dashes, for example my-app.`);
+  if (name === undefined) {
+    // Nobody to ask: say what to type instead.
+    if (options.yes || !process.stdin.isTTY) fail(`Give the app a name: ${typedNevela ? 'nevela new my-app' : 'pnpm create nevela my-app'}`);
+    name = await askName();
+    console.log('');
+  } else {
+    const problem = nameProblem(name);
+    if (problem) fail(problem);
   }
 
   const root = path.resolve(process.cwd(), name);
-  if (fs.existsSync(root) && fs.readdirSync(root).length > 0) fail(`${root} already exists and isn't empty.`);
 
   checkRequirements();
   const pm = detectPackageManager(options.pm);
@@ -583,7 +689,7 @@ async function main() {
   }
   console.log(`\n  Add your first resource: ${dim(`${nevela} resource Product --fields="name:string, price:money"`)}`);
   console.log(`  Check the app: ${dim(`${nevela} status`)}   Upgrade it later: ${dim(`${nevela} upgrade`)}   Everything: ${dim(nevela)}`);
-  if (nevela !== 'php nevela') {
+  if (nevela !== 'php nevela' && nevela !== 'nevela') {
     console.log(`\n  ${dim(`In this shell "php" isn't a command (your PHP is php.bat), so use ${nevela}. In PowerShell, php nevela works too.`)}`);
   }
   console.log(`  Docs: ${DOCS}/start/quickstart/\n`);

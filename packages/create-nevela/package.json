@@ -5,10 +5,13 @@
   "type": "module",
   "bin": {
     "create-nevela": "index.mjs",
-    "nevela": "index.mjs"
+    "nevela": "nevela.mjs"
   },
   "files": [
     "index.mjs",
+    "nevela.mjs",
+    "banner.mjs",
+    "net.mjs",
     "template.mjs",
     "packagist.mjs",
     "selfupdate.mjs",

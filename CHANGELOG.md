@@ -6,6 +6,22 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Added
+
+- The name, drawn large, at the top of `nevela new`, `nevela update` and `nevela`: the block letters the Laravel installer and Grit use, in a gradient from blue through indigo to pink. It uses whatever colours the terminal has, and stays one plain line in a narrow terminal or when the output goes to a file.
+- `nevela version` works anywhere, not only inside an app. It shows the command's version and how it was installed, and inside an app, the app's version beside it.
+- `nevela` on its own lists what the command can do. It used to start creating an app. `pnpm create nevela` on its own still does.
+- `nevela version` and `nevela update` say so when the command is installed more than once (say with npm and with pnpm), list where, and print what removes the extra copy. The shell only ever runs the first, so updating another looked like an update that did nothing.
+
+### Changed
+
+- `nevela new` without a name asks "What is the name of your app?", and asks again when the answer can't be used (empty, capitals or spaces, or a folder that already exists) instead of stopping.
+- `nevela update` reads like Grit's: the current version, "Checking npm for the latest release", then "Already on the latest version" or the update.
+
+### Fixed
+
+- On Windows, every mistake the installer reported straight after starting ended in a crash inside Node (`Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)`) instead of exiting cleanly: `nevela new` with no name where nobody could be asked, a name that can't be used, a folder that already exists. The installer checks npm for a newer version first, and Node on Windows crashes when a program exits just after a `fetch()`. It no longer uses `fetch()`.
+
 ## [0.4.1] - 2026-10-05
 
 ### Fixed
