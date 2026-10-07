@@ -8,7 +8,13 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [0.5.1] - 2026-10-07
 
+### Added
+
+- The docs home page credits Nevela's creator: why he built it, in his own words, and where to follow him.
+
 ### Changed
+
+- A new app's home page says "Built with Nevela (Next.js + Laravel)" in its footer, where it said "Built with Flare". An existing app gets the line on its next `nevela upgrade`, if its home page hasn't been changed.
 
 - `nevela --version` shows what `nevela version` shows: the command's version and how it was installed, and the app's version when you are in one. Piped or captured, it still prints the number alone, for scripts. The docs use `nevela --version`.
 - The docs lead with the `nevela` command throughout: `nevela new`, `nevela dev`, `nevela resource` and the rest, where they said `pnpm create nevela`, `php nevela …` and `php artisan nevela:…`. The longer forms still work and are listed once, under "Without the nevela command".

@@ -450,17 +450,19 @@ const faq = [
 
         <div class="fl-creator-body">
           <h2 id="fl-creator">One place to change it.<br /><span class="fl-ember-text">That was the whole idea.</span></h2>
+          <!-- His words, as he wrote them. -->
           <blockquote class="fl-creator-quote">
-            <p>I built Nevela because I was tired of writing the same code over and over.</p>
+            <p class="fl-creator-lead">I built Nevela because, every time I started a new application, I found myself wishing the same things were already there.</p>
             <p>
-              Every project began with the same boilerplate. And every change meant flipping through folders and files, looking for one small piece
-              I had already written somewhere else.
+              <span class="fl-creator-blocks">Authentication. Imports and exports. Permissions. Notifications. APIs. Dashboards.</span> The building
+              blocks that keep showing up in real applications.
             </p>
             <p>
-              I wanted a single source of truth for my applications: one place to describe a thing, and one place to change it. Now I describe a
-              resource once, and minutes later the database, the API and the dashboard all agree.
+              I didn&rsquo;t want to rebuild them every time. I wanted one place where I could enable what I needed, use it, and move on — then turn
+              it off when I didn&rsquo;t.
             </p>
-            <p>That is the framework I wanted to use. So I built it.</p>
+            <p class="fl-creator-point">So I built the framework I kept wishing I had.</p>
+            <p>That&rsquo;s Nevela.</p>
           </blockquote>
 
           <div class="fl-creator-sign">
@@ -1499,20 +1501,39 @@ const faq = [
   }
 
   .fl-creator-quote {
-    position: relative;
     margin: 0;
-    padding: 0 0 0 1.5rem;
+    padding: 0;
     border: 0;
     max-width: 38rem;
   }
 
+  /*
+   * What says "these are his words" is an opening quotation mark, in the page's gradient,
+   * and nothing down the side: the text starts where the headline above it starts.
+   */
   .fl-creator-quote::before {
-    content: "";
-    position: absolute;
-    inset: 0.35rem auto 0.35rem 0;
-    width: 2px;
-    border-radius: 2px;
-    background: linear-gradient(180deg, var(--fl-ember) 0%, color-mix(in srgb, var(--fl-ember) 12%, transparent) 100%);
+    content: "\201C";
+    display: block;
+    width: fit-content;
+    /* The glyph sits in the top half of its line; the rest of the line is cut away. */
+    height: 2.9rem;
+    margin: 0 0 0.5rem -0.25rem;
+    overflow: hidden;
+    font-size: 6rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--fl-ember);
+    background-image: var(--fl-fuse);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  @media (forced-colors: active) {
+    .fl-creator-quote::before {
+      background-image: none;
+      -webkit-text-fill-color: currentColor;
+    }
   }
 
   .fl-creator-quote p {
@@ -1522,21 +1543,30 @@ const faq = [
     color: var(--fl-body);
   }
 
-  /* The first line is the reason, and the last is the result: both are said plainly. */
-  .fl-creator-quote p:first-child,
-  .fl-creator-quote p:last-child {
-    color: var(--fl-ink);
-    font-weight: 600;
-  }
-
-  .fl-creator-quote p:first-child {
-    font-size: 1.25rem;
-    line-height: 1.4;
-    letter-spacing: -0.01em;
-  }
-
   .fl-creator-quote p:last-child {
     margin-bottom: 0;
+  }
+
+  /* The reason, said first and largest. */
+  .fl-creator-quote .fl-creator-lead {
+    margin-bottom: 1.1rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    color: var(--fl-ink);
+  }
+
+  /* The things he kept rebuilding, a shade stronger than the sentence around them. */
+  .fl-creator-blocks {
+    color: var(--fl-ink);
+    font-weight: 500;
+  }
+
+  /* The line he made bold. */
+  .fl-creator-quote .fl-creator-point {
+    font-weight: 650;
+    color: var(--fl-ink);
   }
 
   .fl-creator-sign {
