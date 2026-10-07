@@ -1,11 +1,33 @@
 ---
+import { Image } from "astro:assets";
 import { Code } from "@astrojs/starlight/components";
+import { siFacebook, siInstagram, siLinkedin, siTiktok, siWhatsapp, siX } from "simple-icons";
+import portrait from "../assets/markcole-mukisa.jpg";
 import { NEVELA_VERSION, RELEASE_HEADLINE, RELEASE_URL, REPO_URL } from "../version";
 /**
  * The docs home page. One idea carries it: describe a resource once, and Nevela writes
  * both sides — the Laravel API and the Next.js dashboard. The layout and styles are
  * Flare's landing page (MIT), with Nevela's content.
  */
+/**
+ * The person who made Nevela, for the section that says why.
+ *
+ * Every link is here and nowhere else. The icons are each network's own mark, from
+ * simple-icons, drawn in the page's ink so six brands sit together as one row.
+ */
+const creator = {
+  name: "MarkCole MUKISA",
+  role: "Creator of Nevela Framework",
+  socials: [
+    { label: "WhatsApp", href: "https://wa.me/256702262806", icon: siWhatsapp },
+    { label: "X", href: "https://x.com/MarkColeMUKISA", icon: siX },
+    { label: "Facebook", href: "https://www.facebook.com/MarkColeMUKISA", icon: siFacebook },
+    { label: "Instagram", href: "https://www.instagram.com/MarkColeMUKISA", icon: siInstagram },
+    { label: "LinkedIn", href: "https://www.linkedin.com/in/MarkColeMUKISA", icon: siLinkedin },
+    { label: "TikTok", href: "https://www.tiktok.com/@MarkColeMUKISA", icon: siTiktok },
+  ],
+};
+
 const install = [
   { id: "install", label: "Install", command: "npm install -g create-nevela" },
   { id: "new", label: "New app", command: "nevela new my-app" },
@@ -413,6 +435,56 @@ const faq = [
       </div>
     </section>
 
+    <!-- The creator -->
+    <section class="fl-section fl-rail fl-creator" aria-labelledby="fl-creator">
+      <p class="fl-step"><span>[ The maker ]</span> Why Nevela exists</p>
+      <div class="fl-creator-grid">
+        <figure class="fl-creator-figure">
+          <div class="fl-creator-frame">
+            <Image src={portrait} alt={`${creator.name}, the creator of Nevela`} width={520} height={520} quality={82} loading="lazy" />
+          </div>
+          <figcaption>
+            <span aria-hidden="true">nevela new</span> started here
+          </figcaption>
+        </figure>
+
+        <div class="fl-creator-body">
+          <h2 id="fl-creator">One place to change it.<br /><span class="fl-ember-text">That was the whole idea.</span></h2>
+          <blockquote class="fl-creator-quote">
+            <p>I built Nevela because I was tired of writing the same code over and over.</p>
+            <p>
+              Every project began with the same boilerplate. And every change meant flipping through folders and files, looking for one small piece
+              I had already written somewhere else.
+            </p>
+            <p>
+              I wanted a single source of truth for my applications: one place to describe a thing, and one place to change it. Now I describe a
+              resource once, and minutes later the database, the API and the dashboard all agree.
+            </p>
+            <p>That is the framework I wanted to use. So I built it.</p>
+          </blockquote>
+
+          <div class="fl-creator-sign">
+            <div>
+              <p class="fl-creator-name">{creator.name}</p>
+              <p class="fl-creator-role">{creator.role}</p>
+            </div>
+            <div class="fl-creator-follow">
+              <p id="fl-creator-follow">Follow him on</p>
+              <ul aria-labelledby="fl-creator-follow">
+                {creator.socials.map((social) => (
+                  <li>
+                    <a href={social.href} target="_blank" rel="noopener noreferrer me" aria-label={`${creator.name} on ${social.label}`} title={social.label}>
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d={social.icon.path} /></svg>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Close -->
     <section class="fl-close fl-rail" aria-labelledby="fl-close">
       <h2 id="fl-close">Create your app<br /><span class="fl-ember-text">in the next five minutes</span></h2>
@@ -426,7 +498,7 @@ const faq = [
       <span class="fl-footer-brand">
         <img src="/favicon.svg" alt="" width="18" height="18" /> Nevela
       </span>
-      <span class="fl-footer-meta">Open source under the MIT license</span>
+      <span class="fl-footer-meta">Open source under the MIT license · Created by <a href="#fl-creator">{creator.name}</a></span>
       <nav aria-label="Project links">
         <a href={REPO_URL}>GitHub</a>
         <a href="/reference/changelog/">Changelog</a>
@@ -1356,6 +1428,226 @@ const faq = [
   }
 
   /* Close + footer */
+  /* ---- The creator ---- */
+  .fl-creator-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(2rem, 5vw, 4.5rem);
+    align-items: center;
+  }
+
+  .fl-creator-figure {
+    margin: 0;
+    max-width: 26rem;
+    /* Keeps the frame's offset outline behind the photo, and in front of the page. */
+    isolation: isolate;
+  }
+
+  /* The portrait sits in the same gradient the nevela command prints its name in. */
+  .fl-creator-frame {
+    position: relative;
+    padding: 3px;
+    border-radius: 1.25rem;
+    background: var(--fl-fuse);
+  }
+
+  /* A second, offset outline: the block letters' shadow, borrowed for the photo. */
+  .fl-creator-frame::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--fl-rule-strong);
+    border-radius: 1.25rem;
+    transform: translate(0.75rem, 0.75rem);
+    z-index: -1;
+  }
+
+  .fl-creator-frame :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: calc(1.25rem - 3px);
+    background: var(--fl-raised);
+  }
+
+  .fl-creator-figure figcaption {
+    margin-top: 1.5rem;
+    font-family: var(--sl-font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fl-muted);
+  }
+
+  .fl-creator-figure figcaption span {
+    color: var(--fl-ember);
+    text-transform: none;
+    letter-spacing: 0;
+    margin-right: 0.35rem;
+  }
+
+  .fl-creator-body h2 {
+    margin: 0 0 1.75rem;
+    font-size: clamp(1.75rem, 1.15rem + 2.2vw, 2.75rem);
+    font-weight: 650;
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+    color: var(--fl-ink);
+    text-wrap: balance;
+  }
+
+  .fl-creator-quote {
+    position: relative;
+    margin: 0;
+    padding: 0 0 0 1.5rem;
+    border: 0;
+    max-width: 38rem;
+  }
+
+  .fl-creator-quote::before {
+    content: "";
+    position: absolute;
+    inset: 0.35rem auto 0.35rem 0;
+    width: 2px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--fl-ember) 0%, color-mix(in srgb, var(--fl-ember) 12%, transparent) 100%);
+  }
+
+  .fl-creator-quote p {
+    margin: 0 0 0.9rem;
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: var(--fl-body);
+  }
+
+  /* The first line is the reason, and the last is the result: both are said plainly. */
+  .fl-creator-quote p:first-child,
+  .fl-creator-quote p:last-child {
+    color: var(--fl-ink);
+    font-weight: 600;
+  }
+
+  .fl-creator-quote p:first-child {
+    font-size: 1.25rem;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+  }
+
+  .fl-creator-quote p:last-child {
+    margin-bottom: 0;
+  }
+
+  .fl-creator-sign {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem 2.5rem;
+    margin-top: 2.25rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--fl-rule);
+    max-width: 38rem;
+  }
+
+  .fl-creator-name {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    color: var(--fl-ink);
+  }
+
+  .fl-creator-role {
+    margin: 0.2rem 0 0;
+    font-size: 0.9375rem;
+    color: var(--fl-muted);
+  }
+
+  .fl-creator-follow p {
+    margin: 0 0 0.6rem;
+    font-family: var(--sl-font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fl-muted);
+  }
+
+  .fl-creator-follow ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fl-creator-follow li {
+    margin: 0;
+  }
+
+  .fl-creator-follow a {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid var(--fl-rule-strong);
+    border-radius: 999px;
+    background: var(--fl-paper);
+    color: var(--fl-ink);
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      transform 0.15s ease;
+  }
+
+  .fl-creator-follow a:hover,
+  .fl-creator-follow a:focus-visible {
+    background: var(--fl-ember);
+    border-color: var(--fl-ember);
+    color: var(--fl-on-ember);
+    transform: translateY(-2px);
+  }
+
+  .fl-creator-follow a:focus-visible {
+    outline: 2px solid var(--fl-ember);
+    outline-offset: 2px;
+  }
+
+  .fl-creator-follow svg {
+    width: 1.05rem;
+    height: 1.05rem;
+    fill: currentColor;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fl-creator-follow a {
+      transition: none;
+    }
+
+    .fl-creator-follow a:hover,
+    .fl-creator-follow a:focus-visible {
+      transform: none;
+    }
+  }
+
+  @media (max-width: 50rem) {
+    .fl-creator-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .fl-creator-figure {
+      max-width: 18rem;
+    }
+
+    /* Kept inside the page: the offset outline would otherwise reach past a narrow screen. */
+    .fl-creator-frame::after {
+      transform: translate(0.5rem, 0.5rem);
+    }
+  }
+
   .fl-close {
     text-align: center;
     padding: clamp(4rem, 8vw, 6rem) var(--gutter);
