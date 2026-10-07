@@ -50,6 +50,9 @@ importers:
       sharp:
         specifier: ^0.35.3
         version: 0.35.5(@types/node@24.19.0)
+      simple-icons:
+        specifier: 13.21.0
+        version: 13.21.0
 
   apps/web:
     dependencies:
@@ -3129,6 +3132,10 @@ packages:
 
   signal-exit@3.0.7:
     resolution: {integrity: sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==}
+
+  simple-icons@13.21.0:
+    resolution: {integrity: sha512-LI5pVJPBv6oc79OMsffwb6kEqnmB8P1Cjg1crNUlhsxPETQ5UzbCKQdxU+7MW6+DD1qfPkla/vSKlLD4IfyXpQ==}
+    engines: {node: '>=0.12.18'}
 
   sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
@@ -7091,6 +7098,8 @@ snapshots:
 
   signal-exit@3.0.7:
     optional: true
+
+  simple-icons@13.21.0: {}
 
   sisteransi@1.0.5: {}
 
