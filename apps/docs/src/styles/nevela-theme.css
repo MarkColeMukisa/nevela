@@ -319,7 +319,8 @@ starlight-toc nav ul ul {
   border-color: var(--fl-rule);
 }
 
-.sl-markdown-content blockquote {
+/* For quotes in the docs' own pages. The home page draws its own, so it is left out, as it is from the rules above. */
+.sl-markdown-content blockquote:not(:where(.not-content *)) {
   border-inline-start: 2px solid var(--fl-ember);
   color: var(--fl-muted);
 }
