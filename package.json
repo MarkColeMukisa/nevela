@@ -1,6 +1,6 @@
 {
   "name": "nevela",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "description": "Nevela: Laravel as the authority, Flare's Next.js frontend as the UI, one resource description driving both.",
   "packageManager": "pnpm@11.8.0",
