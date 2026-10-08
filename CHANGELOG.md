@@ -6,6 +6,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-10-08
+
 ### Added
 
 - **Insights**, above every resource's table: a panel with a bar chart of records created per day, week or month, and how the records split across each enum and yes/no field. It follows the table's search and filters, so narrowing the list redraws the charts for what is left. Closed until opened, and nothing is counted until then.
@@ -269,7 +271,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.3...HEAD
+[0.5.3]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.4.3...v0.5.0
