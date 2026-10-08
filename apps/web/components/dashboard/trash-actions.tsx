@@ -19,20 +19,28 @@ import { Spinner } from "@/components/ui/spinner";
 
 /**
  * The toast after a delete that went to the trash: it says where the record went, and
- * offers to take it back. `undo` restores; `after` is what to do once it has.
+ * offers to take it back. `undo` restores, and says so in `partly` when only some of
+ * several came back; `after` is what to do once it has. `warn` is for a delete that
+ * itself only partly worked.
  */
-export function toastMovedToTrash(message: string, undo: () => Promise<{ ok: true } | { ok: false; error: string }>, after: () => void) {
-  toast.success(message, {
+export function toastMovedToTrash(
+  message: string,
+  undo: () => Promise<{ ok: true; partly?: string } | { ok: false; error: string }>,
+  after: () => void,
+  warn = false,
+) {
+  (warn ? toast.warning : toast.success)(message, {
     action: {
       label: "Undo",
       onClick: async () => {
         const result = await undo();
-        if (result.ok) {
-          toast.success("Restored.");
-          after();
-        } else {
+        if (!result.ok) {
           toast.error(result.error);
+          return;
         }
+        if (result.partly) toast.warning(result.partly);
+        else toast.success("Restored.");
+        after();
       },
     },
   });

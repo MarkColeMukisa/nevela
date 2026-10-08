@@ -47,19 +47,24 @@ export async function restoreRecordAction(slug: string, id: string): Promise<Tra
  * Several back at once: what "Undo" does after deleting a selection. Ids that were never
  * deleted (the ones the delete itself refused) aren't in the trash, and are passed over.
  */
-export async function restoreManyAction(slug: string, ids: string[]): Promise<TrashResult<{ restored: number }>> {
+export async function restoreManyAction(slug: string, ids: string[]): Promise<TrashResult<{ restored: number; refused: number; reason?: string }>> {
   if (!(await getSession())) return { ok: false, error: "Sign in to continue." };
   if (ids.length > 500) return { ok: false, error: "That's more than 500 records. Restore them from the trash instead." };
   let restored = 0;
-  let refusal: string | undefined;
+  let refused = 0;
+  let reason: string | undefined;
   for (const id of ids) {
     const response = await laravel(`_nevela/trash/${encodeURIComponent(slug)}/${encodeURIComponent(id)}/restore`, { method: "POST" });
     if (response.ok) restored++;
-    else if (response.status !== 404) refusal ??= ((response.body ?? {}) as { error?: string }).error;
+    else if (response.status !== 404) {
+      refused++;
+      reason ??= ((response.body ?? {}) as { error?: string }).error ?? `Something went wrong (${response.status}).`;
+    }
   }
   if (restored > 0) revalidate(slug);
-  if (restored === 0) return { ok: false, error: refusal ?? "Nothing to restore: these aren't in the trash any more." };
-  return { ok: true, data: { restored } };
+  if (restored === 0) return { ok: false, error: reason ?? "Nothing to restore: these aren't in the trash any more." };
+  // Some came back and some were refused: both are said, so "Restored" is never the whole answer when it isn't.
+  return { ok: true, data: { restored, refused, reason } };
 }
 
 /** Gone for good. */

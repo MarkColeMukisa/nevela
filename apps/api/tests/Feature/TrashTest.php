@@ -26,6 +26,25 @@ class PolicyWithoutTrash
     }
 }
 
+/** A policy that lets its people delete, and keeps bringing things back for one of them. */
+class PolicyWithStricterRestore
+{
+    public function delete(User $user, Product $product): bool
+    {
+        return true;
+    }
+
+    public function restore(User $user, Product $product): bool
+    {
+        return $user->email === 'keeper@example.com';
+    }
+
+    public function forceDelete(User $user, Product $product): bool
+    {
+        return false;
+    }
+}
+
 /**
  * The trash, over HTTP: a deleted record is kept and hidden, can be restored for thirty
  * days, and is then removed for good.
@@ -235,6 +254,24 @@ class TrashTest extends TestCase
 
         Sanctum::actingAs(User::factory()->create(['email' => 'keeper@example.com']));
         $this->getJson('/api/_nevela/trash/products')->assertOk()->assertJsonPath('meta.total', 1);
+        $this->postJson("/api/_nevela/trash/products/{$deleted->id}/restore")->assertOk();
+    }
+
+    public function test_whoever_may_delete_sees_the_trash_even_where_restoring_is_kept_for_others(): void
+    {
+        $deleted = $this->product('KET-1');
+        $deleted->delete();
+        Gate::policy(Product::class, PolicyWithStricterRestore::class);
+
+        Sanctum::actingAs(User::factory()->create(['email' => 'someone@example.com']));
+        $this->getJson('/api/_nevela/trash/_status')->assertOk()->assertJsonPath('resources', ['products']);
+        $this->getJson('/api/_nevela/trash/products')->assertOk()->assertJsonPath('meta.total', 1);
+        $this->postJson("/api/_nevela/trash/products/{$deleted->id}/restore")->assertForbidden();
+        $this->deleteJson("/api/_nevela/trash/products/{$deleted->id}")->assertForbidden();
+        // Emptying passes over what they may not remove, and says how many it left.
+        $this->deleteJson('/api/_nevela/trash/products?confirm=products')->assertOk()->assertJsonPath('removed', 0)->assertJsonPath('kept', 1);
+
+        Sanctum::actingAs(User::factory()->create(['email' => 'keeper@example.com']));
         $this->postJson("/api/_nevela/trash/products/{$deleted->id}/restore")->assertOk();
     }
 

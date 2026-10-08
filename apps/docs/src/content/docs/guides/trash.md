@@ -40,6 +40,8 @@ public function forceDelete(User $user, Product $product): bool
 }
 ```
 
+The Trash page shows a resource to anyone who may delete, restore or remove its records. So with the rule above, the people who delete still see what they deleted and can restore it; only Delete forever refuses them.
+
 A policy you wrote before 0.6.0 has neither method. It is asked what it says to `delete` instead, so it keeps working unchanged.
 
 ## How long things are kept

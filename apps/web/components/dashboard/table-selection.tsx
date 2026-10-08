@@ -134,8 +134,15 @@ export function SelectionBar({ resourceName, label, pluralLabel, canDelete, rows
       clear();
       router.refresh();
       const what = `${deleted} ${deleted === 1 ? label.toLowerCase() : pluralLabel.toLowerCase()}`;
-      if (failed > 0) toast.warning(`Deleted ${deleted}; ${failed} couldn't be deleted.`);
-      else if (trash) toastMovedToTrash(`${what} moved to the trash.`, () => restoreManyAction(slug, ids), () => router.refresh());
+      // The ones that wouldn't go aren't in the trash, and restoring passes over them.
+      const undo = async () => {
+        const result = await restoreManyAction(slug, ids);
+        if (!result.ok || result.data.refused === 0) return result;
+        return { ok: true as const, partly: `Restored ${result.data.restored}. ${result.data.refused} couldn't be: ${result.data.reason}` };
+      };
+      if (trash && deleted > 0) {
+        toastMovedToTrash(failed > 0 ? `${what} moved to the trash; ${failed} couldn't be deleted.` : `${what} moved to the trash.`, undo, () => router.refresh(), failed > 0);
+      } else if (failed > 0) toast.warning(`Deleted ${deleted}; ${failed} couldn't be deleted.`);
       else toast.success(`Deleted ${what}.`);
     });
   };
