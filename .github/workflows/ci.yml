@@ -314,6 +314,17 @@ jobs:
           editor="$(bearer amara.okafor@example.com)"
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/products -H 'Accept: application/json' -H "Authorization: Bearer $editor")" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8000/api/_nevela/roles -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: Bearer $editor" -d '{"name":"Mine","grants":["*"]}')" = 403
+          # Several at once: all of them, or none and the row that was wrong.
+          # (On categories: a later step counts the products exactly.)
+          bulk() { curl -s -o bulk.json -w '%{http_code}' -X POST http://127.0.0.1:8000/api/categories/_bulk -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: Bearer $editor" -d "$1"; }
+          categories() { curl -s -g "http://127.0.0.1:8000/api/categories?perPage=1" -H 'Accept: application/json' -H "Authorization: Bearer $editor" | sed -E 's/.*"total":([0-9]+).*/\1/'; }
+          before="$(categories)"
+          test "$(bulk '{"items":[{"name":"Bulk one","slug":"bulk-one"},{"name":"Bulk two","slug":"bulk-one"}]}')" = 422
+          grep -q '"row":2' bulk.json
+          test "$(categories)" = "$before"
+          test "$(bulk '{"items":[{"name":"Bulk one","slug":"bulk-one"},{"name":"Bulk two","slug":"bulk-two"}]}')" = 201
+          grep -q '"created":2' bulk.json
+          test "$(categories)" = "$((before + 2))"
           # a user nothing but their own account,
           plain="$(bearer sofia.martinez@example.com)"
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/auth/me -H 'Accept: application/json' -H "Authorization: Bearer $plain")" = 200

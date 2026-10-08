@@ -18,7 +18,7 @@ use Nevela\Laravel\Nevela;
  */
 class CategoryController extends Controller
 {
-    // nevela:generated:start hash=c6cab1b691fb
+    // nevela:generated:start hash=7999e2a15a81
     public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Category::class);
@@ -41,6 +41,13 @@ class CategoryController extends Controller
             ->response()
             ->setStatusCode(201)
             ->header('Location', $request->url().'/'.$category->getKey());
+    }
+
+    public function bulk(Request $request): JsonResponse
+    {
+        Gate::authorize('create', Category::class);
+
+        return Nevela::createMany(Category::class, CategoryRequest::class, CategoryResource::class, $request);
     }
 
     public function show(Category $category): CategoryResource

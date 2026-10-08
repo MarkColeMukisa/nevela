@@ -40,6 +40,20 @@ Running `nevela:resource` or `nevela:generate` in `apps/api` writes into this ap
 
 Do not edit fields in the `.resource.ts` file. Change the JSON descriptor in the Laravel app and regenerate, so both sides stay the same.
 
+## Three ways to add records
+
+Every resource's list has them side by side, for anyone allowed to create:
+
+| | For |
+|---|---|
+| **New** | One record, in the form. |
+| **Add several** | The dozen you have in your head or on a piece of paper. A grid that opens with five blank rows; add more as you go. |
+| **Import CSV** | A file somebody already has. |
+
+In the grid, rows you leave empty are ignored, and the button says how many will be created ("Create 3 products"). The rows are saved together or not at all: if one is wrong, nothing is created and the mistake is shown on its row.
+
+A field that doesn't fit in a cell, an image or a file, has no column. If one of those is required the grid says so, and those records are for the form.
+
 ## Getting dashboard fixes later
 
 The dashboard's files are yours to change. `nevela upgrade` brings the ones you have not changed up to a newer version, and leaves the ones you changed alone. See [Upgrading an app](/guides/updating/#upgrading-an-app).

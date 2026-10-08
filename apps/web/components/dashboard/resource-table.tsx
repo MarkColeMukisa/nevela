@@ -24,6 +24,7 @@ import { ExportButton } from "./export-button";
 import { isInlineEditable } from "./editable";
 import { InlineCell } from "./inline-cell";
 import type { RelationMeta } from "./fields/field-widget";
+import { BulkCreateButton } from "./bulk-create-grid";
 import { ImportDialog } from "./import-dialog";
 import { LocalTime } from "./local-time";
 import { hrefWith, toSearchParams, type SearchParams } from "./query";
@@ -110,6 +111,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
           <ColumnMenu columns={allColumns.map(({ key, label }) => ({ key, label }))} visible={columns.map((column) => column.key)} />
           <ExportButton resourceName={resource.name} pluralLabel={resource.pluralLabel} />
           {permissions.create && <ImportDialog resource={forClient} />}
+          {permissions.create && <BulkCreateButton resource={forClient} relations={relations} />}
           {permissions.create &&
             (overlayForms ? (
               <NewRecordButton resource={forClient} relations={relations} listHref={basePath} />

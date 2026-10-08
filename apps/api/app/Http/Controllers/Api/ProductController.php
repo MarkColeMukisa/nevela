@@ -18,7 +18,7 @@ use Nevela\Laravel\Nevela;
  */
 class ProductController extends Controller
 {
-    // nevela:generated:start hash=4177d2f54585
+    // nevela:generated:start hash=a6c8a98da0a9
     public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Product::class);
@@ -41,6 +41,13 @@ class ProductController extends Controller
             ->response()
             ->setStatusCode(201)
             ->header('Location', $request->url().'/'.$product->getKey());
+    }
+
+    public function bulk(Request $request): JsonResponse
+    {
+        Gate::authorize('create', Product::class);
+
+        return Nevela::createMany(Product::class, ProductRequest::class, ProductResource::class, $request);
     }
 
     public function show(Product $product): ProductResource
