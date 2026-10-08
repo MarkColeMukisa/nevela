@@ -12,6 +12,7 @@ Nevela is two apps. Deploy each the way you would deploy any Laravel or Next.js 
 - Check who holds which [role](/guides/policies/). A generated policy asks for a permission; in an app from before 0.5.0 the policies still allow any signed-in user until you change them.
 - Install with `composer install --no-dev --optimize-autoloader`. A new app has Composer's optimized autoloader turned off, because building it made creating an app take minutes longer; production should have it, and the flag turns it on.
 - Run `php artisan config:cache` and `php artisan route:cache` as usual. Nevela's routes are cached with the rest.
+- Add Laravel's scheduler to cron: `* * * * * cd /path/to/api && php artisan schedule:run >> /dev/null 2>&1`. It is what empties [the trash](/guides/trash/) of records past their 30 days each night. Without it they go the next time someone opens the Trash page.
 
 ## The web app
 

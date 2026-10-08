@@ -168,6 +168,14 @@ Every update is added to the `history` in `.nevela.json`: the date, the versions
 
 The `.nevela/` folder (backups and incoming files) ignores itself, so none of it goes into git.
 
+### After an upgrade: migrate
+
+An upgrade can bring migrations with it. It says so when it has ("2 migration(s) have not been run"), and `nevela migrate` runs them. The upgrade to 0.6.0 does: one for each resource, giving its table [a trash](/guides/trash/#upgrading-an-app-from-before-060).
+
+### When it finishes on an older version
+
+A release reaches Composer a few minutes after it is published. Upgrade in that gap and Composer installs the release before it. The command tells you ("Nevela v0.6.0 is out, and Composer didn't bring it in"): run `nevela upgrade` again shortly.
+
 ## Older apps
 
 **An app from before the record existed** (created with 0.1.3 or earlier) has no fingerprints yet. On its first update, Nevela downloads the dashboard version the app started from and compares against that instead, then writes the record. From then on it works as described above.

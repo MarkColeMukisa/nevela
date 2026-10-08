@@ -38,4 +38,16 @@ class ProductPolicy
     {
         return $user->can('products.delete');
     }
+
+    /** Bring a deleted one back from the trash. */
+    public function restore(User $user, Product $product): bool
+    {
+        return $user->can('products.delete');
+    }
+
+    /** Remove a deleted one from the trash, for good. */
+    public function forceDelete(User $user, Product $product): bool
+    {
+        return $user->can('products.delete');
+    }
 }

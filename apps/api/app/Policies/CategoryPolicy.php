@@ -38,4 +38,16 @@ class CategoryPolicy
     {
         return $user->can('categories.delete');
     }
+
+    /** Bring a deleted one back from the trash. */
+    public function restore(User $user, Category $category): bool
+    {
+        return $user->can('categories.delete');
+    }
+
+    /** Remove a deleted one from the trash, for good. */
+    public function forceDelete(User $user, Category $category): bool
+    {
+        return $user->can('categories.delete');
+    }
 }

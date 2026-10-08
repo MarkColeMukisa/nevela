@@ -7,6 +7,7 @@ import { PencilIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 import type { ClientResource } from "@flaredev/core";
 import { deleteRecordAction } from "@/app/dashboard/actions";
+import { restoreRecordAction } from "@/app/dashboard/trash/actions";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -18,7 +19,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { keptFor, type TrashInfo } from "@/lib/trash-info";
 import { ResourceFormSheet, type FormRelations } from "./resource-form-sheet";
+import { toastMovedToTrash } from "./trash-actions";
 
 interface Props {
   resource: ClientResource;
@@ -31,10 +34,12 @@ interface Props {
   canDelete: boolean;
   /** Whether editing opens a sheet (site.dashboard.forms) or goes to the form page. */
   overlayForms: boolean;
+  /** This resource's trash, when a deleted record goes there instead of going for good. */
+  trash?: TrashInfo;
 }
 
 /** Edit and delete, at the top of a record's own page. Deleting goes back to the list. */
-export function RecordActions({ resource, id, record, relations, listHref, editHref, canUpdate, canDelete, overlayForms }: Props) {
+export function RecordActions({ resource, id, record, relations, listHref, editHref, canUpdate, canDelete, overlayForms, trash }: Props) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -47,7 +52,9 @@ export function RecordActions({ resource, id, record, relations, listHref, editH
         toast.error(result.error);
         return;
       }
-      toast.success(`${resource.label} deleted.`);
+      // Undone, the record has a page again, and that is where to go back to.
+      if (trash) toastMovedToTrash(`${resource.label} moved to the trash.`, () => restoreRecordAction(resource.slug, id), () => router.push(`${listHref}/${id}`));
+      else toast.success(`${resource.label} deleted.`);
       // The record this page is about is gone, so the list is the only place left to be.
       router.push(listHref);
       router.refresh();
@@ -96,14 +103,16 @@ export function RecordActions({ resource, id, record, relations, listHref, editH
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this {resource.label.toLowerCase()}?</AlertDialogTitle>
-            <AlertDialogDescription>This can&apos;t be undone. Anything that belongs to it may be deleted too.</AlertDialogDescription>
+            <AlertDialogTitle>{trash ? `Move this ${resource.label.toLowerCase()} to the trash?` : `Delete this ${resource.label.toLowerCase()}?`}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {trash ? `It can be restored from the trash ${keptFor(trash)}.` : "This can't be undone. Anything that belongs to it may be deleted too."}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={pending}>Keep it</AlertDialogCancel>
             <Button variant="destructive" onClick={remove} disabled={pending}>
               {pending && <Spinner data-icon="inline-start" />}
-              Delete
+              {trash ? "Move to trash" : "Delete"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

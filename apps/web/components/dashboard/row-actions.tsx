@@ -7,6 +7,7 @@ import { ExternalLinkIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lu
 import { toast } from "sonner";
 import type { ClientResource } from "@flaredev/core";
 import { deleteRecordAction } from "@/app/dashboard/actions";
+import { restoreRecordAction } from "@/app/dashboard/trash/actions";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -26,7 +27,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
+import { keptFor, type TrashInfo } from "@/lib/trash-info";
 import { ResourceFormSheet, type FormRelations } from "./resource-form-sheet";
+import { toastMovedToTrash } from "./trash-actions";
 
 /**
  * Edit and delete for one row. Edit opens a dialog when the row's record came with it
@@ -42,6 +45,7 @@ export function RowActions({
   detailHref,
   canUpdate = true,
   canDelete = true,
+  trash,
 }: {
   resource: ClientResource;
   id: string;
@@ -54,18 +58,21 @@ export function RowActions({
   detailHref: string;
   canUpdate?: boolean;
   canDelete?: boolean;
+  /** This resource's trash, when a deleted record goes there instead of going for good. */
+  trash?: TrashInfo;
 }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
-  const { name: resourceName, label } = resource;
+  const { name: resourceName, label, slug } = resource;
 
   function onDelete() {
     startTransition(async () => {
       const result = await deleteRecordAction(resourceName, id);
       if (result.ok) {
-        toast.success(`${label} deleted.`);
+        if (trash) toastMovedToTrash(`${label} moved to the trash.`, () => restoreRecordAction(slug, id), () => router.refresh());
+        else toast.success(`${label} deleted.`);
         setConfirming(false);
         router.refresh();
       } else {
@@ -73,8 +80,6 @@ export function RowActions({
       }
     });
   }
-
-
 
   return (
     <>
@@ -139,14 +144,14 @@ export function RowActions({
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this {label.toLowerCase()}?</AlertDialogTitle>
-            <AlertDialogDescription>This can&apos;t be undone.</AlertDialogDescription>
+            <AlertDialogTitle>{trash ? `Move this ${label.toLowerCase()} to the trash?` : `Delete this ${label.toLowerCase()}?`}</AlertDialogTitle>
+            <AlertDialogDescription>{trash ? `It can be restored from the trash ${keptFor(trash)}.` : "This can't be undone."}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
             <Button variant="destructive" onClick={onDelete} disabled={pending}>
               {pending && <Spinner data-icon="inline-start" />}
-              Delete
+              {trash ? "Move to trash" : "Delete"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

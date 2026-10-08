@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { adminPermissions, allResources, dashboardStore, requireAccess, resourcePath } from "@/lib/dashboard";
 import { site } from "@/lib/site";
+import { trashFor } from "@/lib/trash";
 import { LocalTime } from "./local-time";
 import { PageHeader } from "./page-header";
 import { RecordActions } from "./record-actions";
@@ -31,6 +32,7 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
   if (!result.ok) notFound();
   const record = result.data;
   const permissions = await adminPermissions(resource.name);
+  const trash = permissions.delete ? await trashFor(resource.slug) : undefined;
 
   const all = allResources();
   const byName = new Map(all.map((item) => [item.name, item]));
@@ -90,6 +92,7 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
             canUpdate={permissions.update}
             canDelete={permissions.delete}
             overlayForms={site.dashboard.forms === "sheet"}
+            trash={trash}
           />
         }
       />

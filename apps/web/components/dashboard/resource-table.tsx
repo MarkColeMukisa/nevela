@@ -18,6 +18,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { resourcePath, adminPermissions, allResources, dashboardStore, requireAccess } from "@/lib/dashboard";
 import { site } from "@/lib/site";
+import { trashFor } from "@/lib/trash";
 import { cn } from "@/lib/utils";
 import { ColumnMenu } from "./column-menu";
 import { ExportButton } from "./export-button";
@@ -51,6 +52,8 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
   const forClient = clientResource(resource);
   const basePath = resourcePath(resource);
   const permissions = await adminPermissions(resource.name);
+  // Whether a delete here can be taken back, so the buttons say what they will really do.
+  const trash = permissions.delete ? await trashFor(resource.slug) : undefined;
   const params = toSearchParams(searchParams);
   const store = dashboardStore(resource.name);
 
@@ -300,6 +303,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
                         detailHref={resourcePath(resource, id)}
                         canUpdate={permissions.update}
                         canDelete={permissions.delete}
+                        trash={trash}
                       />
                     </TableCell>
                   </TableRow>
@@ -396,6 +400,8 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
         canDelete={permissions.delete}
         rows={rows}
         columns={exportColumns}
+        slug={resource.slug}
+        trash={trash}
       />
       </div>
     </TableSelection>

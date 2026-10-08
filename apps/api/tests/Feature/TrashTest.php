@@ -89,6 +89,8 @@ class TrashTest extends TestCase
             ->assertJsonPath('data.0.deletedAt', '2026-10-09T12:00:00.000000Z')
             ->assertJsonPath('data.0.expiresAt', '2026-11-08T12:00:00.000000Z');
         $this->getJson('/api/_nevela/trash/unicorns')->assertNotFound();
+        // What a delete button asks first, to say what pressing it will do.
+        $this->getJson('/api/_nevela/trash/_status')->assertOk()->assertExactJson(['days' => 30, 'resources' => ['categories', 'products']]);
     }
 
     public function test_it_can_be_restored_or_removed_for_good(): void

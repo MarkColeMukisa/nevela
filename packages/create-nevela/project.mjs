@@ -11,7 +11,7 @@ import { isNewer, satisfiesCaret } from './packagist.mjs';
 import { spawnCommand } from './shell.mjs';
 
 /** What `nevela <name>` runs: these go to `php artisan nevela:<name>`. */
-const NEVELA = ['upgrade', 'dev', 'status', 'version', 'resource', 'generate', 'seed', 'user'];
+const NEVELA = ['upgrade', 'dev', 'status', 'version', 'resource', 'generate', 'seed', 'user', 'trash'];
 /** These go to the artisan command of the same name. */
 const ARTISAN = ['migrate', 'tinker', 'test', 'serve'];
 
