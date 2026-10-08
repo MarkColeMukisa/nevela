@@ -11,7 +11,10 @@ class Product extends Model
 
     protected $table = 'products';
 
-    // nevela:generated:start hash=e7474ea126e1
+    // nevela:generated:start hash=b9081e6056f7
+    // Deleted records go to the trash, where they can be restored for a while.
+    use \Nevela\Laravel\Concerns\Trashable;
+
     protected $fillable = ['name', 'sku', 'price', 'image', 'category_id', 'active', 'kind', 'notes'];
 
     protected function casts(): array
