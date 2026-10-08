@@ -6,6 +6,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-10-08
+
 ### Added
 
 - **Add several**, beside New and Import on every resource's list: a grid for typing in several records at once. It opens with five blank rows, ignores the ones left empty, and the button says how many it will create. They are saved together or not at all, and a mistake is shown on its row.
@@ -262,7 +264,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.4.3...v0.5.0
 [0.4.3]: https://github.com/MarkColeMukisa/nevela/compare/v0.4.2...v0.4.3
