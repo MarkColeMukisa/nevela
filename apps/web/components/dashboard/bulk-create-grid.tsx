@@ -32,7 +32,11 @@ interface Row {
  */
 const STARTING_ROWS = 5;
 
-/** What Laravel accepts in one request (config/nevela.php, bulk_max). */
+/**
+ * Where the grid stops adding rows: what Laravel accepts in one request unless an app
+ * changes it (config/nevela.php, bulk_max). An app that sets it lower is still safe:
+ * Laravel refuses the larger request, and its message, which says the limit, is shown.
+ */
 const MOST_ROWS = 500;
 
 /** Kinds that fit in a cell: one control, one value. A file needs its own upload, so it is left to the form. */

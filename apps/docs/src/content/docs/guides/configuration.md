@@ -33,7 +33,7 @@ php artisan vendor:publish --tag=nevela-config
 | `auth.issuer` | the app's name | The name an authenticator app and a passkey prompt show. |
 | `per_page` | `25` | Records per page when a list request does not say. |
 | `max_per_page` | `100` | The most a list request may ask for. |
-| `bulk_max` | `500` | The most rows the "Add several" grid, and `POST /{slug}/_bulk`, create in one request. |
+| `bulk_max` | `500` | The most rows `POST /{slug}/_bulk` creates in one request. The dashboard's "Add several" grid stops at 500 rows itself; set this lower and Laravel refuses a larger grid, saying what the limit is. |
 | `uploads.disk` | `public`, or `NEVELA_UPLOADS_DISK` | The disk file and image fields store on. |
 | `uploads.url` | none, or `NEVELA_UPLOADS_URL` | The address files are served from, when a CDN or your web server serves the disk. |
 | `uploads.originals_disk` | `local`, or `NEVELA_ORIGINALS_DISK` | Where untouched originals of images are kept. |
