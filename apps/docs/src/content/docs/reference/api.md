@@ -105,6 +105,7 @@ Using `products` as the example:
 | `PUT /products/{id}` | Replace the record | `200` the record |
 | `DELETE /products/{id}` | Delete | `204` |
 | `GET /products/_stats` | Counts for dashboards | `200 { total, current, previous, values }` |
+| `GET /products/_insights` | Counts per period and per choice, for charts | `200 { total, unit, series, breakdown }` |
 
 ### A record
 
@@ -203,6 +204,24 @@ GET /products/_stats?field=kind&days=7
 | `values` | Records per value of `field`. Empty when `field` is not given. |
 
 `days` is 1 to 365, default 7. `field` must be an enum or boolean field.
+
+### Insights
+
+```
+GET /products/_insights?unit=week&filter[kind]=digital
+```
+
+What the dashboard's insights panel is drawn from.
+
+| Part of the answer | What it is |
+|---|---|
+| `total` | Everything the request matches, whenever it was created. |
+| `series` | How many were created in each period, oldest first: `[{ "bucket": "2026-10-05", "count": 3 }, … ]`. A period with nothing in it is there, as zero. |
+| `breakdown` | For each enum and yes/no field (the first four), how many records hold each choice: `[{ "field": "kind", "kind": "enum", "slices": [{ "value": "stock", "count": 22 }, … ] }]`. Every choice is listed, in the field's own order. |
+
+`unit` is `day` (the last 30 days, the default), `week` (the last 26 weeks, each called by its Monday) or `month` (the last 12 months, as `2026-10`).
+
+It takes the list's `q` and `filter[…]`, so the counts are of the same records a list request with those parameters returns. `page`, `perPage` and `sort` are accepted and change nothing. It takes the permission to view the resource. Days are counted in the app's timezone (`config/app.php`).
 
 ## Relations
 

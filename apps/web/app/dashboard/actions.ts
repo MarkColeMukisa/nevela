@@ -105,6 +105,42 @@ export async function createRecordAction(resourceName: string, input: unknown): 
   return result;
 }
 
+export type InsightsUnit = "day" | "week" | "month";
+
+export interface InsightsData {
+  /** Everything the list matches, whenever it was created. */
+  total: number;
+  unit: InsightsUnit;
+  /** How many were created in each period, oldest first. A day or a week is "2026-10-05" (a week by its Monday), a month "2026-10". */
+  series: { bucket: string; count: number }[];
+  /** How the records split across each field that is a choice. */
+  breakdown: { field: string; kind: "enum" | "boolean"; slices: { value: string; count: number }[] }[];
+}
+
+/**
+ * The counts behind the insights panel: `GET /{slug}/_insights`.
+ *
+ * `query` is the list's own search and filters, so the charts are of the rows the table
+ * is showing. Asked for only when the panel is opened.
+ */
+export async function resourceInsightsAction(resourceName: string, query: string, unit: InsightsUnit): Promise<ActionResult<InsightsData>> {
+  const denied = await allowed(resourceName, "read");
+  if (denied) return denied;
+
+  const { resource } = dashboardStore(resourceName);
+  const params = new URLSearchParams();
+  for (const [key, value] of new URLSearchParams(query)) if (key === "q" || key.startsWith("filter[")) params.append(key, value);
+  params.set("unit", unit);
+  const response = await laravel(`${resource.slug}/_insights?${params}`);
+  if (!response.ok) {
+    const body = (response.body ?? {}) as { error?: string };
+    // An app whose Laravel side is from before this existed has no such address.
+    const missing = response.status === 404 || response.status === 405;
+    return { ok: false, status: response.status, error: missing ? "This app's API has no insights yet. Run: nevela upgrade" : (body.error ?? "Request failed.") };
+  }
+  return { ok: true, data: response.body as InsightsData };
+}
+
 /** What was wrong with one row of several, numbered from 1 among the rows that were sent. */
 export interface RowProblem {
   row: number;

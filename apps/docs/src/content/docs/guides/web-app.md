@@ -54,6 +54,19 @@ In the grid, rows you leave empty are ignored, and the button says how many will
 
 A field that doesn't fit in a cell, an image or a file, has no column. If one of those is required the grid says so, and those records are for the form.
 
+## Insights
+
+Above every resource's table there is an **Insights** panel, closed until you open it:
+
+- **Created per day, week or month**, as a bar chart: the last 30 days, 26 weeks or 12 months.
+- **How the records split** across each field that is a choice, an enum or a yes/no: a bar for every choice, with its count and its share.
+
+The charts are of the rows the table is showing. Search, or filter the list to one category, and they redraw for that.
+
+Nothing is counted until the panel is opened, so a list costs what it did before. Whether you left it open is remembered, for each resource, in your browser.
+
+A resource gets this without being asked: the choices come from its descriptor. There is nothing to configure.
+
 ## Getting dashboard fixes later
 
 The dashboard's files are yours to change. `nevela upgrade` brings the ones you have not changed up to a newer version, and leaves the ones you changed alone. See [Upgrading an app](/guides/updating/#upgrading-an-app).

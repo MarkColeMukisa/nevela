@@ -18,7 +18,7 @@ use Nevela\Laravel\Nevela;
  */
 class ProductController extends Controller
 {
-    // nevela:generated:start hash=a6c8a98da0a9
+    // nevela:generated:start hash=2446cfa10185
     public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Product::class);
@@ -31,6 +31,13 @@ class ProductController extends Controller
         Gate::authorize('viewAny', Product::class);
 
         return Nevela::stats(Product::query(), 'Product', $request);
+    }
+
+    public function insights(Request $request): JsonResponse
+    {
+        Gate::authorize('viewAny', Product::class);
+
+        return Nevela::insights(Product::query(), 'Product', $request);
     }
 
     public function store(ProductRequest $request): JsonResponse
