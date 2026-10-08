@@ -325,6 +325,12 @@ jobs:
           test "$(bulk '{"items":[{"name":"Bulk one","slug":"bulk-one"},{"name":"Bulk two","slug":"bulk-two"}]}')" = 201
           grep -q '"created":2' bulk.json
           test "$(categories)" = "$((before + 2))"
+          # What the insights panel is drawn from: thirty days of counts, and the split by each choice.
+          curl -s -g "http://127.0.0.1:8000/api/products/_insights" -H 'Accept: application/json' -H "Authorization: Bearer $editor" > insights.json
+          test "$(grep -o '"bucket"' insights.json | wc -l)" = 30
+          grep -q '"field":"kind"' insights.json
+          grep -q '"total":100' insights.json
+          test "$(curl -s -g -o /dev/null -w '%{http_code}' "http://127.0.0.1:8000/api/products/_insights?unit=year" -H 'Accept: application/json' -H "Authorization: Bearer $editor")" = 400
           # a user nothing but their own account,
           plain="$(bearer sofia.martinez@example.com)"
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/auth/me -H 'Accept: application/json' -H "Authorization: Bearer $plain")" = 200

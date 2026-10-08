@@ -18,7 +18,7 @@ use Nevela\Laravel\Nevela;
  */
 class CategoryController extends Controller
 {
-    // nevela:generated:start hash=7999e2a15a81
+    // nevela:generated:start hash=cc48fbd4822c
     public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Category::class);
@@ -31,6 +31,13 @@ class CategoryController extends Controller
         Gate::authorize('viewAny', Category::class);
 
         return Nevela::stats(Category::query(), 'Category', $request);
+    }
+
+    public function insights(Request $request): JsonResponse
+    {
+        Gate::authorize('viewAny', Category::class);
+
+        return Nevela::insights(Category::query(), 'Category', $request);
     }
 
     public function store(CategoryRequest $request): JsonResponse

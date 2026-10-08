@@ -25,6 +25,7 @@ import { isInlineEditable } from "./editable";
 import { InlineCell } from "./inline-cell";
 import type { RelationMeta } from "./fields/field-widget";
 import { BulkCreateButton } from "./bulk-create-grid";
+import { ResourceInsights } from "./resource-insights";
 import { ImportDialog } from "./import-dialog";
 import { LocalTime } from "./local-time";
 import { hrefWith, toSearchParams, type SearchParams } from "./query";
@@ -105,6 +106,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
   return (
     <TableSelection ids={rowIds}>
       <div className="flex flex-col gap-4">
+      <ResourceInsights resource={forClient} total={meta.total} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <ResourceTableToolbar resource={forClient} />
         <div className="flex flex-wrap items-center gap-2">

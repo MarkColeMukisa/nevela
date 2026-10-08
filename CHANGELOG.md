@@ -6,6 +6,11 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Added
+
+- **Insights**, above every resource's table: a panel with a bar chart of records created per day, week or month, and how the records split across each enum and yes/no field. It follows the table's search and filters, so narrowing the list redraws the charts for what is left. Closed until opened, and nothing is counted until then.
+- `GET /{slug}/_insights` behind it. Existing apps get it when `nevela upgrade` regenerates their controllers and routes.
+
 ## [0.5.2] - 2026-10-08
 
 ### Added
