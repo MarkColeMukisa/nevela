@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { storedFields, type PolicyAction } from "@flaredev/core";
 import type { FieldIssue } from "@/lib/resource/store";
 import { toCsv } from "@/lib/csv";
+import { revalidateResource } from "@/lib/cache";
 import { fileUrl } from "@/lib/files";
+import { laravel } from "@/lib/laravel";
 import { allResources, resourcePath, dashboardSession, dashboardStore, mayDo } from "@/lib/dashboard";
 
 export type ActionResult<T = unknown> =
@@ -101,6 +103,47 @@ export async function createRecordAction(resourceName: string, input: unknown): 
   const result = await store.create(input);
   if (result.ok) revalidatePath(resourcePath(store.resource));
   return result;
+}
+
+/** What was wrong with one row of several, numbered from 1 among the rows that were sent. */
+export interface RowProblem {
+  row: number;
+  issues: FieldIssue[];
+}
+
+export type CreateManyResult = { ok: true; data: { created: number } } | { ok: false; status: number; error: string; rows?: RowProblem[] };
+
+/**
+ * Several records at once, for the "Add several" grid: `POST /{slug}/_bulk`.
+ *
+ * Laravel checks every row with the rules it uses for one, and saves them in a single
+ * transaction. So the answer is all of them, or none and the rows that were wrong.
+ */
+export async function createManyAction(resourceName: string, rows: Record<string, unknown>[]): Promise<CreateManyResult> {
+  const denied = await allowed(resourceName, "create");
+  if (denied) return denied;
+  if (rows.length === 0) return { ok: false, status: 400, error: "Nothing to create: every row is empty." };
+
+  const { resource } = dashboardStore(resourceName);
+  const response = await laravel(`${resource.slug}/_bulk`, { method: "POST", body: { items: rows } });
+  const body = (response.body ?? {}) as { error?: string; rows?: RowProblem[]; created?: number; data?: { id?: unknown }[] };
+  if (!response.ok) {
+    return {
+      ok: false,
+      status: response.status,
+      // An app whose Laravel side is from before this existed answers 404 or 405.
+      error: response.status === 404 || response.status === 405 ? "This app's API can't create several at once yet. Run: nevela upgrade" : (body.error ?? "Request failed."),
+      ...(body.rows ? { rows: body.rows } : {}),
+    };
+  }
+
+  try {
+    revalidateResource({ resource: resource.name, action: "create", id: String(body.data?.[0]?.id ?? "") });
+  } catch (error) {
+    console.error(`[nevela] ${resource.name} bulk create cache invalidation failed:`, error);
+  }
+  revalidatePath(resourcePath(resource));
+  return { ok: true, data: { created: body.created ?? rows.length } };
 }
 
 export async function updateRecordAction(resourceName: string, id: string, input: unknown): Promise<ActionResult<Record<string, unknown>>> {

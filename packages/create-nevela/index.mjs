@@ -361,6 +361,10 @@ async function inProject(name, args) {
   }
   if (name !== 'upgrade') process.exit(forward(project, name, args));
 
+  // The name first, before anything that waits on the network. A newer installer this
+  // one hands over to knows it has been shown, and prints one line in its place.
+  showTitle();
+
   // Upgrading is the one command that must not run on stale code itself: it is the newest
   // installer that knows what an older app needs repaired. So even a nevela command that
   // hasn't been updated in a while upgrades an app correctly.
@@ -371,9 +375,18 @@ async function inProject(name, args) {
       if (status !== null) process.exit(status);
     }
   }
-  console.log(`\n  ${indigo(bold('Nevela'))} ${dim('upgrade')}\n`);
+  const before = appVersion(project);
+  const looking = args.includes('--check') ? ' (checking only: nothing will be changed)' : '';
+  console.log(`  ${indigo(`Nevela upgrade — this app: ${before ? `v${before}` : 'Nevela not installed in it yet'}`)}${dim(looking)}\n`);
   const releases = await latestRelease();
   const status = await upgrade(project, args, { latest: releases, say: (line) => console.log(`  ${green('✔')} ${line}`) });
+  // Where it ended up, read from the app itself and not from what was asked for.
+  if (status === 0 && !args.includes('--check') && !args.includes('--undo')) {
+    const now = appVersion(project);
+    if (now) {
+      console.log(`\n  ${green(`✔ ${now === before ? `This app is on Nevela v${now}, the version it was on.` : `This app is now on Nevela v${now}.`}`)}\n`);
+    }
+  }
   process.exit(status);
 }
 

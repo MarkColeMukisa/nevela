@@ -6,6 +6,15 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Added
+
+- **Add several**, beside New and Import on every resource's list: a grid for typing in several records at once. It opens with five blank rows, ignores the ones left empty, and the button says how many it will create. They are saved together or not at all, and a mistake is shown on its row.
+- `POST /{slug}/_bulk` behind it: up to 500 rows a request (`bulk_max`), checked with the rules for creating one and written in a single transaction. Existing apps get the endpoint when `nevela upgrade` regenerates their controllers and routes.
+
+### Changed
+
+- `nevela upgrade` opens with the name drawn large, as `nevela new` and `nevela update` do, says which version the app is on, and ends with the version it is on now.
+
 ## [0.5.1] - 2026-10-07
 
 ### Added

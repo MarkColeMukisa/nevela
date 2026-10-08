@@ -100,6 +100,7 @@ Using `products` as the example:
 | `GET /products` | List records | `200 { data, meta }` |
 | `GET /products/{id}` | One record | `200` the record |
 | `POST /products` | Create | `201` the record, with a `Location` header |
+| `POST /products/_bulk` | Create several | `201 { created, data }` |
 | `PATCH /products/{id}` | Change some fields | `200` the record |
 | `PUT /products/{id}` | Replace the record | `200` the record |
 | `DELETE /products/{id}` | Delete | `204` |
@@ -164,6 +165,25 @@ The difference between the two ways to update:
 | `PUT` | Optional fields are cleared. Required fields must be sent. |
 
 A key that is not a field of the resource is rejected with 422 rather than ignored, so a misspelt field name does not pass unnoticed. `id`, `createdAt` and `updatedAt` may be included and are ignored.
+
+### Creating several
+
+```sh
+curl -X POST http://127.0.0.1:8000/api/products/_bulk \
+  -H "Accept: application/json" -H "Content-Type: application/json" -H "Authorization: Bearer …" \
+  -d '{"items": [{"name": "Lamp", "sku": "L-1", "price": 42, "active": true, "kind": "stock"}, {"name": "Desk", "sku": "D-1", "price": 180, "active": true, "kind": "stock"}]}'
+```
+
+Every row is checked with the rules for creating one, before anything is written, and they are saved in one transaction. So the answer is all of them (`201 { "created": 2, "data": [ … ] }`), or none and the rows that were wrong:
+
+```json
+{
+  "error": "Nothing was created: row 2 needs fixing.",
+  "rows": [{ "row": 2, "issues": [{ "path": "sku", "message": "The same as row 1. Each one needs its own." }] }]
+}
+```
+
+Rows are numbered from 1. Two rows of one request can't share a unique value. At most 500 rows a request (`bulk_max` in `config/nevela.php`); for more, import a file from the dashboard. It takes the same permission as creating one.
 
 ### Stats
 

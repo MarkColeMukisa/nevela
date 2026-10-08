@@ -197,6 +197,8 @@ nevela upgrade --check    # show what would change, and change nothing
 nevela upgrade --undo     # put the dashboard back as it was before the last upgrade
 ```
 
+It opens with the version the app is on and ends with the version it is on now.
+
 `nevela update` and `nevela upgrade` are two commands, as in Grit: `update` is for the `nevela` command itself, and `upgrade` is for the app you are in. See [Updating and upgrading](/guides/updating/).
 
 | Option | Meaning |
