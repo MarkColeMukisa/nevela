@@ -17,8 +17,12 @@ test("one with no such line is called by the first thing it lists", () => {
   assert.equal(headlineOf("### Fixed\n\n- Generated files could be written with Windows line endings. And more about it.\n"), "Generated files could be written with Windows line endings");
   const long = headlineOf(`### Fixed\n\n- ${"word ".repeat(40)}\n`);
   assert.ok(long.length <= 90 && long.endsWith("…"), long);
-  // A bold line is an entry, not a headline.
+  // A bold line is an entry, not a headline, whichever mark makes it bold.
   assert.equal(headlineOf("**Breaking** change here.\n\n- The real first entry.\n"), "The real first entry");
+  assert.equal(headlineOf("__Breaking change__\n\n- The real first entry.\n"), "The real first entry");
+  // A list is a list by any of its marks.
+  assert.equal(headlineOf("### Added\n\n* Starred entry. More.\n"), "Starred entry");
+  assert.equal(headlineOf("### Added\n\n+ Plus entry.\n"), "Plus entry");
 });
 
 test("every release in the file is found, newest first, and Unreleased is not one", () => {

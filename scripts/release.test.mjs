@@ -39,4 +39,6 @@ test('a headline is the first line of the notes, in italics, and moves with them
   assert.ok(!hasHeadline('### Added\n\n- One.'));
   // Bold is an entry that starts strongly, not a headline.
   assert.ok(!hasHeadline('**Breaking** change.\n\n- One.'));
+  assert.ok(!hasHeadline('**Breaking change**\n\n- One.'));
+  assert.ok(!hasHeadline('__Breaking change__\n\n- One.'));
 });

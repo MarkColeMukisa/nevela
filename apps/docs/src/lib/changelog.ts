@@ -26,10 +26,12 @@ export interface Week {
  */
 export function headlineOf(body: string): string {
   const lines = body.split("\n").map((line) => line.trim()).filter(Boolean);
-  const written = /^_(.+)_$/.exec(lines[0] ?? "") ?? /^\*([^*].*[^*]|[^*])\*$/.exec(lines[0] ?? "");
+  // Italics, by either mark. Two of the mark is bold, which is an entry that starts strongly.
+  const written = /^_([^_].*[^_]|[^_])_$/.exec(lines[0] ?? "") ?? /^\*([^*].*[^*]|[^*])\*$/.exec(lines[0] ?? "");
   if (written) return written[1]!;
 
-  const first = lines.find((line) => line.startsWith("- "))?.slice(2) ?? "";
+  // A list item, by any of the marks markdown takes for one.
+  const first = lines.find((line) => /^[-*+]\s+\S/.test(line))?.replace(/^[-*+]\s+/, "") ?? "";
   const lead = /^\*\*(.+?)\*\*/.exec(first);
   const text = (lead ? lead[1]! : first.replace(/\*\*/g, "").split(/(?<=[.:])\s/)[0]!).replace(/[.:,]$/, "");
   return text.length > 90 ? `${text.slice(0, 87).trimEnd()}…` : text;

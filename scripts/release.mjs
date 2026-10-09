@@ -80,7 +80,8 @@ export function cutChangelog(changelog, version, date, previousTag) {
 
 /** Whether a release's notes start with its headline: one line in italics, the release in a few words. */
 export function hasHeadline(notes) {
-  return /^(_.+_|\*[^*].*\*)$/.test(notes.trim().split('\n')[0] ?? '');
+  // Italics, by either mark. Two of the mark is bold, which is not a headline.
+  return /^(_([^_].*[^_]|[^_])_|\*([^*].*[^*]|[^*])\*)$/.test(notes.trim().split('\n')[0] ?? '');
 }
 
 /** The newest version that already has a section, as a tag name, or null for a first release. */
