@@ -219,7 +219,7 @@ class AccessTest extends TestCase
         $created = $this->postJson('/api/_nevela/users', ['name' => 'Amara Okafor', 'email' => 'Amara@Example.com', 'password' => 'a-long-password', 'roles' => [$editor->id]])
             ->assertCreated()
             ->assertJsonPath('email', 'amara@example.com')->assertJsonPath('roles.0.name', 'EDITOR')
-            ->assertJsonPath('active', true)->assertJsonPath('isAdmin', false)->assertJsonPath('emailVerified', true);
+            ->assertJsonPath('active', true)->assertJsonPath('isAdmin', false)->assertJsonPath('emailVerified', false);
         $id = $created->json('id');
 
         $this->postJson('/api/_nevela/users', ['name' => 'Again', 'email' => 'amara@example.com', 'password' => 'a-long-password', 'roles' => []])
@@ -437,6 +437,11 @@ class AccessTest extends TestCase
         $this->assertSame(['USER'], $roles('next@example.com'));
         $this->assertSame(['EDITOR'], $roles('third@example.com'));
         $this->assertNull(User::query()->where('email', 'fourth@example.com')->first());
+
+        // Making an account proves nothing about its address. Whoever runs the command can say they know it.
+        $this->assertNull(User::query()->where('email', 'admin@example.com')->value('email_verified_at'));
+        $this->artisan('nevela:user', ['--name' => 'Known', '--email' => 'known@example.com', '--password' => 'password', '--verified' => true])->assertSuccessful();
+        $this->assertNotNull(User::query()->where('email', 'known@example.com')->value('email_verified_at'));
     }
 
     public function test_ten_sample_users_two_editors_and_eight_users(): void
@@ -448,7 +453,7 @@ class AccessTest extends TestCase
         $this->assertSame(8, DB::table('nevela_role_user')->where('role_id', $this->role('USER')->id)->count());
         $this->assertSame(0, DB::table('nevela_role_user')->where('role_id', $this->role('ADMIN')->id)->count());
         $this->assertSame(1, User::query()->where('active', false)->count());
-        $this->assertTrue(User::query()->get()->every(fn (User $user) => str_ends_with($user->email, '@example.com') && $user->email_verified_at !== null));
+        $this->assertTrue(User::query()->get()->every(fn (User $user) => str_ends_with($user->email, '@example.com') && $user->email_verified_at === null), 'made-up addresses that nobody has proved');
         $this->assertSame('amara.okafor@example.com', SampleUsers::email('Amara Okafor'));
 
         // One of them can sign in, as an editor.

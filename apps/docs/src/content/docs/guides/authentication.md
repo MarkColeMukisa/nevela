@@ -44,6 +44,18 @@ It asks for a name, an email, a password and a role. Pass them as options to ski
 
 People with the permission can also add, change, switch off and delete users from the dashboard's **Users** screen: see [Users, roles and permissions](/guides/policies/).
 
+### Verified means proved
+
+An email is marked **Verified** when its owner has proved the address is theirs: by the verification link or code, by signing in with an emailed link or code, or by resetting their password from an email. Nothing else marks it.
+
+So an account you make with `nevela user`, one an administrator adds on the Users screen, the starter `admin@example.com` and the sample users all start as **Not verified**. That is the truth about them. Their owner verifies from **Account → Profile**, with **Send verification link**.
+
+This matters only if you set `require_email_verification`: then an unverified account is sent a link the first time it signs in, and gets in once it has used it. For an account on a server whose address you know is right, and where email isn't set up yet, say so when you make it:
+
+```sh
+nevela user --name="Ada Okafor" --email=ada@example.com --role=ADMIN --verified
+```
+
 ### Letting people sign up
 
 Sign-up is off by default: most dashboards are for a team, not for the public.

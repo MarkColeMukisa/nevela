@@ -178,6 +178,7 @@ It asks for a name, an email, a password and a role. The password is not shown a
 | `--email=` | The address they sign in with. Must not be in use already. |
 | `--password=` | Their password, at least 8 characters. Leave it out to be asked for it, which keeps it out of your shell history. |
 | `--role=` | Their [role](/guides/policies/): `ADMIN`, `EDITOR`, `USER` or one you have made. |
+| `--verified` | Mark the email as verified. Without it the account starts unverified, as nobody has proved the address yet. See [Verified means proved](/guides/authentication/#verified-means-proved). |
 | `--sample` | Create the ten sample users instead: two editors and eight users, one switched off. Their password is `password`, or `--password`. Refused in production. |
 
 The first account in an app is its `ADMIN`, whatever `--role` is left out. After that, an account made without `--role` and without being asked is a `USER`, which allows nothing beyond its own account.
