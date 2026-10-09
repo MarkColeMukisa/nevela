@@ -6,6 +6,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-09
+
 ### Added
 
 - **Deleted accounts.** A page under Manage that lists the accounts that were closed, with their roles, when they were closed and by whom. **Restore** opens one again exactly as it was; **Remove for good** erases it. For anyone who may delete users, under the Users screen's rule: only accounts that may do no more than you.
@@ -297,7 +299,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.3...v0.6.0
 [0.5.3]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.1...v0.5.2
