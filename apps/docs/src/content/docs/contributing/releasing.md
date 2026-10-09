@@ -42,7 +42,21 @@ Changes that count as breaking for Nevela:
 
 [CHANGELOG.md](/reference/changelog/) has an "Unreleased" section at the top. Every pull request that changes what a user sees adds a line there, in the same pull request as the change.
 
-Group lines under these headings, and leave out the ones you do not need:
+Start the section with one line in italics: the release in a few words.
+
+```md
+## [Unreleased]
+
+_Deleted accounts, kept and restorable_
+
+### Added
+
+- …
+```
+
+The [changelog page](/reference/changelog/) lists every release by that line, week by week, so write it for someone deciding whether to read on: what changed, or what was broken, and not "bug fixes". `pnpm release` moves it with the notes, and says so when there isn't one. A release without one is listed by its first entry.
+
+Group the lines under these headings, and leave out the ones you do not need:
 
 | Heading | For |
 |---|---|
