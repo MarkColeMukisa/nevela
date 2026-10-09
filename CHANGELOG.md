@@ -6,6 +6,18 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Added
+
+- **Deleted accounts.** A page under Manage that lists the accounts that were closed, with their roles, when they were closed and by whom. **Restore** opens one again exactly as it was; **Remove for good** erases it. For anyone who may delete users, under the Users screen's rule: only accounts that may do no more than you.
+- **Close account**, at the foot of Account → Profile: someone closes their own account with their password. It is signed out everywhere and kept for an administrator to restore. The only administrator can't. `auth.close_account` in `config/nevela.php` switches it off.
+- **An email that had an account can't sign up again**, while its account is closed and after it is removed for good. Other spellings of the same mailbox count as the same: capitals, a `+tag`, and at Gmail the dots. After removal only a fingerprint of the address is kept (an HMAC keyed with the app key) and a hint such as `m•••@gmail.com`; **Allow again** on the Deleted accounts page frees it.
+- `POST /auth/close`, `GET /_nevela/deleted-accounts`, `POST /_nevela/deleted-accounts/{id}/restore`, `DELETE /_nevela/deleted-accounts/{id}`, `GET /_nevela/blocked-emails` and `DELETE /_nevela/blocked-emails/{id}`.
+
+### Changed
+
+- **Deleting a user closes the account** (`DELETE /_nevela/users/{id}`, and Delete on the Users screen), where it removed the account with its roles and sign-in methods. A closed account can't sign in, is sent no sign-in links or password resets, isn't listed among the users and isn't counted as holding its roles. In an existing app this starts when `nevela migrate` has run the migration that comes with the upgrade; until then deleting removes, as before. Code of your own that lists or counts users sees closed accounts too: start from `ClosedAccounts::open()`. See [Deleted accounts](apps/docs/src/content/docs/guides/deleted-accounts.md).
+- `nevela status` counts the users who can sign in without the deleted accounts, and a resource's records without what is in the trash, and says how many of each are being kept.
+
 ## [0.6.0] - 2026-10-09
 
 ### Added

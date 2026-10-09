@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Nevela\Laravel\Access\Access;
+use Nevela\Laravel\Access\ClosedAccounts;
 use Nevela\Laravel\Access\Permissions;
 use Nevela\Laravel\Http\Auth\Answers;
 use Nevela\Laravel\Models\Role;
@@ -41,7 +42,7 @@ final class RolesController
         if (! $user->can('roles.view') && ! $user->can('users.view')) {
             throw new AccessDeniedHttpException("You don't have access to this.");
         }
-        $counts = DB::table('nevela_role_user')->groupBy('role_id')->selectRaw('role_id, count(*) as users')->pluck('users', 'role_id');
+        $counts = self::holders();
         $held = Access::grantsFor($user);
         $roles = Role::query()->orderByDesc('is_system')->orderBy('name')->get();
 
@@ -128,7 +129,30 @@ final class RolesController
 
     private function users(Role $role): int
     {
-        return DB::table('nevela_role_user')->where('role_id', $role->id)->count();
+        return self::holders($role->id)[$role->id] ?? 0;
+    }
+
+    /**
+     * How many people hold each role, or the one role asked about. Closed accounts keep
+     * their roles, for when they are restored, and aren't counted.
+     *
+     * @return array<string, int>
+     */
+    private static function holders(?string $role = null): array
+    {
+        $links = fn () => DB::table('nevela_role_user')->when($role !== null, fn ($query) => $query->where('role_id', $role));
+        $perRole = fn ($query) => $query->groupBy('role_id')->selectRaw('role_id, count(*) as users')->pluck('users', 'role_id');
+
+        $counts = $perRole($links())->map(fn ($users) => (int) $users)->all();
+        // Taken off in batches. A list of ids is bound one value at a time, a database takes
+        // only so many, and the list of closed accounts only grows.
+        foreach (array_chunk(ClosedAccounts::ids(), 500) as $closed) {
+            foreach ($perRole($links()->whereIn('user_id', $closed)) as $id => $users) {
+                $counts[$id] = ($counts[$id] ?? 0) - (int) $users;
+            }
+        }
+
+        return $counts;
     }
 
     /** @return array{name?: string, description?: string|null, grants?: list<string>} */

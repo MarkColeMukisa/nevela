@@ -115,6 +115,10 @@ Change the sizes under `uploads.profiles.avatar` in `config/nevela.php`.
 
 Each sign-in creates a token, and each token is a device in **Account → Devices**, with its browser, its address and when it was last used. The browser and address are what the dashboard reports about the visitor, which Laravel believes because the two share a secret (`NEVELA_PROXY_SECRET`, written into both apps when the app is created). Someone calling the API directly cannot choose how their device is listed. The page can sign out every other device. Changing the password does the same, and resetting a forgotten password signs out every device, this one included.
 
+## Closing an account
+
+At the foot of **Account → Profile**, **Close account** lets someone close their own. It takes their password, signs them out everywhere, and keeps the account for an administrator to restore or remove for good. Their email can't sign up again meanwhile. See [Deleted accounts](/guides/deleted-accounts/), which also says how to switch this off.
+
 ## Switching methods on and off
 
 The choices are in the `auth` section of `config/nevela.php` in the Laravel app. Publish the file to change them:

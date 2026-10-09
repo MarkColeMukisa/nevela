@@ -234,8 +234,10 @@ class AccessTest extends TestCase
             ->assertOk()->assertJsonPath('name', 'Amara O.')->assertJsonPath('roles.0.name', 'USER');
 
         $this->deleteJson("/api/_nevela/users/{$id}")->assertNoContent();
-        $this->assertNull(User::find($id));
-        $this->assertSame(0, DB::table('nevela_role_user')->where('user_id', (string) $id)->count());
+        // Deleted is closed and kept, out of the list (ClosedAccountsTest has the rest).
+        $this->assertNotNull(User::find($id)?->closed_at);
+        $this->getJson('/api/_nevela/users')->assertJsonPath('meta.total', 1);
+        $this->getJson("/api/_nevela/users/{$id}")->assertNotFound();
         $this->getJson('/api/_nevela/users/nobody')->assertNotFound();
     }
 

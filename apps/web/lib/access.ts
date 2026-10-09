@@ -69,7 +69,32 @@ export interface PermissionCatalog {
 
 export interface UserList {
   data: ManagedUser[];
+  /** keepsDeleted: deleting a user closes the account, to be restored, where it used to remove it. */
+  meta: { page: number; perPage: number; total: number; totalPages: number; keepsDeleted?: boolean };
+}
+
+/** An account that was closed: by its owner, or by someone deleting it from the Users screen. */
+export interface DeletedAccount extends ManagedUser {
+  closedAt: string | null;
+  /** "self" when its owner closed it, "admin" when someone else did. */
+  closedBy: "self" | "admin" | null;
+  /** Who, when it wasn't the owner and they still have an account. */
+  closedByName: string | null;
+}
+
+export interface DeletedAccountList {
+  data: DeletedAccount[];
   meta: { page: number; perPage: number; total: number; totalPages: number };
+  /** How many emails are blocked with no account left behind them. */
+  blocked: number;
+}
+
+/** An email whose account was removed for good. The address itself isn't kept. */
+export interface BlockedEmail {
+  id: string;
+  /** Enough to recognise it by: "m•••@gmail.com". */
+  hint: string;
+  blockedAt: string;
 }
 
 /** What a call answered with when it didn't work, in words for the person. */
@@ -84,6 +109,23 @@ export async function listUsers(params: { q?: string; role?: string; status?: st
   for (const [key, value] of Object.entries(params)) if (value) query.set(key, value);
   const response = await laravel(`_nevela/users?${query}`);
   return response.ok ? (response.body as UserList) : null;
+}
+
+/**
+ * The closed accounts. "migrate" when the app has upgraded and not yet run the migration
+ * that keeps them, and null when the person may not see them.
+ */
+export async function listDeletedAccounts(params: { q?: string; page?: string }): Promise<DeletedAccountList | "migrate" | null> {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) if (value) query.set(key, value);
+  const response = await laravel(`_nevela/deleted-accounts?${query}`);
+  if (response.ok) return response.body as DeletedAccountList;
+  return response.status === 409 || response.status === 404 ? "migrate" : null;
+}
+
+export async function listBlockedEmails(): Promise<BlockedEmail[]> {
+  const response = await laravel("_nevela/blocked-emails?perPage=100");
+  return response.ok ? (response.body as { data: BlockedEmail[] }).data : [];
 }
 
 export async function getUser(id: string): Promise<ManagedUser | null> {

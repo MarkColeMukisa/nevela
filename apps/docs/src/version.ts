@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "A trash for deleted records";
+export const RELEASE_HEADLINE = "Deleted accounts, kept and restorable";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "a trash: a deleted record is kept for 30 days and can be restored, from a Trash page or with Undo.",
-  href: "/guides/trash/",
-  label: "The trash",
+  text: "deleted accounts: a closed account is kept and can be restored, and its email can't sign up again.",
+  href: "/guides/deleted-accounts/",
+  label: "Deleted accounts",
 };

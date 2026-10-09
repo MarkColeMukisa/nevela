@@ -24,7 +24,18 @@ import type { ManagedUser } from "@/lib/access";
  * What can be done to one user from the list. Laravel has the last word on each: it
  * refuses, with its reason, to switch off the last administrator and the like.
  */
-export function UserRowActions({ user, canEdit, canDelete }: { user: ManagedUser; canEdit: boolean; canDelete: boolean }) {
+export function UserRowActions({
+  user,
+  canEdit,
+  canDelete,
+  keepsDeleted = false,
+}: {
+  user: ManagedUser;
+  canEdit: boolean;
+  canDelete: boolean;
+  /** Whether a deleted account is kept under Deleted accounts, to be restored. */
+  keepsDeleted?: boolean;
+}) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -99,13 +110,14 @@ export function UserRowActions({ user, canEdit, canDelete }: { user: ManagedUser
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {who}?</AlertDialogTitle>
             <AlertDialogDescription>
-              Their account, their roles and their sign-in methods are removed, and they are signed out everywhere. This can&apos;t be undone. To keep the
-              account and stop them signing in, switch it off instead.
+              {keepsDeleted
+                ? "They are signed out everywhere and can't sign in, and their email can't sign up again. The account is kept under Deleted accounts, where it can be restored as it was or removed for good."
+                : "Their account, their roles and their sign-in methods are removed, and they are signed out everywhere. This can't be undone. To keep the account and stop them signing in, switch it off instead."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
-            <Button variant="destructive" disabled={pending} onClick={() => run(() => deleteUserAction(user.id), `${who} is deleted.`)}>
+            <Button variant="destructive" disabled={pending} onClick={() => run(() => deleteUserAction(user.id), keepsDeleted ? `${who} is deleted. Restore them from Deleted accounts.` : `${who} is deleted.`)}>
               {pending && <Spinner />}
               Delete
             </Button>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { ActivityIcon, LayoutDashboardIcon, ShieldCheckIcon, Trash2Icon, UserCircleIcon, UsersIcon } from "lucide-react";
+import { ActivityIcon, LayoutDashboardIcon, ShieldCheckIcon, Trash2Icon, UserCircleIcon, UserXIcon, UsersIcon } from "lucide-react";
 import { ChevronsUpDownIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
@@ -63,7 +63,7 @@ export function DashboardSidebar({
   resources,
   links = [],
   isAdmin = false,
-  access = { users: false, roles: false },
+  access = { users: false, roles: false, deleted: false },
   trash = false,
   user,
 }: {
@@ -74,7 +74,7 @@ export function DashboardSidebar({
   /** Whether to show the sections that manage the app itself. */
   isAdmin?: boolean;
   /** Which of the screens for managing people this person may open. */
-  access?: { users: boolean; roles: boolean };
+  access?: { users: boolean; roles: boolean; deleted?: boolean };
   /** Whether this person may delete anything, and so has a trash to look in. */
   trash?: boolean;
   user: DashboardUser;
@@ -86,6 +86,7 @@ export function DashboardSidebar({
     ...ACCOUNT_LINKS,
     ...(access.users ? [{ href: "/dashboard/access/users", label: "Users", icon: UsersIcon }] : []),
     ...(access.roles ? [{ href: "/dashboard/access/roles", label: "Roles", icon: ShieldCheckIcon }] : []),
+    ...(access.deleted ? [{ href: "/dashboard/access/deleted", label: "Deleted accounts", icon: UserXIcon }] : []),
     ...(trash ? [{ href: "/dashboard/trash", label: "Trash", icon: Trash2Icon }] : []),
     ...(isAdmin ? ADMIN_LINKS : []),
   ];

@@ -352,6 +352,34 @@ jobs:
           grep -q '"total":0' trash.json
           test "$(categories)" = "$((before + 1))"
           (cd .. && cd .. && php nevela trash | grep -q 'Nothing in the trash is older than 30 days')
+          # Deleted accounts: a deleted user is closed and kept, can't sign in, comes back when restored,
+          # and once removed for good leaves its email blocked until it is allowed again.
+          as_admin() { curl -s -g -o account.json -w '%{http_code}' -X "$1" "http://127.0.0.1:8000/api/$2" -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: Bearer $admin" ${3:+-d "$3"}; }
+          person='{"name":"Closing Soon","email":"closing.soon@gmail.com","password":"harbour-lantern-quartz-4821","roles":[]}'
+          closing_signin() { curl -s -X POST http://127.0.0.1:8000/api/auth/token -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{"email":"closing.soon@gmail.com","password":"harbour-lantern-quartz-4821"}'; }
+          test "$(as_admin POST _nevela/users "$person")" = 201
+          closing="$(sed -E 's/^\{"id":"([^"]+)".*/\1/' account.json)"
+          test "$(as_admin DELETE "_nevela/users/$closing")" = 204
+          test "$(as_admin GET "_nevela/users/$closing")" = 404
+          closing_signin | grep -q 'ACCOUNT_CLOSED'
+          test "$(as_admin GET _nevela/deleted-accounts)" = 200
+          grep -q '"total":1' account.json
+          grep -q '"closedBy":"admin"' account.json
+          test "$(as_admin POST "_nevela/deleted-accounts/$closing/restore")" = 200
+          closing_signin | grep -q '"token"'
+          test "$(as_admin DELETE "_nevela/users/$closing")" = 204
+          test "$(as_admin DELETE "_nevela/deleted-accounts/$closing")" = 204
+          # Another spelling of the same mailbox is the same mailbox.
+          test "$(as_admin POST _nevela/users '{"name":"Back Again","email":"Closing.Soon+back@gmail.com","password":"harbour-lantern-quartz-4821","roles":[]}')" = 422
+          grep -q 'blocked' account.json
+          test "$(as_admin GET _nevela/blocked-emails)" = 200
+          # The hint is the first letter, three dots (escaped in the JSON) and the domain.
+          grep -Eq '"hint":"c[^"@.]+@gmail\.com"' account.json
+          if grep -q 'closing.soon' account.json; then echo "the address itself was kept"; exit 1; fi
+          blocked="$(sed -E 's/.*"data":\[\{"id":"([^"]+)".*/\1/' account.json)"
+          test "$(as_admin DELETE "_nevela/blocked-emails/$blocked")" = 204
+          test "$(as_admin POST _nevela/users "$person")" = 201
+          test "$(as_admin DELETE "_nevela/users/$(sed -E 's/^\{"id":"([^"]+)".*/\1/' account.json)")" = 204
           # a user nothing but their own account,
           plain="$(bearer sofia.martinez@example.com)"
           curl -s http://127.0.0.1:8000/api/_nevela/trash -H 'Accept: application/json' -H "Authorization: Bearer $plain" | grep -q '"resources":\[\]'
