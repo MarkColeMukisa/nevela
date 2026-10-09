@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { cutChangelog, nextVersion } from './release.mjs';
+import { cutChangelog, hasHeadline, nextVersion } from './release.mjs';
 
 test('bumps by part or takes an explicit version', () => {
   assert.equal(nextVersion('0.1.9', 'patch'), '0.1.10');
@@ -27,4 +27,16 @@ test('a later release keeps older sections and their links', () => {
   assert.match(updated, /## \[0\.1\.1\] - 2026-10-04\n\n### Fixed\n\n- Two\.\n\n## \[0\.1\.0\]/);
   assert.match(updated, /\[Unreleased\]: .*v0\.1\.1\.\.\.HEAD\n\[0\.1\.1\]: .*compare\/v0\.1\.0\.\.\.v0\.1\.1\n\[0\.1\.0\]: .*releases\/tag\/v0\.1\.0\n$/);
   assert.equal(updated.match(/^\[Unreleased\]: /gm).length, 1);
+});
+
+test('a headline is the first line of the notes, in italics, and moves with them', () => {
+  const before = '# Changelog\n\n## [Unreleased]\n\n_The trash, for 30 days_\n\n### Added\n\n- A trash.\n';
+  const { updated, notes } = cutChangelog(before, '0.1.0', '2026-10-03', null);
+  assert.match(updated, /## \[0\.1\.0\] - 2026-10-03\n\n_The trash, for 30 days_\n\n### Added\n/);
+  assert.ok(hasHeadline(notes));
+
+  assert.ok(hasHeadline('*Add several records at once*\n\n- One.'));
+  assert.ok(!hasHeadline('### Added\n\n- One.'));
+  // Bold is an entry that starts strongly, not a headline.
+  assert.ok(!hasHeadline('**Breaking** change.\n\n- One.'));
 });

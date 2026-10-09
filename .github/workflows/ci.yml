@@ -87,6 +87,8 @@ jobs:
         run: pnpm test:release
       - name: create-nevela unit tests
         run: pnpm test:create
+      - name: Docs changelog tests
+        run: pnpm test:docs
       - run: pnpm --filter nevela-web typecheck
       - run: pnpm --filter nevela-web build
 

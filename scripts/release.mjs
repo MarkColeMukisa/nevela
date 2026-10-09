@@ -78,6 +78,11 @@ export function cutChangelog(changelog, version, date, previousTag) {
   return { updated, notes: body };
 }
 
+/** Whether a release's notes start with its headline: one line in italics, the release in a few words. */
+export function hasHeadline(notes) {
+  return /^(_.+_|\*[^*].*\*)$/.test(notes.trim().split('\n')[0] ?? '');
+}
+
 /** The newest version that already has a section, as a tag name, or null for a first release. */
 function previousTagIn(changelog) {
   const match = /^## \[(\d+\.\d+\.\d+)\]/m.exec(changelog);
@@ -106,6 +111,9 @@ function main() {
 
   console.log(`\n  ${current} → ${version}${dryRun ? '  (dry run, nothing written)' : ''}\n`);
   console.log(notes.split('\n').map((line) => `  ${line}`).join('\n'));
+  if (!hasHeadline(notes)) {
+    console.log(`\n  ! No headline. Start the notes with one line in italics, the release in a few words:\n      _Deleted accounts, kept and restorable_\n    The docs list every release by it. Without one, this release is listed by its first entry.`);
+  }
 
   if (!dryRun) {
     fs.writeFileSync(path.join(root, 'CHANGELOG.md'), updated);
