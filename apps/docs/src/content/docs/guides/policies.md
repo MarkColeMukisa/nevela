@@ -61,7 +61,7 @@ nevela user --sample
 - **Change their roles**, their name, their email, or set a new password. A new password signs them out everywhere and they are told by email.
 - **Switch an account off.** It is kept, signed out of every device, and can't sign in until it is switched on again.
 - **Sign someone out everywhere** without changing anything else.
-- **Delete** an account, with its roles, its passkeys and its second step.
+- **Delete** an account. It is closed and kept under [Deleted accounts](/guides/deleted-accounts/), where it can be restored as it was or removed for good, and its email can't sign up again.
 
 From the command line, `nevela user` still creates an account. The first one in an app is its `ADMIN`. After that it asks which role, or takes one:
 
@@ -179,7 +179,7 @@ Between upgrading and running the migration, everyone can still do everything, a
 | `GET /api/_nevela/users` | List: `q`, `role`, `status`, `page`, `perPage` |
 | `POST /api/_nevela/users` | Create: `name`, `email`, `password`, `roles` (ids), `active` |
 | `PATCH /api/_nevela/users/{id}` | Any of the same fields |
-| `DELETE /api/_nevela/users/{id}` | Delete |
+| `DELETE /api/_nevela/users/{id}` | Delete: the account is closed and kept. See [Deleted accounts](/guides/deleted-accounts/#over-the-api) for restoring and removing. |
 | `DELETE /api/_nevela/users/{id}/sessions` | Sign them out everywhere |
 | `GET /api/_nevela/roles` | Every role, with what its grants come to and how many people hold it |
 | `POST /api/_nevela/roles` | Create: `name`, `description`, `grants` |

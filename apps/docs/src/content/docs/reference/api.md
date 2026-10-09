@@ -77,12 +77,13 @@ All are under `/api/auth`. The ones marked 🔒 need a token.
 | 🔒 | `GET /me`, `PATCH /me` | The signed-in user; change `name` or `avatar`. |
 | 🔒 | `PUT /avatar?name=me.jpg` | Upload a profile picture. The body is the file. |
 | 🔒 | `POST /password` | Change the password: `currentPassword`, `newPassword`. |
+| 🔒 | `POST /close` | Close your own account, with `password`. It is kept, and can be [restored](/guides/deleted-accounts/). |
 | 🔒 | `GET /sessions`, `DELETE /sessions`, `DELETE /sessions/{id}` | List devices; sign out the others, or one. |
 | 🔒 | `POST /two-factor/enable`, `/confirm`, `/disable`, `/backup-codes` | Set up and manage the second step. |
 | 🔒 | `GET /passkeys`, `POST /passkeys/options`, `POST /passkeys`, `PATCH`/`DELETE /passkeys/{id}` | List, add, rename and remove passkeys. |
 | 🔒 | `DELETE /token` | Sign out: the token stops working. |
 
-An error has a `code` beside its message, such as `INVALID_EMAIL_OR_PASSWORD`, `INVALID_TWO_FACTOR_CODE`, `OTP_EXPIRED` or `TOO_MANY_ATTEMPTS`. A method that is switched off answers 404. Attempts are limited to ten a minute per account, after which the answer is 429.
+An error has a `code` beside its message, such as `INVALID_EMAIL_OR_PASSWORD`, `INVALID_TWO_FACTOR_CODE`, `OTP_EXPIRED`, `TOO_MANY_ATTEMPTS`, or `ACCOUNT_CLOSED` for an account that was closed. A method that is switched off answers 404. Attempts are limited to ten a minute per account, after which the answer is 429.
 
 ### Other auth endpoints
 

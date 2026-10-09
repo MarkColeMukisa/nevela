@@ -46,6 +46,21 @@ export async function deleteUserAction(id: string): Promise<AccessResult<null>> 
   return send(`_nevela/users/${encodeURIComponent(id)}`, "DELETE");
 }
 
+/** Open a closed account again, as it was. */
+export async function restoreAccountAction(id: string): Promise<AccessResult<ManagedUser>> {
+  return send(`_nevela/deleted-accounts/${encodeURIComponent(id)}/restore`, "POST");
+}
+
+/** Remove a closed account for good. Its email stays blocked. */
+export async function removeAccountAction(id: string): Promise<AccessResult<null>> {
+  return send(`_nevela/deleted-accounts/${encodeURIComponent(id)}`, "DELETE");
+}
+
+/** Let an email whose account was removed for good sign up again. */
+export async function allowEmailAction(id: string): Promise<AccessResult<null>> {
+  return send(`_nevela/blocked-emails/${encodeURIComponent(id)}`, "DELETE");
+}
+
 /** Sign someone out of every device. */
 export async function signOutUserAction(id: string): Promise<AccessResult<{ revoked: number }>> {
   return send(`_nevela/users/${encodeURIComponent(id)}/sessions`, "DELETE");

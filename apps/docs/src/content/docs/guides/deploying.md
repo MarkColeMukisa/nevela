@@ -22,7 +22,7 @@ In production the token cookie is marked `Secure`, so the web app must be served
 
 ## Checklist
 
-- [ ] Roles and policies reviewed, and the sample users deleted
+- [ ] Roles and policies reviewed, and the sample users deleted, then removed for good under Deleted accounts
 - [ ] `NEVELA_API_URL` points at the production API, with its prefix
 - [ ] Both apps served over HTTPS
 - [ ] At least one user created on the server with `php artisan nevela:user`. The starter `admin@example.com` account is not there, and should not be

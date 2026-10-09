@@ -28,6 +28,7 @@ php artisan vendor:publish --tag=nevela-config
 | `auth.web_url` | `http://localhost:3000`, or `NEVELA_WEB_URL` | Where the dashboard is: for links in emails, and for passkeys. |
 | `auth.attempts_per_address` | `300` | Sign-in attempts a minute from one address, on top of ten per account. |
 | `auth.proxy_secret` | none, or `NEVELA_PROXY_SECRET` | Shared with the dashboard, so Laravel believes what it says about a visitor's browser. See [Devices](/guides/authentication/#devices). |
+| `auth.close_account` | `true` | Whether people can close their own account from the Account page. See [Deleted accounts](/guides/deleted-accounts/#switching-close-account-off). |
 | `auth.default_role` | `USER` | The [role](/guides/policies/) someone who signs up starts with. `null` gives none. |
 | `permissions` | `[]` | Permissions of your own, beside the ones every resource gets. See [Permissions of your own](/guides/policies/#permissions-of-your-own). |
 | `auth.issuer` | the app's name | The name an authenticator app and a passkey prompt show. |

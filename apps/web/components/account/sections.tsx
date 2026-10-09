@@ -9,6 +9,7 @@ import { PasswordField } from "@/components/auth/password-field";
 import { authErrorMessage } from "@/components/auth/sign-in-flow";
 import { PROVIDER_LABELS, ProviderIcon } from "@/components/auth/provider-icons";
 import { UserAvatar } from "@/components/dashboard/user-menu";
+import { closeAccountAction } from "@/app/auth-actions";
 import { authClient, uploadAvatar } from "@/lib/auth-client";
 import { fileUrl } from "@/lib/files";
 import { checkPassword } from "@/lib/password-rules";
@@ -186,6 +187,66 @@ export function Profile({ user }: { user: Props["user"] }) {
           Save
         </PrimaryButton>
       </form>
+    </Section>
+  );
+}
+
+/**
+ * Close your own account. It asks for the password, and says what closing means before
+ * it does it: this is the one thing here a person can't take back by themselves.
+ */
+export function CloseAccount({ email }: { email: string }) {
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const close = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setPending(true);
+    setError(null);
+    // When it works there is no answer to read: the action sends the browser to the sign-in page.
+    const result = await closeAccountAction(password);
+    if (result && !result.ok) {
+      setPending(false);
+      setError(result.error);
+    }
+  };
+
+  return (
+    <Section id="close-account" title="Close account" description="Sign out everywhere and stop using this account.">
+      {!open ? (
+        <>
+          <p className="text-sm text-foreground-muted">
+            You won&apos;t be able to sign in, and {email} can&apos;t be used to make a new account. Nothing is erased: an administrator can restore the account
+            as it was, or remove it for good.
+          </p>
+          <SecondaryButton className="w-fit text-danger" onClick={() => setOpen(true)}>
+            Close my account
+          </SecondaryButton>
+        </>
+      ) : (
+        <form className="flex flex-col gap-4" onSubmit={close}>
+          <p className="text-sm text-foreground-muted">Enter your password to close your account. You will be signed out on every device straight away.</p>
+          <PasswordConfirm id="close-account-password" value={password} onChange={setPassword} />
+          {error && <FormMessage tone="error">{error}</FormMessage>}
+          <div className="flex flex-wrap items-center gap-3">
+            <PrimaryButton type="submit" pending={pending} className="w-fit">
+              Close my account
+            </PrimaryButton>
+            <TextButton
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setPassword("");
+                setError(null);
+              }}
+            >
+              Keep it
+            </TextButton>
+          </div>
+        </form>
+      )}
     </Section>
   );
 }

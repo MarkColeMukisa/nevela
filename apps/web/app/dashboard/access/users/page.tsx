@@ -115,7 +115,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{user.lastActiveAt ? <LocalTime value={user.lastActiveAt} /> : "Not yet"}</TableCell>
                   <TableCell>
-                    <UserRowActions user={user} canEdit={may("users.edit") && (user.withinYours || user.isSelf)} canDelete={may("users.delete") && user.withinYours} />
+                    <UserRowActions user={user} canEdit={may("users.edit") && (user.withinYours || user.isSelf)} canDelete={may("users.delete") && user.withinYours} keepsDeleted={Boolean(list?.meta.keepsDeleted)} />
                   </TableCell>
                 </TableRow>
               ))}

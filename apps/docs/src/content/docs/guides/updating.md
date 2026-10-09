@@ -170,11 +170,11 @@ The `.nevela/` folder (backups and incoming files) ignores itself, so none of it
 
 ### After an upgrade: migrate
 
-An upgrade can bring migrations with it. It says so when it has ("2 migration(s) have not been run"), and `nevela migrate` runs them. The upgrade to 0.6.0 does: one for each resource, giving its table [a trash](/guides/trash/#upgrading-an-app-from-before-060).
+An upgrade can bring migrations with it. It says so when it has ("2 migration(s) have not been run"), and `nevela migrate` runs them. The upgrade to 0.6.0 does: one for each resource, giving its table [a trash](/guides/trash/#upgrading-an-app-from-before-060). So does the upgrade to 0.7.0, for [deleted accounts](/guides/deleted-accounts/#upgrading-an-app-from-before-070).
 
 ### When it finishes on an older version
 
-A release reaches Composer a few minutes after it is published. Upgrade in that gap and Composer installs the release before it. The command tells you ("Nevela v0.6.0 is out, and Composer didn't bring it in"): run `nevela upgrade` again shortly.
+A release reaches Composer a few minutes after it is published. Upgrade in that gap and Composer installs the release before it. The command tells you ("Nevela v0.7.0 is out, and Composer didn't bring it in"): run `nevela upgrade` again shortly.
 
 ## Older apps
 

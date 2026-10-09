@@ -14,7 +14,7 @@ const ERRORS: Record<string, string> = {
   link: "That sign-in link has expired or was already used. Ask for a new one.",
 };
 
-export default async function SignInPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; reset?: string }> }) {
+export default async function SignInPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; reset?: string; closed?: string }> }) {
   const params = await searchParams;
   const next = safeRedirectPath(params.next);
   if (await getSession()) redirect(next);
@@ -44,7 +44,13 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
         methods={{ magicLink: authConfig.magicLink, emailOtp: authConfig.emailOtp, passkeys: authConfig.passkeys }}
         next={next}
         initialError={params.error ? (ERRORS[params.error] ?? "Sign-in didn't finish. Try again.") : null}
-        initialNotice={params.reset ? "Your password is changed. Sign in with the new one." : null}
+        initialNotice={
+          params.reset
+            ? "Your password is changed. Sign in with the new one."
+            : params.closed
+              ? "Your account is closed, and you are signed out everywhere. To have it back, ask an administrator."
+              : null
+        }
       />
     </AuthShell>
   );

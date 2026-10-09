@@ -9,7 +9,7 @@
  */
 export type SocialProvider = "google" | "github" | "apple" | "microsoft";
 
-// nevela:generated:start hash=584f50322414
+// nevela:generated:start hash=68b0e3641ced
 export const authConfig = {
   /** People can create their own account at /sign-up. */
   registration: false,
@@ -29,6 +29,8 @@ export const authConfig = {
   requireEmailVerification: false,
   /** Check new passwords against Have I Been Pwned's breach list. */
   checkBreachedPasswords: true,
+  /** People can close their own account, from the Account page. */
+  closeAccount: true,
   /** Signing in with Google, GitHub and the like isn't part of Nevela yet. */
   social: [] as SocialProvider[],
 };
