@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\Sanctum;
+use Nevela\Laravel\Access\Access;
 use Nevela\Laravel\Auth\AuthMail;
 use Nevela\Laravel\Auth\Passkeys;
 use Nevela\Laravel\Auth\Totp;
@@ -115,6 +117,33 @@ class AuthTest extends TestCase
         $this->postJson('/api/auth/token', ['email' => 'ada@example.com', 'password' => self::PASSWORD])->assertStatus(403)->assertJsonPath('code', 'EMAIL_NOT_VERIFIED');
         // A fresh code was sent, and using it signs them in.
         $this->postJson('/api/auth/email/verify', ['email' => 'ada@example.com', 'code' => $this->emailedCode()])->assertCreated()->assertJsonStructure(['token']);
+    }
+
+    public function test_an_account_someone_else_made_is_verified_only_when_its_owner_proves_the_address(): void
+    {
+        $admin = User::factory()->create();
+        Access::grant($admin, 'ADMIN');
+        Sanctum::actingAs($admin);
+        $this->postJson('/api/_nevela/users', ['name' => 'Bo', 'email' => 'bo@example.com', 'password' => self::PASSWORD, 'roles' => []])
+            ->assertCreated()->assertJsonPath('emailVerified', false);
+        $this->app['auth']->forgetGuards();
+
+        // They sign in as anyone does, and their account says the address isn't verified yet.
+        $headers = $this->signedIn(User::query()->where('email', 'bo@example.com')->firstOrFail());
+        $this->withHeaders($headers)->getJson('/api/auth/me')->assertOk()->assertJsonPath('user.emailVerified', false);
+        // The code sent to the address is what verifies it.
+        $this->withHeaders($headers)->postJson('/api/auth/email/send')->assertOk();
+        $this->withHeaders($headers)->postJson('/api/auth/email/verify', ['email' => 'bo@example.com', 'code' => $this->emailedCode()])->assertOk()->assertJsonPath('user.emailVerified', true);
+
+        // Where an app requires it, an account an administrator made proves its address like any other.
+        config(['nevela.auth.require_email_verification' => true]);
+        $this->flushHeaders();
+        $this->app['auth']->forgetGuards();
+        Sanctum::actingAs($admin);
+        $this->postJson('/api/_nevela/users', ['name' => 'Cy', 'email' => 'cy@example.com', 'password' => self::PASSWORD, 'roles' => []])->assertCreated();
+        $this->app['auth']->forgetGuards();
+        $this->postJson('/api/auth/token', ['email' => 'cy@example.com', 'password' => self::PASSWORD])->assertStatus(403)->assertJsonPath('code', 'EMAIL_NOT_VERIFIED');
+        $this->postJson('/api/auth/email/verify', ['email' => 'cy@example.com', 'code' => $this->emailedCode()])->assertCreated()->assertJsonPath('user.emailVerified', true);
     }
 
     public function test_a_forgotten_password_is_reset_by_an_emailed_link_that_works_once_and_signs_every_device_out(): void

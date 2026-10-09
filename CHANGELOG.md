@@ -6,6 +6,10 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Fixed
+
+- **An email nobody had verified was shown as "Verified".** Accounts made with `nevela user`, added on the Users screen, the starter `admin@example.com` and the sample users were all marked verified when they were created, though no link or code had ever been sent to the address. They now start as "Not verified", which is what they are, and become verified when their owner proves the address. `nevela user --verified` marks one by hand, for an address you know is right. Accounts made before this keep the mark they have. If your app sets `require_email_verification`, an account an administrator adds is now sent a verification link the first time it signs in.
+
 ## [0.7.0] - 2026-10-09
 
 ### Added
