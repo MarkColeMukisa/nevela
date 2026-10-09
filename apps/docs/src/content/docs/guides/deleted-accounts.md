@@ -55,13 +55,13 @@ Not the address. Two things, in the `nevela_blocked_emails` table:
 - a **fingerprint**: an HMAC-SHA256 of the address, keyed with your `APP_KEY`. It answers "is this the same address?" and nothing else. The address can't be read back from it, and it is useless to anyone who has only the database.
 - a **hint**, such as `m•••@gmail.com`: the first letter and the domain, so that whoever is asked to allow an email again can tell which one it is.
 
-Because the fingerprint is keyed with `APP_KEY`, changing that key makes the existing fingerprints match nothing. Blocked emails are then free to sign up again.
+Because the fingerprint is keyed with `APP_KEY`, it depends on that key. Rotate the key the way Laravel provides for, with the old one kept in `APP_PREVIOUS_KEYS`, and blocked emails stay blocked: fingerprints made under an earlier key are still recognised. Replace the key and drop the old one, and they match nothing; those emails are then free to sign up again.
 
 If your users have a right to have their data erased, **Remove for good** is the erasure: what remains can't identify them to anyone but you, and only when they come back with the same address. Whether you may keep even that is for you to judge under the rules you work to. **Allow again** deletes it.
 
 ## Switching "Close account" off
 
-To have only administrators close accounts, [publish the config](/guides/configuration/) and set:
+To leave closing accounts to the people who may delete users, [publish the config](/guides/configuration/) and set:
 
 ```php
 'auth' => [
@@ -103,11 +103,11 @@ One thing to check afterwards: code of your own that lists or counts users, as a
 
 ## Over the API
 
-All under `/api`, with a token whose roles include `users.delete`.
+All under `/api`. Closing your own account takes a token and your password, and no permission. Everything else here takes a token whose roles include `users.delete`.
 
 | | |
 |---|---|
-| `POST /auth/close` | Close your own account. Takes `password`. Needs only a token. |
+| `POST /auth/close` | Close your own account. Takes `password`. |
 | `DELETE /_nevela/users/{id}` | Close someone's account |
 | `GET /_nevela/deleted-accounts` | The closed accounts: `q`, `page`, `perPage`. Each has `closedAt`, `closedBy` (`self` or `admin`) and `closedByName`. `blocked` is how many emails are blocked. |
 | `POST /_nevela/deleted-accounts/{id}/restore` | Restore one |

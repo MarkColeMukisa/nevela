@@ -86,6 +86,7 @@ class ClosedAccountsTest extends TestCase
         $this->assertSame(1, DB::table('nevela_role_user')->where('user_id', (string) $person->id)->count());
         $editor = collect($this->getJson('/api/_nevela/roles')->json('data'))->firstWhere('name', 'EDITOR');
         $this->assertSame(0, $editor['users']);
+        $this->assertSame(1, collect($this->getJson('/api/_nevela/roles')->json('data'))->firstWhere('name', 'ADMIN')['users']);
         $this->assertFalse(User::find($person->id)->can('products.view'));
 
         $this->getJson('/api/_nevela/deleted-accounts')->assertOk()
@@ -237,6 +238,34 @@ class ClosedAccountsTest extends TestCase
         $this->getJson('/api/_nevela/blocked-emails')->assertJsonPath('meta.total', 0);
         $this->signedOut();
         $this->postJson('/api/auth/register', $this->registration('mark@gmail.com'))->assertCreated();
+    }
+
+    public function test_a_blocked_email_stays_blocked_when_the_app_key_is_rotated(): void
+    {
+        $this->signedInAs($admin = $this->user('ADMIN'));
+        $person = $this->user('USER', ['email' => 'mark@gmail.com']);
+        $this->deleteJson("/api/_nevela/users/{$person->id}")->assertNoContent();
+        $this->deleteJson("/api/_nevela/deleted-accounts/{$person->id}")->assertNoContent();
+
+        // A new key, with the old one kept as Laravel's own key rotation keeps it.
+        $old = config('app.key');
+        config(['app.key' => 'base64:'.base64_encode(random_bytes(32)), 'app.previous_keys' => [$old]]);
+        $this->assertNotSame(DB::table(ClosedAccounts::BLOCKED)->value('fingerprint'), ClosedAccounts::fingerprint('mark@gmail.com'));
+        $this->signedOut();
+        $this->postJson('/api/auth/register', $this->registration('m.ark@gmail.com'))->assertStatus(422)->assertJsonPath('code', 'EMAIL_BLOCKED');
+
+        // Allowed again, made again and removed again: one entry for the mailbox, under today's key.
+        $this->signedInAs($admin);
+        $this->deleteJson('/api/_nevela/blocked-emails/'.DB::table(ClosedAccounts::BLOCKED)->value('id'))->assertNoContent();
+        DB::table(ClosedAccounts::BLOCKED)->insert(['id' => 'from-before', 'fingerprint' => hash_hmac('sha256', 'mark@gmail.com', (string) $old), 'hint' => 'm•••@gmail.com', 'user_id' => null, 'blocked_at' => now()->subYear()]);
+        $again = $this->user('USER', ['email' => 'mark@gmail.com']);
+        $this->deleteJson("/api/_nevela/users/{$again->id}")->assertNoContent();
+        $this->deleteJson("/api/_nevela/deleted-accounts/{$again->id}")->assertNoContent();
+        $this->assertSame([ClosedAccounts::fingerprint('mark@gmail.com')], DB::table(ClosedAccounts::BLOCKED)->pluck('fingerprint')->all());
+
+        // The old key dropped, the fingerprints made with it match nothing.
+        config(['app.key' => 'base64:'.base64_encode(random_bytes(32)), 'app.previous_keys' => []]);
+        $this->assertNull(ClosedAccounts::standing('mark@gmail.com'));
     }
 
     public function test_an_address_is_compared_as_the_mailbox_it_reaches(): void

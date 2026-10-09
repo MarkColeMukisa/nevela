@@ -205,11 +205,17 @@ export function CloseAccount({ email }: { email: string }) {
     event.preventDefault();
     setPending(true);
     setError(null);
-    // When it works there is no answer to read: the action sends the browser to the sign-in page.
-    const result = await closeAccountAction(password);
-    if (result && !result.ok) {
+    // When it works there is no answer to read: the action sends the browser to the sign-in
+    // page. So an answer is a refusal, and a rejection is a request that never got through.
+    try {
+      const result = await closeAccountAction(password);
+      if (result && !result.ok) {
+        setPending(false);
+        setError(result.error);
+      }
+    } catch {
       setPending(false);
-      setError(result.error);
+      setError("That didn't get through. Your account is as it was: try again.");
     }
   };
 
