@@ -6,6 +6,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-09
+
 ### Added
 
 - **The trash.** A deleted record is kept for 30 days and can be restored. A **Trash** page under Manage lists what has been deleted, a tab per resource, with Restore, Delete forever and Empty. Every delete in the dashboard says where the record is going, and the message that confirms it has an **Undo**, for one row or a whole selection.
@@ -283,7 +285,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.3...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.3...v0.6.0
 [0.5.3]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.0...v0.5.1
