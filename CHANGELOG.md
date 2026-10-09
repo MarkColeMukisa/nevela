@@ -6,6 +6,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-10-09
+
 ### Fixed
 
 - **An email nobody had verified was shown as "Verified".** Accounts made with `nevela user`, added on the Users screen, the starter `admin@example.com` and the sample users were all marked verified when they were created, though no link or code had ever been sent to the address. They now start as "Not verified", which is what they are, and become verified when their owner proves the address. `nevela user --verified` marks one by hand, for an address you know is right. Accounts made before this keep the mark they have. If your app sets `require_email_verification`, an account an administrator adds is now sent a verification link the first time it signs in.
@@ -303,7 +305,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.3...v0.6.0
 [0.5.3]: https://github.com/MarkColeMukisa/nevela/compare/v0.5.2...v0.5.3
