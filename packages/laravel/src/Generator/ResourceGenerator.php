@@ -226,7 +226,7 @@ final class ResourceGenerator
 
         // What you type => the artisan command it runs.
         // "update" is what upgrade was called before 0.3.0; it still works.
-        \$nevela = ['resource', 'generate', 'seed', 'user', 'upgrade', 'update', 'dev', 'status', 'version'];
+        \$nevela = ['resource', 'generate', 'seed', 'user', 'upgrade', 'update', 'dev', 'status', 'version', 'trash'];
         \$artisan = ['migrate', 'tinker', 'test', 'serve'];
         if (in_array(\$name, ['--version', '-v', '-V'], true)) {
             \$name = 'version';
@@ -255,6 +255,7 @@ final class ResourceGenerator
               php nevela generate              regenerate after editing a descriptor
               php nevela seed Product          fill a resource with records
               php nevela user                  create someone who can sign in
+              php nevela trash                 remove deleted records whose time in the trash is up
               php nevela upgrade               bring this app to the latest Nevela
               php nevela version               which Nevela this is
 
@@ -463,6 +464,9 @@ final class ResourceGenerator
             protected \$table = '{$d->table}';
 
             {$m}
+            // Deleted records go to the trash, where they can be restored for a while.
+            use \Nevela\Laravel\Concerns\Trashable;
+
             protected \$fillable = [{$fillable}];
 
             protected function casts(): array
@@ -535,6 +539,8 @@ final class ResourceGenerator
                     \$table->uuid('id')->primary();
         {$cols}
                     \$table->timestamps();
+                    // When a record was deleted. Until it is removed for good it sits in the trash.
+                    \$table->softDeletes();
                 });
             }
 
@@ -545,6 +551,55 @@ final class ResourceGenerator
         };
 
         PHP;
+    }
+
+    /**
+     * For a table made before there was a trash: the column that gives it one.
+     *
+     * Written once, by `nevela:generate`, for a resource whose own migration doesn't
+     * have the column. Until it is run, deleting a record removes it as before.
+     */
+    public function trashMigration(Descriptor $d): string
+    {
+        return <<<PHP
+        <?php
+
+        use Illuminate\Database\Migrations\Migration;
+        use Illuminate\Database\Schema\Blueprint;
+        use Illuminate\Support\Facades\Schema;
+
+        // Gives {$d->pluralLabel} a trash: a deleted record is kept, hidden, and can be restored
+        // for a while (config/nevela.php, trash.days). Generated once by Nevela.
+        return new class extends Migration
+        {
+            public function up(): void
+            {
+                if (Schema::hasTable('{$d->table}') && ! Schema::hasColumn('{$d->table}', 'deleted_at')) {
+                    Schema::table('{$d->table}', function (Blueprint \$table) {
+                        \$table->softDeletes();
+                    });
+                }
+            }
+
+            public function down(): void
+            {
+                if (Schema::hasColumn('{$d->table}', 'deleted_at')) {
+                    Schema::table('{$d->table}', function (Blueprint \$table) {
+                        \$table->dropSoftDeletes();
+                    });
+                }
+            }
+        };
+
+        PHP;
+    }
+
+    /** The file `trashMigration()` goes in. Not made again once one exists for the table, whatever its date. */
+    public function trashMigrationFile(Descriptor $d, ?string $timestamp = null): GeneratedFile
+    {
+        $timestamp ??= date('Y_m_d_His');
+
+        return new GeneratedFile(GeneratedFile::TARGET_API, "database/migrations/{$timestamp}_add_trash_to_{$d->table}_table.php", $this->trashMigration($d), GeneratedFile::MODE_ONCE, "database/migrations/*_add_trash_to_{$d->table}_table.php");
     }
 
     /** @param list<Descriptor> $all */
@@ -849,6 +904,18 @@ final class ResourceGenerator
             }
 
             public function delete(User \$user, {$d->name} \${$var}): bool
+            {
+                return \$user->can('{$d->table}.delete');
+            }
+
+            /** Bring a deleted one back from the trash. */
+            public function restore(User \$user, {$d->name} \${$var}): bool
+            {
+                return \$user->can('{$d->table}.delete');
+            }
+
+            /** Remove a deleted one from the trash, for good. */
+            public function forceDelete(User \$user, {$d->name} \${$var}): bool
             {
                 return \$user->can('{$d->table}.delete');
             }

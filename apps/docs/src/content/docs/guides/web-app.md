@@ -67,6 +67,10 @@ Nothing is counted until the panel is opened, so a list costs what it did before
 
 A resource gets this without being asked: the choices come from its descriptor. There is nothing to configure.
 
+## The trash
+
+Delete is not final. A deleted record goes to the **Trash** page, under Manage, where it can be restored for 30 days; the message that confirms a delete has an **Undo** on it. See [The trash](/guides/trash/).
+
 ## Getting dashboard fixes later
 
 The dashboard's files are yours to change. `nevela upgrade` brings the ones you have not changed up to a newer version, and leaves the ones you changed alone. See [Upgrading an app](/guides/updating/#upgrading-an-app).

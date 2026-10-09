@@ -82,6 +82,10 @@ A change to a role applies from each person's next request. Nobody has to sign i
 
 A role that people hold can't be deleted: give them another first.
 
+## The trash
+
+Deleting needs `products.delete`, and so does everything about a deleted product: seeing it in [the trash](/guides/trash/), restoring it and removing it for good. To make one of those stricter, change `restore` or `forceDelete` in the resource's policy.
+
 ## Three rules that can't be switched off
 
 Being allowed to manage users or roles is never a way to get more than you were given.

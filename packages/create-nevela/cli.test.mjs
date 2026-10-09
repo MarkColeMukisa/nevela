@@ -163,6 +163,8 @@ test('commands map onto artisan the way the php launcher maps them', () => {
   assert.deepEqual(artisanArguments('resource', ['Product', '--fields=name:string']), ['nevela:resource', 'Product', '--fields=name:string', '--migrate']);
   assert.deepEqual(artisanArguments('resource', ['Product', '--no-migrate']), ['nevela:resource', 'Product']);
   assert.deepEqual(artisanArguments('migrate', ['--force']), ['migrate', '--force']);
+  assert.ok(COMMANDS.includes('trash'));
+  assert.deepEqual(artisanArguments('trash', []), ['nevela:trash']);
   assert.deepEqual(artisanArguments('artisan', ['route:list', '--path=api']), ['route:list', '--path=api']);
 });
 

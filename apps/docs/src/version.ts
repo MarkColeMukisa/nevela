@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "Users, roles and permissions";
+export const RELEASE_HEADLINE = "A trash for deleted records";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "users, roles and permissions: a Users screen, a Roles screen, and a dashboard that shows each person only what their role allows.",
-  href: "/guides/policies/",
-  label: "Users, roles and permissions",
+  text: "a trash: a deleted record is kept for 30 days and can be restored, from a Trash page or with Undo.",
+  href: "/guides/trash/",
+  label: "The trash",
 };

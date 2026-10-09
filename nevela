@@ -3,14 +3,14 @@
 
 // Run Nevela from the top of the project: php nevela <command>
 // Maintained by `php artisan nevela:generate`. Add your own shortcuts below the block.
-// nevela:generated:start hash=3fa9504f74e9
+// nevela:generated:start hash=9afa104397d0
 $api = __DIR__.'/apps/api';
 $args = array_slice($_SERVER['argv'], 1);
 $name = array_shift($args) ?? 'help';
 
 // What you type => the artisan command it runs.
 // "update" is what upgrade was called before 0.3.0; it still works.
-$nevela = ['resource', 'generate', 'seed', 'user', 'upgrade', 'update', 'dev', 'status', 'version'];
+$nevela = ['resource', 'generate', 'seed', 'user', 'upgrade', 'update', 'dev', 'status', 'version', 'trash'];
 $artisan = ['migrate', 'tinker', 'test', 'serve'];
 if (in_array($name, ['--version', '-v', '-V'], true)) {
     $name = 'version';
@@ -39,6 +39,7 @@ if (in_array($name, $nevela, true)) {
       php nevela generate              regenerate after editing a descriptor
       php nevela seed Product          fill a resource with records
       php nevela user                  create someone who can sign in
+      php nevela trash                 remove deleted records whose time in the trash is up
       php nevela upgrade               bring this app to the latest Nevela
       php nevela version               which Nevela this is
 

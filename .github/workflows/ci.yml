@@ -331,8 +331,30 @@ jobs:
           grep -q '"field":"kind"' insights.json
           grep -q '"total":100' insights.json
           test "$(curl -s -g -o /dev/null -w '%{http_code}' "http://127.0.0.1:8000/api/products/_insights?unit=year" -H 'Accept: application/json' -H "Authorization: Bearer $editor")" = 400
+          # The trash: a deleted record is kept and hidden, comes back when restored, and goes when removed for good.
+          call() { curl -s -g -o trash.json -w '%{http_code}' -X "$1" "http://127.0.0.1:8000/api/$2" -H 'Accept: application/json' -H "Authorization: Bearer $editor"; }
+          bulked="$(sed -E 's/.*"id":"([^"]+)".*/\1/' bulk.json)"
+          test "$(call DELETE "categories/$bulked")" = 204
+          test "$(categories)" = "$((before + 1))"
+          test "$(call GET "categories/$bulked")" = 404
+          test "$(call GET _nevela/trash)" = 200
+          grep -q '"days":30' trash.json
+          grep -Eq '"slug":"categories","icon":("[a-z-]+"|null),"count":1' trash.json
+          test "$(call GET _nevela/trash/categories)" = 200
+          grep -q "\"id\":\"$bulked\"" trash.json
+          test "$(call POST "_nevela/trash/categories/$bulked/restore")" = 200
+          test "$(categories)" = "$((before + 2))"
+          test "$(call DELETE "categories/$bulked")" = 204
+          test "$(call DELETE _nevela/trash/categories)" = 422
+          test "$(call DELETE '_nevela/trash/categories?confirm=categories')" = 200
+          grep -q '"removed":1' trash.json
+          test "$(call GET _nevela/trash/categories)" = 200
+          grep -q '"total":0' trash.json
+          test "$(categories)" = "$((before + 1))"
+          (cd .. && cd .. && php nevela trash | grep -q 'Nothing in the trash is older than 30 days')
           # a user nothing but their own account,
           plain="$(bearer sofia.martinez@example.com)"
+          curl -s http://127.0.0.1:8000/api/_nevela/trash -H 'Accept: application/json' -H "Authorization: Bearer $plain" | grep -q '"resources":\[\]'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/auth/me -H 'Accept: application/json' -H "Authorization: Bearer $plain")" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/products -H 'Accept: application/json' -H "Authorization: Bearer $plain")" = 403
           # and a switched-off account no way in.

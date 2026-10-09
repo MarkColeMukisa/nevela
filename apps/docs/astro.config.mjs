@@ -58,6 +58,7 @@ export default defineConfig({
             { label: "The web app", slug: "guides/web-app" },
             { label: "Authentication", slug: "guides/authentication" },
             { label: "Users, roles and permissions", slug: "guides/policies" },
+            { label: "The trash", slug: "guides/trash" },
             { label: "Seeding data", slug: "guides/seeding" },
             { label: "Updating and upgrading", slug: "guides/updating" },
             { label: "Configuration", slug: "guides/configuration" },

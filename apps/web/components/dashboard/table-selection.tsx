@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { DownloadIcon, Trash2Icon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { deleteManyAction } from "@/app/dashboard/actions";
+import { restoreManyAction } from "@/app/dashboard/trash/actions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
 import { toCsv } from "@/lib/csv";
+import { keptFor, type TrashInfo } from "@/lib/trash-info";
+import { toastMovedToTrash } from "./trash-actions";
 
 interface SelectionValue {
   ids: string[];
@@ -94,13 +97,16 @@ interface BarProps {
   /** Rows as they're shown, for exporting what's selected without another round trip. */
   rows: Record<string, unknown>[];
   columns: { key: string; label: string }[];
+  /** The resource's address, and its trash when deleted records go there instead of going for good. */
+  slug: string;
+  trash?: TrashInfo;
 }
 
 /**
  * What you can do with the rows you've ticked. Appears only when something is selected,
  * pinned to the bottom so it's reachable in a long table.
  */
-export function SelectionBar({ resourceName, label, pluralLabel, canDelete, rows, columns }: BarProps) {
+export function SelectionBar({ resourceName, label, pluralLabel, canDelete, rows, columns, slug, trash }: BarProps) {
   const { selected, clear } = useSelection();
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
@@ -117,7 +123,8 @@ export function SelectionBar({ resourceName, label, pluralLabel, canDelete, rows
 
   const remove = () => {
     startTransition(async () => {
-      const result = await deleteManyAction(resourceName, [...selected]);
+      const ids = [...selected];
+      const result = await deleteManyAction(resourceName, ids);
       setConfirming(false);
       if (!result.ok) {
         toast.error(result.error);
@@ -126,8 +133,17 @@ export function SelectionBar({ resourceName, label, pluralLabel, canDelete, rows
       const { deleted, failed } = result.data;
       clear();
       router.refresh();
-      if (failed > 0) toast.warning(`Deleted ${deleted}; ${failed} couldn't be deleted.`);
-      else toast.success(`Deleted ${deleted} ${deleted === 1 ? label.toLowerCase() : pluralLabel.toLowerCase()}.`);
+      const what = `${deleted} ${deleted === 1 ? label.toLowerCase() : pluralLabel.toLowerCase()}`;
+      // The ones that wouldn't go aren't in the trash, and restoring passes over them.
+      const undo = async () => {
+        const result = await restoreManyAction(slug, ids);
+        if (!result.ok || result.data.refused === 0) return result;
+        return { ok: true as const, partly: `Restored ${result.data.restored}. ${result.data.refused} couldn't be: ${result.data.reason}` };
+      };
+      if (trash && deleted > 0) {
+        toastMovedToTrash(failed > 0 ? `${what} moved to the trash; ${failed} couldn't be deleted.` : `${what} moved to the trash.`, undo, () => router.refresh(), failed > 0);
+      } else if (failed > 0) toast.warning(`Deleted ${deleted}; ${failed} couldn't be deleted.`);
+      else toast.success(`Deleted ${what}.`);
     });
   };
 
@@ -156,15 +172,19 @@ export function SelectionBar({ resourceName, label, pluralLabel, canDelete, rows
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Delete {count} {noun}?
+              {trash ? `Move ${count} ${noun} to the trash?` : `Delete ${count} ${noun}?`}
             </AlertDialogTitle>
-            <AlertDialogDescription>This can&apos;t be undone. Anything that belongs to them may be deleted too.</AlertDialogDescription>
+            <AlertDialogDescription>
+              {trash
+                ? `${count === 1 ? "It" : "They"} can be restored from the trash ${keptFor(trash)}.`
+                : "This can't be undone. Anything that belongs to them may be deleted too."}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={pending}>Keep them</AlertDialogCancel>
             <AlertDialogAction onClick={(event) => { event.preventDefault(); remove(); }} disabled={pending}>
               {pending && <Spinner data-icon="inline-start" />}
-              Delete {count}
+              {trash ? `Move ${count} to trash` : `Delete ${count}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

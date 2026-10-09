@@ -75,7 +75,7 @@ const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
     nevela dev                 Run the API and the dashboard
     nevela status              Check versions, migrations, users and the dashboard
     nevela resource <Name> --fields="…" [--seed]
-    nevela seed | user | generate | migrate | artisan <command>
+    nevela seed | user | generate | migrate | trash | artisan <command>
 
   ${bold('Options')}
     --pm <pnpm|npm|yarn|bun>   Package manager for the dashboard. Default: the one you ran this with.
@@ -386,6 +386,10 @@ async function inProject(name, args) {
     if (now) {
       console.log(`\n  ${green(`✔ ${now === before ? `This app is on Nevela v${now}, the version it was on.` : `This app is now on Nevela v${now}.`}`)}\n`);
     }
+    // A release is on Packagist a few minutes before every Composer can see it. Finishing
+    // on the older one without a word would look like there was nothing newer.
+    const behind = behindNotice(now, releases);
+    if (behind) console.log(`${behind}\n`);
   }
   process.exit(status);
 }
@@ -446,6 +450,19 @@ function otherCopies() {
   };
   const removals = new Set(copies.filter((copy) => copy !== keep).map((copy) => removeCommand(copy.dir, launcher(copy.dir))));
   for (const removal of removals) console.log(`      ${bold(removal)}`);
+}
+
+/**
+ * What to say when an upgrade finished on a version older than the newest release, or null
+ * when it didn't. `now` is what the app has, `latest` what Packagist lists.
+ */
+function behindNotice(now, latest) {
+  if (!now || !latest || !isNewer(latest, now)) return null;
+  return [
+    `  ${red('!')} Nevela ${bold(`v${latest}`)} is out, and Composer didn't bring it in.`,
+    `    A release takes a few minutes to reach Composer. Run ${bold('nevela upgrade')} again shortly.`,
+    `    ${dim(`Still on v${now} after that? This says what holds it back: cd apps/api && composer why-not nevela/laravel ${latest}`)}`,
+  ].join('\n');
 }
 
 /** The version of Nevela an app has installed, read from the package, or null. */

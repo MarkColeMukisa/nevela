@@ -1,6 +1,6 @@
 ---
 title: "Commands"
-description: "Every nevela command and option: new, update, resource, generate, seed, user, upgrade, dev, status and --version."
+description: "Every nevela command and option: new, update, resource, generate, seed, user, upgrade, trash, dev, status and --version."
 ---
 
 Install the `nevela` command once, and everything is this short, in every shell:
@@ -29,6 +29,7 @@ nevela seed Product
 nevela user
 nevela upgrade             # bring the app to the latest Nevela
 nevela migrate
+nevela trash               # remove deleted records whose 30 days are up
 ```
 
 You don't have to install it. [Without the nevela command](#without-the-nevela-command), at the end of this page, has the longer forms that do the same.
@@ -256,6 +257,16 @@ nevela status
 
 Anything that needs attention is in red, with the command that fixes it: migrations that have not run, a resource whose table is missing, nobody able to sign in, or the dashboard's API address being answered by a different program. The command exits with an error code when it finds a problem, so it works in scripts.
 
+## nevela trash
+
+```sh
+nevela trash
+```
+
+Removes, for good, the deleted records that have been in [the trash](/guides/trash/) longer than `trash.days` (30), and says how many of each resource went.
+
+You rarely need to type it. The app's scheduler runs it each night, and opening the Trash page does the same. It is here for a server with neither, and for seeing what a night's run would do.
+
 ## nevela migrate, and any other artisan command
 
 ```sh
@@ -291,6 +302,7 @@ With npm the first is `npm create nevela@latest my-app`, and the second is `npm 
 | `php nevela generate` | `php artisan nevela:generate` |
 | `php nevela seed …` | `php artisan nevela:seed …` |
 | `php nevela user` | `php artisan nevela:user` |
+| `php nevela trash` | `php artisan nevela:trash` |
 | `php nevela upgrade` | `php artisan nevela:upgrade` |
 | `php nevela update` | the same: the name it had before 0.3.0 |
 | `php nevela migrate` | `php artisan migrate` |

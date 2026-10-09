@@ -103,7 +103,7 @@ Using `products` as the example:
 | `POST /products/_bulk` | Create several | `201 { created, data }` |
 | `PATCH /products/{id}` | Change some fields | `200` the record |
 | `PUT /products/{id}` | Replace the record | `200` the record |
-| `DELETE /products/{id}` | Delete | `204` |
+| `DELETE /products/{id}` | Delete: to [the trash](#the-trash), where it can be restored | `204` |
 | `GET /products/_stats` | Counts for dashboards | `200 { total, current, previous, values }` |
 | `GET /products/_insights` | Counts per period and per choice, for charts | `200 { total, unit, series, breakdown }` |
 
@@ -222,6 +222,42 @@ What the dashboard's insights panel is drawn from.
 `unit` is `day` (the last 30 days, the default), `week` (the last 26 weeks, each called by its Monday) or `month` (the last 12 months, as `2026-10`).
 
 It takes the list's `q` and `filter[…]`, so the counts are of the same records a list request with those parameters returns. `page`, `perPage` and `sort` are accepted and change nothing. It takes the permission to view the resource. Days are counted in the app's timezone (`config/app.php`).
+
+## The trash
+
+A deleted record is kept for 30 days (`trash.days`) and answers 404 everywhere above until it is restored. These are the same for every resource, by its slug:
+
+| Request | What it does | Success |
+|---|---|---|
+| `GET /_nevela/trash` | How long things are kept, and how many of each resource are deleted | `200 { days, resources }` |
+| `GET /_nevela/trash/products` | The deleted products, the latest deletion first. Takes `page` and `perPage`. | `200 { data, meta }` |
+| `POST /_nevela/trash/products/{id}/restore` | Put one back | `200 { id, restored }` |
+| `DELETE /_nevela/trash/products/{id}` | Remove one for good | `204` |
+| `DELETE /_nevela/trash/products?confirm=products` | Remove every deleted product for good | `200 { removed, kept }` |
+| `GET /_nevela/trash/_status` | Which resources have a trash the caller may use. Counts nothing. | `200 { days, resources }` |
+
+```json
+{
+  "data": [
+    { "id": "01a0fd2e-…", "label": "Lamp", "deletedAt": "2026-10-09T12:00:00.000000Z", "expiresAt": "2026-11-08T12:00:00.000000Z" }
+  ],
+  "meta": { "page": 1, "perPage": 25, "total": 1, "totalPages": 1 }
+}
+```
+
+`label` is the record's title, as a list shows it. `expiresAt` is when it is removed for good, and `null` when `trash.days` is off.
+
+Each takes the permission to delete the resource; a resource the caller may not delete is left out of the first and last, and answers 403 on the rest. A resource whose table has no trash yet answers 404.
+
+| Refusal | Status | `code` |
+|---|---|---|
+| Restoring a record whose required parent is in the trash too | 409 | `PARENT_IN_TRASH` |
+| Removing a record that deleted records still belong to | 409 | `STILL_REFERENCED` |
+| Emptying without `confirm` set to the resource's slug | 422 | `CONFIRM` |
+
+Emptying removes what it can and counts the rest in `kept`.
+
+A unique value held by a deleted record is still taken. Creating another with it answers 422, with a message that says the value belongs to a record in the trash.
 
 ## Relations
 

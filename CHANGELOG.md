@@ -6,6 +6,18 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [Unreleased]
 
+### Added
+
+- **The trash.** A deleted record is kept for 30 days and can be restored. A **Trash** page under Manage lists what has been deleted, a tab per resource, with Restore, Delete forever and Empty. Every delete in the dashboard says where the record is going, and the message that confirms it has an **Undo**, for one row or a whole selection.
+- Deleted records are hidden from lists, counts, stats, insights, exports and their own pages. They are removed for good each night by the scheduler, whenever the Trash page is opened, and by the new `nevela trash`. `trash.days` in `config/nevela.php` sets how long they are kept; `null` keeps them until someone removes them.
+- Who may use it follows the permission to delete: a generated policy has `restore` and `forceDelete`, and a policy from before this is asked what it says to `delete`.
+- `GET /_nevela/trash`, `GET /_nevela/trash/{slug}`, `POST /_nevela/trash/{slug}/{id}/restore`, `DELETE /_nevela/trash/{slug}/{id}` and `DELETE /_nevela/trash/{slug}?confirm={slug}`.
+
+### Changed
+
+- **Deleting a record moves it to the trash**, in the dashboard and over the API (`DELETE /{slug}/{id}`), where it removed the row. Generated models use `Nevela\Laravel\Concerns\Trashable`, which is Laravel's soft delete. In an existing app this starts when `nevela migrate` has run the migration `nevela upgrade` writes for each resource (`add_trash_to_…`); until then delete works as it did. A query of your own that reads a resource's table with `DB::table(…)` sees deleted rows, and a unique value is held until its record is removed for good. See [The trash](apps/docs/src/content/docs/guides/trash.md).
+- `nevela upgrade` says so when it finishes on a version older than the newest release, which happens in the few minutes a release takes to reach Composer, and what to run.
+
 ## [0.5.3] - 2026-10-08
 
 ### Added

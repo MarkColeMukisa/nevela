@@ -11,7 +11,10 @@ class Category extends Model
 
     protected $table = 'categories';
 
-    // nevela:generated:start hash=31771532d382
+    // nevela:generated:start hash=2c9dae15254f
+    // Deleted records go to the trash, where they can be restored for a while.
+    use \Nevela\Laravel\Concerns\Trashable;
+
     protected $fillable = ['name', 'slug', 'image'];
 
     protected function casts(): array
