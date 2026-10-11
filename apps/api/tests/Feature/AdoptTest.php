@@ -384,6 +384,9 @@ class AdoptTest extends TestCase
         // A parent's page lists its children.
         $this->getJson('/api/transactions?filter[internshipApplicationId]=1')->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.reference', 'TX-1');
         $this->getJson('/api/transactions?filter[internshipApplicationId]=null')->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.reference', 'TX-2');
+        // An id here is a number: a UUID, or a word, is nobody's.
+        $this->getJson('/api/transactions?filter[internshipApplicationId]=one')->assertOk()->assertJsonPath('meta.total', 0);
+        $this->getJson('/api/transactions?filter[internshipApplicationId]=00000000-0000-7000-8000-000000000000')->assertOk()->assertJsonPath('meta.total', 0);
 
         // The dashboard sends the id it was given, a string; a script may send the number.
         $transaction = ['reference' => 'TX-3', 'amount' => 5000, 'status' => 'pending'];

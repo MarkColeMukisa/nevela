@@ -18,6 +18,11 @@ _Adopt a table you already have, integer ids, and the changelog week by week_
 - The docs' [changelog page](https://nevela-docs.vercel.app/reference/changelog/) opens with **Releases by week**: every release as a version and one line saying what it was about, grouped by the week it came out, each linking to its full entry below. The entries follow as before.
 - Each release has that line in `CHANGELOG.md`, in italics under its version. `pnpm release` says so when the notes for a new one have none.
 
+### Fixed
+
+- **A record could be made to belong to one in the trash.** A product could be created in, or moved to, a deleted category, which no list shows and whose page is a 404. It is refused now, in the form, the API and "Add several", with "This one is in the trash. Restore it, or choose another." Records that already point at a deleted one are left as they are.
+- Filtering a list by a relation with something that can't be an id (`filter[categoryId]=nonsense`) answers with no records. On PostgreSQL it was an error.
+
 ## [0.7.1] - 2026-10-09
 
 _An email nobody had verified said "Verified"_

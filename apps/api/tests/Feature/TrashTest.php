@@ -218,6 +218,31 @@ class TrashTest extends TestCase
         $this->getJson("/api/products/{$spade->id}")->assertOk()->assertJsonPath('categoryId', $garden->id);
     }
 
+    public function test_nothing_can_be_made_to_belong_to_a_record_in_the_trash(): void
+    {
+        $garden = Category::create(['name' => 'Garden', 'slug' => 'garden']);
+        $garden->delete();
+        $row = ['name' => 'Spade', 'sku' => 'SPD-1', 'price' => 10, 'categoryId' => $garden->id, 'active' => true, 'kind' => 'stock'];
+        $message = 'This one is in the trash. Restore it, or choose another.';
+
+        // The category is in no list and its page is a 404: a product can't be put in it,
+        $this->postJson('/api/products', $row)->assertStatus(422)->assertJsonPath('issues.0.path', 'categoryId')->assertJsonPath('issues.0.message', $message);
+        // or moved to it, or added to it with others,
+        $kettle = $this->product('KET-1');
+        $this->patchJson("/api/products/{$kettle->id}", ['categoryId' => $garden->id])->assertStatus(422)->assertJsonPath('issues.0.message', $message);
+        $this->postJson('/api/products/_bulk', ['items' => [$row]])->assertStatus(422)->assertJsonPath('rows.0.issues.0.message', $message);
+        $this->assertSame(1, DB::table('products')->count());
+        // and a category that was never there is still just not one.
+        $this->postJson('/api/products', ['categoryId' => '00000000-0000-7000-8000-000000000000'] + $row)->assertStatus(422)->assertJsonMissing(['message' => $message]);
+
+        // Restored, it takes products again.
+        $this->postJson("/api/_nevela/trash/categories/{$garden->id}/restore")->assertOk();
+        $this->postJson('/api/products', $row)->assertCreated();
+        // A product that was in it when it was deleted can still be saved as it is.
+        $kettle->update(['category_id' => $garden->id]);
+        $this->patchJson("/api/products/{$kettle->id}", ['name' => 'Kettle, renamed'])->assertOk();
+    }
+
     public function test_the_trash_is_for_those_who_may_delete(): void
     {
         $deleted = $this->product('KET-1');
