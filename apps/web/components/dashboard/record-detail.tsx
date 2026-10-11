@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { FileCell } from "@/components/dashboard/fields/file-cell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { adminPermissions, allResources, dashboardStore, requireAccess, resourcePath } from "@/lib/dashboard";
+import { adminPermissions, allowedActions, allResources, dashboardStore, requireAccess, resourcePath } from "@/lib/dashboard";
+import { actionApplies } from "@/lib/extras";
 import { isRich } from "@/lib/rich";
 import { site } from "@/lib/site";
 import { trashFor } from "@/lib/trash";
@@ -94,6 +95,7 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
             canDelete={permissions.delete}
             overlayForms={site.dashboard.forms === "sheet"}
             trash={trash}
+            actions={(await allowedActions(resource.name)).filter((action) => action.on === "record" && actionApplies(action, record))}
           />
         }
       />

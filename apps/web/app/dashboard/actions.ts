@@ -8,6 +8,7 @@ import { revalidateResource } from "@/lib/cache";
 import { fileUrl } from "@/lib/files";
 import { laravel } from "@/lib/laravel";
 import { allResources, resourcePath, dashboardSession, dashboardStore, mayDo } from "@/lib/dashboard";
+import { actionsOf } from "@/lib/extras";
 
 export type ActionResult<T = unknown> =
   | { ok: true; data: T }
@@ -34,6 +35,39 @@ export async function deleteRecordAction(resourceName: string, id: string): Prom
   const result = await store.delete(id);
   if (result.ok) revalidatePath(resourcePath(store.resource));
   return result;
+}
+
+/**
+ * Run one of a resource's own actions (the descriptor's "actions"): on one record, on
+ * the rows selected, or on the list as a whole.
+ *
+ * Laravel does it, in the class the app wrote for it, and decides everything: who may,
+ * whether it applies, whether what was filled in is valid. Its answer comes back as it
+ * is, so a problem with a field can be shown on that field.
+ */
+export async function runResourceAction(
+  resourceName: string,
+  key: string,
+  target: { id?: string; ids?: string[] },
+  input: Record<string, unknown> = {},
+): Promise<ActionResult<{ message: string; done?: number; skipped?: number }>> {
+  const { allowed: inAdmin, may } = await dashboardSession();
+  const resource = allResources().find((item) => item.name === resourceName);
+  const action = actionsOf(resourceName).find((item) => item.key === key);
+  if (!inAdmin || !resource || !action || !may(action.permission)) return forbidden();
+  if (target.ids && target.ids.length > 500) return { ok: false, status: 400, error: "That's more than 500 records. Do them in smaller batches." };
+
+  const path = target.id ? `${resource.slug}/${encodeURIComponent(target.id)}/_actions/${key}` : `${resource.slug}/_actions/${key}`;
+  const response = await laravel(path, { method: "POST", body: { input, ...(target.ids ? { ids: target.ids } : {}) } });
+  const body = (response.body ?? {}) as { message?: string; done?: number; skipped?: number; error?: string; detail?: string; issues?: FieldIssue[] };
+  if (!response.ok) {
+    // `detail` is only sent while the Laravel app is in debug mode: the reason, for whoever is building it.
+    return { ok: false, status: response.status, error: body.detail ? `${body.error ?? "It didn't work."} ${body.detail}` : (body.error ?? "It didn't work."), issues: body.issues };
+  }
+  // What it changed could be anything of this resource's, so everything of it is read again.
+  revalidateResource({ resource: resourceName, action: "update", id: target.id ?? "" });
+  revalidatePath(resourcePath(resource));
+  return { ok: true, data: { message: body.message ?? `${action.label}: done.`, done: body.done, skipped: body.skipped } };
 }
 
 /** How many rows one export may fetch: enough for a spreadsheet. */

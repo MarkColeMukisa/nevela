@@ -51,8 +51,10 @@ export interface PermissionFeature {
   /** The first half of a permission: "products". */
   key: string;
   name: string;
-  /** The second halves that mean something for it: create, view, edit, delete. */
+  /** The second halves that mean something for it: create, view, edit, delete, then the resource's own actions. */
   actions: string[];
+  /** What a resource's own actions are called, by second half: { accept: "Accept" }. */
+  labels?: Record<string, string>;
 }
 
 export interface PermissionModule {

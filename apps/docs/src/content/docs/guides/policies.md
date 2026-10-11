@@ -12,9 +12,11 @@ A permission is `feature.action`.
 | Part | What it is |
 |---|---|
 | feature | A resource's table (`products`), one of the built-in ones (`users`, `roles`), or one you add |
-| action | `create`, `view`, `edit` or `delete` |
+| action | `create`, `view`, `edit` or `delete`, or one of the resource's [own actions](/guides/actions/) |
 
 So a `Product` resource brings `products.create`, `products.view`, `products.edit` and `products.delete`. Nothing has to be registered: a resource's permissions exist as soon as the resource does.
+
+A resource with an `accept` action also brings `applications.accept`. It is on the Roles screen under the resource, on a line of its own beneath the four.
 
 ## The roles an app starts with
 
@@ -139,10 +141,12 @@ A role's grants can be patterns. The Roles screen writes the first two for you; 
 | Grant | Covers |
 |---|---|
 | `*` | Everything |
-| `@resources.*` | Every action on every resource, including ones added later |
+| `@resources.*` | Creating, viewing, editing and deleting every resource, including ones added later |
 | `@resources.view` | Viewing every resource |
-| `products.*` | Every action on products |
+| `products.*` | Creating, viewing, editing and deleting products |
 | `*.view` | Viewing everything, users and roles included |
+
+After the dot, `*` means create, view, edit and delete. A resource's own action is not one of those: it is covered by its own name (`applications.accept`) or by `*` alone, so a role with everything for the records has not been given the button that sends a letter.
 
 ## What the dashboard does with them
 

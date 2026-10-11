@@ -36,6 +36,7 @@ description: "The JSON file per resource that everything else is generated from.
 | `group` | The sidebar heading the resource sits under. Optional. |
 | `titleField` | The field shown as a record's title. Defaults to the first string field. |
 | `fields` | The fields, in the order they appear in forms and tables. |
+| `actions` | What can be done to a record, or to the list, beyond create, edit and delete. See [Actions on a record](/guides/actions/). Optional. |
 
 Each field has a `kind` (`string`, `text`, `int`, `float`, `boolean`, `date`, `datetime` or `enum`) and may have:
 
