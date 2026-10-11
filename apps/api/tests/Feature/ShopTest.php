@@ -106,6 +106,10 @@ class ShopTest extends TestCase
 
         $this->getJson("/api/products?filter[categoryId]={$kitchen->id}")->assertOk()->assertJsonPath('meta.total', 2);
         $this->getJson("/api/products?filter[categoryId]={$office->id}")->assertOk()->assertJsonPath('meta.total', 1);
+        // Nothing is in a category that can't exist: no rows, and no question the database might choke on.
+        $this->getJson('/api/products?filter[categoryId]=nonsense')->assertOk()->assertJsonPath('meta.total', 0);
+        $this->getJson('/api/products?filter[categoryId]=12')->assertOk()->assertJsonPath('meta.total', 0);
+        $this->getJson('/api/products/_insights?filter[categoryId]=nonsense')->assertOk()->assertJsonPath('total', 0);
     }
 
     public function test_a_category_with_products_is_not_deleted(): void
