@@ -58,6 +58,9 @@ export function actionApplies(action: ResourceAction, record: Record<string, unk
   return Object.entries(action.when ?? {}).every(([field, wanted]) => {
     const value = record[field] ?? null;
     if (wanted === null) return value === null;
-    return value !== null && String(value) === String(wanted);
+    if (value === null) return false;
+    // A yes/no value may arrive as 1 or 0.
+    if (typeof wanted === "boolean") return (value === true || value === 1 || value === "1") === wanted;
+    return String(value) === String(wanted);
   });
 }

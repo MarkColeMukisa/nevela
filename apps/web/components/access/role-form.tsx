@@ -401,7 +401,13 @@ function FeatureRows({
                     const key = `${feature.key}.${action}`;
                     return (
                       <label key={action} className="flex items-center gap-2">
-                        <Checkbox checked={on(key)} disabled={fixed(key)} onCheckedChange={(value) => set([key], value === true)} />
+                        {/* Named with its resource, as the four are: two resources can both have an "Archive". */}
+                        <Checkbox
+                          aria-label={`${feature.labels?.[action] ?? action} ${feature.name.toLowerCase()}`}
+                          checked={on(key)}
+                          disabled={fixed(key)}
+                          onCheckedChange={(value) => set([key], value === true)}
+                        />
                         {feature.labels?.[action] ?? action}
                       </label>
                     );

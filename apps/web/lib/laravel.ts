@@ -34,6 +34,17 @@ export async function callerHeaders(): Promise<Record<string, string>> {
   if (agent) sent["X-Nevela-User-Agent"] = agent.slice(0, 500);
   const address = (incoming.get("x-forwarded-for") ?? "").split(",")[0]?.trim() || incoming.get("x-real-ip");
   if (address) sent["X-Nevela-Ip"] = address.replace(/^::ffff:/, "");
+  // That one is for showing: the first entry of X-Forwarded-For is whatever the request
+  // came with, and anyone can send one. The address a visitor is *counted* by (the public
+  // routes' throttle) has to be one they couldn't have made up. Each proxy adds the
+  // address it was called from to the end of the list, so with one proxy in front of this
+  // app the last entry is the visitor as that proxy saw them. NEVELA_TRUSTED_PROXIES says
+  // how many proxies are in front: 1 unless set, and 0 when this app is reached directly,
+  // in which case nobody's word is taken and visitors are counted together.
+  const proxies = Number.parseInt(process.env.NEVELA_TRUSTED_PROXIES ?? "1", 10);
+  const chain = (incoming.get("x-forwarded-for") ?? "").split(",").map((part) => part.trim()).filter(Boolean);
+  const counted = Number.isInteger(proxies) && proxies > 0 ? chain[chain.length - proxies] : undefined;
+  sent["X-Nevela-Client"] = counted ? counted.replace(/^::ffff:/, "") : "unknown";
   // Proves to Laravel that this is the dashboard speaking for a browser, and not someone
   // calling the API with made-up headers. The same value is in the Laravel app's .env.
   if (process.env.NEVELA_PROXY_SECRET) sent["X-Nevela-Proxy-Secret"] = process.env.NEVELA_PROXY_SECRET;

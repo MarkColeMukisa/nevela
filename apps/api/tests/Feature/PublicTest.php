@@ -300,7 +300,7 @@ namespace Tests\Feature {
         public function test_through_the_web_app_each_visitor_has_their_own_count_and_the_site_itself_has_none(): void
         {
             config(['nevela.auth.proxy_secret' => 'shared-secret']);
-            $from = fn (?string $visitor, string $secret = 'shared-secret') => array_filter(['X-Nevela-Proxy-Secret' => $secret, 'X-Nevela-Ip' => $visitor]);
+            $from = fn (?string $visitor, string $secret = 'shared-secret') => array_filter(['X-Nevela-Proxy-Secret' => $secret, 'X-Nevela-Client' => $visitor]);
 
             // Every one of these arrives from the web app's server. They are counted by whose they are.
             for ($i = 1; $i <= 5; $i++) {
@@ -314,6 +314,14 @@ namespace Tests\Feature {
             for ($i = 1; $i <= 70; $i++) {
                 $this->getJson('/api/public/stories', $from(null))->assertOk();
             }
+
+            // Where the web app couldn't tell whose request it was, they are counted together, not let through.
+            for ($i = 1; $i <= 10; $i++) {
+                $this->postJson('/api/public/signups', ['email' => "unknown{$i}@example.com"], $from('unknown'))->assertStatus(201);
+            }
+            $this->postJson('/api/public/signups', ['email' => 'unknown11@example.com'], $from('unknown'))->assertStatus(429);
+            // The address the request claims for itself is for showing in a list of devices. Nothing is counted by it.
+            $this->postJson('/api/public/signups', ['email' => 'claims@example.com'], $from('unknown') + ['X-Nevela-Ip' => '203.0.113.99'])->assertStatus(429);
 
             // Saying so without the secret is believed by nobody: it is one more caller, counted from where it came.
             for ($i = 1; $i <= 60; $i++) {

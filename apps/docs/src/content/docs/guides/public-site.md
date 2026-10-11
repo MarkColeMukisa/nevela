@@ -121,6 +121,14 @@ Each resource's reading, its form and its upload are counted separately, for eac
 
 Through the web app every request reaches Laravel from the web app's server. So that visitors are counted apart, the web app passes on each visitor's address with the secret the two apps share (`NEVELA_PROXY_SECRET`, set in both when the app was created). Without the secret set in production, all visitors are counted as one.
 
+The address it passes on is the one the proxy in front of the web app saw, the last entry of `X-Forwarded-For`, and not the first, which is whatever the request came with: a visitor who could choose the address they are counted by would have a fresh allowance with every request. That is right for a web app behind one proxy, which is what a host or a single nginx gives you. Set `NEVELA_TRUSTED_PROXIES` in the web app's environment when it is otherwise:
+
+| | |
+|---|---|
+| `1` (the default) | One proxy in front of the web app. |
+| `2`, `3` | That many: a CDN in front of a load balancer is two. |
+| `0` | The web app is reached directly, with nothing in front. No address can be trusted then, and all visitors are counted together. |
+
 ## In the web app
 
 ### A page anyone can open

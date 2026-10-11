@@ -25,6 +25,7 @@ If the app has [public pages](/guides/public-site/), two more things:
 
 - **Caching.** What `laravelPublic()` reads is kept in Next's data cache and revalidated when the dashboard changes a record. That cache has to be shared by every instance of the web app, or one instance will go on showing a page another has revalidated. On one server it is the default; on several, or on a serverless host, give Next a shared cache handler.
 - **`NEVELA_PROXY_SECRET`**, the same value in both apps. It is how Laravel tells visitors apart when every request reaches it from the web app's server. Without it one busy visitor uses up everyone's allowance.
+- **`NEVELA_TRUSTED_PROXIES`** in the web app, if there isn't exactly one proxy in front of it. See [Throttling](/guides/public-site/#throttling).
 
 ## Checklist
 
