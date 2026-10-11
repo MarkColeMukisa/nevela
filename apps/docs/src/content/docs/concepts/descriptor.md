@@ -44,6 +44,7 @@ Each field has a `kind` (`string`, `text`, `int`, `float`, `boolean`, `date`, `d
 |---|---|
 | `format` | For strings: `email`, `url`, `tel`, `slug`, `color`. For numbers: `money`, `percent`, `rating`. For text: `rich`, which is [rich text](/concepts/field-types/#rich-text). |
 | `options` | The allowed values of an enum. |
+| `private` | For a file: `true` keeps it where only someone who may view the record can fetch it. See [private files](/guides/images/#private-files). |
 | `maxLength` | For `string` and `text`: the most characters it holds, where that isn't the usual 255 or 65,535. |
 | `required` | `false` makes the field optional. Defaults to `true`. |
 | `unique` | `true` makes values unique. Defaults to `false`. |
