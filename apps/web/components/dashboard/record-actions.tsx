@@ -67,7 +67,7 @@ export function RecordActions({ resource, id, record, relations, listHref, editH
 
   return (
     <>
-      <ActionButtons resourceName={resource.name} noun={resource.pluralLabel.toLowerCase()} actions={actions} id={id} />
+      <ActionButtons resourceName={resource.name} actions={actions} id={id} />
       {canUpdate &&
         (overlayForms ? (
           <Button variant="outline" onClick={() => setEditing(true)}>

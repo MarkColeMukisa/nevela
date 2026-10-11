@@ -121,7 +121,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
         <div className="flex flex-wrap items-center gap-2">
           <ColumnMenu columns={allColumns.map(({ key, label }) => ({ key, label }))} visible={columns.map((column) => column.key)} />
           <ExportButton resourceName={resource.name} pluralLabel={resource.pluralLabel} />
-          <ActionButtons resourceName={resource.name} noun={resource.pluralLabel.toLowerCase()} actions={actions.filter((action) => action.on === "collection")} />
+          <ActionButtons resourceName={resource.name} actions={actions.filter((action) => action.on === "collection")} />
           {permissions.create && <ImportDialog resource={forClient} />}
           {permissions.create && <BulkCreateButton resource={forClient} relations={relations} />}
           {permissions.create &&
