@@ -80,3 +80,52 @@ export async function laravel(path: string, { method = "GET", body, token }: Lar
   }
   return { status: response.status, ok: response.ok, body: parsed };
 }
+
+export interface PublicRequest {
+  /** How long an answer may be reused, in seconds. Default 300. `false` keeps it until one of its tags is revalidated. */
+  revalidate?: number | false;
+  /** What makes it stale. `resourceTag("Post")` from lib/cache: the dashboard revalidates it when a post is created, changed, deleted or restored. */
+  tags?: string[];
+}
+
+/**
+ * Read what a resource's "public" section opens, for a page anyone can visit.
+ *
+ * ```ts
+ * const { body } = await laravelPublic("posts?sort=-publishedAt", { tags: [resourceTag("Post")] });
+ * ```
+ *
+ * Unlike `laravel()` it carries nothing of the person asking: no token and none of their
+ * headers. The answer is the same for everyone, so it is cached and shared between
+ * visitors, and a published post appears as soon as the dashboard saves it, because
+ * saving revalidates the resource's tag.
+ *
+ * `path` is under `{api}/public/`. To send a form (a public create), post to
+ * `/api/public/<slug>` from the browser: see app/api/[...path]/route.ts.
+ */
+export async function laravelPublic(path: string, { revalidate = 300, tags = [] }: PublicRequest = {}): Promise<LaravelResponse> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/public/${path.replace(/^\/+/, "")}`, {
+      headers: {
+        Accept: "application/json",
+        // The site reading its own data, to show to many: Laravel doesn't count it against
+        // a visitor's allowance, which it otherwise would against this server's address.
+        ...(process.env.NEVELA_PROXY_SECRET ? { "X-Nevela-Proxy-Secret": process.env.NEVELA_PROXY_SECRET } : {}),
+      },
+      next: { revalidate, tags },
+    });
+  } catch {
+    return { status: 502, ok: false, body: { error: "Can't reach the API." } };
+  }
+  const text = response.status === 204 ? "" : await response.text();
+  let parsed: unknown = null;
+  if (text) {
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = { error: `Laravel answered ${response.status} with something that isn't JSON.` };
+    }
+  }
+  return { status: response.status, ok: response.ok, body: parsed };
+}

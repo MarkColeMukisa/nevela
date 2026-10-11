@@ -8,7 +8,7 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_Adopt a table you already have, integer ids, rich text, actions on a record, private files, and the changelog week by week_
+_Adopt a table you already have, integer ids, rich text, actions on a record, private files, a public side, and the changelog week by week_
 
 ### Added
 
@@ -17,6 +17,8 @@ _Adopt a table you already have, integer ids, rich text, actions on a record, pr
 - **Rich text.** `body:richtext` is a field with an editor in the dashboard: bold, italic, strikethrough, links, headings, lists, quotes, undo and redo. It is stored as HTML, and Laravel cleans that HTML against a list of tags (`rich_text` in `config/nevela.php`) when a record is saved and again when it is read, so `<p onclick="x()">Hi<script>alert(1)</script></p>` is stored as `<p>Hi</p>` whether it came from the form, the API, "Add several" or a CSV import. A record's page shows it formatted, a table shows its first words, and `nevela seed` writes a few paragraphs with a heading and a list. See [Field types](apps/docs/src/content/docs/concepts/field-types.md).
 - **Actions on a record.** An `actions` section in a descriptor names what can be done beyond create, edit and delete: accept an application, send an announcement. `nevela generate` writes a class for each, once (`app/Nevela/Actions/<Resource>/<Action>.php`), and you write what it does in `handle()`. Nevela gives it the route, a button on the record's page and in its row menu (or beside New, for one on the list as a whole), a confirmation, a sheet for what it asks for, the message it returns as a toast, and a database transaction around it. Each is a permission of its own on the Roles screen (`internship_applications.accept`), which an administrator has and nobody else does until given it by name. See [Actions on a record](apps/docs/src/content/docs/guides/actions.md).
 - **Private files.** A file field can be marked private (`cv:file(pdf|private)`, or `"private": true` in the descriptor). The file is kept on `uploads.private_disk`, which the web server doesn't serve, and its key opens nothing: `GET /_nevela/files/<key>` answers 404. It is fetched from `GET /_nevela/private/<slug>/<id>/<field>` by someone signed in who may view that record, with `Cache-Control: private, no-store`. The dashboard shows a download in place of a public link. It stays unreachable while its record is in the trash, and is deleted when the record is removed for good. See [Files and images](apps/docs/src/content/docs/guides/images.md#private-files).
+- **A public site on your API.** A `public` section in a descriptor opens part of a resource to anyone, with no sign-in: `read` (the fields that may be seen, and the unique field one record is fetched by) and `create` (the fields a visitor may send, and a throttle). The routes are under `/api/public/<slug>`, only for what a section names, and are listed in `routes/nevela-public.php`. Which records can be read is the model's `publicQuery` scope, which lets nothing through until you write it. A field that isn't listed can't be reached by sorting, filtering or search either. A form can carry a file: `PUT /api/public/_nevela/uploads/<Resource>/<field>` gives a key that is good once and for an hour, and uploads never used are removed each night. In the web app, `laravelPublic()` reads what is public into Next's cache, which the dashboard revalidates when it saves a record. See [A public site on your API](apps/docs/src/content/docs/guides/public-site.md).
+- **A field can have a default**: `status:enum(pending|paid)=pending`, or `"default": "pending"` in the descriptor. It is what the field is when a create leaves it out, and the column's default. An adopted column brings its own.
 - **A string or text field can have a length of its own**: `excerpt:string(500)`, or `"maxLength": 500` in the descriptor. The column, the validation and the dashboard's form use it. An adopted `varchar(500)` keeps its 500.
 - The docs' [changelog page](https://nevela-docs.vercel.app/reference/changelog/) opens with **Releases by week**: every release as a version and one line saying what it was about, grouped by the week it came out, each linking to its full entry below. The entries follow as before.
 - Each release has that line in `CHANGELOG.md`, in italics under its version. `pnpm release` says so when the notes for a new one have none.
@@ -25,6 +27,8 @@ _Adopt a table you already have, integer ids, rich text, actions on a record, pr
 
 - In a role's grants, `*` after the dot (`products.*`, `@resources.*`) means create, view, edit and delete, as it always has in practice: those were the only four. A resource's own action is not covered by it, only by its own name or by `*` alone. No role changes what it allows by upgrading.
 - `resources/index.ts` in the dashboard also exports `extras`, which `nevela generate` writes.
+- `nevela generate` writes `routes/nevela-public.php` in every app. With no `public` section anywhere it holds no routes.
+- `nevela trash` also removes files uploaded through a public form and never used.
 
 ### Fixed
 

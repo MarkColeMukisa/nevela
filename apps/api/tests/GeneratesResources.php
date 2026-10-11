@@ -55,6 +55,8 @@ trait GeneratesResources
         }
         $new = array_values(array_filter($all, fn (Descriptor $d) => ! in_array($d->name, ['Category', 'Product'], true)));
         Route::prefix('api')->middleware(config('nevela.middleware'))->group($this->file($generator->routes($new)->contents));
+        // And what their "public" sections open, as the service provider loads routes/nevela-public.php.
+        Route::prefix('api/public')->middleware('api')->name('nevela.public.')->group($this->file($generator->publicRoutes($new)->contents));
     }
 
     /** @param callable(list<Descriptor>): list<Descriptor> $describe */
