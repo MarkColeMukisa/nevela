@@ -2,6 +2,7 @@
 
 namespace Nevela\Laravel\Generator;
 
+use Nevela\Laravel\Support\Action;
 use Nevela\Laravel\Support\Descriptor;
 use Nevela\Laravel\Support\Field;
 use Nevela\Laravel\Support\Naming;
@@ -41,7 +42,48 @@ final class ResourceGenerator
             new GeneratedFile($api, "app/Policies/{$d->name}Policy.php", $this->policy($d), GeneratedFile::MODE_ONCE),
             new GeneratedFile(GeneratedFile::TARGET_WEB, 'resources/'.Naming::kebab($d->name).'.resource.ts', $this->typescript($d, $all)),
             ...$this->pages($d),
+            ...array_values(array_map(fn (Action $action) => new GeneratedFile($api, "app/Nevela/Actions/{$d->name}/{$action->className()}.php", $this->action($d, $action), GeneratedFile::MODE_ONCE), $d->actions)),
         ];
+    }
+
+    /**
+     * The class an action is written in: what happens when its button is pressed. Written
+     * once and then the app's own, like a policy. Until someone fills it in it says so.
+     */
+    public function action(Descriptor $d, Action $action): string
+    {
+        $var = $d->variable();
+        $class = $action->className();
+        $path = "app/Nevela/Actions/{$d->name}/{$class}.php";
+        $asks = $action->fields === [] ? 'It asks for nothing, so $input is empty.' : 'What the person filled in, checked: '.implode(', ', array_keys($action->fields)).'.';
+        [$imports, $signature, $what] = $action->on === 'record'
+            ? ["\nuse App\\Models\\{$d->name};\n", "{$d->name} \${$var}, array \$input", "on one {$this->lower($d->label)}"]
+            : ['', 'array $input', "on {$this->lower($d->pluralLabel)} as a whole"];
+        $permission = "{$d->table}.{$action->key()}";
+
+        return <<<PHP
+        <?php
+
+        namespace App\Nevela\Actions\\{$d->name};
+        {$imports}
+        /**
+         * {$action->label}, {$what}. Generated once — this file is yours.
+         *
+         * Nevela has done the rest by the time handle() runs: the route, the "{$permission}"
+         * permission, the check that the action applies, and the validation of what was asked
+         * for. It runs inside a database transaction, so throwing undoes what it changed, and
+         * the person is told it didn't work. What it returns is the message they see.
+         */
+        class {$class}
+        {
+            /** @param array<string, mixed> \$input {$asks} */
+            public function handle({$signature}): ?string
+            {
+                throw new \LogicException('{$action->label} does nothing yet. Write it in {$path}.');
+            }
+        }
+
+        PHP;
     }
 
     /**
@@ -325,6 +367,14 @@ final class ResourceGenerator
         $body = $names === []
             ? 'export const resources = [] as const;'
             : implode("\n", $imports)."\n\nexport { {$list} };\nexport const resources = [{$list}] as const;";
+        // What Flare's descriptor has no place for, by resource name: the actions a resource has.
+        $extras = [];
+        foreach ($all as $d) {
+            if ($d->actions !== []) {
+                $extras[$d->name]['actions'] = array_map(fn (Action $a) => ['permission' => "{$d->table}.{$a->key()}"] + $a->toArray(), $d->actions);
+            }
+        }
+        $body .= "\n\n/** What a resource has beyond its fields. Read through lib/extras.ts. */\nexport const extras: Record<string, unknown> = ".($extras === [] ? '{}' : json_encode($extras, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)).';';
         $m = self::M;
         $e = self::E;
 
@@ -431,6 +481,61 @@ final class ResourceGenerator
         PHP);
     }
 
+    /**
+     * The routes anyone can call: only for resources with a "public" section, and only
+     * what each one's section opens. Loaded by Nevela under {prefix}/public with the api
+     * middleware and no sign-in.
+     *
+     * @param  list<Descriptor>  $all
+     */
+    public function publicRoutes(array $all): GeneratedFile
+    {
+        usort($all, fn (Descriptor $a, Descriptor $b) => strcmp($a->slug, $b->slug));
+        $controller = '\\Nevela\\Laravel\\Http\\PublicController::class';
+        $lines = [];
+        foreach ($all as $d) {
+            $public = $d->public;
+            if ($public === null) {
+                continue;
+            }
+            $more = implode('', array_map(fn (string $name) => ", '{$name}'", $public->middleware));
+            $for = "->defaults('resource', '{$d->name}')";
+            // The third part names the count. Without it Laravel keeps one per visitor for every
+            // throttled route there is, and reading a few pages would use up a form's allowance.
+            // (nevela.throttle is Laravel's throttle, counting the visitor and not the web app's server: see PublicThrottle.)
+            $throttle = fn (string $limit, string $what) => "'nevela.throttle:{$limit},{$d->slug}.{$what}:'";
+            if ($public->read !== null) {
+                $lines[] = "Route::get('{$d->slug}', [{$controller}, 'index']){$for}->middleware([{$throttle($public->readThrottle, 'read')}{$more}])->name('{$d->slug}.index');";
+                $lines[] = "Route::get('{$d->slug}/{id}', [{$controller}, 'show']){$for}->middleware([{$throttle($public->readThrottle, 'read')}{$more}])->name('{$d->slug}.show');";
+            }
+            if ($public->create !== null) {
+                $lines[] = "Route::post('{$d->slug}', [{$controller}, 'store']){$for}->middleware([{$throttle($public->createThrottle, 'create')}{$more}])->name('{$d->slug}.store');";
+                foreach ($public->create as $field) {
+                    if ($d->fields[$field]->kind === 'file') {
+                        $lines[] = "Route::put('_nevela/uploads/{$d->name}/{$field}', [{$controller}, 'upload']){$for}->defaults('field', '{$field}')->middleware([{$throttle($public->createThrottle, 'upload')}{$more}])->name('{$d->slug}.upload.{$field}');";
+                    }
+                }
+            }
+        }
+        $body = $lines === [] ? '// No resource has a "public" section, so nothing is open.' : implode("\n", $lines);
+        $m = self::M;
+        $e = self::E;
+
+        return new GeneratedFile(GeneratedFile::TARGET_API, 'routes/nevela-public.php', <<<PHP
+        <?php
+
+        use Illuminate\Support\Facades\Route;
+
+        // What anyone can call without signing in: {prefix}/public/… (default: /api/public).
+        // Written from each resource's "public" section by `php artisan nevela:generate`.
+        // A resource without one has no route here, and so nothing of it is open.
+        {$m}
+        {$body}
+        {$e}
+
+        PHP);
+    }
+
     /** @param list<Descriptor> $all */
     public function model(Descriptor $d, array $all = []): string
     {
@@ -472,6 +577,22 @@ final class ResourceGenerator
             }
         }
         $castBlock = $casts ? implode("\n", $casts) : '';
+        // Written with the model, outside its generated block: which records are public is the app's to say.
+        $scope = $d->public?->read === null ? '' : <<<PHP
+
+
+            /**
+             * Which {$this->lower($d->pluralLabel)} anyone may read, signed in or not. The public list and
+             * the public page of one both go through here. It lets nothing through until you
+             * say what may be: for instance
+             *
+             *     \$query->whereNotNull('published_at')->where('published_at', '<=', now());
+             */
+            public function scopePublicQuery(\Illuminate\Database\Eloquent\Builder \$query): void
+            {
+                \$query->whereRaw('1 = 0');
+            }
+        PHP;
         // An integer id is Eloquent's own default: the database numbers the records.
         [$import, $trait] = $d->idType === 'int' ? ['', ''] : ["use Illuminate\\Database\\Eloquent\\Concerns\\HasUuids;\n", "    use HasUuids;\n\n"];
         $m = self::M;
@@ -502,7 +623,7 @@ final class ResourceGenerator
             }{$relationBlock}
             {$e}
 
-            // Your own relationships, scopes and accessors go here — outside the generated block.
+            // Your own relationships, scopes and accessors go here — outside the generated block.{$scope}
         }
 
         PHP;
@@ -527,8 +648,8 @@ final class ResourceGenerator
             }
             $line = match (true) {
                 $f->kind === 'file' => "\$table->string('{$c}', 512)",
-                // More than a text column holds on MySQL.
-                $f->kind === 'text' && $f->maxLength > 65535 => "\$table->longText('{$c}')",
+                // More than a text column holds on MySQL, or HTML, whose tags count against it too.
+                $f->kind === 'text' && ($f->isRich() || $f->maxLength > 65535) => "\$table->longText('{$c}')",
                 $f->kind === 'text' => "\$table->text('{$c}')",
                 $f->kind === 'int' => "\$table->integer('{$c}')",
                 $f->kind === 'float' && $f->format === 'money' => "\$table->decimal('{$c}', 12, 2)",
@@ -542,6 +663,10 @@ final class ResourceGenerator
             };
             if (! $f->required) {
                 $line .= '->nullable()';
+            }
+            if ($f->default !== null && $f->kind !== 'text') {
+                // (A text column can't have one on MySQL; the request supplies it there.)
+                $line = str_replace('->default(false)', '', $line).'->default('.var_export($f->default, true).')';
             }
             if ($f->unique) {
                 $line .= '->unique()';
@@ -645,6 +770,27 @@ final class ResourceGenerator
         }
         $ruleLines = implode("\n", $rules);
         $columnMap = implode(', ', $columns);
+        $defaults = implode(', ', array_map(fn (Field $f) => "'{$f->name}' => ".var_export($f->default, true), array_filter($d->fields, fn (Field $f) => $f->default !== null)));
+        $defaultsBlock = $defaults === '' ? '' : <<<PHP
+
+
+            /** What a field is when a create leaves it out. */
+            protected function defaults(): array
+            {
+                return [{$defaults}];
+            }
+        PHP;
+        // Only where there is one: a resource without rich text has the request it always had.
+        $rich = implode(', ', array_map(fn (Field $f) => "'{$f->name}'", array_filter($d->fields, fn (Field $f) => $f->isRich())));
+        $richBlock = $rich === '' ? '' : <<<PHP
+
+
+            /** Fields that hold HTML. It is cleaned before it is checked, so the length is that of what is kept. */
+            protected function rich(): array
+            {
+                return [{$rich}];
+            }
+        PHP;
         $m = self::M;
         $e = self::E;
 
@@ -686,7 +832,7 @@ final class ResourceGenerator
             protected function columns(): array
             {
                 return [{$columnMap}];
-            }
+            }{$richBlock}{$defaultsBlock}
             {$e}
         }
 
@@ -700,6 +846,10 @@ final class ResourceGenerator
     private function rules(Descriptor $d, Field $f, array $all = []): array
     {
         $rules = [$f->required ? "'required'" : "'nullable'"];
+        // With a default, leaving it out is saying "the usual". Sent, it is checked like any other.
+        if ($f->default !== null) {
+            array_unshift($rules, "'sometimes'");
+        }
         // A length of the field's own takes the place of the usual one.
         $max = fn (int $usual) => "'max:".($f->maxLength ?? $usual)."'";
         $type = match (true) {
@@ -738,6 +888,8 @@ final class ResourceGenerator
             $value = match (true) {
                 $f->kind === 'date' => "\$this->{$f->column()}?->format('Y-m-d')",
                 $f->kind === 'datetime' => "\$this->{$f->column()}?->toJSON()",
+                // Cleaned again on the way out: HTML can reach a table without passing a request.
+                $f->isRich() => "\\Nevela\\Laravel\\Nevela::html(\$this->{$f->column()})",
                 // An id is a string in the API whatever it is in the database.
                 $f->kind === 'belongsTo' && $this->hasIntIds((string) $f->target, $d, $all) => "\$this->{$f->column()} === null ? null : (string) \$this->{$f->column()}",
                 default => "\$this->{$f->column()}",
@@ -745,7 +897,10 @@ final class ResourceGenerator
             $lines[] = "            '{$f->name}' => {$value},";
             if ($f->kind === 'file') {
                 // The key is what a record stores; this is what a page needs to show it.
-                $lines[] = "            '{$f->name}File' => \\Nevela\\Laravel\\Nevela::file(\$this->{$f->column()}),";
+                $lines[] = $f->private
+                    // A private file is fetched through its record, so its details say which record.
+                    ? "            '{$f->name}File' => \\Nevela\\Laravel\\Nevela::privateFile(\$this->{$f->column()}, '{$d->slug}', \$this->getKey(), '{$f->name}'),"
+                    : "            '{$f->name}File' => \\Nevela\\Laravel\\Nevela::file(\$this->{$f->column()}),";
             }
         }
         $body = implode("\n", $lines);
@@ -989,12 +1144,21 @@ final class ResourceGenerator
                 'label' => $f->label ? $j($f->label) : null,
                 'format' => in_array($f->format, ['money', 'percent', 'rating'], true) ? $j($f->format) : null,
                 'maxLength' => $f->maxLength !== null ? (string) $f->maxLength : null,
+                'default' => $f->default !== null ? $j($f->default) : null,
                 // What the migration does when the parent goes: an optional link is cleared.
                 'onDelete' => $f->kind === 'belongsTo' && ! $f->required ? '"set null"' : null,
-                // A picture is worth a column in the table; other files are not.
-                'list' => $f->isImage() ? 'true' : null,
+                // A picture is worth a column in the table; other files are not, and a private one has no thumbnail to show.
+                'list' => $f->isImage() && ! $f->private ? 'true' : null,
             ]);
-            $opts = $options ? '{ '.implode(', ', array_map(fn ($k, $v) => "{$k}: {$v}", array_keys($options), $options)).' }' : '';
+            $parts = array_map(fn ($k, $v) => "{$k}: {$v}", array_keys($options), $options);
+            if ($f->private) {
+                $parts[] = '...({ private: true } as {})';
+            }
+            if ($f->isRich()) {
+                // Flare has no word for it, so it is said in passing: the dashboard reads `rich` off the field.
+                $parts[] = '...({ rich: true } as {})';
+            }
+            $opts = $parts ? '{ '.implode(', ', $parts).' }' : '';
             $call = match (true) {
                 $f->kind === 'belongsTo' => "field.belongsTo({$j($f->target)}".($opts ? ", {$opts}" : '').')',
                 $f->kind === 'file' => "field.file({$j($f->accept)}".($opts ? ", {$opts}" : '').')',

@@ -32,7 +32,9 @@ use Nevela\Laravel\Http\FlareErrors;
 use Nevela\Laravel\Http\Auth\AccountController;
 use Nevela\Laravel\Http\Auth\SecurityController;
 use Nevela\Laravel\Http\Auth\SignInController;
+use Nevela\Laravel\Http\PublicThrottle;
 use Nevela\Laravel\Http\TokenController;
+use Nevela\Laravel\Http\ActionController;
 use Nevela\Laravel\Http\TrashController;
 use Nevela\Laravel\Http\UploadController;
 use Nevela\Laravel\Media\Uploads;
@@ -173,12 +175,21 @@ final class NevelaServiceProvider extends ServiceProvider
             'app' => Nevela::fingerprint(),
         ]))->name('nevela.ping');
 
+        Route::aliasMiddleware('nevela.throttle', PublicThrottle::class);
+
+        // What a resource's "public" section opens: no sign-in, and each route its own throttle.
+        if (is_file($open = base_path('routes/nevela-public.php'))) {
+            Route::prefix(trim($prefix.'/public', '/'))->middleware('api')->name('nevela.public.')->group($open);
+        }
+
         // Stored files. Open, like any image on a website: the key is the secret.
         Route::prefix($prefix)->middleware('api')->get('_nevela/files/{path}', [UploadController::class, 'show'])
             ->where('path', '.*')->name('nevela.files.show');
 
         Route::prefix($prefix)->middleware(config('nevela.middleware', ['api', 'auth:sanctum']))->name('nevela.')->group(function () {
             Route::put('_nevela/uploads/{resource}/{field}', [UploadController::class, 'store'])->name('uploads.store');
+            // A private file: only for someone who may view the record it belongs to.
+            Route::get('_nevela/private/{slug}/{id}/{field}', [UploadController::class, 'download'])->name('private.show');
 
             // The image profiles, for a client that wants to know which renditions exist.
             Route::get('_nevela/profiles', fn () => response()->json([
@@ -221,6 +232,10 @@ final class NevelaServiceProvider extends ServiceProvider
             Route::get('_nevela/resources', fn () => response()->json([
                 'data' => array_map(fn ($d) => $d->toArray(), Nevela::all()),
             ]))->name('resources');
+
+            // A resource's own actions: on one record, and on the list or a selection from it.
+            Route::post('{slug}/_actions/{action}', [ActionController::class, 'collection'])->name('actions.collection');
+            Route::post('{slug}/{id}/_actions/{action}', [ActionController::class, 'record'])->name('actions.record');
 
             if (is_file($routes = base_path('routes/nevela.php'))) {
                 require $routes;

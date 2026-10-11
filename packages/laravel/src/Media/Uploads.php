@@ -22,12 +22,42 @@ use Throwable;
  */
 final class Uploads
 {
+    /** Who uploaded a file that came in through a public form and hasn't been used in a create yet. */
+    public const UNCLAIMED = 'public:unclaimed';
+
+    /** And one that has: it belongs to a record now, like any other. */
+    public const CLAIMED = 'public';
+
+    /** What every private file's key starts with. */
+    public const PRIVATE_PREFIX = 'private/';
+
     /** @var array<string, Upload|null> Rows already looked up in this request, by key. */
     private static array $loaded = [];
 
     public static function disk(): string
     {
         return (string) config('nevela.uploads.disk', 'public');
+    }
+
+    /** Where private files are kept: a disk the web server doesn't serve. */
+    public static function privateDisk(): string
+    {
+        return (string) config('nevela.uploads.private_disk', 'local');
+    }
+
+    /**
+     * Whether a key is a private file's. It is said by the key itself, so that nothing
+     * which hands out files by key has to look anything up to know it must not.
+     */
+    public static function isPrivate(?string $key): bool
+    {
+        return is_string($key) && str_starts_with($key, self::PRIVATE_PREFIX);
+    }
+
+    /** Where a private file is on its disk, beside the originals Nevela keeps there. */
+    public static function privatePath(string $key): string
+    {
+        return 'nevela/'.$key;
     }
 
     public static function maxBytes(): int
@@ -72,6 +102,23 @@ final class Uploads
             'uploaded_by' => $uploadedBy,
         ];
         $profile = self::profile($field->profile);
+
+        // A private file is stored as it came, where the web server doesn't reach. Nothing
+        // is made from it: a thumbnail would be a copy of it on a disk anyone can read.
+        if ($field->private) {
+            $key = self::PRIVATE_PREFIX."{$base}.{$extension}";
+            self::write(Storage::disk(self::privateDisk()), self::privatePath($key), $bytes);
+            $size = str_starts_with($mime, 'image/') ? @getimagesizefromstring($bytes) : false;
+
+            return self::remember(Upload::create(['disk' => self::privateDisk()] + $row + [
+                'key' => $key,
+                'mime' => $mime,
+                'size' => strlen($bytes),
+                'width' => $size ? $size[0] : null,
+                'height' => $size ? $size[1] : null,
+                'optimised' => false,
+            ]));
+        }
 
         if ($field->isImage() && in_array($mime, ImageOptimizer::OPTIMISABLE, true)) {
             $written = [];
@@ -193,6 +240,11 @@ final class Uploads
             return null;
         }
         $upload = self::find($key);
+        // A private file has no address of its own. It is fetched through the record it
+        // belongs to (see privateRef), by someone who may view that record.
+        if (self::isPrivate($key)) {
+            return ['key' => $key, 'url' => null, 'private' => true, 'name' => $upload?->name, 'mime' => $upload?->mime, 'size' => $upload?->size];
+        }
         if ($upload === null) {
             return ['key' => $key, 'url' => self::url($key)];
         }
@@ -217,6 +269,65 @@ final class Uploads
             'optimised' => $upload->optimised,
             'renditions' => (object) $renditions,
         ];
+    }
+
+    /**
+     * A private file as a record shows it: what it is, and the address it is fetched from,
+     * which names the record and the field and never the key.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function privateRef(?string $key, string $slug, mixed $id, string $field): ?array
+    {
+        $ref = self::ref($key);
+        if ($ref === null || ! self::isPrivate($key)) {
+            return $ref;
+        }
+
+        return ['url' => route('nevela.private.show', ['slug' => $slug, 'id' => $id, 'field' => $field])] + $ref;
+    }
+
+    /**
+     * Remove a private file for good: from its disk, and the record of it. For when the
+     * record it belonged to has been removed for good.
+     */
+    public static function discard(string $key): void
+    {
+        if (! self::isPrivate($key)) {
+            return;
+        }
+        $upload = Upload::query()->where('key', $key)->first();
+        Storage::disk($upload?->disk ?? self::privateDisk())->delete(self::privatePath($key));
+        $upload?->delete();
+        unset(self::$loaded[$key]);
+    }
+
+    /**
+     * Remove what visitors uploaded and never used: a form that was started and left.
+     * Each such file waits an hour for its create (PublicController::CLAIM_SECONDS), and
+     * goes after that, with anything that was made from it.
+     *
+     * @return int How many were removed
+     */
+    public static function purgeUnclaimed(int $olderThanSeconds = 3600): int
+    {
+        $removed = 0;
+        Upload::query()->where('uploaded_by', self::UNCLAIMED)->where('created_at', '<', now()->subSeconds($olderThanSeconds))->orderBy('id')
+            ->chunkById(200, function ($uploads) use (&$removed) {
+                foreach ($uploads as $upload) {
+                    $disk = Storage::disk($upload->disk);
+                    $disk->delete(self::isPrivate($upload->key) ? self::privatePath($upload->key) : $upload->key);
+                    $disk->delete(array_column($upload->renditions ?? [], 'key'));
+                    if ($upload->original_key !== null) {
+                        Storage::disk((string) config('nevela.uploads.originals_disk', 'local'))->delete($upload->original_key);
+                    }
+                    unset(self::$loaded[$upload->key]);
+                    $upload->delete();
+                    $removed++;
+                }
+            });
+
+        return $removed;
     }
 
     public static function forget(): void

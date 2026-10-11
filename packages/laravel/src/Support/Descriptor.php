@@ -19,6 +19,8 @@ final class Descriptor
      * @param  array<string, Field>  $fields  keyed by field name, in declaration order
      * @param  string  $idType  "uuid" or "int". Chosen when the resource is made: changing it later means migrating the table yourself.
      * @param  bool  $adopted  The table was there before Nevela, so no migration is written to create it
+     * @param  array<string, Action>  $actions  What can be done to a record or to the list beyond create, edit and delete, by name
+     * @param  PublicAccess|null  $public  What of it anyone may read or create without signing in. Nothing, when null.
      */
     public function __construct(
         public readonly string $name,
@@ -32,6 +34,8 @@ final class Descriptor
         public readonly ?string $titleField = null,
         public readonly string $idType = 'uuid',
         public readonly bool $adopted = false,
+        public readonly array $actions = [],
+        public readonly ?PublicAccess $public = null,
     ) {
         if (! preg_match('/^[A-Z][A-Za-z0-9]*$/', $name)) {
             throw new InvalidArgumentException('Resource name must be PascalCase, e.g. Product or BlogPost.');
@@ -45,6 +49,20 @@ final class Descriptor
         if ($titleField !== null && ! isset($fields[$titleField])) {
             throw new InvalidArgumentException("titleField \"{$titleField}\" is not a field of {$name}.");
         }
+        $keys = [];
+        foreach ($actions as $action) {
+            foreach (array_keys($action->when) as $field) {
+                if (! isset($fields[$field])) {
+                    throw new InvalidArgumentException("Action \"{$action->name}\" of {$name} depends on \"{$field}\", which is not one of its fields.");
+                }
+            }
+            // sendNow and send_now would be the same permission.
+            if (isset($keys[$action->key()])) {
+                throw new InvalidArgumentException("{$name} has two actions that come to \"{$action->key()}\".");
+            }
+            $keys[$action->key()] = true;
+        }
+        $public?->check($name, $fields);
     }
 
     /** Build from a name and a `--fields` string: "name:string, price:money, status:enum(draft|live)?". */
@@ -90,6 +108,10 @@ final class Descriptor
             $fields[$key] = Field::fromArray($key, (array) $field);
         }
         $base = self::make($name, $fields);
+        $actions = [];
+        foreach ((array) ($data['actions'] ?? []) as $key => $action) {
+            $actions[(string) $key] = Action::fromArray((string) $key, (array) $action);
+        }
 
         return new self(
             $name,
@@ -103,6 +125,8 @@ final class Descriptor
             $data['titleField'] ?? null,
             (string) ($data['id'] ?? 'uuid'),
             (bool) ($data['adopted'] ?? false),
+            $actions,
+            isset($data['public']) ? PublicAccess::fromArray((array) $data['public']) : null,
         );
     }
 
@@ -132,6 +156,8 @@ final class Descriptor
             'group' => $this->group,
             'titleField' => $this->titleField,
             'fields' => array_map(fn (Field $f) => $f->toArray(), $this->fields),
+            'actions' => $this->actions ? array_map(fn (Action $a) => $a->toArray(), $this->actions) : null,
+            'public' => $this->public?->toArray(),
         ], fn ($v) => $v !== null);
     }
 
@@ -153,6 +179,17 @@ final class Descriptor
         }
 
         return 'id';
+    }
+
+    /**
+     * This resource with only some of its fields: what a list of it is sorted, filtered
+     * and searched by when the list is the public one.
+     *
+     * @param  list<string>  $fields
+     */
+    public function only(array $fields): self
+    {
+        return new self($this->name, array_intersect_key($this->fields, array_flip($fields)), $this->table, $this->slug, $this->label, $this->pluralLabel, $this->icon, $this->group, null, $this->idType, $this->adopted);
     }
 
     public function variable(): string

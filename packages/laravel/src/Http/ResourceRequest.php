@@ -6,8 +6,10 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator as Validation;
+use Illuminate\Validation\Rules\Exists;
 use Illuminate\Validation\Rules\Unique;
 use Illuminate\Validation\Validator;
+use Nevela\Laravel\Support\Html;
 
 /**
  * Base for generated resource requests.
@@ -31,9 +33,102 @@ abstract class ResourceRequest extends FormRequest
     /** @return array<string, string> field => column */
     abstract protected function columns(): array;
 
+    /**
+     * Fields that hold rich text. A generated request with any says which.
+     *
+     * @return list<string>
+     */
+    protected function rich(): array
+    {
+        return [];
+    }
+
+    /**
+     * What a field is when a create leaves it out. A generated request with any says which.
+     *
+     * @return array<string, mixed> field => value
+     */
+    protected function defaults(): array
+    {
+        return [];
+    }
+
+    /**
+     * A create from some of the fields only: a public form's, where nobody is asked who
+     * they are and so only what the descriptor lists is taken.
+     *
+     * The rules are this request's own. A key that isn't listed is refused the way an
+     * unknown one is, and a field left out takes its default, or is left to the column.
+     *
+     * @param  list<string>  $fields  The fields that may be sent
+     * @param  array<string, mixed>  $input
+     * @return array{values: array<string, mixed>, issues: list<array{path: string, message: string}>}
+     */
+    public function forFields(array $fields, array $input): array
+    {
+        $input = self::cleaned($this->rich(), $input) + $input;
+        $issues = [];
+        foreach (array_keys($input) as $key) {
+            if (! in_array($key, $fields, true)) {
+                $issues[] = ['path' => (string) $key, 'message' => 'Unknown field.'];
+            }
+        }
+        $validator = Validation::make($input, array_intersect_key(self::withoutTrashed($this->rules()), array_flip($fields)));
+        if ($validator->fails()) {
+            self::explainTrashed($validator, $input);
+            array_push($issues, ...FlareErrors::issues($validator->errors()->toArray()));
+        }
+        if ($issues !== []) {
+            return ['values' => [], 'issues' => $issues];
+        }
+
+        $validated = $validator->validated();
+        $defaults = $this->defaults();
+        $values = [];
+        foreach ($this->columns() as $field => $column) {
+            if (array_key_exists($field, $validated)) {
+                $values[$column] = $validated[$field];
+            } elseif (array_key_exists($field, $defaults)) {
+                $values[$column] = $defaults[$field];
+            }
+        }
+
+        return ['values' => $values, 'issues' => []];
+    }
+
+    /**
+     * Rich text is cleaned before anything looks at it: what is checked for being there,
+     * and for being short enough, is the HTML that would be stored.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge(self::cleaned($this->rich(), $this->all()));
+    }
+
+    /**
+     * @param  list<string>  $fields
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed> The fields that were sent as text, cleaned. One with nothing left to read is empty.
+     */
+    private static function cleaned(array $fields, array $input): array
+    {
+        $clean = [];
+        foreach ($fields as $field) {
+            if (is_string($input[$field] ?? null)) {
+                $html = Html::clean($input[$field]);
+                $clean[$field] = $html === '' ? null : $html;
+            }
+        }
+
+        return $clean;
+    }
+
+    /** Tables known to have a trash. Only "yes" is remembered: the column can arrive with a migration. */
+    private static array $trashes = [];
+
     protected function validationRules()
     {
-        $rules = parent::validationRules();
+        $rules = self::withoutTrashed(parent::validationRules());
         if (! $this->isMethod('PATCH')) {
             return $rules;
         }
@@ -58,8 +153,35 @@ abstract class ResourceRequest extends FormRequest
     }
 
     /**
+     * A relation points at a record that is there, and one in the trash is not: nothing
+     * lists it and its own page answers 404. Laravel's exists rule looks at the table,
+     * where a deleted record still is, so it is told to leave those out.
+     *
+     * @param  array<string, mixed>  $rules
+     * @return array<string, mixed>
+     */
+    private static function withoutTrashed(array $rules): array
+    {
+        foreach ($rules as $set) {
+            foreach (is_array($set) ? $set : [] as $rule) {
+                if (! $rule instanceof Exists) {
+                    continue;
+                }
+                // "exists:categories,id": the rule keeps its table to itself.
+                $table = (string) strtok(substr((string) $rule, strlen('exists:')), ',');
+                if (self::$trashes[$table] ?? (Schema::hasColumn($table, 'deleted_at') && (self::$trashes[$table] = true))) {
+                    $rule->withoutTrashed();
+                }
+            }
+        }
+
+        return $rules;
+    }
+
+    /**
      * A unique value can be held by a record nobody can see: one in the trash. "Already
      * taken" would send someone looking through a list it isn't in, so say where it is.
+     * The same goes for a relation to a record that is in the trash.
      *
      * @param  array<string, mixed>  $data
      * @return list<array{path: string, message: string}> The messages that were replaced
@@ -82,6 +204,25 @@ abstract class ResourceRequest extends FormRequest
             $validator->errors()->add($field, $message);
             $replaced[] = ['path' => (string) $field, 'message' => $message];
         }
+        foreach ($validator->failed() as $field => $rules) {
+            // And for a failed exists rule: the table and the column, then what else it asked.
+            [$table, $column] = array_pad($rules['Exists'] ?? [], 2, null);
+            $value = $data[$field] ?? null;
+            if (! is_string($table) || ! is_string($column) || ! is_scalar($value) || ! (self::$trashes[$table] ?? false)) {
+                continue;
+            }
+            try {
+                $trashed = DB::table($table)->where($column, $value)->whereNotNull('deleted_at')->exists();
+            } catch (\Throwable) {
+                continue; // not something that could be an id at all
+            }
+            if ($trashed) {
+                $message = 'This one is in the trash. Restore it, or choose another.';
+                $validator->errors()->forget($field);
+                $validator->errors()->add($field, $message);
+                $replaced[] = ['path' => (string) $field, 'message' => $message];
+            }
+        }
 
         return $replaced;
     }
@@ -101,8 +242,9 @@ abstract class ResourceRequest extends FormRequest
      */
     public function many(array $rows): array
     {
-        $rules = $this->rules();
+        $rules = self::withoutTrashed($this->rules());
         $columns = $this->columns();
+        $defaults = $this->defaults();
         $known = array_keys($columns);
         $computed = array_map(fn (string $field) => $field.'File', $known);
         $unique = array_keys(array_filter($rules, fn ($rule) => is_array($rule) && array_filter($rule, fn ($one) => $one instanceof Unique) !== []));
@@ -124,6 +266,7 @@ abstract class ResourceRequest extends FormRequest
                     $issues[] = ['path' => (string) $key, 'message' => 'Unknown field.'];
                 }
             }
+            $row = self::cleaned($this->rich(), $row) + $row;
             $validator = Validation::make($row, $rules);
             if ($validator->fails()) {
                 self::explainTrashed($validator, $row);
@@ -152,6 +295,8 @@ abstract class ResourceRequest extends FormRequest
             foreach ($columns as $field => $column) {
                 if (array_key_exists($field, $validated)) {
                     $mapped[$column] = $validated[$field];
+                } elseif (array_key_exists($field, $defaults)) {
+                    $mapped[$column] = $defaults[$field];
                 }
             }
             $values[] = $mapped;
@@ -164,10 +309,14 @@ abstract class ResourceRequest extends FormRequest
     public function values(): array
     {
         $validated = $this->validated();
+        $defaults = $this->defaults();
         $values = [];
         foreach ($this->columns() as $field => $column) {
             if (array_key_exists($field, $validated)) {
                 $values[$column] = $validated[$field];
+            } elseif (array_key_exists($field, $defaults) && ! $this->isMethod('PATCH')) {
+                // Left out of a create, or of a replace, it is what it usually is.
+                $values[$column] = $defaults[$field];
             } elseif ($this->isMethod('PUT')) {
                 $values[$column] = null;
             }

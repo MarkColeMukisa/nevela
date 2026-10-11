@@ -123,6 +123,7 @@ Uploading takes the permission to create records of that resource (the policy's 
 |---|---|---|
 | `uploads.disk` | `public` | The disk from `config/filesystems.php` files are stored on. Use `s3` in production if the app runs on more than one server. |
 | `uploads.originals_disk` | `local` | Where untouched originals go. Never served. |
+| `uploads.private_disk` | `local` | Where [private files](#private-files) go. Never served: not `public`, and not a bucket anyone can read. |
 | `uploads.url` | none | If a CDN or your web server serves the disk, its address. The API's links then point there. |
 | `uploads.max_bytes` | 10 MB | The largest file a field takes. |
 | `uploads.memory` | `512M` | Memory allowed while an image is optimised. |
@@ -130,8 +131,35 @@ Uploading takes the permission to create records of that resource (the policy's 
 Files are handed out by `GET /api/_nevela/files/<key>`, so nothing needs linking or publishing for it to work. Only files uploaded through Nevela are served this way, whatever else is on the disk. The response may be cached for good: a key is never reused.
 
 :::caution
-A file's key is unguessable, but anyone who has it can fetch the file. Do not use these fields for documents that must stay private.
+A file's key is unguessable, but anyone who has it can fetch the file. For a document that must stay private, use a [private file](#private-files).
 :::
+
+## Private files
+
+A CV, a contract, a scan of an identity card: a file only some people may read. Mark the field private:
+
+```sh
+nevela resource Candidate --fields="name:string, cv:file(pdf|document|private)?"
+```
+
+In the descriptor that is `"private": true` on the field.
+
+| | A file | A private file |
+|---|---|---|
+| Kept on | `uploads.disk` (`public`) | `uploads.private_disk` (`local`), which the web server must not serve |
+| Fetched from | `GET /api/_nevela/files/<key>`, by anyone with the key | `GET /api/_nevela/private/<slug>/<id>/<field>`, signed in, by someone who may view that record |
+| Its key | is its address | opens nothing: the files route answers 404 for it |
+| Caching | for good | never: `Cache-Control: private, no-store` |
+| An image | is optimised, with renditions | is kept as it came, with nothing made from it |
+| When the record is removed for good | stays on the disk | is deleted |
+
+Who may fetch one is the resource's policy: its `view`. Someone signed in without it is answered 403.
+
+In the dashboard a private file is shown as its name with a lock, and the name downloads it. It is not a column in the table unless you add it, since there is no thumbnail to show.
+
+While its record is in [the trash](/guides/trash/) the file stays where it is and nobody can fetch it. Restoring the record brings it back; removing the record for good removes the file. If two records hold the same file, it goes with the last of them.
+
+The record's own JSON gives the address to fetch it from, in `<field>File.url`, and never puts the key in one.
 
 ## Requirements
 
@@ -139,5 +167,5 @@ Optimising needs PHP's GD extension, which most PHP installations have (Laravel 
 
 ## Not done yet
 
-- Files are not deleted when their record is, or when a field is given a new file. They stay on the disk.
+- Files are not deleted when their record is, or when a field is given a new file. They stay on the disk. A [private file](#private-files) is deleted with its record, though not when the field is given a new one.
 - Uploads are capped at the size PHP can hold in memory. For large video, upload to your storage directly and store the address in a `url` field.

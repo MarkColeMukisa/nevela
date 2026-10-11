@@ -3,6 +3,8 @@ import { FileCell } from "@/components/dashboard/fields/file-cell";
 import { ArrowDownIcon, ArrowUpIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsUpDownIcon, PlusIcon } from "lucide-react";
 import { clientResource, formatValue, optionLabel, statusTone, storedFields, type Resource, type StoredField } from "@flaredev/core";
 import { isSortable } from "@/lib/resource/query";
+import { privateFileUrl } from "@/lib/files";
+import { isRich, richToText } from "@/lib/rich";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,7 +18,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { resourcePath, adminPermissions, allResources, dashboardStore, requireAccess } from "@/lib/dashboard";
+import { resourcePath, adminPermissions, allowedActions, allResources, dashboardStore, requireAccess } from "@/lib/dashboard";
+import { actionApplies } from "@/lib/extras";
 import { site } from "@/lib/site";
 import { trashFor } from "@/lib/trash";
 import { cn } from "@/lib/utils";
@@ -26,6 +29,7 @@ import { isInlineEditable } from "./editable";
 import { InlineCell } from "./inline-cell";
 import type { RelationMeta } from "./fields/field-widget";
 import { BulkCreateButton } from "./bulk-create-grid";
+import { ActionButtons } from "./resource-action";
 import { ResourceInsights } from "./resource-insights";
 import { ImportDialog } from "./import-dialog";
 import { LocalTime } from "./local-time";
@@ -96,6 +100,9 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
   }
 
   const overlayForms = site.dashboard.forms === "sheet";
+  // The resource's own actions this person may run: on the list as a whole, and on a record.
+  const actions = await allowedActions(resource.name);
+  const onRecords = actions.filter((action) => action.on === "record");
   const rowIds = rows.map((row) => String(row.id));
   const exportColumns = [{ key: "id", label: "Id" }, ...fields.filter(([, def]) => def.kind !== "file").map(([key, def]) => ({ key, label: def.label }))];
 
@@ -115,6 +122,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
         <div className="flex flex-wrap items-center gap-2">
           <ColumnMenu columns={allColumns.map(({ key, label }) => ({ key, label }))} visible={columns.map((column) => column.key)} />
           <ExportButton resourceName={resource.name} pluralLabel={resource.pluralLabel} />
+          <ActionButtons resourceName={resource.name} actions={actions.filter((action) => action.on === "collection")} />
           {permissions.create && <ImportDialog resource={forClient} />}
           {permissions.create && <BulkCreateButton resource={forClient} relations={relations} />}
           {permissions.create &&
@@ -213,10 +221,13 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
                       } else if (column.def.kind === "enum" && value != null) {
                         const tone = statusTone(value);
                         content = <Badge variant={tone === "neutral" ? "secondary" : tone}>{content}</Badge>;
+                      } else if (isRich(column.def) && typeof value === "string") {
+                        // The start of it, as words: markup is noise in a table.
+                        content = richToText(value, 120);
                       } else if (column.def.kind === "file" && typeof value === "string" && value) {
                         // A thumbnail for an image, a filename for anything else — the raw
                         // object key is noise in a table.
-                        content = <FileCell resourceName={resource.name} fieldKey={column.key} value={value} />;
+                        content = <FileCell resourceName={resource.name} fieldKey={column.key} value={value} download={privateFileUrl(resource.slug, String(row.id), column.key)} />;
                       } else if (column.def.kind === "multiselect" && Array.isArray(value) && value.length) {
                         const def = column.def;
                         content = (
@@ -304,6 +315,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
                         canUpdate={permissions.update}
                         canDelete={permissions.delete}
                         trash={trash}
+                        actions={onRecords.filter((action) => actionApplies(action, row))}
                       />
                     </TableCell>
                   </TableRow>
@@ -398,6 +410,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
         label={resource.label}
         pluralLabel={resource.pluralLabel}
         canDelete={permissions.delete}
+        actions={onRecords.filter((action) => action.many)}
         rows={rows}
         columns={exportColumns}
         slug={resource.slug}

@@ -1,3 +1,4 @@
+import { actionsOf, type ResourceAction } from "@/lib/extras";
 import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { can, type Policy, type PolicyAction, type Resource } from "@flaredev/core";
@@ -94,6 +95,15 @@ export async function adminPermissions(resourceName: string): Promise<Record<Exc
   if (!resource) return { read: false, create: false, update: false, delete: false };
   const [read, create, update, remove] = await Promise.all((["read", "create", "update", "delete"] as const).map((action) => mayDo(resource, action)));
   return { read: read!, create: create!, update: update!, delete: remove! };
+}
+
+/**
+ * The resource's own actions that the current person may run, for drawing their buttons.
+ * Each is a permission by name. Laravel checks it again when the button is pressed.
+ */
+export async function allowedActions(resourceName: string): Promise<ResourceAction[]> {
+  const { session, may } = await dashboardSession();
+  return session ? actionsOf(resourceName).filter((action) => may(action.permission)) : [];
 }
 
 const stores = new Map<string, ResourceStore>();

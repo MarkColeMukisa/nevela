@@ -7,6 +7,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Nevela\Laravel\Media\Uploads;
 use Nevela\Laravel\Support\Descriptor;
@@ -76,7 +77,18 @@ final class Nevela
      */
     public static function list(Builder $query, string $name, Request $request, string $resourceClass): JsonResponse
     {
-        $resource = self::resource($name);
+        return self::listFor($query, self::resource($name), $request, $resourceClass);
+    }
+
+    /**
+     * The same, for a descriptor that was handed over and not looked up: the public list
+     * is the resource with only the fields anyone may see, so nothing else can be sorted,
+     * filtered or searched by.
+     *
+     * @param  class-string<\Illuminate\Http\Resources\Json\JsonResource>  $resourceClass
+     */
+    public static function listFor(Builder $query, Descriptor $resource, Request $request, string $resourceClass): JsonResponse
+    {
         $list = ListQuery::parse($resource, $request->query(), (int) config('nevela.per_page', 25), (int) config('nevela.max_per_page', 100));
         if (! $list->ok()) {
             return response()->json(['error' => 'Invalid query.', 'issues' => $list->issues], 400);
@@ -124,10 +136,30 @@ final class Nevela
         }
 
         foreach ($list->filters as $filter) {
+            $field = $resource->fields[$filter['field']] ?? null;
+            if ($filter['value'] !== null && $field?->kind === 'belongsTo' && ! self::couldBeId((string) $field->target, (string) $filter['value'])) {
+                // Nothing belongs to a record that can't exist. Asked anyway, some databases
+                // answer a number column given letters with an error instead of with no rows.
+                $query->whereRaw('1 = 0');
+
+                continue;
+            }
             $filter['value'] === null
                 ? $query->whereNull($filter['column'])
                 : $query->where($filter['column'], $filter['value']);
         }
+    }
+
+    /** Whether a value has the shape of one of a resource's ids: digits, or a UUID. */
+    private static function couldBeId(string $name, string $value): bool
+    {
+        try {
+            $integers = self::resource($name)->idType === 'int';
+        } catch (InvalidArgumentException) {
+            return true; // not a resource this app describes: its ids are its own business
+        }
+
+        return $integers ? preg_match('/^[0-9]{1,18}$/', $value) === 1 : Str::isUuid($value);
     }
 
     /**
@@ -316,6 +348,26 @@ final class Nevela
     public static function file(?string $key): ?array
     {
         return Uploads::ref($key);
+    }
+
+    /**
+     * The same for a private file: what it is, and the address it is fetched from by
+     * someone who may view the record, which names the record and never the file's key.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function privateFile(?string $key, string $slug, mixed $id, string $field): ?array
+    {
+        return Uploads::privateRef($key, $slug, $id, $field);
+    }
+
+    /**
+     * A rich text field's HTML, as it is safe to show: only the tags and attributes in
+     * config('nevela.rich_text'). Generated API resources send every rich text field through it.
+     */
+    public static function html(?string $html): ?string
+    {
+        return $html === null ? null : Support\Html::clean($html);
     }
 
     /** Whether a request is one Nevela answers (so errors use Flare's shape). */

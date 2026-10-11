@@ -14,6 +14,7 @@ final class Field
 
     public const FORMATS = [
         'string' => ['email', 'url', 'tel', 'slug', 'color'],
+        'text' => ['rich'],
         'float' => ['money', 'percent', 'rating'],
         'int' => ['percent', 'rating'],
     ];
@@ -23,7 +24,7 @@ final class Field
 
     /** Shorthand types accepted by --fields, mapped to kind + format. */
     private const ALIASES = [
-        'string' => ['string', null], 'text' => ['text', null],
+        'string' => ['string', null], 'text' => ['text', null], 'richtext' => ['text', 'rich'],
         'email' => ['string', 'email'], 'url' => ['string', 'url'], 'tel' => ['string', 'tel'],
         'slug' => ['string', 'slug'], 'color' => ['string', 'color'],
         'int' => ['int', null], 'integer' => ['int', null],
@@ -41,6 +42,8 @@ final class Field
      * @param  list<string>  $accept  file: the categories it takes, e.g. ["image"]
      * @param  string|null  $profile  file: the image profile uploads are optimised with (config nevela.uploads.profiles)
      * @param  int|null  $maxLength  string and text: the most characters it holds, where that isn't the usual 255 or 65,535
+     * @param  bool  $private  file: kept where the web server doesn't reach, and handed only to someone who may view the record
+     * @param  string|int|float|bool|null  $default  What the field is when a create leaves it out. Also the column's default.
      */
     public function __construct(
         public readonly string $name,
@@ -54,6 +57,8 @@ final class Field
         public readonly array $accept = [],
         public readonly ?string $profile = null,
         public readonly ?int $maxLength = null,
+        public readonly bool $private = false,
+        public readonly string|int|float|bool|null $default = null,
     ) {
         if (! preg_match('/^[a-z][A-Za-z0-9]*$/', $name)) {
             throw new InvalidArgumentException("Field \"{$name}\" must be camelCase (e.g. publishedAt).");
@@ -86,6 +91,25 @@ final class Field
                 throw new InvalidArgumentException("A belongsTo field holds an id, so its name ends in \"Id\": {$name}Id.");
             }
         }
+        if ($default !== null) {
+            $fits = match ($kind) {
+                'string', 'text' => is_string($default) && ! ($kind === 'text' && $format === 'rich'),
+                'int' => is_int($default),
+                'float' => is_int($default) || is_float($default),
+                'boolean' => is_bool($default),
+                'enum' => is_string($default) && in_array($default, $options, true),
+                default => false,
+            };
+            if (! $fits) {
+                throw new InvalidArgumentException("The default of \"{$name}\" has to be a value the field could hold".($kind === 'enum' ? ': one of '.implode(', ', $options).'.' : (in_array($kind, ['string', 'text', 'int', 'float', 'boolean'], true) ? '.' : ", and a {$kind} field can't have one.")));
+            }
+            if ($unique) {
+                throw new InvalidArgumentException("\"{$name}\" is unique, so only one record could ever have its default.");
+            }
+        }
+        if ($private && $kind !== 'file') {
+            throw new InvalidArgumentException("\"{$name}\" can't be private: that is for file fields. Who may see a record's other fields is its policy's to say.");
+        }
         if ($kind === 'file') {
             if ($accept === []) {
                 throw new InvalidArgumentException("File field \"{$name}\" needs what it accepts, e.g. {$name}:image or {$name}:file(pdf|image).");
@@ -109,15 +133,39 @@ final class Field
      *
      *   status:enum(draft|published)
      *   excerpt:string(500)               a length other than the usual 255
+     *   body:richtext                     formatted text, kept as HTML that has been cleaned
      *   category:belongsTo(Category)      stored as categoryId
      *   image:image                       an optimised image; image:image(product) names a profile
      *   manual:file(pdf|document)         any other upload
+     *   cv:file(pdf|private)              one only those who may view the record can fetch
+     *   status:enum(pending|paid)=pending what it is when a create leaves it out
      *
      * Grit's and Flare's spellings are understood too: see normalise().
      */
     public static function parse(string $token): self
     {
         $written = trim($token);
+        // status:enum(pending|paid)=pending: what the field is when a create leaves it out.
+        $default = null;
+        if (($at = strpos($written, '=')) !== false) {
+            $default = trim(substr($written, $at + 1));
+            $written = rtrim(substr($written, 0, $at));
+        }
+        if ($default !== null) {
+            $field = self::parse($written);
+            $value = match ($field->kind) {
+                'int' => filter_var($default, FILTER_VALIDATE_INT) === false ? $default : (int) $default,
+                'float' => is_numeric($default) ? (float) $default : $default,
+                'boolean' => match (strtolower($default)) {
+                    'true', '1', 'yes' => true,
+                    'false', '0', 'no' => false,
+                    default => $default,
+                },
+                default => $default,
+            };
+
+            return self::fromArray($field->name, ['default' => $value] + $field->toArray());
+        }
         $token = self::normalise($written);
         if (! preg_match('/^([A-Za-z][A-Za-z0-9_]*):([A-Za-z_]+)(?:\(([^)]*)\))?([?!]{0,2})$/', $token, $m)) {
             throw new InvalidArgumentException("Invalid field \"{$written}\". Expected name:type, e.g. price:money, status:enum(draft|live)?, image:image or category:belongsTo(Category).");
@@ -141,7 +189,10 @@ final class Field
             return new self($name, 'file', null, $required, $unique, accept: ['image'], profile: $list[0] ?? null);
         }
         if ($type === 'file') {
-            return new self($name, 'file', null, $required, $unique, accept: $list ?: ['any']);
+            // cv:file(pdf|private): "private" among what it takes is how it is kept, not a kind of file.
+            $accept = array_values(array_diff($list, ['private']));
+
+            return new self($name, 'file', null, $required, $unique, accept: $accept ?: ['any'], private: count($accept) !== count($list));
         }
         if (! isset(self::ALIASES[$type])) {
             throw new InvalidArgumentException("Unknown type \"{$type}\" on \"{$name}\". Use one of: ".implode(', ', array_keys(self::ALIASES)).', enum(a|b), belongsTo(Resource), image, file(pdf|…).');
@@ -192,6 +243,8 @@ final class Field
             array_values($data['accept'] ?? []),
             $data['profile'] ?? null,
             isset($data['maxLength']) ? (int) $data['maxLength'] : null,
+            (bool) ($data['private'] ?? false),
+            $data['default'] ?? null,
         );
     }
 
@@ -206,6 +259,8 @@ final class Field
             'accept' => $this->accept ?: null,
             'profile' => $this->profile,
             'maxLength' => $this->maxLength,
+            'private' => $this->private ?: null,
+            'default' => $this->default,
             'required' => $this->required ? null : false,
             'unique' => $this->unique ?: null,
             'label' => $this->label,
@@ -227,6 +282,12 @@ final class Field
     public function relation(): string
     {
         return substr($this->name, 0, -2);
+    }
+
+    /** Whether this is text with formatting: written in an editor, kept as HTML, cleaned on the way in and out. */
+    public function isRich(): bool
+    {
+        return $this->kind === 'text' && $this->format === 'rich';
     }
 
     /** Whether this is a file field that takes images only, and so is optimised and shown as a picture. */

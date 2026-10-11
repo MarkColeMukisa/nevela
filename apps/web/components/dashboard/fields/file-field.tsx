@@ -14,7 +14,7 @@ import {
 import { createUploadUrlAction } from "@/app/dashboard/actions";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { fileName, fileUrl, isImageKey } from "@/lib/files";
+import { fileName, fileUrl, isImageKey, isPrivateKey } from "@/lib/files";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -107,7 +107,8 @@ export function FileField({ id, value, onChange, invalid, disabled, field, resou
 
   // Thumbnail for a stored image (a local preview replaces it while uploading).
   useEffect(() => {
-    setPreview(value && isImageKey(value) ? fileUrl(value, "thumb") : null);
+    // A private file has no thumbnail, and nothing to fetch one from.
+    setPreview(value && isImageKey(value) && !isPrivateKey(value) ? fileUrl(value, "thumb") : null);
   }, [value]);
 
   async function check(file: File): Promise<string | null> {
@@ -236,9 +237,12 @@ export function FileField({ id, value, onChange, invalid, disabled, field, resou
           {thumbnail}
           <span className="min-w-0 flex-1 truncate text-sm font-medium">{fileName(value)}</span>
           <div className="flex shrink-0 gap-1">
-            <Button type="button" variant="ghost" size="sm" onClick={open}>
-              Open<span className="sr-only"> {fileName(value)}</span>
-            </Button>
+            {/* A private file is fetched through its record, from the record's page, not from here. */}
+            {!isPrivateKey(value) && (
+              <Button type="button" variant="ghost" size="sm" onClick={open}>
+                Open<span className="sr-only"> {fileName(value)}</span>
+              </Button>
+            )}
             {/* The field label points here; aria-label keeps the button named for what it does. */}
             <Button
               id={id}

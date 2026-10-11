@@ -10,12 +10,14 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { groupDigits, ungroup } from "@/lib/number";
+import { isRich } from "@/lib/rich";
 import { DateField, DateTimeField } from "./date-field";
 import { CountryField } from "./country-field";
 import { FileField } from "./file-field";
 import { MultiSelectField } from "./multi-select-field";
 import { PhoneField } from "./phone-field";
 import { RelationField } from "./relation-field";
+import { RichTextField } from "./rich-text-field";
 
 export interface RelationMeta {
   name: string;
@@ -56,6 +58,9 @@ export function FieldWidget(props: WidgetProps) {
 
   switch (field.kind) {
     case "text":
+      if (isRich(field)) {
+        return <RichTextField id={id} value={text} onChange={onChange} invalid={invalid} disabled={disabled} placeholder={field.placeholder} />;
+      }
       return <Textarea {...common} value={text} rows={4} onChange={(event) => onChange(event.target.value)} />;
 
     case "int":

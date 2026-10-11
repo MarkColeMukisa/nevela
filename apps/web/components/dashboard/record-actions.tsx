@@ -19,7 +19,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import type { ResourceAction } from "@/lib/extras";
 import { keptFor, type TrashInfo } from "@/lib/trash-info";
+import { ActionButtons } from "./resource-action";
 import { ResourceFormSheet, type FormRelations } from "./resource-form-sheet";
 import { toastMovedToTrash } from "./trash-actions";
 
@@ -36,10 +38,12 @@ interface Props {
   overlayForms: boolean;
   /** This resource's trash, when a deleted record goes there instead of going for good. */
   trash?: TrashInfo;
+  /** The resource's own actions that this person may run and that apply to this record as it is. */
+  actions?: ResourceAction[];
 }
 
-/** Edit and delete, at the top of a record's own page. Deleting goes back to the list. */
-export function RecordActions({ resource, id, record, relations, listHref, editHref, canUpdate, canDelete, overlayForms, trash }: Props) {
+/** The resource's own actions, then edit and delete, at the top of a record's own page. Deleting goes back to the list. */
+export function RecordActions({ resource, id, record, relations, listHref, editHref, canUpdate, canDelete, overlayForms, trash, actions = [] }: Props) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -63,6 +67,7 @@ export function RecordActions({ resource, id, record, relations, listHref, editH
 
   return (
     <>
+      <ActionButtons resourceName={resource.name} actions={actions} id={id} />
       {canUpdate &&
         (overlayForms ? (
           <Button variant="outline" onClick={() => setEditing(true)}>

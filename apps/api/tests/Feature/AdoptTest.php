@@ -7,18 +7,14 @@ use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
 use Nevela\Laravel\Access\Access;
 use Nevela\Laravel\Access\Permissions;
-use Nevela\Laravel\Console\GenerateCommand;
-use Nevela\Laravel\Generator\ResourceGenerator;
-use Nevela\Laravel\Generator\Writer;
 use Nevela\Laravel\Nevela;
 use Nevela\Laravel\Support\Adoption;
 use Nevela\Laravel\Support\Descriptor;
-use Nevela\Laravel\Support\Naming;
+use Tests\GeneratesResources;
 use Tests\TestCase;
 
 /**
@@ -33,10 +29,7 @@ use Tests\TestCase;
  */
 class AdoptTest extends TestCase
 {
-    use RefreshDatabase;
-
-    /** Where the generated code is. Written once: a class can be loaded once in a process. */
-    private static ?string $dir = null;
+    use GeneratesResources, RefreshDatabase;
 
     /** @var list<string> */
     private const ADOPTED = ['internship_applications', 'transactions', 'posts', 'comments'];
@@ -45,31 +38,18 @@ class AdoptTest extends TestCase
     {
         parent::setUp();
         $this->tables();
+        $this->resources(function (array $all): array {
+            $made = [];
+            // Parents first: a foreign key is a relation once the table it points at is a resource.
+            foreach (self::ADOPTED as $table) {
+                $all[] = $made[] = Adoption::of($table, $all)->descriptor;
+            }
+            // A new resource with integer ids that belongs to one with UUIDs, and the reverse.
+            $made[] = Descriptor::fromSpec('Note', 'body:string, category:belongsTo(Category)', idType: 'int');
+            $made[] = Descriptor::fromSpec('Reply', 'body:string, post:belongsTo(Post)');
 
-        $first = self::$dir === null;
-        self::$dir ??= sys_get_temp_dir().DIRECTORY_SEPARATOR.'nevela-adopt-'.bin2hex(random_bytes(4));
-        config(['nevela.descriptors_path' => self::$dir.DIRECTORY_SEPARATOR.'descriptors']);
-        Nevela::forget();
-        if ($first) {
-            $this->generate();
-        }
-        $all = Nevela::all();
-        $generator = new ResourceGenerator;
-        foreach ($all as $descriptor) {
-            // What `php artisan migrate` would run: the trash for a table that was there,
-            // and the table itself for a resource that is new.
-            if ($descriptor->adopted) {
-                $this->assertTrue(GenerateCommand::needsTrashMigration([], false, Schema::hasColumn($descriptor->table, 'deleted_at'), true));
-                $this->migrate($generator->trashMigration($descriptor));
-            } elseif (! Schema::hasTable($descriptor->table)) {
-                $this->migrate($generator->migration($descriptor, $all));
-            }
-            if (method_exists($model = "App\\Models\\{$descriptor->name}", 'forgetTrash')) {
-                $model::forgetTrash();
-            }
-        }
-        $new = array_values(array_filter($all, fn (Descriptor $d) => ! in_array($d->name, ['Category', 'Product'], true)));
-        Route::prefix('api')->middleware(config('nevela.middleware'))->group($this->file($generator->routes($new)->contents));
+            return $made;
+        });
 
         Access::reset();
         Permissions::forget();
@@ -147,60 +127,6 @@ class AdoptTest extends TestCase
             ['title' => 'Summer intake', 'slug' => 'summer-intake', 'body' => 'Apply now.', 'excerpt' => 'Short.', 'published_at' => null] + $stamps,
         ]);
         DB::table('comments')->insert(['post_id' => 1, 'author' => 'Nia', 'body' => 'Congratulations!'] + $stamps);
-    }
-
-    /** Adopt the tables, describe the two new resources, and generate and load the code for all of them. */
-    private function generate(): void
-    {
-        $dir = self::$dir;
-        $all = array_map(fn (string $file) => Descriptor::fromJson((string) file_get_contents($file)), glob(base_path('nevela/resources/*.json')));
-        $made = [];
-        // Parents first: a foreign key is a relation once the table it points at is a resource.
-        foreach (self::ADOPTED as $table) {
-            $all[] = $made[] = Adoption::of($table, $all)->descriptor;
-        }
-        // A new resource with integer ids that belongs to one with UUIDs, and the reverse.
-        $all[] = $made[] = Descriptor::fromSpec('Note', 'body:string, category:belongsTo(Category)', idType: 'int');
-        $all[] = $made[] = Descriptor::fromSpec('Reply', 'body:string, post:belongsTo(Post)');
-
-        mkdir($dir.'/descriptors', 0775, true);
-        foreach ($all as $descriptor) {
-            file_put_contents($dir.'/descriptors/'.Naming::kebab($descriptor->name).'.json', $descriptor->toJson());
-        }
-
-        $generator = new ResourceGenerator;
-        $files = [];
-        foreach ($made as $descriptor) {
-            array_push($files, ...$generator->forResource($descriptor, '2026_10_11_000000', $all));
-        }
-        foreach ((new Writer(['api' => $dir.'/api', 'web' => $dir.'/web']))->write($files) as $row) {
-            $this->assertSame('created', $row['status'], $row['path']);
-            if (str_ends_with($row['path'], '.php') && ! str_contains($row['path'], 'migrations')) {
-                require_once $row['path'];
-            }
-        }
-    }
-
-    private function migrate(string $migration): void
-    {
-        (require $this->file($migration))->up();
-    }
-
-    /** Generated code that isn't a class, in a file to be loaded from: a migration, the routes. */
-    private function file(string $php): string
-    {
-        $path = self::$dir.DIRECTORY_SEPARATOR.'loaded'.DIRECTORY_SEPARATOR.sha1($php).'.php';
-        if (! is_file($path)) {
-            is_dir(dirname($path)) || mkdir(dirname($path), 0775, true);
-            file_put_contents($path, $php);
-        }
-
-        return $path;
-    }
-
-    private function descriptor(string $name): Descriptor
-    {
-        return Nevela::resource($name);
     }
 
     // --- what adopting reads
@@ -384,6 +310,9 @@ class AdoptTest extends TestCase
         // A parent's page lists its children.
         $this->getJson('/api/transactions?filter[internshipApplicationId]=1')->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.reference', 'TX-1');
         $this->getJson('/api/transactions?filter[internshipApplicationId]=null')->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.reference', 'TX-2');
+        // An id here is a number: a UUID, or a word, is nobody's.
+        $this->getJson('/api/transactions?filter[internshipApplicationId]=one')->assertOk()->assertJsonPath('meta.total', 0);
+        $this->getJson('/api/transactions?filter[internshipApplicationId]=00000000-0000-7000-8000-000000000000')->assertOk()->assertJsonPath('meta.total', 0);
 
         // The dashboard sends the id it was given, a string; a script may send the number.
         $transaction = ['reference' => 'TX-3', 'amount' => 5000, 'status' => 'pending'];

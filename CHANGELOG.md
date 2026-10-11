@@ -8,15 +8,32 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_Adopt a table you already have, integer ids, and the changelog week by week_
+_Adopt a table you already have, integer ids, rich text, actions on a record, private files, a public side, and the changelog week by week_
 
 ### Added
 
 - **`nevela adopt <table>`: make a resource of a table you already have.** The descriptor is read from the table: nullable columns are optional, a unique index is `!`, and a foreign key to a table that is already a resource is a `belongsTo`. It shows what it read and what it left alone, and asks before writing. The table is not changed and no migration is written to create it; `nevela migrate` afterwards adds the `deleted_at` column that gives it a trash. A column with no field kind, such as `json`, stays in the table untouched by the API. See [Adding Nevela to an app you already have](apps/docs/src/content/docs/guides/existing-app.md).
 - **Integer ids.** A resource can have the numbered ids of `$table->id()` in place of UUIDs: `nevela resource Note --fields="…" --id=int`, or `"id": "int"` in the descriptor, which is what adopting a table with integer ids writes. A relation's column follows the resource it points at, so a resource with integer ids and one with UUIDs can belong to each other. An `id` is a string in the API either way. `nevela seed` fills both. Nothing is generated differently for a resource with UUID ids: after upgrading, `nevela generate` reports every resource file `unchanged`.
+- **Rich text.** `body:richtext` is a field with an editor in the dashboard: bold, italic, strikethrough, links, headings, lists, quotes, undo and redo. It is stored as HTML, and Laravel cleans that HTML against a list of tags (`rich_text` in `config/nevela.php`) when a record is saved and again when it is read, so `<p onclick="x()">Hi<script>alert(1)</script></p>` is stored as `<p>Hi</p>` whether it came from the form, the API, "Add several" or a CSV import. A record's page shows it formatted, a table shows its first words, and `nevela seed` writes a few paragraphs with a heading and a list. See [Field types](apps/docs/src/content/docs/concepts/field-types.md).
+- **Actions on a record.** An `actions` section in a descriptor names what can be done beyond create, edit and delete: accept an application, send an announcement. `nevela generate` writes a class for each, once (`app/Nevela/Actions/<Resource>/<Action>.php`), and you write what it does in `handle()`. Nevela gives it the route, a button on the record's page and in its row menu (or beside New, for one on the list as a whole), a confirmation, a sheet for what it asks for, the message it returns as a toast, and a database transaction around it. Each is a permission of its own on the Roles screen (`internship_applications.accept`), which an administrator has and nobody else does until given it by name. See [Actions on a record](apps/docs/src/content/docs/guides/actions.md).
+- **Private files.** A file field can be marked private (`cv:file(pdf|private)`, or `"private": true` in the descriptor). The file is kept on `uploads.private_disk`, which the web server doesn't serve, and its key opens nothing: `GET /_nevela/files/<key>` answers 404. It is fetched from `GET /_nevela/private/<slug>/<id>/<field>` by someone signed in who may view that record, with `Cache-Control: private, no-store`. The dashboard shows a download in place of a public link. It stays unreachable while its record is in the trash, and is deleted when the record is removed for good. See [Files and images](apps/docs/src/content/docs/guides/images.md#private-files).
+- **A public site on your API.** A `public` section in a descriptor opens part of a resource to anyone, with no sign-in: `read` (the fields that may be seen, and the unique field one record is fetched by) and `create` (the fields a visitor may send, and a throttle). The routes are under `/api/public/<slug>`, only for what a section names, and are listed in `routes/nevela-public.php`. Which records can be read is the model's `publicQuery` scope, which lets nothing through until you write it. A field that isn't listed can't be reached by sorting, filtering or search either. A form can carry a file: `PUT /api/public/_nevela/uploads/<Resource>/<field>` gives a key that is good once and for an hour, and uploads never used are removed each night. In the web app, `laravelPublic()` reads what is public into Next's cache, which the dashboard revalidates when it saves a record. See [A public site on your API](apps/docs/src/content/docs/guides/public-site.md).
+- **A field can have a default**: `status:enum(pending|paid)=pending`, or `"default": "pending"` in the descriptor. It is what the field is when a create leaves it out, and the column's default. An adopted column brings its own.
 - **A string or text field can have a length of its own**: `excerpt:string(500)`, or `"maxLength": 500` in the descriptor. The column, the validation and the dashboard's form use it. An adopted `varchar(500)` keeps its 500.
 - The docs' [changelog page](https://nevela-docs.vercel.app/reference/changelog/) opens with **Releases by week**: every release as a version and one line saying what it was about, grouped by the week it came out, each linking to its full entry below. The entries follow as before.
 - Each release has that line in `CHANGELOG.md`, in italics under its version. `pnpm release` says so when the notes for a new one have none.
+
+### Changed
+
+- In a role's grants, `*` after the dot (`products.*`, `@resources.*`) means create, view, edit and delete, as it always has in practice: those were the only four. A resource's own action is not covered by it, only by its own name or by `*` alone. No role changes what it allows by upgrading.
+- `resources/index.ts` in the dashboard also exports `extras`, which `nevela generate` writes.
+- `nevela generate` writes `routes/nevela-public.php` in every app. With no `public` section anywhere it holds no routes.
+- `nevela trash` also removes files uploaded through a public form and never used.
+
+### Fixed
+
+- **A record could be made to belong to one in the trash.** A product could be created in, or moved to, a deleted category, which no list shows and whose page is a 404. It is refused now, in the form, the API and "Add several", with "This one is in the trash. Restore it, or choose another." Records that already point at a deleted one are left as they are.
+- Filtering a list by a relation with something that can't be an id (`filter[categoryId]=nonsense`) answers with no records. On PostgreSQL it was an error.
 
 ## [0.7.1] - 2026-10-09
 
