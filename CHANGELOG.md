@@ -4,21 +4,31 @@ What changed in each version of Nevela. The format follows [Keep a Changelog](ht
 
 Add a line under "Unreleased" in the same pull request as the change. `pnpm release` moves those lines under a version; see [Releasing](apps/docs/src/content/docs/contributing/releasing.md).
 
+The first line under a version, in italics, is the release in a few words. The docs list every release by it, week by week, so write it for someone deciding whether to read on.
+
 ## [Unreleased]
+
+_Adopt a table you already have, integer ids, and the changelog week by week_
 
 ### Added
 
 - **`nevela adopt <table>`: make a resource of a table you already have.** The descriptor is read from the table: nullable columns are optional, a unique index is `!`, and a foreign key to a table that is already a resource is a `belongsTo`. It shows what it read and what it left alone, and asks before writing. The table is not changed and no migration is written to create it; `nevela migrate` afterwards adds the `deleted_at` column that gives it a trash. A column with no field kind, such as `json`, stays in the table untouched by the API. See [Adding Nevela to an app you already have](apps/docs/src/content/docs/guides/existing-app.md).
 - **Integer ids.** A resource can have the numbered ids of `$table->id()` in place of UUIDs: `nevela resource Note --fields="…" --id=int`, or `"id": "int"` in the descriptor, which is what adopting a table with integer ids writes. A relation's column follows the resource it points at, so a resource with integer ids and one with UUIDs can belong to each other. An `id` is a string in the API either way. `nevela seed` fills both. Nothing is generated differently for a resource with UUID ids: after upgrading, `nevela generate` reports every resource file `unchanged`.
 - **A string or text field can have a length of its own**: `excerpt:string(500)`, or `"maxLength": 500` in the descriptor. The column, the validation and the dashboard's form use it. An adopted `varchar(500)` keeps its 500.
+- The docs' [changelog page](https://nevela-docs.vercel.app/reference/changelog/) opens with **Releases by week**: every release as a version and one line saying what it was about, grouped by the week it came out, each linking to its full entry below. The entries follow as before.
+- Each release has that line in `CHANGELOG.md`, in italics under its version. `pnpm release` says so when the notes for a new one have none.
 
 ## [0.7.1] - 2026-10-09
+
+_An email nobody had verified said "Verified"_
 
 ### Fixed
 
 - **An email nobody had verified was shown as "Verified".** Accounts made with `nevela user`, added on the Users screen, the starter `admin@example.com` and the sample users were all marked verified when they were created, though no link or code had ever been sent to the address. They now start as "Not verified", which is what they are, and become verified when their owner proves the address. `nevela user --verified` marks one by hand, for an address you know is right. Accounts made before this keep the mark they have. If your app sets `require_email_verification`, an account an administrator adds is now sent a verification link the first time it signs in.
 
 ## [0.7.0] - 2026-10-09
+
+_Deleted accounts, kept and restorable_
 
 ### Added
 
@@ -34,6 +44,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [0.6.0] - 2026-10-09
 
+_The trash: deleted records, restorable for 30 days_
+
 ### Added
 
 - **The trash.** A deleted record is kept for 30 days and can be restored. A **Trash** page under Manage lists what has been deleted, a tab per resource, with Restore, Delete forever and Empty. Every delete in the dashboard says where the record is going, and the message that confirms it has an **Undo**, for one row or a whole selection.
@@ -48,12 +60,16 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [0.5.3] - 2026-10-08
 
+_Insights above every resource's table_
+
 ### Added
 
 - **Insights**, above every resource's table: a panel with a bar chart of records created per day, week or month, and how the records split across each enum and yes/no field. It follows the table's search and filters, so narrowing the list redraws the charts for what is left. Closed until opened, and nothing is counted until then.
 - `GET /{slug}/_insights` behind it. Existing apps get it when `nevela upgrade` regenerates their controllers and routes.
 
 ## [0.5.2] - 2026-10-08
+
+_Add several records at once_
 
 ### Added
 
@@ -65,6 +81,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - `nevela upgrade` opens with the name drawn large, as `nevela new` and `nevela update` do, says which version the app is on, and ends with the version it is on now.
 
 ## [0.5.1] - 2026-10-07
+
+_The creator's credit, and `nevela --version`_
 
 ### Added
 
@@ -78,6 +96,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - The docs lead with the `nevela` command throughout: `nevela new`, `nevela dev`, `nevela resource` and the rest, where they said `pnpm create nevela`, `php nevela …` and `php artisan nevela:…`. The longer forms still work and are listed once, under "Without the nevela command".
 
 ## [0.5.0] - 2026-10-06
+
+_Users, roles and permissions_
 
 ### Added
 
@@ -108,6 +128,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [0.4.3] - 2026-10-06
 
+_`nevela update` did nothing under pnpm 11_
+
 ### Fixed
 
 - `nevela update` did nothing for a `nevela` command installed with pnpm 11, and said it had worked. pnpm 11 keeps a global package's files in its store, so the command took its own install for an npm one and updated a different copy. It now goes by the folder the command was started through as well.
@@ -116,6 +138,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - The notice about several installed copies shows each copy's version and tells you to remove the older ones. It used to say to keep the first on the PATH, which could be the oldest.
 
 ## [0.4.2] - 2026-10-06
+
+_The name drawn large, and `nevela new` asks for a name_
 
 ### Added
 
@@ -135,11 +159,15 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [0.4.1] - 2026-10-05
 
+_Upgrading to 0.4.0 broke `next build`_
+
 ### Fixed
 
 - Upgrading an app to 0.4.0 left `components/auth/sign-in-form.tsx` behind, and it no longer compiled, so `next build` failed. An upgrade used to leave a file in place when the template dropped it. It now removes such a file when you never changed it, after copying it to the backup, and `upgrade --undo` brings it back. A file you changed is still always kept. An app already upgraded with 0.4.0 has that one file removed by the next upgrade.
 
 ## [0.4.0] - 2026-10-05
+
+_Full authentication: two-factor, passkeys, emailed links_
 
 ### Added
 
@@ -170,6 +198,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [0.3.0] - 2026-10-04
 
+_`update` and `upgrade` are two commands_
+
 ### Changed
 
 - **Breaking, for the `nevela` command only:** `update` and `upgrade` are now two commands, the same two Grit has. `nevela update`, from anywhere, updates the `nevela` command itself. `nevela upgrade`, inside an app, brings that app to the latest Nevela, which is what `update` did before. Inside an app, `php nevela update`, `pnpm nevela update` and `npx create-nevela update` still upgrade the app, so instructions written for older versions keep working.
@@ -183,11 +213,15 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [0.2.1] - 2026-10-04
 
+_`nevela update` stopped short of 0.2.0_
+
 ### Fixed
 
 - `nevela update` stopped short of 0.2.0 on every app created so far. Their `composer.json` asks for `"nevela/laravel": "^0.1"`, and below 1.0 that range means 0.1.x only, so Composer kept the old version and the command asked for a manual edit. The update now moves the range to the one that has the newest release (`^0.2`) and says that it did. From an app on 0.1.x, use `npx create-nevela@latest update`: the fix is in the installer, which runs before the app's own older code.
 
 ## [0.2.0] - 2026-10-04
+
+_Relationships, images and files_
 
 ### Added
 
@@ -210,6 +244,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [0.1.5] - 2026-10-04
 
+_A hydration mismatch on every full page load_
+
 ### Fixed
 
 - The dashboard reported "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties" on a full page load, with a different `radix-…` id on each account menu. The React bundled with Next.js 16.0.4 loses a component's place in a list when its code arrives a moment after the page starts up, so every id beneath it comes out different in the browser. The dashboard now uses Next.js 16.3.8, which has the fix. `nevela update` moves an existing app to it; run the install command it prints afterwards.
@@ -220,6 +256,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - Next.js 16.0.4 is marked by its maintainers as having a security vulnerability (CVE-2025-66478). 16.3.8 is a patched version.
 
 ## [0.1.4] - 2026-10-04
+
+_Updates that back up, undo, and run from any shell_
 
 ### Added
 
@@ -244,6 +282,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [0.1.3] - 2026-10-04
 
+_`php nevela status`, and a dev server that finds a free port_
+
 ### Added
 
 - `php nevela status`: check the app in one command. It shows the Nevela version, migrations run and pending, how many people can sign in, each resource's record count, and whether the dashboard is reaching this app's API. Problems are marked with the command that fixes them.
@@ -262,6 +302,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 
 ## [0.1.2] - 2026-10-04
 
+_`php nevela`, from the top of the project_
+
 ### Added
 
 - `php nevela <command>` from the top of the project, so there is no `cd apps/api` first: `php nevela resource …`, `php nevela seed …`, `php nevela user`, `php nevela update`, `php nevela dev`. The file is written and kept current by `nevela:generate`.
@@ -275,6 +317,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - Generated files could be written with Windows line endings when the package itself was checked out that way.
 
 ## [0.1.1] - 2026-10-04
+
+_An installer that asks no questions_
 
 ### Added
 
@@ -294,6 +338,8 @@ Add a line under "Unreleased" in the same pull request as the change. `pnpm rele
 - On Windows, `create-nevela` wrote the package constraint as an exact `0.1` instead of `^0.1`, so `composer update` would not have picked up later 0.1.x releases.
 
 ## [0.1.0] - 2026-10-03
+
+_The first release_
 
 ### Added
 
