@@ -18,6 +18,8 @@ nevela resource Product --fields="name:string, sku:string!, price:money, notes:t
 
 Both can be combined: `code:string?!`.
 
+`=` after the type gives a default, used when a create leaves the field out: `status:enum(pending|paid)=pending`, `quantity:int=1`, `active:boolean=true`.
+
 ## Types
 
 

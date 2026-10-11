@@ -62,6 +62,7 @@ Then it writes `nevela/resources/transaction.json` and generates the model, the 
 | a foreign key to the `id` of a table that is a resource | `belongsTo` |
 | nullable | optional (`?`) |
 | a unique index on the one column | unique (`!`) |
+| a column default (`'pending'`, `0`) | the field's default |
 
 Every column comes in as the plainest type that holds it. An `email` column is a `string`, not an `email`, because each value in it was valid when it was saved and a stricter rule would refuse to save an old record again. Where you know a column is an email, a slug, a URL or one of a few choices, say so in the descriptor and run `nevela generate`:
 

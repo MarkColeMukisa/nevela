@@ -176,6 +176,21 @@ jobs:
           php nevela resource Candidate --fields="name:string, cv:file(pdf|private)?"
           grep -q "privateFile(\$this->cv, 'candidates', \$this->getKey(), 'cv')" apps/api/app/Http/Resources/Nevela/CandidateResource.php
           grep -q 'cv: field.file(\["pdf"\], { required: false, ...({ private: true } as {}) })' apps/web/resources/candidate.resource.ts
+          # A public side: a sign-up form anyone can send, with a default for what the form leaves out.
+          node -e '
+            const fs = require("fs"), file = "apps/api/nevela/resources/signup.json";
+            fs.writeFileSync(file, JSON.stringify({
+              name: "Signup",
+              fields: { email: { kind: "string", format: "email", unique: true }, source: { kind: "string", default: "website" } },
+              public: { read: { fields: ["email"] }, create: { fields: ["email"], throttle: "3,1" } },
+            }, null, 4) + "\n");
+          '
+          php nevela generate Signup
+          php nevela migrate
+          grep -q "Route::post('signups'" apps/api/routes/nevela-public.php
+          grep -q "nevela.throttle:3,1,signups.create:" apps/api/routes/nevela-public.php
+          grep -q "scopePublicQuery" apps/api/app/Models/Signup.php
+          if grep -q "products\|categories" apps/api/routes/nevela-public.php; then echo "a resource with no public section got a public route"; exit 1; fi
           # An action: named in the descriptor, it gets a class to be written in, a permission and a button.
           node -e '
             const fs = require("fs"), file = "apps/api/nevela/resources/article.json";
@@ -390,6 +405,22 @@ jobs:
           test "$(curl -s -g -o /dev/null -w '%{http_code}' "http://127.0.0.1:8000/api/products/_insights?unit=year" -H 'Accept: application/json' -H "Authorization: Bearer $editor")" = 400
           # Rich text is cleaned on the way in, whoever sends it.
           curl -s -X POST http://127.0.0.1:8000/api/articles -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: Bearer $admin" -d '{"title":"CI","body":"<p onclick=\"x()\">Hi<script>alert(1)</script></p>"}' | tee article.json | grep -q '"body":"<p>Hi<\\/p>"'
+          # The public side, with no token at all. Nothing is public that no descriptor opens,
+          open() { curl -s -o public.json -w '%{http_code}' -X "$1" "http://127.0.0.1:8000/api/public/$2" -H 'Accept: application/json' -H 'Content-Type: application/json' ${3:+-d "$3"}; }
+          test "$(open GET products)" = 404
+          test "$(open POST products '{"name":"x"}')" = 404
+          # a form creates a record from the fields it lists and no others, the rest taking their defaults,
+          test "$(open POST signups '{"email":"visitor@example.com","source":"mine"}')" = 422
+          test "$(open POST signups '{"email":"visitor@example.com"}')" = 201
+          grep -q '"email":"visitor@example.com"' public.json
+          if grep -q 'source' public.json; then echo "a field that isn't public was sent out"; exit 1; fi
+          # nothing can be read until the model says which records may be,
+          test "$(open GET signups)" = 200
+          grep -q '"total":0' public.json
+          # and the form has its own allowance: three a minute here.
+          test "$(open POST signups '{"email":"second@example.com"}')" = 201
+          test "$(open POST signups '{"email":"third@example.com"}')" = 429
+          grep -q 'Too many requests' public.json
           # A private file: its key opens nothing, and the record's own address hands it to someone who may view the record.
           printf '%%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%%%EOF\n' > cv.pdf
           curl -s -X PUT "http://127.0.0.1:8000/api/_nevela/uploads/Candidate/cv?name=cv.pdf" -H 'Accept: application/json' -H 'Content-Type: application/pdf' -H "Authorization: Bearer $admin" --data-binary @cv.pdf > upload.json
