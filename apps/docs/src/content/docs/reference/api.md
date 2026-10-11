@@ -124,7 +124,7 @@ Using `products` as the example:
 }
 ```
 
-Keys are camelCase, matching the descriptor. The `id` is a UUID string. Dates are `YYYY-MM-DD` and timestamps are ISO 8601.
+Keys are camelCase, matching the descriptor. The `id` is a string: a UUID, or digits for a resource with [integer ids](/guides/existing-app/#integer-ids-for-a-new-resource). Dates are `YYYY-MM-DD` and timestamps are ISO 8601.
 
 ### Listing
 

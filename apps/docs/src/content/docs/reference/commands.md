@@ -1,6 +1,6 @@
 ---
 title: "Commands"
-description: "Every nevela command and option: new, update, resource, generate, seed, user, upgrade, trash, dev, status and --version."
+description: "Every nevela command and option: new, update, resource, adopt, generate, seed, user, upgrade, trash, dev, status and --version."
 ---
 
 Install the `nevela` command once, and everything is this short, in every shell:
@@ -24,6 +24,7 @@ Inside an app, from any folder in it:
 nevela dev                 # run the API and the dashboard
 nevela status              # check the app
 nevela resource Product --fields="name:string, price:money" --seed
+nevela adopt posts         # make a resource of a table you already have
 nevela generate
 nevela seed Product
 nevela user
@@ -94,6 +95,7 @@ nevela resource Product --fields="name:string, price:money, kind:enum(stock|digi
 | `--fields=` | The fields, as `name:type` separated by commas. See [field types](/concepts/field-types/), including `category:belongsTo(Category)` and `image:image`. If left out, the command asks for them. |
 | `--icon=` | A Lucide icon name for the dashboard sidebar. |
 | `--group=` | The sidebar heading to put the resource under. |
+| `--id=int` | Give the resource the numbered ids of `$table->id()`. Without it, ids are UUIDs. |
 | `--force` | Replace the descriptor if the resource already exists. |
 | `--no-migrate` | Don't create the table yet. Run `nevela migrate` when you are ready. |
 | `--seed`, `--seed=100` | Fill the new resource with records as well: 25, or the number you give. |
@@ -101,6 +103,25 @@ nevela resource Product --fields="name:string, price:money, kind:enum(stock|digi
 It writes the descriptor to `nevela/resources/<name>.json`, generates the files listed in [What gets generated](/concepts/resources/#what-gets-generated), and creates the table, because a new resource is no use without it.
 
 If the resource already exists, the command stops and points you at `nevela generate`, so a typo cannot wipe out an existing descriptor.
+
+## nevela adopt
+
+Make a resource of a table that is already in the database. The descriptor is read from the table, which is left as it is.
+
+```sh
+nevela adopt posts
+```
+
+| Argument or option | Meaning |
+|---|---|
+| `table` | The table to adopt. It needs an `id` (integers or UUIDs), `created_at` and `updated_at`. |
+| `--name=` | The resource's name, when it isn't the table's own (`posts` is `Post`). |
+| `--icon=` | A Lucide icon name for the dashboard sidebar. |
+| `--group=` | The sidebar heading to put the resource under. |
+| `--yes` | Write it without asking. |
+| `--force` | Read the table again and replace the descriptor it already has. |
+
+It shows each column and the field it becomes, lists the columns it leaves alone and why, and asks before writing. No migration is written to create the table; `nevela migrate` afterwards adds the `deleted_at` column that gives it a [trash](/guides/trash/). See [Adding Nevela to an app you already have](/guides/existing-app/).
 
 ## nevela generate
 
@@ -300,6 +321,7 @@ With npm the first is `npm create nevela@latest my-app`, and the second is `npm 
 | `php nevela status` | `php artisan nevela:status` |
 | `php nevela --version` | `php artisan nevela:version`: the version of Nevela the app is on |
 | `php nevela resource …` | `php artisan nevela:resource … --migrate` |
+| `php nevela adopt …` | `php artisan nevela:adopt …` |
 | `php nevela generate` | `php artisan nevela:generate` |
 | `php nevela seed …` | `php artisan nevela:seed …` |
 | `php nevela user` | `php artisan nevela:user` |

@@ -57,7 +57,7 @@ Matches Flare's `createResourceClient` and `ResourceStore`, so Flare's own clien
 | `POST /api/auth/token` · `GET /api/auth/me` · `DELETE /api/auth/token` | `{ token, user }` · `{ user }` · `204` |
 | `GET /api/_nevela/resources` | `{ data: Descriptor[] }` |
 
-Records use camelCase keys, string UUID `id`, ISO `createdAt`/`updatedAt`, and `Y-m-d` dates.
+Records use camelCase keys, a string `id` (a UUID, or digits where ids are integers), ISO `createdAt`/`updatedAt`, and `Y-m-d` dates.
 
 Errors (only under the Nevela prefix):
 

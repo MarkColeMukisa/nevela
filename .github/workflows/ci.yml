@@ -169,6 +169,43 @@ jobs:
           # A relation to a resource that doesn't exist is refused before anything is written.
           if php nevela resource Review --fields="body:text, author:belongsTo(Author)"; then echo "a relation to a missing resource was accepted"; exit 1; fi
           test ! -e apps/api/nevela/resources/review.json
+          # A table the app made for itself, with numbered ids and a row in it, becomes a resource as it is.
+          cat > apps/api/database/migrations/2026_01_01_000000_create_legacy_notes_table.php <<'PHP'
+          <?php
+
+          use Illuminate\Database\Migrations\Migration;
+          use Illuminate\Database\Schema\Blueprint;
+          use Illuminate\Support\Facades\DB;
+          use Illuminate\Support\Facades\Schema;
+
+          return new class extends Migration
+          {
+              public function up(): void
+              {
+                  Schema::create('legacy_notes', function (Blueprint $table) {
+                      $table->id();
+                      $table->foreignUuid('category_id')->nullable()->constrained()->nullOnDelete();
+                      $table->string('title');
+                      $table->timestamps();
+                  });
+                  DB::table('legacy_notes')->insert(['title' => 'From before', 'created_at' => now(), 'updated_at' => now()]);
+              }
+          };
+          PHP
+          php nevela migrate
+          php nevela adopt legacy_notes --yes | tee adopt.log
+          grep -q 'legacy_notes as LegacyNote, with integer ids' adopt.log
+          grep -q 'categoryId:belongsTo(Category)?' adopt.log
+          grep -q '"id": "int"' apps/api/nevela/resources/legacy-note.json
+          grep -q '"adopted": true' apps/api/nevela/resources/legacy-note.json
+          # No second migration to create it, and no UUIDs in its model.
+          test "$(ls apps/api/database/migrations/*_create_legacy_notes_table.php | wc -l)" = 1
+          if grep -q 'HasUuids' apps/api/app/Models/LegacyNote.php; then echo "an integer-id model was given UUIDs"; exit 1; fi
+          grep -q "where(\['legacy_note' => '\[0-9\]{1,18}'\])" apps/api/routes/nevela.php
+          # Adopting changes nothing in the database. Migrating afterwards gives the table its trash.
+          ls apps/api/database/migrations/*_add_trash_to_legacy_notes_table.php
+          php nevela migrate
+          php nevela seed LegacyNote --count=5
           php nevela status | tee status.log
           grep -q "none pending" status.log
           grep -q "Resource: Product" status.log
@@ -331,6 +368,11 @@ jobs:
           grep -q '"field":"kind"' insights.json
           grep -q '"total":100' insights.json
           test "$(curl -s -g -o /dev/null -w '%{http_code}' "http://127.0.0.1:8000/api/products/_insights?unit=year" -H 'Accept: application/json' -H "Authorization: Bearer $editor")" = 400
+          # The adopted table: the row that was there before Nevela, its number sent as a string.
+          curl -s http://127.0.0.1:8000/api/legacy-notes/1 -H 'Accept: application/json' -H "Authorization: Bearer $admin" | tee legacy.json | grep -q '"id":"1"'
+          grep -q '"title":"From before"' legacy.json
+          curl -s -g "http://127.0.0.1:8000/api/legacy-notes?perPage=1" -H 'Accept: application/json' -H "Authorization: Bearer $admin" | grep -q '"total":6'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/legacy-notes/first -H 'Accept: application/json' -H "Authorization: Bearer $admin")" = 404
           # The trash: a deleted record is kept and hidden, comes back when restored, and goes when removed for good.
           call() { curl -s -g -o trash.json -w '%{http_code}' -X "$1" "http://127.0.0.1:8000/api/$2" -H 'Accept: application/json' -H "Authorization: Bearer $editor"; }
           bulked="$(sed -E 's/.*"id":"([^"]+)".*/\1/' bulk.json)"

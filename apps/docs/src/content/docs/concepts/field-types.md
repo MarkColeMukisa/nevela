@@ -65,4 +65,6 @@ The spellings those two use are understood, so you can type what you know:
 
 `integer`, `bool` and `decimal` are accepted as other spellings of `int`, `boolean` and `money`.
 
-Every resource also has `id` (a UUID), `createdAt` and `updatedAt`. You do not declare them, and those names are reserved.
+A `string` or `text` can have a length of its own: `excerpt:string(500)`, `body:text(100000)`. The column, the validation and the dashboard's form all use it. A `text` longer than 65,535 is stored as `longText`.
+
+Every resource also has `id`, `createdAt` and `updatedAt`. You do not declare them, and those names are reserved. The `id` is a UUID unless the resource was made with `--id=int` or [adopted from a table](/guides/existing-app/) with integer ids; either way it is a string in the API.
