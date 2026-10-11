@@ -28,6 +28,8 @@ description: "The JSON file per resource that everything else is generated from.
 |---|---|
 | `name` | The PascalCase name. Model, controller and policy are named from it. |
 | `table` | The database table. |
+| `id` | What a record's id is: `"int"` for the numbered ids of `$table->id()`. Left out, ids are UUIDs. Set when the resource is made, with `--id=int` or by [adopting a table](/guides/existing-app/). |
+| `adopted` | `true` for a table that was there before Nevela: no migration is written to create it. |
 | `slug` | The URL segment: `/api/products` and `/dashboard/products`. |
 | `label`, `pluralLabel` | What the dashboard calls one record and many. |
 | `icon` | A [Lucide](https://lucide.dev) icon name for the sidebar. Optional. |
@@ -41,6 +43,7 @@ Each field has a `kind` (`string`, `text`, `int`, `float`, `boolean`, `date`, `d
 |---|---|
 | `format` | For strings: `email`, `url`, `tel`, `slug`, `color`. For numbers: `money`, `percent`, `rating`. |
 | `options` | The allowed values of an enum. |
+| `maxLength` | For `string` and `text`: the most characters it holds, where that isn't the usual 255 or 65,535. |
 | `required` | `false` makes the field optional. Defaults to `true`. |
 | `unique` | `true` makes values unique. Defaults to `false`. |
 | `label` | The label in the dashboard. Defaults to the field name in words. |

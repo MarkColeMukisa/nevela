@@ -75,6 +75,7 @@ const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
     nevela dev                 Run the API and the dashboard
     nevela status              Check versions, migrations, users and the dashboard
     nevela resource <Name> --fields="…" [--seed]
+    nevela adopt <table>       Make a resource of a table you already have
     nevela seed | user | generate | migrate | trash | artisan <command>
 
   ${bold('Options')}

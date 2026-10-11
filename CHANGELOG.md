@@ -8,10 +8,13 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_The changelog, week by week_
+_Adopt a table you already have, integer ids, and the changelog week by week_
 
 ### Added
 
+- **`nevela adopt <table>`: make a resource of a table you already have.** The descriptor is read from the table: nullable columns are optional, a unique index is `!`, and a foreign key to a table that is already a resource is a `belongsTo`. It shows what it read and what it left alone, and asks before writing. The table is not changed and no migration is written to create it; `nevela migrate` afterwards adds the `deleted_at` column that gives it a trash. A column with no field kind, such as `json`, stays in the table untouched by the API. See [Adding Nevela to an app you already have](apps/docs/src/content/docs/guides/existing-app.md).
+- **Integer ids.** A resource can have the numbered ids of `$table->id()` in place of UUIDs: `nevela resource Note --fields="…" --id=int`, or `"id": "int"` in the descriptor, which is what adopting a table with integer ids writes. A relation's column follows the resource it points at, so a resource with integer ids and one with UUIDs can belong to each other. An `id` is a string in the API either way. `nevela seed` fills both. Nothing is generated differently for a resource with UUID ids: after upgrading, `nevela generate` reports every resource file `unchanged`.
+- **A string or text field can have a length of its own**: `excerpt:string(500)`, or `"maxLength": 500` in the descriptor. The column, the validation and the dashboard's form use it. An adopted `varchar(500)` keeps its 500.
 - The docs' [changelog page](https://nevela-docs.vercel.app/reference/changelog/) opens with **Releases by week**: every release as a version and one line saying what it was about, grouped by the week it came out, each linking to its full entry below. The entries follow as before.
 - Each release has that line in `CHANGELOG.md`, in italics under its version. `pnpm release` says so when the notes for a new one have none.
 
