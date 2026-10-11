@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "Deleted accounts, kept and restorable";
+export const RELEASE_HEADLINE = "Adopt the tables you have, and open part of them to the public";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "deleted accounts: a closed account is kept and can be restored, and its email can't sign up again.",
-  href: "/guides/deleted-accounts/",
-  label: "Deleted accounts",
+  text: "an app you already have: adopt its tables as they are, then give them rich text, actions, private files and a public side.",
+  href: "/guides/existing-app/",
+  label: "An app you already have",
 };
