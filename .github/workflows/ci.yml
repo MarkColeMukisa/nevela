@@ -168,6 +168,10 @@ jobs:
           grep -q 'categoryId: field.belongsTo("Category")' apps/web/resources/product.resource.ts
           grep -q "function products()" apps/api/app/Models/Category.php
           ls apps/api/storage/app/public/products/image/*/*/ | grep -q '\.thumb\.'
+          # Rich text: an editor in the dashboard, which the build below compiles, and HTML in the table.
+          php nevela resource Article --fields="title:string, body:richtext" --icon=newspaper --seed=3
+          grep -q 'body: field.text({ ...({ rich: true } as {}) })' apps/web/resources/article.resource.ts
+          grep -q "longText('body')" apps/api/database/migrations/*_create_articles_table.php
           # A relation to a resource that doesn't exist is refused before anything is written.
           if php nevela resource Review --fields="body:text, author:belongsTo(Author)"; then echo "a relation to a missing resource was accepted"; exit 1; fi
           test ! -e apps/api/nevela/resources/review.json
@@ -370,6 +374,8 @@ jobs:
           grep -q '"field":"kind"' insights.json
           grep -q '"total":100' insights.json
           test "$(curl -s -g -o /dev/null -w '%{http_code}' "http://127.0.0.1:8000/api/products/_insights?unit=year" -H 'Accept: application/json' -H "Authorization: Bearer $editor")" = 400
+          # Rich text is cleaned on the way in, whoever sends it.
+          curl -s -X POST http://127.0.0.1:8000/api/articles -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: Bearer $admin" -d '{"title":"CI","body":"<p onclick=\"x()\">Hi<script>alert(1)</script></p>"}' | tee article.json | grep -q '"body":"<p>Hi<\\/p>"'
           # The adopted table: the row that was there before Nevela, its number sent as a string.
           curl -s http://127.0.0.1:8000/api/legacy-notes/1 -H 'Accept: application/json' -H "Authorization: Bearer $admin" | tee legacy.json | grep -q '"id":"1"'
           grep -q '"title":"From before"' legacy.json

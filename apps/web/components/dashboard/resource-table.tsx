@@ -3,6 +3,7 @@ import { FileCell } from "@/components/dashboard/fields/file-cell";
 import { ArrowDownIcon, ArrowUpIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsUpDownIcon, PlusIcon } from "lucide-react";
 import { clientResource, formatValue, optionLabel, statusTone, storedFields, type Resource, type StoredField } from "@flaredev/core";
 import { isSortable } from "@/lib/resource/query";
+import { isRich, richToText } from "@/lib/rich";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -213,6 +214,9 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
                       } else if (column.def.kind === "enum" && value != null) {
                         const tone = statusTone(value);
                         content = <Badge variant={tone === "neutral" ? "secondary" : tone}>{content}</Badge>;
+                      } else if (isRich(column.def) && typeof value === "string") {
+                        // The start of it, as words: markup is noise in a table.
+                        content = richToText(value, 120);
                       } else if (column.def.kind === "file" && typeof value === "string" && value) {
                         // A thumbnail for an image, a filename for anything else — the raw
                         // object key is noise in a table.

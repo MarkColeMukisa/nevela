@@ -6,6 +6,7 @@ import { FileCell } from "@/components/dashboard/fields/file-cell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { adminPermissions, allResources, dashboardStore, requireAccess, resourcePath } from "@/lib/dashboard";
+import { isRich } from "@/lib/rich";
 import { site } from "@/lib/site";
 import { trashFor } from "@/lib/trash";
 import { LocalTime } from "./local-time";
@@ -111,6 +112,9 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
               } else if (def.kind === "enum" && value != null) {
                 const tone = statusTone(value);
                 content = <Badge variant={tone === "neutral" ? "secondary" : tone}>{content}</Badge>;
+              } else if (isRich(def) && typeof value === "string" && value) {
+                // Shown as it was written. Laravel cleaned it when it was saved and again when it was read.
+                content = <div className="rich-text" dangerouslySetInnerHTML={{ __html: value }} />;
               } else if (def.kind === "file" && typeof value === "string" && value) {
                 // Bigger here than in the table: this is the page for looking at one record.
                 content = <FileCell resourceName={resource.name} fieldKey={key} value={value} size={96} />;

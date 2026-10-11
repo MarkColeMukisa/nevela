@@ -41,7 +41,7 @@ Each field has a `kind` (`string`, `text`, `int`, `float`, `boolean`, `date`, `d
 
 | Key | Meaning |
 |---|---|
-| `format` | For strings: `email`, `url`, `tel`, `slug`, `color`. For numbers: `money`, `percent`, `rating`. |
+| `format` | For strings: `email`, `url`, `tel`, `slug`, `color`. For numbers: `money`, `percent`, `rating`. For text: `rich`, which is [rich text](/concepts/field-types/#rich-text). |
 | `options` | The allowed values of an enum. |
 | `maxLength` | For `string` and `text`: the most characters it holds, where that isn't the usual 255 or 65,535. |
 | `required` | `false` makes the field optional. Defaults to `true`. |

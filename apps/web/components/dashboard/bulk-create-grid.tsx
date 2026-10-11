@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { isRich } from "@/lib/rich";
 import { cn } from "@/lib/utils";
 import { FieldWidget, type RelationMeta } from "./fields/field-widget";
 
@@ -41,6 +42,8 @@ const MOST_ROWS = 500;
 
 /** Kinds that fit in a cell: one control, one value. A file needs its own upload, so it is left to the form. */
 const IN_A_CELL = new Set(["string", "text", "int", "float", "boolean", "date", "datetime", "enum", "belongsTo"]);
+/** A file needs an upload and rich text needs an editor: neither is something to type into a cell. */
+const fitsACell = (def: { kind: string }) => IN_A_CELL.has(def.kind) && !isRich(def);
 
 /**
  * Add several records at once, in a grid.
@@ -82,10 +85,10 @@ function Grid({ resource, relations, onDone }: { resource: ClientResource; relat
   const [pending, startTransition] = useTransition();
   const validators = useMemo(() => createValidators(resource), [resource]);
   const all = useMemo(() => storedFields(resource) as [string, FieldDef][], [resource]);
-  const fields = useMemo(() => all.filter(([, def]) => IN_A_CELL.has(def.kind)), [all]);
+  const fields = useMemo(() => all.filter(([, def]) => fitsACell(def)), [all]);
   // A field this grid can't show and Laravel requires would fail every row, with nothing
   // on screen to fix. Say so, and leave those records to the form.
-  const missing = useMemo(() => all.filter(([, def]) => !IN_A_CELL.has(def.kind) && def.required !== false), [all]);
+  const missing = useMemo(() => all.filter(([, def]) => !fitsACell(def) && def.required !== false), [all]);
 
   const blank = useMemo(() => initialFormValues(resource, null) as Values, [resource]);
   const nextKey = useRef(STARTING_ROWS);

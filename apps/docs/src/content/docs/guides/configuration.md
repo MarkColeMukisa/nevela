@@ -35,6 +35,7 @@ php artisan vendor:publish --tag=nevela-config
 | `per_page` | `25` | Records per page when a list request does not say. |
 | `max_per_page` | `100` | The most a list request may ask for. |
 | `bulk_max` | `500` | The most rows `POST /{slug}/_bulk` creates in one request. The dashboard's "Add several" grid stops at 500 rows itself; set this lower and Laravel refuses a larger grid, saying what the limit is. |
+| `rich_text.tags`, `.attributes`, `.schemes` | the editor's toolbar; `href` on links; `http`, `https`, `mailto` | What a [rich text](/concepts/field-types/#rich-text) field keeps. Everything else is removed when a record is saved and again when it is read. |
 | `trash.days` | `30` | How many days a deleted record stays in [the trash](/guides/trash/) before it is removed for good. `null` keeps it until someone removes it. |
 | `uploads.disk` | `public`, or `NEVELA_UPLOADS_DISK` | The disk file and image fields store on. |
 | `uploads.url` | none, or `NEVELA_UPLOADS_URL` | The address files are served from, when a CDN or your web server serves the disk. |
