@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { adminPermissions, allowedActions, allResources, dashboardStore, requireAccess, resourcePath } from "@/lib/dashboard";
 import { actionApplies } from "@/lib/extras";
+import { privateFileUrl } from "@/lib/files";
 import { isRich } from "@/lib/rich";
 import { site } from "@/lib/site";
 import { trashFor } from "@/lib/trash";
@@ -119,7 +120,7 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
                 content = <div className="rich-text" dangerouslySetInnerHTML={{ __html: value }} />;
               } else if (def.kind === "file" && typeof value === "string" && value) {
                 // Bigger here than in the table: this is the page for looking at one record.
-                content = <FileCell resourceName={resource.name} fieldKey={key} value={value} size={96} />;
+                content = <FileCell resourceName={resource.name} fieldKey={key} value={value} size={96} download={privateFileUrl(resource.slug, id, key)} />;
               } else if (def.kind === "multiselect" && Array.isArray(value) && value.length > 0) {
                 content = (
                   <span className="flex flex-wrap gap-1">

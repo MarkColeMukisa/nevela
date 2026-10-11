@@ -5,7 +5,9 @@ import { API_URL, sessionToken } from "@/lib/laravel";
  * The browser's way to the Laravel API, for the few things a server action can't do:
  *
  * - reading, for the relation picker's search (`/api/categories?q=…`),
- * - showing stored files (`/api/_nevela/files/<key>`), and
+ * - showing stored files (`/api/_nevela/files/<key>`),
+ * - downloading a private one (`/api/_nevela/private/<slug>/<id>/<field>`), which Laravel
+ *   hands only to someone who may view that record, and
  * - uploading one (`PUT /api/_nevela/uploads/<Resource>/<field>`), which needs the
  *   browser's upload progress and is larger than a server action accepts.
  *
@@ -23,7 +25,7 @@ const MAX_UPLOAD_BYTES = 64 * 1024 * 1024;
  * What is passed back from Laravel's answer. Not its length or encoding: fetch() hands
  * over the body already decompressed, so the length Laravel gave may no longer be true.
  */
-const RESPONSE_HEADERS = ["content-type", "cache-control", "etag", "last-modified", "location", "x-content-type-options"];
+const RESPONSE_HEADERS = ["content-type", "content-disposition", "cache-control", "etag", "last-modified", "location", "x-content-type-options"];
 
 type Context = { params: Promise<{ path: string[] }> };
 

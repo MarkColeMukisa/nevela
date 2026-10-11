@@ -17,5 +17,19 @@ export function fileUrl(key: string, rendition?: string): string {
   return `/api/_nevela/files/${path.split("/").map(encodeURIComponent).join("/")}`;
 }
 
+/**
+ * Whether a key is a private file's. Such a file has no address of its own: asked for by
+ * key, Laravel answers that there is no such file. It is fetched through its record.
+ */
+export const isPrivateKey = (key: string) => key.startsWith("private/");
+
+/**
+ * Where a private file is fetched from: the record it belongs to and the field it is in.
+ * Laravel hands it over only to someone signed in who may view that record.
+ */
+export function privateFileUrl(resourceSlug: string, id: string, fieldKey: string): string {
+  return `/api/_nevela/private/${encodeURIComponent(resourceSlug)}/${encodeURIComponent(id)}/${encodeURIComponent(fieldKey)}`;
+}
+
 /** "products/image/2026/10/<uuid>-kettle.webp" → "kettle.webp" */
 export const fileName = (key: string) => key.slice(key.lastIndexOf("/") + 1).replace(/^[0-9a-f-]{36}-/, "");

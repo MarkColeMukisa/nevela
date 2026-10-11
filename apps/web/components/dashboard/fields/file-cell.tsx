@@ -1,5 +1,5 @@
-import { FileIcon } from "lucide-react";
-import { fileName, fileUrl, isImageKey } from "@/lib/files";
+import { DownloadIcon, FileIcon, LockIcon } from "lucide-react";
+import { fileName, fileUrl, isImageKey, isPrivateKey } from "@/lib/files";
 
 /**
  * A stored file in a table cell or a record's detail.
@@ -8,8 +8,29 @@ import { fileName, fileUrl, isImageKey } from "@/lib/files";
  * uploaded, so a table of fifty products downloads fifty small pictures, not fifty
  * full-size ones. Anything else is its filename, which is the useful part of a key
  * nobody wants to read in full.
+ *
+ * A private file is its name and a lock, picture or not: it has no thumbnail and no
+ * address of its own. With `download`, where it is fetched through its record, the name
+ * is the link that saves it.
  */
-export function FileCell({ value, size = 36 }: { resourceName?: string; fieldKey?: string; value: string; size?: number }) {
+export function FileCell({ value, size = 36, download }: { resourceName?: string; fieldKey?: string; value: string; size?: number; download?: string }) {
+  if (isPrivateKey(value)) {
+    const name = <span className="max-w-[24ch] truncate">{fileName(value)}</span>;
+    return (
+      <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+        <LockIcon aria-label="Private" className="size-3.5" />
+        {download ? (
+          <a href={download} download className="inline-flex items-center gap-1.5 text-primary hover:underline">
+            {name}
+            <DownloadIcon aria-hidden="true" className="size-3.5" />
+          </a>
+        ) : (
+          name
+        )}
+      </span>
+    );
+  }
+
   if (!isImageKey(value)) {
     return (
       <span className="inline-flex items-center gap-1.5 text-muted-foreground">

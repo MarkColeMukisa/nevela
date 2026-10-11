@@ -3,6 +3,7 @@ import { FileCell } from "@/components/dashboard/fields/file-cell";
 import { ArrowDownIcon, ArrowUpIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsUpDownIcon, PlusIcon } from "lucide-react";
 import { clientResource, formatValue, optionLabel, statusTone, storedFields, type Resource, type StoredField } from "@flaredev/core";
 import { isSortable } from "@/lib/resource/query";
+import { privateFileUrl } from "@/lib/files";
 import { isRich, richToText } from "@/lib/rich";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -226,7 +227,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
                       } else if (column.def.kind === "file" && typeof value === "string" && value) {
                         // A thumbnail for an image, a filename for anything else — the raw
                         // object key is noise in a table.
-                        content = <FileCell resourceName={resource.name} fieldKey={column.key} value={value} />;
+                        content = <FileCell resourceName={resource.name} fieldKey={column.key} value={value} download={privateFileUrl(resource.slug, String(row.id), column.key)} />;
                       } else if (column.def.kind === "multiselect" && Array.isArray(value) && value.length) {
                         const def = column.def;
                         content = (

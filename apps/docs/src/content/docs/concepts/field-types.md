@@ -43,6 +43,7 @@ Both can be combined: `code:string?!`.
 | `belongsTo(Resource)` | a foreign key, indexed | the id of a record that exists |
 | `image` | `string` (the file's key) | a picture uploaded to this field |
 | `file(pdf\|image)` | `string` (the file's key) | a file of a listed kind, uploaded to this field |
+| `file(pdf\|private)` | `string` (the file's key) | the same, [kept private](/guides/images/#private-files) |
 
 The dashboard picks the input and the table column from the type.
 

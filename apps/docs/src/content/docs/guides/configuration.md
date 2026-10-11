@@ -40,6 +40,7 @@ php artisan vendor:publish --tag=nevela-config
 | `uploads.disk` | `public`, or `NEVELA_UPLOADS_DISK` | The disk file and image fields store on. |
 | `uploads.url` | none, or `NEVELA_UPLOADS_URL` | The address files are served from, when a CDN or your web server serves the disk. |
 | `uploads.originals_disk` | `local`, or `NEVELA_ORIGINALS_DISK` | Where untouched originals of images are kept. |
+| `uploads.private_disk` | `local`, or `NEVELA_PRIVATE_DISK` | Where [private files](/guides/images/#private-files) are kept. It must not be a disk the web server serves. |
 | `uploads.max_bytes` | 10 MB | The largest file a field takes. |
 | `uploads.memory` | `512M` | Memory allowed while an image is optimised. |
 | `uploads.profiles` | `default`, `product`, `avatar`, `cover` | How images are optimised. See [Files and images](/guides/images/#profiles). |
