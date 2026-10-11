@@ -130,7 +130,7 @@ function asInput(fields: Record<string, ActionField>, values: Record<string, str
  * Then the message its class returned is the toast, and the page is asked for again.
  * `dialogs` is the sheet and the dialog, to be rendered once by whoever holds the buttons.
  */
-export function useResourceActions(resourceName: string, noun: string, onDone?: () => void) {
+export function useResourceActions(resourceName: string, nouns: { one: string; many: string }, onDone?: () => void) {
   const router = useRouter();
   const [current, setCurrent] = useState<{ action: ResourceAction; target: ActionTarget } | null>(null);
   const [values, setValues] = useState<Record<string, string | boolean>>({});
@@ -170,6 +170,8 @@ export function useResourceActions(resourceName: string, noun: string, onDone?: 
 
   const action = current?.action;
   const count = current?.target.ids?.length;
+  // "the 1 article you selected", "the 3 articles you selected"
+  const selected = count ? ` This is for the ${count} ${count === 1 ? nouns.one : nouns.many} you selected.` : "";
   const asking = Boolean(action && !action.fields);
   const filling = Boolean(action?.fields);
 
@@ -181,7 +183,7 @@ export function useResourceActions(resourceName: string, noun: string, onDone?: 
             <AlertDialogTitle>{action?.label}</AlertDialogTitle>
             <AlertDialogDescription>
               {action?.confirm}
-              {count ? ` This is for the ${count} ${noun} you selected.` : ""}
+              {selected}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -200,7 +202,7 @@ export function useResourceActions(resourceName: string, noun: string, onDone?: 
             <SheetTitle>{action?.label}</SheetTitle>
             <SheetDescription>
               {action?.confirm ?? `Fill this in, then ${action?.label.toLowerCase()}.`}
-              {count ? ` This is for the ${count} ${noun} you selected.` : ""}
+              {selected}
             </SheetDescription>
           </SheetHeader>
           <form
@@ -258,8 +260,9 @@ export function useResourceActions(resourceName: string, noun: string, onDone?: 
  * Buttons for a resource's actions: on a record's page (with the record's id), or beside
  * New for actions on the list as a whole (with none).
  */
-export function ActionButtons({ resourceName, noun, actions, id }: { resourceName: string; noun: string; actions: ResourceAction[]; id?: string }) {
-  const { start, pending, dialogs } = useResourceActions(resourceName, noun);
+export function ActionButtons({ resourceName, actions, id }: { resourceName: string; actions: ResourceAction[]; id?: string }) {
+  // Buttons here are for one record or for the list as a whole: never for a selection, so no noun is needed.
+  const { start, pending, dialogs } = useResourceActions(resourceName, { one: "record", many: "records" });
   if (actions.length === 0) return null;
   return (
     <>

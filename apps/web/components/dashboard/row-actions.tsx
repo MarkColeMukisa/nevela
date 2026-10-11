@@ -67,7 +67,7 @@ export function RowActions({
   actions?: ResourceAction[];
 }) {
   const router = useRouter();
-  const own = useResourceActions(resource.name, resource.pluralLabel.toLowerCase());
+  const own = useResourceActions(resource.name, { one: resource.label.toLowerCase(), many: resource.pluralLabel.toLowerCase() });
   const [confirming, setConfirming] = useState(false);
   const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();

@@ -113,7 +113,7 @@ interface BarProps {
 export function SelectionBar({ resourceName, label, pluralLabel, canDelete, rows, columns, slug, trash, actions = [] }: BarProps) {
   const { selected, clear } = useSelection();
   const router = useRouter();
-  const own = useResourceActions(resourceName, pluralLabel.toLowerCase(), clear);
+  const own = useResourceActions(resourceName, { one: label.toLowerCase(), many: pluralLabel.toLowerCase() }, clear);
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
   const count = selected.size;
