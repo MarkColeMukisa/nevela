@@ -45,7 +45,7 @@ Then it writes `nevela/resources/transaction.json` and generates the model, the 
 | `--name=` | The resource's name, when it isn't the table's own. `posts` is `Post` unless you say otherwise. |
 | `--icon=`, `--group=` | As for [`nevela resource`](/reference/commands/#nevela-resource). |
 | `--yes` | Write it without asking. |
-| `--force` | Read the table again and replace the descriptor it already has. |
+| `--force` | Read the table again and replace the descriptor it already has. The resource keeps its name. |
 
 ## How columns are read
 
@@ -71,6 +71,8 @@ Every column comes in as the plainest type that holds it. An `email` column is a
 ```
 
 The same goes for length. A `varchar(500)` is adopted as `string(500)`, so a value that fit the column is not refused by the form.
+
+Some columns say nothing about their length: every string column on SQLite, and a PostgreSQL `varchar` declared without one. For those the values decide. If the longest one in the table is over 255 characters, the field is given room for 65,535 and the command says so.
 
 ## Adopt parents first
 

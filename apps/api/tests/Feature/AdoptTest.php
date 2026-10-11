@@ -135,7 +135,8 @@ class AdoptTest extends TestCase
         $stamps = ['created_at' => $now, 'updated_at' => $now];
         DB::table('internship_applications')->insert([
             ['name' => 'Amara Okafor', 'email' => 'amara@example.com', 'track' => 'Backend', 'accepted_at' => null] + $stamps,
-            ['name' => 'Kofi Mensah', 'email' => 'kofi@example.com', 'track' => 'Design', 'accepted_at' => $now] + $stamps,
+            // SQLite keeps no length for a string column, and this one holds more than the usual 255.
+            ['name' => 'Kofi Mensah', 'email' => 'kofi@example.com', 'track' => str_repeat('d', 300), 'accepted_at' => $now] + $stamps,
         ]);
         DB::table('transactions')->insert([
             ['internship_application_id' => 1, 'reference' => 'TX-1', 'amount' => 150000, 'status' => 'successful', 'gateway_response' => '{"provider":"momo"}'] + $stamps,
@@ -240,6 +241,13 @@ class AdoptTest extends TestCase
         $this->assertFileDoesNotExist(base_path('app/Models/NewsletterSubscription.php'));
 
         $this->artisan('nevela:adopt', ['table' => 'transactions'])->expectsOutputToContain('transactions is a resource already')->assertFailed();
+        // Read again, a table stays the resource it is: under a second name it would be two.
+        $this->artisan('nevela:adopt', ['table' => 'transactions', '--force' => true, '--name' => 'Payment'])->expectsOutputToContain('transactions is the Transaction resource')->assertFailed();
+        $this->assertFileDoesNotExist(self::$dir.'/descriptors/payment.json');
+        $this->artisan('nevela:adopt', ['table' => 'posts', '--force' => true, '--name' => 'post'])
+            ->expectsOutputToContain('posts as Post, with integer ids')
+            ->expectsConfirmation('Make Post a resource? The table is not changed', 'no')
+            ->assertSuccessful();
         $this->artisan('nevela:adopt', ['table' => 'nowhere'])->expectsOutputToContain('There is no table called nowhere.')->assertFailed();
         $this->artisan('nevela:adopt', ['table' => 'nevela_roles'])->expectsOutputToContain('keeps for itself')->assertFailed();
         // A name another resource has.
@@ -294,6 +302,10 @@ class AdoptTest extends TestCase
         $this->patchJson('/api/posts/1', ['excerpt' => str_repeat('e', 400), 'title' => 'Opening day!'])->assertOk()->assertJsonPath('title', 'Opening day!');
         $this->patchJson('/api/posts/1', ['excerpt' => str_repeat('e', 500)])->assertOk();
         $this->patchJson('/api/posts/1', ['excerpt' => str_repeat('e', 501)])->assertStatus(422)->assertJsonPath('issues.0.path', 'excerpt');
+        // A column that says nothing of its length is as long as what was found in it.
+        $this->assertSame(65535, $this->descriptor('InternshipApplication')->fields['track']->maxLength);
+        $this->assertNull($this->descriptor('InternshipApplication')->fields['name']->maxLength);
+        $this->putJson('/api/internship-applications/2', ['name' => 'Kofi Mensah', 'email' => 'kofi@example.com', 'track' => str_repeat('d', 300)])->assertOk();
         // A column of the usual length has the usual limit.
         $this->patchJson('/api/posts/1', ['title' => str_repeat('t', 256)])->assertStatus(422)->assertJsonPath('issues.0.path', 'title');
     }
