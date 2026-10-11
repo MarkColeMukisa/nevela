@@ -56,6 +56,7 @@ export default defineConfig({
             { label: "Relationships", slug: "guides/relationships" },
             { label: "An app you already have", slug: "guides/existing-app" },
             { label: "Files and images", slug: "guides/images" },
+            { label: "Actions on a record", slug: "guides/actions" },
             { label: "The web app", slug: "guides/web-app" },
             { label: "Authentication", slug: "guides/authentication" },
             { label: "Users, roles and permissions", slug: "guides/policies" },

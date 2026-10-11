@@ -27,7 +27,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
+import type { ResourceAction } from "@/lib/extras";
 import { keptFor, type TrashInfo } from "@/lib/trash-info";
+import { actionIcon, useResourceActions } from "./resource-action";
 import { ResourceFormSheet, type FormRelations } from "./resource-form-sheet";
 import { toastMovedToTrash } from "./trash-actions";
 
@@ -46,6 +48,7 @@ export function RowActions({
   canUpdate = true,
   canDelete = true,
   trash,
+  actions = [],
 }: {
   resource: ClientResource;
   id: string;
@@ -60,8 +63,11 @@ export function RowActions({
   canDelete?: boolean;
   /** This resource's trash, when a deleted record goes there instead of going for good. */
   trash?: TrashInfo;
+  /** The resource's own actions that this person may run and that apply to this row. */
+  actions?: ResourceAction[];
 }) {
   const router = useRouter();
+  const own = useResourceActions(resource.name, resource.pluralLabel.toLowerCase());
   const [confirming, setConfirming] = useState(false);
   const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -99,6 +105,22 @@ export function RowActions({
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
+          {actions.length > 0 && (
+            <>
+              <DropdownMenuGroup>
+                {actions.map((action) => {
+                  const Icon = actionIcon(action.icon);
+                  return (
+                    <DropdownMenuItem key={action.key} disabled={own.pending} onSelect={() => own.start(action, { id })}>
+                      <Icon />
+                      {action.label}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuGroup>
+              {(canUpdate || canDelete) && <DropdownMenuSeparator />}
+            </>
+          )}
           {canUpdate && (
             <DropdownMenuGroup>
               {record ? (
@@ -127,6 +149,8 @@ export function RowActions({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {own.dialogs}
 
       {record && canUpdate && (
         <ResourceFormSheet

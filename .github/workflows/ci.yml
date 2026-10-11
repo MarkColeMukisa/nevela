@@ -172,6 +172,16 @@ jobs:
           php nevela resource Article --fields="title:string, body:richtext" --icon=newspaper --seed=3
           grep -q 'body: field.text({ ...({ rich: true } as {}) })' apps/web/resources/article.resource.ts
           grep -q "longText('body')" apps/api/database/migrations/*_create_articles_table.php
+          # An action: named in the descriptor, it gets a class to be written in, a permission and a button.
+          node -e '
+            const fs = require("fs"), file = "apps/api/nevela/resources/article.json";
+            const descriptor = JSON.parse(fs.readFileSync(file, "utf8"));
+            descriptor.actions = { publish: { label: "Publish", icon: "send", confirm: "Publish this article?" } };
+            fs.writeFileSync(file, JSON.stringify(descriptor, null, 4) + "\n");
+          '
+          php nevela generate Article
+          grep -q 'public function handle(Article $article, array $input): ?string' apps/api/app/Nevela/Actions/Article/Publish.php
+          grep -q '"permission": "articles.publish"' apps/web/resources/index.ts
           # A relation to a resource that doesn't exist is refused before anything is written.
           if php nevela resource Review --fields="body:text, author:belongsTo(Author)"; then echo "a relation to a missing resource was accepted"; exit 1; fi
           test ! -e apps/api/nevela/resources/review.json
@@ -376,6 +386,13 @@ jobs:
           test "$(curl -s -g -o /dev/null -w '%{http_code}' "http://127.0.0.1:8000/api/products/_insights?unit=year" -H 'Accept: application/json' -H "Authorization: Bearer $editor")" = 400
           # Rich text is cleaned on the way in, whoever sends it.
           curl -s -X POST http://127.0.0.1:8000/api/articles -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: Bearer $admin" -d '{"title":"CI","body":"<p onclick=\"x()\">Hi<script>alert(1)</script></p>"}' | tee article.json | grep -q '"body":"<p>Hi<\\/p>"'
+          # An action is a permission of its own: an editor, who may edit articles, may not publish one.
+          article="$(sed -E 's/.*"id":"([^"]+)".*/\1/' article.json)"
+          publish() { curl -s -o publish.json -w '%{http_code}' -X POST "http://127.0.0.1:8000/api/articles/$article/_actions/publish" -H 'Accept: application/json' -H "Authorization: Bearer $1"; }
+          test "$(publish "$editor")" = 403
+          # Nobody has written what it does yet, and it says so, having changed nothing.
+          test "$(publish "$admin")" = 500
+          grep -q "didn't work, and nothing was changed" publish.json
           # The adopted table: the row that was there before Nevela, its number sent as a string.
           curl -s http://127.0.0.1:8000/api/legacy-notes/1 -H 'Accept: application/json' -H "Authorization: Bearer $admin" | tee legacy.json | grep -q '"id":"1"'
           grep -q '"title":"From before"' legacy.json

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { Fragment, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { createRoleAction, deleteRoleAction, updateRoleAction } from "@/app/dashboard/access/actions";
 import {
@@ -27,6 +27,12 @@ import type { ManagedRole, PermissionCatalog, PermissionFeature } from "@/lib/ac
 const LIST = "/dashboard/access/roles";
 const ACTIONS = ["create", "view", "edit", "delete"] as const;
 const ACTION_LABELS: Record<string, string> = { create: "Create", view: "View", edit: "Edit", delete: "Delete" };
+/**
+ * Whether a permission is one of a resource's own actions ("applications.accept") and not
+ * one of the four. Those are given by name only: a whole section, or a pattern, doesn't
+ * carry them, which is how Laravel reads a grant too.
+ */
+const isOwn = (key: string) => !(ACTIONS as readonly string[]).includes(key.split(".")[1] ?? "");
 
 /**
  * A role's name and what it allows.
@@ -84,8 +90,9 @@ export function RoleForm({
   }, [kept.length]);
 
   const holds = (key: string) => mine === null || mine.includes(key);
-  const on = (key: string) => everything || whole.has(moduleOf.get(key.split(".")[0]!) ?? "") || byPattern.has(key) || picked.has(key);
-  const fixed = (key: string) => locked || whole.has(moduleOf.get(key.split(".")[0]!) ?? "") || byPattern.has(key) || (!picked.has(key) && !holds(key));
+  const inWhole = (key: string) => !isOwn(key) && whole.has(moduleOf.get(key.split(".")[0]!) ?? "");
+  const on = (key: string) => everything || inWhole(key) || byPattern.has(key) || picked.has(key);
+  const fixed = (key: string) => locked || inWhole(key) || byPattern.has(key) || (!picked.has(key) && !holds(key));
 
   const total = catalog.total;
   const count = useMemo(() => {
@@ -116,7 +123,7 @@ export function RoleForm({
     // A permission already covered by a whole section doesn't need saying twice.
     const grants = everything
       ? ["*"]
-      : [...[...whole].map((section) => `@${section}.*`), ...kept, ...[...picked].filter((key) => !whole.has(moduleOf.get(key.split(".")[0]!) ?? ""))];
+      : [...[...whole].map((section) => `@${section}.*`), ...kept, ...[...picked].filter((key) => !inWhole(key))];
     const input = { name: name.trim(), description: description.trim() || null, grants };
 
     startTransition(async () => {
@@ -349,8 +356,11 @@ function FeatureRows({
         const keys = feature.actions.map((action) => `${feature.key}.${action}`);
         const every = keys.every(on);
         const some = keys.some(on);
+        // The resource's own actions: accept, send an announcement. They have no column, so they get a line.
+        const own = feature.actions.filter((action) => !(ACTIONS as readonly string[]).includes(action));
         return (
-          <tr key={feature.key} className="border-b last:border-b-0">
+          <Fragment key={feature.key}>
+          <tr className={own.length > 0 ? undefined : "border-b last:border-b-0"}>
             <th scope="row" className="px-3 py-2 text-left font-normal">
               {feature.name}
             </th>
@@ -382,6 +392,25 @@ function FeatureRows({
               />
             </td>
           </tr>
+          {own.length > 0 && (
+            <tr className="border-b last:border-b-0">
+              <td colSpan={ACTIONS.length + 2} className="px-3 pt-0 pb-2">
+                <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                  <span className="text-xs">Also</span>
+                  {own.map((action) => {
+                    const key = `${feature.key}.${action}`;
+                    return (
+                      <label key={action} className="flex items-center gap-2">
+                        <Checkbox checked={on(key)} disabled={fixed(key)} onCheckedChange={(value) => set([key], value === true)} />
+                        {feature.labels?.[action] ?? action}
+                      </label>
+                    );
+                  })}
+                </span>
+              </td>
+            </tr>
+          )}
+          </Fragment>
         );
       })}
     </>

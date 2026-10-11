@@ -77,7 +77,12 @@ trait GeneratesResources
         }
         foreach ((new Writer(['api' => $dir.'/api', 'web' => $dir.'/web']))->write($files) as $row) {
             $this->assertSame('created', $row['status'], $row['path']);
-            if (str_ends_with($row['path'], '.php') && ! str_contains($row['path'], 'migrations')) {
+            if (! str_ends_with($row['path'], '.php') || str_contains($row['path'], 'migrations')) {
+                continue;
+            }
+            // A class the test wrote itself stands in for the generated one: an action's, to give it something to do.
+            $class = 'App\\'.str_replace(['/', '\\\\'], '\\', substr(str_replace('\\', '/', $row['path']), strlen(str_replace('\\', '/', $dir).'/api/app/'), -4));
+            if (! class_exists($class, false)) {
                 require_once $row['path'];
             }
         }

@@ -20,7 +20,9 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
 import { toCsv } from "@/lib/csv";
+import { actionApplies, type ResourceAction } from "@/lib/extras";
 import { keptFor, type TrashInfo } from "@/lib/trash-info";
+import { actionIcon, useResourceActions } from "./resource-action";
 import { toastMovedToTrash } from "./trash-actions";
 
 interface SelectionValue {
@@ -100,15 +102,18 @@ interface BarProps {
   /** The resource's address, and its trash when deleted records go there instead of going for good. */
   slug: string;
   trash?: TrashInfo;
+  /** The resource's own actions that can be run on several records at once, and that this person may run. */
+  actions?: ResourceAction[];
 }
 
 /**
  * What you can do with the rows you've ticked. Appears only when something is selected,
  * pinned to the bottom so it's reachable in a long table.
  */
-export function SelectionBar({ resourceName, label, pluralLabel, canDelete, rows, columns, slug, trash }: BarProps) {
+export function SelectionBar({ resourceName, label, pluralLabel, canDelete, rows, columns, slug, trash, actions = [] }: BarProps) {
   const { selected, clear } = useSelection();
   const router = useRouter();
+  const own = useResourceActions(resourceName, pluralLabel.toLowerCase(), clear);
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
   const count = selected.size;
@@ -157,6 +162,17 @@ export function SelectionBar({ resourceName, label, pluralLabel, canDelete, rows
           <DownloadIcon data-icon="inline-start" />
           Export
         </Button>
+        {actions.map((action) => {
+          const Icon = actionIcon(action.icon);
+          // Offered when it applies to at least one of the rows ticked. Laravel passes over the rest.
+          const applicable = rows.filter((row) => selected.has(String(row.id)) && actionApplies(action, row)).map((row) => String(row.id));
+          return (
+            <Button key={action.key} variant="ghost" size="sm" disabled={own.pending || applicable.length === 0} onClick={() => own.start(action, { ids: applicable })}>
+              <Icon data-icon="inline-start" />
+              {action.label}
+            </Button>
+          );
+        })}
         {canDelete && (
           <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setConfirming(true)}>
             <Trash2Icon data-icon="inline-start" />
@@ -167,6 +183,8 @@ export function SelectionBar({ resourceName, label, pluralLabel, canDelete, rows
           <XIcon />
         </Button>
       </div>
+
+      {own.dialogs}
 
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
