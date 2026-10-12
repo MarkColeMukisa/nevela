@@ -87,7 +87,7 @@ Cloudflare's yes means a person solved a check for your widget. Laravel takes it
 
   ```sh
   # apps/api/.env, only if the form is on other names than NEVELA_WEB_URL's
-  TURNSTILE_HOSTNAMES=example.com, shop.example.org
+  TURNSTILE_HOSTNAMES=example.com,shop.example.org
   ```
 
   A name stands for its subdomains, as it does on the widget: `example.com` accepts `www.example.com`. In development `localhost` and `127.0.0.1` are accepted too. In production they never are, whatever the setting says.
