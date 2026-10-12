@@ -8,7 +8,7 @@ import { revalidateResource } from "@/lib/cache";
 import { fileUrl } from "@/lib/files";
 import { laravel } from "@/lib/laravel";
 import { allResources, resourcePath, dashboardSession, dashboardStore, mayDo } from "@/lib/dashboard";
-import { actionsOf, publishFieldOf } from "@/lib/extras";
+import { actionsOf, formOf, publishFieldOf } from "@/lib/extras";
 
 export type ActionResult<T = unknown> =
   | { ok: true; data: T }
@@ -111,8 +111,11 @@ export async function exportRecordsAction(resourceName: string, query: string): 
 
   const rows: Record<string, unknown>[] = [];
   let truncated = false;
+  // Someone who joined a list and hasn't proved their address isn't on it yet.
+  const confirmedOnly = formOf(resourceName)?.confirm !== undefined && !new URLSearchParams(query).has("filter[confirmed]");
   for (let page = 1; rows.length < EXPORT_LIMIT; page++) {
     const params = new URLSearchParams(query);
+    if (confirmedOnly) params.set("filter[confirmed]", "true");
     params.set("page", String(page));
     params.set("perPage", String(EXPORT_PAGE));
     const result = await store.list(params);

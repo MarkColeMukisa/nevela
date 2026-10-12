@@ -1,6 +1,6 @@
 ---
 title: "Commands"
-description: "Every nevela command and option: new, update, resource, adopt, blog, generate, seed, user, upgrade, trash, dev, status and --version."
+description: "Every nevela command and option: new, update, resource, adopt, blog, generate, seed, user, upgrade, trash, disposable, dev, status and --version."
 ---
 
 Install the `nevela` command once, and everything is this short, in every shell:
@@ -32,6 +32,7 @@ nevela user
 nevela upgrade             # bring the app to the latest Nevela
 nevela migrate
 nevela trash               # remove deleted records whose 30 days are up
+nevela disposable          # fetch the current list of throwaway email domains
 ```
 
 You don't have to install it. [Without the nevela command](#without-the-nevela-command), at the end of this page, has the longer forms that do the same.
@@ -273,7 +274,9 @@ It checks the API's port before using it. If another program already has port 80
 | `--port=` | The first port to try for the API. Default 8000. |
 | `--api-only` | Start the API without the dashboard. |
 
-Stopping it with Ctrl+C stops both.
+Where the app's queue isn't `sync`, it works the queue too, so the mail a [public form](/guides/protecting-forms/#the-mail-a-form-causes) causes is sent while you develop.
+
+Stopping it with Ctrl+C stops them all.
 
 ## nevela status
 
@@ -298,7 +301,7 @@ nevela status
 
 `nevela status -v` also lists the dashboard files you have changed, which are the ones an upgrade will leave alone.
 
-Anything that needs attention is in red, with the command that fixes it: migrations that have not run, a resource whose table is missing, nobody able to sign in, or the dashboard's API address being answered by a different program. The command exits with an error code when it finds a problem, so it works in scripts.
+Anything that needs attention is in red, with the command that fixes it: migrations that have not run, a resource whose table is missing, nobody able to sign in, a form whose [robot check](/guides/protecting-forms/#when-the-check-cant-be-made) has no secret key in production, or the dashboard's API address being answered by a different program. The command exits with an error code when it finds a problem, so it works in scripts.
 
 ## nevela trash
 
@@ -309,6 +312,28 @@ nevela trash
 Removes, for good, the deleted records that have been in [the trash](/guides/trash/) longer than `trash.days` (30), and says how many of each resource went.
 
 You rarely need to type it. The app's scheduler runs it each night, and opening the Trash page does the same. It is here for a server with neither, and for seeing what a night's run would do.
+
+The same run removes files uploaded through a public form and never sent, and people who joined a list and didn't [confirm their address](/guides/protecting-forms/#proving-an-address) within 48 hours.
+
+## nevela disposable
+
+```sh
+nevela disposable
+```
+
+Fetches the current list of throwaway email domains, which a form with [`"email"` in its `protect`](/guides/protecting-forms/#the-checks) refuses. The package ships with a list; this replaces it with today's, kept in the app's `storage/app/nevela`. If what comes back isn't the list, the one in use is left alone.
+
+| Option | Meaning |
+|---|---|
+| `--url=` | Fetch the list from somewhere else: one domain a line. |
+
+## nevela digest
+
+```sh
+nevela digest
+```
+
+Sends the owner one email naming the form notices that were [held back](/guides/protecting-forms/#the-mail-a-form-causes) in a busy hour. The scheduler runs it at the top of every hour; it is here for a server without one.
 
 ## nevela migrate, and any other artisan command
 
