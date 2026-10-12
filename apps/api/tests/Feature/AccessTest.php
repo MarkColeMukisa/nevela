@@ -241,6 +241,41 @@ class AccessTest extends TestCase
         $this->getJson('/api/_nevela/users/nobody')->assertNotFound();
     }
 
+    /**
+     * SQLite answers "where id = 'nobody'" with no rows. Postgres answers with an error,
+     * because an id is a number or a UUID and that is neither: a 500 where a 404 was meant.
+     * So this passes on any database, and only means something on that one.
+     */
+    public function test_an_id_that_could_not_be_one_is_nobodys_and_not_an_error(): void
+    {
+        Sanctum::actingAs($this->user('ADMIN'));
+        $role = $this->role('USER')->id;
+
+        foreach (['nobody', '12abc', '0199-not-a-uuid', '99999999999999999999999'] as $id) {
+            $this->getJson("/api/_nevela/users/{$id}")->assertNotFound();
+            $this->patchJson("/api/_nevela/users/{$id}", ['name' => 'X', 'roles' => [$role]])->assertNotFound();
+            $this->deleteJson("/api/_nevela/users/{$id}")->assertNotFound();
+            $this->deleteJson("/api/_nevela/users/{$id}/sessions")->assertNotFound();
+            $this->postJson("/api/_nevela/deleted-accounts/{$id}/restore")->assertNotFound();
+            $this->deleteJson("/api/_nevela/deleted-accounts/{$id}")->assertNotFound();
+            $this->deleteJson("/api/_nevela/blocked-emails/{$id}")->assertNotFound();
+            $this->getJson("/api/_nevela/roles/{$id}")->assertNotFound();
+            $this->patchJson("/api/_nevela/roles/{$id}", ['name' => 'X'])->assertNotFound();
+            $this->deleteJson("/api/_nevela/roles/{$id}")->assertNotFound();
+            // A resource's own records: by its address, in the trash, an action on one, a private file of one.
+            $this->getJson("/api/products/{$id}")->assertNotFound();
+            $this->getJson("/api/categories/{$id}")->assertNotFound();
+            $this->postJson("/api/_nevela/trash/products/{$id}/restore")->assertNotFound();
+            $this->deleteJson("/api/_nevela/trash/products/{$id}")->assertNotFound();
+            $this->postJson("/api/products/{$id}/_actions/anything")->assertNotFound();
+            $this->get("/api/_nevela/private/products/{$id}/image", ['Accept' => 'application/json'])->assertNotFound();
+            // The account's own: a passkey to rename, and one and a session to remove (which answer the same whether or not there was one).
+            $this->patchJson("/api/auth/passkeys/{$id}", ['name' => 'X'])->assertNotFound();
+            $this->deleteJson("/api/auth/passkeys/{$id}")->assertNoContent();
+            $this->deleteJson("/api/auth/sessions/{$id}")->assertNoContent();
+        }
+    }
+
     public function test_a_switched_off_account_is_signed_out_and_cannot_sign_in(): void
     {
         $person = $this->user('EDITOR');

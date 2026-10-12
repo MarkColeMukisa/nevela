@@ -72,7 +72,8 @@ class AdoptTest extends TestCase
             $table->string('name');
             $table->string('email');
             $table->string('phone')->nullable();
-            $table->string('track');
+            // Room for the long one below on a database that keeps a string column's length. SQLite keeps none.
+            $table->string('track', 400);
             $table->string('cv_path')->nullable();
             $table->text('message')->nullable();
             $table->timestamp('accepted_at')->nullable();
@@ -228,8 +229,8 @@ class AdoptTest extends TestCase
         $this->patchJson('/api/posts/1', ['excerpt' => str_repeat('e', 400), 'title' => 'Opening day!'])->assertOk()->assertJsonPath('title', 'Opening day!');
         $this->patchJson('/api/posts/1', ['excerpt' => str_repeat('e', 500)])->assertOk();
         $this->patchJson('/api/posts/1', ['excerpt' => str_repeat('e', 501)])->assertStatus(422)->assertJsonPath('issues.0.path', 'excerpt');
-        // A column that says nothing of its length is as long as what was found in it.
-        $this->assertSame(65535, $this->descriptor('InternshipApplication')->fields['track']->maxLength);
+        // A column that says nothing of its length (SQLite's) is as long as what was found in it. One that says, is that long.
+        $this->assertSame(DB::connection()->getDriverName() === 'sqlite' ? 65535 : 400, $this->descriptor('InternshipApplication')->fields['track']->maxLength);
         $this->assertNull($this->descriptor('InternshipApplication')->fields['name']->maxLength);
         $this->putJson('/api/internship-applications/2', ['name' => 'Kofi Mensah', 'email' => 'kofi@example.com', 'track' => str_repeat('d', 300)])->assertOk();
         // A column of the usual length has the usual limit.

@@ -14,6 +14,12 @@ _A robot check counts only if it was solved on your site, for that form_
 
 - **The robot check is tied to the site and to the form.** Cloudflare's yes is now taken only if the check was solved on the web app's own address (`NEVELA_WEB_URL`), or one of `TURNSTILE_HOSTNAMES`, and under the form's own name, which `<PublicFormGuard>` now renders the widget with. A widget usually lists `localhost` beside the real domain; before this, a token solved on someone's own machine was good on the live form. In production `localhost` is never accepted and Cloudflare's test keys are refused. A live site whose `NEVELA_WEB_URL` is still `localhost` answers 503 and `nevela status` says why. `GET /api/public/_nevela/form/<slug>` returns the `action` for a form you render yourself. See [Where a check counts](apps/docs/src/content/docs/guides/protecting-forms.md).
 
+### Fixed
+
+- `PublicMail::toVisitor()` and `toOwner()` called while a record is being saved (a model's `created`) now count and send once the save has committed, not inside its transaction. A record that is rolled back sends nothing. On Postgres with the database cache, a lock held by another request could abort the transaction and lose the record. Inside a transaction they answer `true`: whether the email went is decided at the commit.
+- On Postgres, an address with something that couldn't be an id in it (`/api/_nevela/users/nobody`) answered 500 where it meant 404: Postgres refuses to compare a number or UUID column with it. An id's shape is now checked first, for users, deleted accounts, blocked emails, roles, passkeys, sessions, and a record's trash, actions and private files.
+- Removing a record from the trash for good while others still belong to it no longer aborts a surrounding transaction on Postgres.
+
 ## [0.9.0] - 2026-10-12
 
 _A blog with every new app, and public forms that keep bots out_

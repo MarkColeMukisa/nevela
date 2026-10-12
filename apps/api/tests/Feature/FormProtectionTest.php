@@ -419,6 +419,33 @@ class FormProtectionTest extends TestCase
         Mail::assertQueued(Receipt::class, 3);
     }
 
+    public function test_mail_asked_for_while_a_record_is_being_saved_waits_for_the_save(): void
+    {
+        DB::transaction(function () {
+            $this->assertTrue(PublicMail::toVisitor('amara@example.com', new Receipt));
+            // Not yet: nothing is counted or queued inside the transaction it was called in.
+            Mail::assertNothingQueued();
+            $this->assertSame(0, DB::table('nevela_public_mail')->count());
+        });
+        Mail::assertQueued(Receipt::class, 1);
+        $this->assertSame(1, DB::table('nevela_public_mail')->count());
+
+        // A save that is rolled back sends nothing.
+        try {
+            DB::transaction(function () {
+                PublicMail::toOwner(new Notice);
+                throw new \RuntimeException('The save failed.');
+            });
+        } catch (\RuntimeException) {
+        }
+        Mail::assertNotQueued(Notice::class);
+        $this->assertSame(0, DB::table('nevela_public_mail')->where('kind', 'owner')->count());
+
+        // With no transaction it happens at once, and says whether it went.
+        $this->assertFalse(PublicMail::toVisitor('amara@example.com', new Receipt));
+        $this->assertTrue(PublicMail::toOwner(new Notice));
+    }
+
     public function test_the_owner_gets_ten_notices_in_an_hour_and_one_email_for_the_rest(): void
     {
         Notification::fake();
