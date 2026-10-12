@@ -747,6 +747,7 @@ async function main() {
   let admin = false;
   let samples = false;
   let blog = false;
+  let blogMissing = false;
   await step('Setting up the database', () => {
     // One artisan process for the app key, Sanctum's migration, the generated files, the
     // migrations, the starter account and the sample users: each separate call would
@@ -757,6 +758,8 @@ async function main() {
       admin = account.length > 0;
       samples = admin && options.samples;
       blog = options.blog && fs.existsSync(path.join(web, 'app', 'blog', 'page.tsx'));
+      // Asked for, and not there: the setup carried on without it, and the person is told.
+      blogMissing = options.blog && !blog;
       return;
     }
     // 2: the app is set up and only the starter account could not be created.
@@ -809,6 +812,8 @@ async function main() {
   }
   if (blog) {
     console.log(`\n  The site has a blog at ${indigo('http://localhost:3000/blog')}, with three posts to start. Write more under Posts in the dashboard.`);
+  } else if (blogMissing) {
+    console.log(`\n  The blog couldn't be set up, so this app has none yet. Everything else is in place. Add it later: ${dim(`${nevela} blog`)}`);
   }
   console.log(`\n  Add ${blog ? 'a' : 'your first'} resource: ${dim(`${nevela} resource Product --fields="name:string, price:money"`)}`);
   console.log(`  Check the app: ${dim(`${nevela} status`)}   Upgrade it later: ${dim(`${nevela} upgrade`)}   Everything: ${dim(nevela)}`);
