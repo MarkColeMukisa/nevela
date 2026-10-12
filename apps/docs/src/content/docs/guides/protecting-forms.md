@@ -140,6 +140,7 @@ export function ContactForm() {
 |---|---|
 | `form.submit` | Sends each named field of the form, with the token. |
 | `form.pending`, `form.sent` | Being sent, and taken. |
+| `form.uploading` | The file field being uploaded right now, or `null`. |
 | `form.errors` | What is wrong with a field, by its name. |
 | `form.error` | What went wrong that isn't about one field: the robot check, too many tries, no connection. |
 | `form.again()` | Show the form again after one was sent. |
@@ -151,6 +152,20 @@ The hook works for a form with no `protect` too. Pass `values` to send something
 ```ts
 usePublicForm("orders", { values: (data) => ({ email: data.get("email"), quantity: Number(data.get("quantity")) }) });
 ```
+
+### A file in the form
+
+Add a file input named for a file field the descriptor's `create.fields` lists:
+
+```tsx
+<input name="cv" type="file" accept="application/pdf" />
+{form.errors.cv && <p>{form.errors.cv}</p>}
+<button disabled={form.pending}>{form.uploading ? "Uploading…" : "Send"}</button>
+```
+
+On submit the hook uploads the file first, to the form's own upload address, then sends its key as the field's value, [as Laravel wants it](/guides/public-site/#a-file-with-a-form). What Laravel refuses (the wrong type, too large) is shown under the field, and nothing else is sent. A file that was uploaded is not uploaded again when the form fails for another reason.
+
+With `values`, the keys arrive as its second argument: `values: (data, uploaded) => ({ …, cv: uploaded.cv })`. To upload as soon as a file is chosen, call `form.upload("cv", file)` yourself: it answers `{ key }` or `{ error }`.
 
 ### Without the web app
 

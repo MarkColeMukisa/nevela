@@ -365,6 +365,22 @@ namespace Tests\Feature {
             $this->assertSame(0, Upload::query()->count());
         }
 
+        public function test_a_file_can_be_sent_to_the_forms_own_address(): void
+        {
+            // What a page that knows the form by its slug sends to: the same upload, the same rules.
+            $put = fn (string $path, string $bytes = self::PDF) => $this->call('PUT', "/api/public/{$path}?name=cv.pdf", [], [], [], ['CONTENT_TYPE' => 'application/pdf', 'CONTENT_LENGTH' => strlen($bytes), 'HTTP_ACCEPT' => 'application/json'], $bytes);
+
+            $key = $put('enquiries/_uploads/cv')->assertCreated()->assertJsonPath('private', true)->json('key');
+            $this->postJson('/api/public/enquiries', $this->enquiry(['cv' => $key]))->assertStatus(201);
+            $this->assertSame($key, DB::table('enquiries')->value('cv'));
+
+            // Only a file field the form lists has one, and it takes what the field takes.
+            $put('enquiries/_uploads/brochure')->assertNotFound();
+            $put('enquiries/_uploads/name')->assertNotFound();
+            $put('stories/_uploads/body')->assertNotFound();
+            $put('enquiries/_uploads/cv', "GIF89a\x01\x00\x01\x00\x00\x00\x00;")->assertStatus(422);
+        }
+
         public function test_a_key_is_good_once_and_for_an_hour(): void
         {
             $key = $this->upload('Enquiry', 'cv')->assertCreated()->json('key');

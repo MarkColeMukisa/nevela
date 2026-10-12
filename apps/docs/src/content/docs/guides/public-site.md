@@ -110,12 +110,14 @@ or `status:enum(new|read)=new` after `--fields`. The default is used whenever a 
 A form with a file sends it first, to the upload route of a file field that `create.fields` lists:
 
 ```
-PUT /api/public/_nevela/uploads/InternshipApplication/cv?name=cv.pdf
+PUT /api/public/internship-applications/_uploads/cv?name=cv.pdf
 Content-Type: application/pdf
 (the file)
 ```
 
-It answers with a `key`. The form then sends that key as the field's value. The field's own types and size limit apply.
+It answers with a `key`. The form then sends that key as the field's value. The field's own types and size limit apply. (`/api/public/_nevela/uploads/InternshipApplication/cv`, by the resource's name, is the same route and still works.)
+
+In the web app [`usePublicForm`](/guides/protecting-forms/#a-file-in-the-form) does both steps for every file input in the form.
 
 A key from a public upload can be used **once**, in a public create for that resource, **within an hour**. Files uploaded and never used (a form that was started and left) are removed by `nevela trash`, which the scheduler runs each night.
 
@@ -174,6 +176,6 @@ if (response.status === 422) {
 }
 ```
 
-and a file, before it, to `/api/public/_nevela/uploads/<Resource>/<field>?name=cv.pdf` with `PUT`.
+and a file, before it, to `/api/public/<slug>/_uploads/<field>?name=cv.pdf` with `PUT`. Or let [`usePublicForm`](/guides/protecting-forms/#the-form-in-the-web-app) do both.
 
 Those two, and reading under `/api/public`, are the only things the web app lets through without a session.
