@@ -8,6 +8,8 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-10-12
+
 _A robot check counts only if it was solved on your site, for that form_
 
 ### Changed
@@ -411,7 +413,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.7.0...v0.7.1
