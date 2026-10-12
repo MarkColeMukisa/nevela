@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { resourcePath, adminPermissions, allowedActions, allResources, dashboardStore, requireAccess } from "@/lib/dashboard";
-import { actionApplies } from "@/lib/extras";
+import { actionApplies, PUBLISH_LABELS, publishFieldOf, publishState } from "@/lib/extras";
 import { site } from "@/lib/site";
 import { trashFor } from "@/lib/trash";
 import { cn } from "@/lib/utils";
@@ -100,6 +100,9 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
   }
 
   const overlayForms = site.dashboard.forms === "sheet";
+  // The field this resource's records are published by, where it has one, and the time to judge them by.
+  const publishField = publishFieldOf(resource.name);
+  const now = new Date();
   // The resource's own actions this person may run: on the list as a whole, and on a record.
   const actions = await allowedActions(resource.name);
   const onRecords = actions.filter((action) => action.on === "record");
@@ -118,7 +121,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
       <div className="flex flex-col gap-4">
       <ResourceInsights resource={forClient} total={meta.total} />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <ResourceTableToolbar resource={forClient} />
+        <ResourceTableToolbar resource={forClient} publish={publishField ? { field: publishField, label: resource.fields[publishField]?.label ?? "Published" } : undefined} />
         <div className="flex flex-wrap items-center gap-2">
           <ColumnMenu columns={allColumns.map(({ key, label }) => ({ key, label }))} visible={columns.map((column) => column.key)} />
           <ExportButton resourceName={resource.name} pluralLabel={resource.pluralLabel} />
@@ -216,7 +219,20 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
                       let content: React.ReactNode = formatValue(column.def, value);
                       // Timestamps are formatted in the browser: the Worker's clock is UTC,
                       // so a date rendered here would be in nobody's timezone.
-                      if ((column.def.kind === "timestamp" || column.def.kind === "datetime") && value != null) {
+                      if (column.key === publishField) {
+                        // Not the raw date: what it means. A post is published, waiting for its time, or neither.
+                        const state = publishState(value, now);
+                        content = (
+                          <span className="inline-flex items-center gap-2">
+                            <Badge variant={state === "published" ? "success" : state === "scheduled" ? "warning" : "secondary"}>{PUBLISH_LABELS[state]}</Badge>
+                            {state !== "draft" && (
+                              <span className="text-xs text-muted-foreground">
+                                <LocalTime value={value as string} />
+                              </span>
+                            )}
+                          </span>
+                        );
+                      } else if ((column.def.kind === "timestamp" || column.def.kind === "datetime") && value != null) {
                         content = <LocalTime value={value as string | number | Date} />;
                       } else if (column.def.kind === "enum" && value != null) {
                         const tone = statusTone(value);
@@ -316,6 +332,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
                         canDelete={permissions.delete}
                         trash={trash}
                         actions={onRecords.filter((action) => actionApplies(action, row))}
+                        published={publishField ? publishState(row[publishField], now) : undefined}
                       />
                     </TableCell>
                   </TableRow>

@@ -12,7 +12,7 @@ import { hrefWith } from "./query";
 const ALL = "__all__";
 
 /** Search box and enum/boolean filters for ResourceTable; all state goes into the URL. */
-export function ResourceTableToolbar({ resource }: { resource: ClientResource }) {
+export function ResourceTableToolbar({ resource, publish }: { resource: ClientResource; publish?: { field: string; label: string } }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = new URLSearchParams(useSearchParams().toString());
@@ -31,7 +31,7 @@ export function ResourceTableToolbar({ resource }: { resource: ClientResource })
     go({ q: q.trim() || null });
   }
 
-  if (!searchable && filters.length === 0) return null;
+  if (!searchable && filters.length === 0 && !publish) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -50,6 +50,24 @@ export function ResourceTableToolbar({ resource }: { resource: ClientResource })
             />
           </InputGroup>
         </form>
+      )}
+
+      {/* For a resource with a publish date: which of the three a record is, not a date to match. */}
+      {publish && (
+        <Select value={params.get(`filter[${publish.field}]`) ?? ALL} onValueChange={(value) => go({ [`filter[${publish.field}]`]: value === ALL ? null : value })}>
+          <SelectTrigger className="min-w-36" aria-label="Filter by whether it is published">
+            <span className="text-muted-foreground">Status:</span>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value={ALL}>Any</SelectItem>
+              <SelectItem value="published">Published</SelectItem>
+              <SelectItem value="scheduled">Scheduled</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       )}
 
       {filters.map(([key, def]) => {

@@ -7,6 +7,8 @@ Everything a resource has is behind sign-in, until its descriptor says otherwise
 
 Nothing is open without the section, and nothing beyond what it names.
 
+[The blog](/guides/blog/) a new app comes with is a worked example of the reading half: a resource, its section, and the pages that show it.
+
 ```json
 "public": {
     "read":   { "by": "slug", "fields": ["title", "slug", "excerpt", "body", "publishedAt"] },

@@ -6,7 +6,7 @@ import { FileCell } from "@/components/dashboard/fields/file-cell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { adminPermissions, allowedActions, allResources, dashboardStore, requireAccess, resourcePath } from "@/lib/dashboard";
-import { actionApplies } from "@/lib/extras";
+import { actionApplies, publishFieldOf, publishState } from "@/lib/extras";
 import { privateFileUrl } from "@/lib/files";
 import { isRich } from "@/lib/rich";
 import { site } from "@/lib/site";
@@ -97,6 +97,7 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
             overlayForms={site.dashboard.forms === "sheet"}
             trash={trash}
             actions={(await allowedActions(resource.name)).filter((action) => action.on === "record" && actionApplies(action, record))}
+            published={publishFieldOf(resource.name) ? publishState(record[publishFieldOf(resource.name)!]) : undefined}
           />
         }
       />

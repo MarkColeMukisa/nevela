@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition, type FormEvent, type MouseEvent } from "react";
-import { createValidators, formValuesToInput, initialFormValues, issuesByField, storedFields, type ClientResource, type StoredField } from "@flaredev/core";
+import { createValidators, formValuesToInput, initialFormValues, issuesByField, slugify, storedFields, type ClientResource, type StoredField } from "@flaredev/core";
 import { toast } from "sonner";
 import { createRecordAction, updateRecordAction } from "@/app/dashboard/actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -70,8 +70,25 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
   const last = step === steps.length - 1;
   const visible = steps[step] ?? [];
 
+  /**
+   * Fields made from another (a slug from a title) and not yet typed in by hand. On a new
+   * record they follow their source as it is typed, so what Laravel would make is on
+   * show; once someone types in one, it is theirs. Never on an edit: a slug that is
+   * already an address doesn't move.
+   */
+  const [following, setFollowing] = useState<Set<string>>(
+    () => new Set(mode === "create" ? fields.filter(([, def]) => typeof (def as { from?: string }).from === "string").map(([key]) => key) : []),
+  );
+
   const setValue = (key: string, value: string | boolean) => {
-    setValues((current) => ({ ...current, [key]: value }));
+    setValues((current) => {
+      const next = { ...current, [key]: value };
+      for (const [made, def] of fields) {
+        if (following.has(made) && (def as { from?: string }).from === key) next[made] = slugify(String(value));
+      }
+      return next;
+    });
+    if (following.has(key)) setFollowing((current) => new Set([...current].filter((made) => made !== key)));
     if (errors[key]) setErrors(({ [key]: _removed, ...rest }) => rest);
   };
 

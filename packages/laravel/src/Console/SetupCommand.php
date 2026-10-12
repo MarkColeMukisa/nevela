@@ -16,9 +16,10 @@ final class SetupCommand extends Command
         {--name= : Name for the starter account}
         {--email= : Email for the starter account. Leave out to create no account}
         {--password= : Password for the starter account}
-        {--no-sample-users : Create the starter account only, without the ten sample users}';
+        {--no-sample-users : Create the starter account only, without the ten sample users}
+        {--no-blog : Leave out the blog: the Post resource, its three sample posts and the /blog pages}';
 
-    protected $description = 'Finish setting up a new app: key, Sanctum\'s migration, generated files, migrations, a starter account and sample users';
+    protected $description = 'Finish setting up a new app: key, Sanctum\'s migration, generated files, migrations, the blog, a starter account and sample users';
 
     protected $hidden = true;
 
@@ -37,6 +38,18 @@ final class SetupCommand extends Command
         }
         if ($this->call('migrate', ['--force' => true]) !== self::SUCCESS) {
             return self::FAILURE;
+        }
+
+        // A blog, as a first resource and a first public page: a Post to write in the
+        // dashboard, /blog to read it at, and three posts so neither is empty. Not having
+        // one is no reason to call the setup failed.
+        if (! $this->option('no-blog')) {
+            // The sample posts are for development: asked for in production they are refused,
+            // which would read as the blog having failed.
+            $blog = $this->call('nevela:blog', app()->environment('production') ? [] : ['--sample' => true]);
+            if ($blog !== self::SUCCESS) {
+                $this->components->warn('The blog could not be set up, so this app has none yet. Everything else is in place. Add it later: php nevela blog');
+            }
         }
 
         if ($this->option('email')) {

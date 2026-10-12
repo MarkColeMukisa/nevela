@@ -8,7 +8,7 @@ import { revalidateResource } from "@/lib/cache";
 import { fileUrl } from "@/lib/files";
 import { laravel } from "@/lib/laravel";
 import { allResources, resourcePath, dashboardSession, dashboardStore, mayDo } from "@/lib/dashboard";
-import { actionsOf } from "@/lib/extras";
+import { actionsOf, publishFieldOf } from "@/lib/extras";
 
 export type ActionResult<T = unknown> =
   | { ok: true; data: T }
@@ -224,6 +224,17 @@ export async function updateRecordAction(resourceName: string, id: string, input
   const result = await store.update(id, input);
   if (result.ok) revalidatePath(resourcePath(store.resource));
   return result;
+}
+
+/**
+ * Publish a record now, or take it back to a draft: its publish date is set to this
+ * moment, or cleared. An edit like any other, so it takes the permission to edit, and
+ * Laravel's policy has the last word.
+ */
+export async function publishRecordAction(resourceName: string, id: string, publish: boolean): Promise<ActionResult<Record<string, unknown>>> {
+  const field = publishFieldOf(resourceName);
+  if (!field) return { ok: false, status: 404, error: "This isn't something that is published." };
+  return updateRecordAction(resourceName, id, { [field]: publish ? new Date().toISOString() : null });
 }
 
 /**

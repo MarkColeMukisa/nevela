@@ -1,6 +1,6 @@
 ---
 title: "Commands"
-description: "Every nevela command and option: new, update, resource, adopt, generate, seed, user, upgrade, trash, dev, status and --version."
+description: "Every nevela command and option: new, update, resource, adopt, blog, generate, seed, user, upgrade, trash, dev, status and --version."
 ---
 
 Install the `nevela` command once, and everything is this short, in every shell:
@@ -25,6 +25,7 @@ nevela dev                 # run the API and the dashboard
 nevela status              # check the app
 nevela resource Product --fields="name:string, price:money" --seed
 nevela adopt posts         # make a resource of a table you already have
+nevela blog                # give the site a blog, if it has none
 nevela generate
 nevela seed Product
 nevela user
@@ -52,6 +53,7 @@ Leave the name off and it asks for one. The [quickstart](/start/quickstart/) wal
 | `--fast` | Leave out PHPUnit, Pint and Laravel's other development packages. About a third quicker. |
 | `--no-user` | Don't create the starter account, or the sample users. |
 | `--no-sample-users` | Create the administrator only, without the ten sample users. |
+| `--no-blog` | Leave out [the blog](/guides/blog/): the Post resource, its three sample posts and `/blog`. |
 | `--no-git` | Don't run `git init`. |
 | `--bundled-package` | Use the copy of `nevela/laravel` inside the installer instead of the release on Packagist. |
 | `-y`, `--yes` | Ask nothing. Only the app name is ever asked for, and only if you leave it off. |
@@ -122,6 +124,25 @@ nevela adopt posts
 | `--force` | Read the table again and replace the descriptor it already has. |
 
 It shows each column and the field it becomes, lists the columns it leaves alone and why, and asks before writing. No migration is written to create the table; `nevela migrate` afterwards adds the `deleted_at` column that gives it a [trash](/guides/trash/). See [Adding Nevela to an app you already have](/guides/existing-app/).
+
+## nevela blog
+
+Give the site a blog: a Post resource to write in, and `/blog` to read it at. A new app has one already; this is for an app created with `--no-blog`, or before there was one.
+
+```sh
+nevela blog
+nevela blog --resource=Post --title=title --body=body --image=thumbnail --published=published_at
+```
+
+| Option | Meaning |
+|---|---|
+| `--resource=` | Read the posts from a resource the app already has, and write only the pages. It needs `public.read` with a `by` field. |
+| `--title=`, `--body=` | That resource's fields for a post's title and for the post itself. Default: `title` and `body`. |
+| `--excerpt=`, `--image=`, `--published=` | Its fields for those, where it has them. |
+| `--sample` | Add three posts to start with. For development: refused in production. |
+| `--no-migrate` | Don't create the posts table yet. |
+
+The pages are written once into `apps/web` and are yours afterwards. Run again, it writes only what isn't there. See [The blog](/guides/blog/).
 
 ## nevela generate
 
@@ -322,6 +343,7 @@ With npm the first is `npm create nevela@latest my-app`, and the second is `npm 
 | `php nevela --version` | `php artisan nevela:version`: the version of Nevela the app is on |
 | `php nevela resource …` | `php artisan nevela:resource … --migrate` |
 | `php nevela adopt …` | `php artisan nevela:adopt …` |
+| `php nevela blog` | `php artisan nevela:blog` |
 | `php nevela generate` | `php artisan nevela:generate` |
 | `php nevela seed …` | `php artisan nevela:seed …` |
 | `php nevela user` | `php artisan nevela:user` |
