@@ -32,6 +32,7 @@ Both can be combined: `code:string?!`.
 | `url` | `string` (2,048) | a valid URL |
 | `tel` | `string` | text, up to 32 characters |
 | `slug` | `string` | letters, numbers, dashes and underscores |
+| `slug(title)` | `string` | the same, made from the title when left empty (`post-title`, then `post-title-2`) |
 | `color` | `string` | a hex colour such as `#1a2b3c` |
 | `int` | `integer` | a whole number |
 | `float` | `double` | a number |

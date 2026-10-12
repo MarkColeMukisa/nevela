@@ -36,6 +36,8 @@ description: "The JSON file per resource that everything else is generated from.
 | `group` | The sidebar heading the resource sits under. Optional. |
 | `titleField` | The field shown as a record's title. Defaults to the first string field. |
 | `fields` | The fields, in the order they appear in forms and tables. |
+| `publish` | The optional date-and-time field a record is published by: empty is a draft, a time still to come is scheduled. See [The blog](/guides/blog/#how-it-is-described). Optional. |
+| `blog` | Where on the site the resource's public records are a blog (`"/blog"`). Written by `nevela blog`. Optional. |
 | `public` | What of the resource anyone may read or create without signing in. Nothing, without it. See [A public site on your API](/guides/public-site/). Optional. |
 | `actions` | What can be done to a record, or to the list, beyond create, edit and delete. See [Actions on a record](/guides/actions/). Optional. |
 
@@ -49,5 +51,6 @@ Each field has a `kind` (`string`, `text`, `int`, `float`, `boolean`, `date`, `d
 | `maxLength` | For `string` and `text`: the most characters it holds, where that isn't the usual 255 or 65,535. |
 | `required` | `false` makes the field optional. Defaults to `true`. |
 | `unique` | `true` makes values unique. Defaults to `false`. |
+| `from` | For a slug: the field it is made from when a create leaves it empty (`"title"`). It is never remade afterwards. |
 | `default` | What the field is when a create leaves it out: `"pending"`, `0`, `false`. Also the column's default. For `string`, `text`, `int`, `float`, `boolean` and `enum`. |
 | `label` | The label in the dashboard. Defaults to the field name in words. |

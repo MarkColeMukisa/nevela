@@ -43,7 +43,16 @@ export interface ResourceAction {
 
 interface ResourceExtras {
   actions?: Record<string, Omit<ResourceAction, "key">>;
+  /** The date-and-time field its records are published by (the descriptor's "publish"). */
+  publish?: string;
+  /** Where on the site its public records are a blog: "/blog". */
+  blog?: string;
 }
+
+/** What a record with a publish date is: on the site, waiting for its time, or neither. */
+export type PublishState = "published" | "scheduled" | "draft";
+
+export const PUBLISH_LABELS: Record<PublishState, string> = { published: "Published", scheduled: "Scheduled", draft: "Draft" };
 
 /** An app generated before there were any has no `extras` in its registry, and none to have. */
 const extras = ((registry as { extras?: unknown }).extras ?? {}) as Record<string, ResourceExtras>;
@@ -51,6 +60,22 @@ const extras = ((registry as { extras?: unknown }).extras ?? {}) as Record<strin
 /** A resource's actions, in the order the descriptor gives them. */
 export function actionsOf(resourceName: string): ResourceAction[] {
   return Object.entries(extras[resourceName]?.actions ?? {}).map(([key, action]) => ({ ...action, key }));
+}
+
+/** The field a resource's records are published by, if it has one. */
+export function publishFieldOf(resourceName: string): string | undefined {
+  return extras[resourceName]?.publish;
+}
+
+/** Which of the three a record is, from its publish date and the time now. */
+export function publishState(value: unknown, now: Date = new Date()): PublishState {
+  if (typeof value !== "string" || value === "") return "draft";
+  return new Date(value).getTime() <= now.getTime() ? "published" : "scheduled";
+}
+
+/** Links for the site's header to what the resources have put on the site: the blog. */
+export function siteLinks(): { label: string; href: string }[] {
+  return Object.values(extras).flatMap((entry) => (entry.blog ? [{ label: "Blog", href: entry.blog }] : []));
 }
 
 /** Whether an action applies to a record as it is now. Laravel asks the same before running it. */

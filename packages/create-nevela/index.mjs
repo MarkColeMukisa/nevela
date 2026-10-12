@@ -76,6 +76,7 @@ const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
     nevela status              Check versions, migrations, users and the dashboard
     nevela resource <Name> --fields="…" [--seed]
     nevela adopt <table>       Make a resource of a table you already have
+    nevela blog                Give the site a blog, if it was created without one
     nevela seed | user | generate | migrate | trash | artisan <command>
 
   ${bold('Options')}
@@ -83,6 +84,7 @@ const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
     --no-install               Don't install the dashboard's dependencies.
     --no-user                  Don't create the starter admin account, or the sample users.
     --no-sample-users          Create the admin only, without the ten sample users.
+    --no-blog                  Leave out the blog: the Post resource, three sample posts and /blog.
     --fast                     Leave out PHPUnit, Pint and Laravel's other development packages.
                                About a third quicker. Add them later: cd apps/api && composer install
     --no-git                   Don't run git init.
@@ -194,7 +196,7 @@ async function step(label, work) {
 }
 
 function parseArgs(argv) {
-  const options = { name: undefined, pm: undefined, install: true, user: true, samples: true, git: true, yes: false, bundledPackage: false, devTools: true };
+  const options = { name: undefined, pm: undefined, install: true, user: true, samples: true, blog: true, git: true, yes: false, bundledPackage: false, devTools: true };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '-h' || arg === '--help') {
@@ -208,6 +210,7 @@ function parseArgs(argv) {
     else if (arg === '--no-install') options.install = false;
     else if (arg === '--no-user') options.user = false;
     else if (arg === '--no-sample-users') options.samples = false;
+    else if (arg === '--no-blog') options.blog = false;
     else if (arg === '--no-git') options.git = false;
     else if (arg === '--no-dev-tools' || arg === '--fast') options.devTools = false;
     else if (arg === '--bundled-package') options.bundledPackage = true;
@@ -286,7 +289,7 @@ function write(file, contents) {
   fs.writeFileSync(file, contents);
 }
 
-function writeRootFiles(root, { name, title, pm, admin, samples }) {
+function writeRootFiles(root, { name, title, pm, admin, samples, blog }) {
   write(path.join(root, 'package.json'), `${JSON.stringify({
     name,
     version: '0.1.0',
@@ -338,7 +341,11 @@ php nevela upgrade     # bring this app to the latest Nevela
 php nevela             # everything it can do
 \`\`\`
 
-## Add a resource
+${blog ? `## The blog
+
+The site has a blog at http://localhost:3000/blog. Posts are written under **Posts** in the dashboard, and a post is on the site once it is published. Its pages are in \`apps/web/app/blog\` and its settings in \`apps/web/lib/blog.ts\`: both are yours to change.
+
+` : ''}## Add a resource
 
 \`\`\`sh
 php nevela resource Product --fields="name:string, sku:string!, price:money, notes:text?"
@@ -682,7 +689,7 @@ async function main() {
   // `nevela upgrade` compares against these to tell the files you changed from the ones
   // you didn't, so an update never overwrites your work.
   write(path.join(web, '.nevela.json'), `${JSON.stringify(templateRecord(VERSION), null, 4)}\n`);
-  writeRootFiles(root, { name, title, pm, admin: options.user ? ADMIN : null, samples: options.user && options.samples });
+  writeRootFiles(root, { name, title, pm, admin: options.user ? ADMIN : null, samples: options.user && options.samples, blog: options.blog });
   const packages = options.install ? start(pm, ['install'], { cwd: web }) : null;
 
   const tokens = await step('Creating the Laravel app', async (progress) => {
@@ -739,15 +746,17 @@ async function main() {
 
   let admin = false;
   let samples = false;
+  let blog = false;
   await step('Setting up the database', () => {
     // One artisan process for the app key, Sanctum's migration, the generated files, the
     // migrations, the starter account and the sample users: each separate call would
     // start Laravel again.
     const account = options.user && tokens ? [`--name=${ADMIN.name}`, `--email=${ADMIN.email}`, `--password=${ADMIN.password}`, ...(options.samples ? [] : ['--no-sample-users'])] : [];
-    const setup = run('php', ['artisan', 'nevela:setup', ...account], { cwd: api, allowFailure: true });
+    const setup = run('php', ['artisan', 'nevela:setup', ...account, ...(options.blog ? [] : ['--no-blog'])], { cwd: api, allowFailure: true });
     if (setup.ok) {
       admin = account.length > 0;
       samples = admin && options.samples;
+      blog = options.blog && fs.existsSync(path.join(web, 'app', 'blog', 'page.tsx'));
       return;
     }
     // 2: the app is set up and only the starter account could not be created.
@@ -798,7 +807,10 @@ async function main() {
       console.log(`  ${dim(`Ten sample users are there too, with the same password: 2 editors and 8 users. See them under Users, and what each may do under Roles.`)}`);
     }
   }
-  console.log(`\n  Add your first resource: ${dim(`${nevela} resource Product --fields="name:string, price:money"`)}`);
+  if (blog) {
+    console.log(`\n  The site has a blog at ${indigo('http://localhost:3000/blog')}, with three posts to start. Write more under Posts in the dashboard.`);
+  }
+  console.log(`\n  Add ${blog ? 'a' : 'your first'} resource: ${dim(`${nevela} resource Product --fields="name:string, price:money"`)}`);
   console.log(`  Check the app: ${dim(`${nevela} status`)}   Upgrade it later: ${dim(`${nevela} upgrade`)}   Everything: ${dim(nevela)}`);
   if (nevela !== 'php nevela' && nevela !== 'nevela') {
     console.log(`\n  ${dim(`In this shell "php" isn't a command (your PHP is php.bat), so use ${nevela}. In PowerShell, php nevela works too.`)}`);

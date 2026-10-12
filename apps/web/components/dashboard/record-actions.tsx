@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { PencilIcon, Trash2Icon } from "lucide-react";
+import { EyeOffIcon, PencilIcon, SendIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 import type { ClientResource } from "@flaredev/core";
-import { deleteRecordAction } from "@/app/dashboard/actions";
+import { deleteRecordAction, publishRecordAction } from "@/app/dashboard/actions";
 import { restoreRecordAction } from "@/app/dashboard/trash/actions";
 import {
   AlertDialog,
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import type { ResourceAction } from "@/lib/extras";
+import type { PublishState, ResourceAction } from "@/lib/extras";
 import { keptFor, type TrashInfo } from "@/lib/trash-info";
 import { ActionButtons } from "./resource-action";
 import { ResourceFormSheet, type FormRelations } from "./resource-form-sheet";
@@ -40,11 +40,23 @@ interface Props {
   trash?: TrashInfo;
   /** The resource's own actions that this person may run and that apply to this record as it is. */
   actions?: ResourceAction[];
+  /** For a resource with a publish date: what this record is now, so the right one of Publish and Unpublish is offered. */
+  published?: PublishState;
 }
 
-/** The resource's own actions, then edit and delete, at the top of a record's own page. Deleting goes back to the list. */
-export function RecordActions({ resource, id, record, relations, listHref, editHref, canUpdate, canDelete, overlayForms, trash, actions = [] }: Props) {
+/** Publishing, the resource's own actions, then edit and delete, at the top of a record's own page. Deleting goes back to the list. */
+export function RecordActions({ resource, id, record, relations, listHref, editHref, canUpdate, canDelete, overlayForms, trash, actions = [], published }: Props) {
   const router = useRouter();
+  const [publishing, startPublishing] = useTransition();
+
+  const publish = (now: boolean) => {
+    startPublishing(async () => {
+      const result = await publishRecordAction(resource.name, id, now);
+      if (result.ok) toast.success(now ? `${resource.label} published.` : `${resource.label} is a draft again.`);
+      else toast.error(result.error);
+      router.refresh();
+    });
+  };
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -67,6 +79,18 @@ export function RecordActions({ resource, id, record, relations, listHref, editH
 
   return (
     <>
+      {canUpdate && published && published !== "published" && (
+        <Button disabled={publishing} onClick={() => publish(true)}>
+          {publishing ? <Spinner data-icon="inline-start" /> : <SendIcon data-icon="inline-start" />}
+          {published === "scheduled" ? "Publish now" : "Publish"}
+        </Button>
+      )}
+      {canUpdate && published === "published" && (
+        <Button variant="outline" disabled={publishing} onClick={() => publish(false)}>
+          {publishing ? <Spinner data-icon="inline-start" /> : <EyeOffIcon data-icon="inline-start" />}
+          Unpublish
+        </Button>
+      )}
       <ActionButtons resourceName={resource.name} actions={actions} id={id} />
       {canUpdate &&
         (overlayForms ? (

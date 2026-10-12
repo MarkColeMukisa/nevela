@@ -8,6 +8,18 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_A blog with every new app_
+
+### Added
+
+- **A blog.** A new app has one: a Post resource to write in under Posts in the dashboard, `/blog` and `/blog/<slug>` on the site, an RSS feed at `/blog/feed.xml`, a sitemap, a Blog link in the site's header, and three sample posts. The pages are written once into `apps/web` and are yours. `nevela new my-app --no-blog` leaves it out, and `nevela blog` adds it to an app that has none. For posts in a table of the app's own, `nevela blog --resource=Post --title=… --body=…` writes only the pages. See [The blog](apps/docs/src/content/docs/guides/blog.md).
+- **A slug that fills itself.** `slug:slug(title)!`, or `"from": "title"` in the descriptor: left empty on create, the slug is made from that field, and `-2`, `-3` are added while it is taken, counting records in the trash. In the dashboard's form it follows the title as it is typed. It is never remade when the title changes later.
+- **Publishing.** `"publish": "publishedAt"` in a descriptor names the date a record is published by. The dashboard shows a Published, Draft or Scheduled badge in place of the date, a filter on it, and Publish and Unpublish on the record's page and in its row's menu, under the permission to edit. `filter[publishedAt]=draft` (or `published`, `scheduled`) narrows a list over the API. A model generated for such a resource has a `publicQuery` scope that lets through the records whose time has come.
+
+### Changed
+
+- `nevela new` creates the blog unless told `--no-blog`, so a new app starts with one resource and three records in it.
+
 ## [0.8.0] - 2026-10-11
 
 _Adopt the tables you have, and open part of them to the public_

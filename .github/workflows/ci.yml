@@ -133,7 +133,9 @@ jobs:
       - name: Create an app
         working-directory: ${{ runner.temp }}
         # --bundled-package: test the package as it is in this commit, not the last release on Packagist.
-        run: node create-nevela/package/index.mjs demo-app --yes --pm pnpm --bundled-package
+        # --no-blog: an app with nothing in it first, so the steps below can see that an empty one builds.
+        # The blog is added further down with the command a new app runs for itself.
+        run: node create-nevela/package/index.mjs demo-app --yes --pm pnpm --bundled-package --no-blog
       - name: The new app has what it should, and none of the examples
         working-directory: ${{ runner.temp }}/demo-app
         run: |
@@ -144,6 +146,11 @@ jobs:
           grep -q "HasApiTokens, HasFactory" apps/api/app/Models/User.php
           test ! -e apps/web/app/dashboard/products
           test ! -e apps/web/resources/product.resource.ts
+          # Asked for no blog: no Post resource, no pages, and nothing for the site's header to link to.
+          test ! -e apps/api/nevela/resources/post.json
+          test ! -e apps/web/app/blog
+          test ! -e apps/web/lib/blog.ts
+          if grep -q '"blog"' apps/web/resources/index.ts; then echo "an app created with --no-blog has a blog"; exit 1; fi
           test -d apps/web/node_modules
           grep -q '"nevela/laravel"' apps/api/composer.json
           grep -q '"laravel/sanctum"' apps/api/composer.json
@@ -158,6 +165,19 @@ jobs:
           test -f nevela
           php nevela | grep -q "php nevela upgrade"
           php nevela version | grep -q "^Nevela [0-9]"
+          # The blog, for an app created without one: what `nevela new` runs for itself otherwise.
+          php nevela blog --sample | tee blog.log
+          grep -q 'Added three sample posts' blog.log
+          test -f apps/api/nevela/resources/post.json
+          for file in lib/blog.ts app/blog/page.tsx 'app/blog/[slug]/page.tsx' app/blog/feed.xml/route.ts app/sitemap.ts; do test -f "apps/web/$file"; done
+          grep -q '"blog": "/blog"' apps/web/resources/index.ts
+          grep -q '"publish": "publishedAt"' apps/web/resources/index.ts
+          # Its model lets through the posts whose time has come, not none.
+          grep -q "whereNotNull('published_at')" apps/api/app/Models/Post.php
+          # Run again, it writes nothing over what is there.
+          php nevela blog | tee blog-again.log
+          grep -q 'exists (yours)' blog-again.log
+          if grep -q 'created' blog-again.log; then echo "nevela blog wrote something the second time"; exit 1; fi
           # One command: the code, the table and the records.
           # Written the way Grit writes an image field, which Nevela also understands.
           php nevela resource Category --fields="name:string, slug:slug!, image:file:image?" --icon=tags --seed=6
@@ -403,6 +423,17 @@ jobs:
           grep -q '"field":"kind"' insights.json
           grep -q '"total":100' insights.json
           test "$(curl -s -g -o /dev/null -w '%{http_code}' "http://127.0.0.1:8000/api/products/_insights?unit=year" -H 'Accept: application/json' -H "Authorization: Bearer $editor")" = 400
+          # The blog as the site reads it, with no token: the three posts it came with,
+          curl -s -g "http://127.0.0.1:8000/api/public/posts?sort=-publishedAt" -H 'Accept: application/json' | tee posts.json | grep -q '"total":3'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/public/posts/welcome-to-your-blog -H 'Accept: application/json')" = 200
+          # and a post written now: a slug made from its title, and not on the site until it is published.
+          curl -s -X POST http://127.0.0.1:8000/api/posts -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: Bearer $admin" -d '{"title":"Written in CI","body":"<p>Hello.</p>"}' | tee post.json | grep -q '"slug":"written-in-ci"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/public/posts/written-in-ci -H 'Accept: application/json')" = 404
+          curl -s -g "http://127.0.0.1:8000/api/posts?filter[publishedAt]=draft" -H 'Accept: application/json' -H "Authorization: Bearer $admin" | grep -q '"total":1'
+          written="$(sed -E 's/^\{"id":"([^"]+)".*/\1/' post.json)"
+          curl -s -o /dev/null -X PATCH "http://127.0.0.1:8000/api/posts/$written" -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: Bearer $admin" -d '{"publishedAt":"2026-01-01T00:00:00Z","title":"Renamed in CI"}'
+          # Published, it is there, at the address it was given first.
+          curl -s http://127.0.0.1:8000/api/public/posts/written-in-ci -H 'Accept: application/json' | grep -q '"title":"Renamed in CI"'
           # Rich text is cleaned on the way in, whoever sends it.
           curl -s -X POST http://127.0.0.1:8000/api/articles -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: Bearer $admin" -d '{"title":"CI","body":"<p onclick=\"x()\">Hi<script>alert(1)</script></p>"}' | tee article.json | grep -q '"body":"<p>Hi<\\/p>"'
           # The public side, with no token at all. Nothing is public that no descriptor opens,

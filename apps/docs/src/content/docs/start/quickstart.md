@@ -85,6 +85,8 @@ Open http://localhost:3000/sign-in and sign in with the starter account:
 
 That account is the administrator. Ten sample users are there too, with the same password: two editors and eight users. Open **Users** in the sidebar to see them and **Roles** to see what each may do, or sign in as `amara.okafor@example.com` (an editor) or `sofia.martinez@example.com` (a user) to see the dashboard as they do. [Users, roles and permissions](/guides/policies/) has the rest.
 
+The app also has a blog. Open http://localhost:3000/blog: three sample posts are on it, and **Posts** in the dashboard is where they are written. [The blog](/guides/blog/) says how it works and how to change it, and `nevela new my-app --no-blog` leaves it out.
+
 :::caution[These accounts are for your machine]
 They exist only in your local database. They are not in the code or in a migration, so they do not follow the app to a server. Still, don't keep a password everyone knows: add your own account and delete these before anyone else can reach the app.
 
@@ -150,6 +152,7 @@ It lists the Nevela version, which migrations have run and which are pending, ho
 | `--fast` | Leave out PHPUnit, Pint and Laravel's other development packages. About a third quicker. |
 | `--no-user` | Don't create the starter account, or the sample users. |
 | `--no-sample-users` | Create the administrator only, without the ten sample users. |
+| `--no-blog` | Leave out [the blog](/guides/blog/): the Post resource, its three sample posts and `/blog`. |
 | `--no-git` | Don't run `git init`. |
 | `--bundled-package` | Use the copy of `nevela/laravel` inside the installer instead of the release on Packagist. |
 | `-y`, `--yes` | Ask nothing. Only the app name is ever asked for, and only if you leave it off. |
@@ -159,6 +162,7 @@ Through npm's `create`, put options after `--`: `npm create nevela@latest my-app
 ## Next
 
 - [Build a shop](/guides/shop/): two linked resources, with images that are optimised on upload
+- [The blog](/guides/blog/): the one your app came with, and how it is put together
 - [Resources](/concepts/resources/): the field types and how regeneration works
 - [REST API](/reference/api/): calling the API directly
 - [Updating and upgrading](/guides/updating/): bring the app up to a newer Nevela later
