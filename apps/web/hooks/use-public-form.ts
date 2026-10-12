@@ -8,6 +8,8 @@ interface Issued {
   honeypot: string | null;
   minSeconds: number;
   turnstile: boolean;
+  /** The name the robot check is made under. Cloudflare returns it, and Laravel checks it is this form's. */
+  action?: string | null;
 }
 
 export interface PublicForm {
@@ -27,6 +29,7 @@ export interface PublicForm {
   guard: {
     honeypot: string | null;
     turnstile: boolean;
+    action: string | null;
     /** Goes up after every attempt: a robot token is good once, so the widget starts over. */
     attempt: number;
     robot: (token: string | null) => void;
@@ -164,7 +167,7 @@ export function usePublicForm(slug: string, { values, onSent }: PublicFormOption
   }, []);
 
   const guard = React.useMemo(
-    () => ({ honeypot: issued?.honeypot ?? null, turnstile: issued?.turnstile ?? false, attempt, robot: setRobot }),
+    () => ({ honeypot: issued?.honeypot ?? null, turnstile: issued?.turnstile ?? false, action: issued?.action ?? null, attempt, robot: setRobot }),
     [issued, attempt, setRobot],
   );
 
