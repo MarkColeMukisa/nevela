@@ -253,6 +253,26 @@ class FormProtectionTest extends TestCase
         $this->assertSame(['robot' => 2], $this->blocked());
     }
 
+    public function test_a_token_is_good_once_here_even_when_cloudflare_would_take_it_again(): void
+    {
+        // Seen with a real widget: the same token, sent three times, answered yes three times.
+        // So Cloudflare's answers here are all yes, but for one check solved somewhere else.
+        $this->turnstile($this->yes(), $this->yes(), $this->yes('evil.example'), $this->yes());
+
+        $this->send(['_turnstile' => 'the-same-token'])->assertStatus(201);
+        $this->send(['_turnstile' => 'the-same-token', 'email' => 'kofi@example.com'])->assertStatus(422)->assertJsonPath('code', 'ROBOT');
+        // Refused from memory: Cloudflare was asked once.
+        Http::assertSentCount(1);
+        // Another token is another check.
+        $this->send(['_turnstile' => 'another-token', 'email' => 'kofi@example.com'])->assertStatus(201);
+        Http::assertSentCount(2);
+
+        // One that was refused was never taken: sent again, it is Cloudflare's to answer.
+        $this->send(['_turnstile' => 'a-third-token', 'email' => 'ama@example.com'])->assertStatus(422)->assertJsonPath('code', 'HOSTNAME');
+        $this->send(['_turnstile' => 'a-third-token', 'email' => 'ama@example.com'])->assertStatus(201);
+        $this->assertSame(3, DB::table('contacts')->count());
+    }
+
     public function test_a_check_solved_somewhere_else_or_for_another_form_is_not_this_forms(): void
     {
         $this->turnstile($this->yes('evil.example'), $this->yes('localhost', 'joiners'), $this->yes('localhost', ''), $this->yes('127.0.0.1'));
@@ -266,6 +286,7 @@ class FormProtectionTest extends TestCase
 
         // Where a form is built, the machine it is built on counts as here.
         $this->send(['_turnstile' => 'a-token'])->assertStatus(201);
+        $this->assertSame(1, DB::table('contacts')->count());
         $this->assertSame(['hostname' => 1, 'robot' => 2], $this->blocked());
         // Longer than any token Cloudflare makes: not one, and Cloudflare isn't asked.
         Http::fake();
@@ -284,7 +305,7 @@ class FormProtectionTest extends TestCase
         $this->send(['_turnstile' => 'a-token'])->assertStatus(422)->assertJsonPath('code', 'HOSTNAME');
         // The site, and a name under it, as on the widget.
         $this->send(['_turnstile' => 'a-token'])->assertStatus(201);
-        $this->send(['_turnstile' => 'a-token', 'email' => 'kofi@example.com'])->assertStatus(201);
+        $this->send(['_turnstile' => 'b-token', 'email' => 'kofi@example.com'])->assertStatus(201);
         $this->assertSame(2, DB::table('contacts')->count());
 
         // Said outright, it is those sites and no others. localhost is still not one of them.

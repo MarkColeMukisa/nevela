@@ -13,6 +13,7 @@ _A robot check counts only if it was solved on your site, for that form_
 ### Changed
 
 - **The robot check is tied to the site and to the form.** Cloudflare's yes is now taken only if the check was solved on the web app's own address (`NEVELA_WEB_URL`), or one of `TURNSTILE_HOSTNAMES`, and under the form's own name, which `<PublicFormGuard>` now renders the widget with. A widget usually lists `localhost` beside the real domain; before this, a token solved on someone's own machine was good on the live form. In production `localhost` is never accepted and Cloudflare's test keys are refused. A live site whose `NEVELA_WEB_URL` is still `localhost` answers 503 and `nevela status` says why. `GET /api/public/_nevela/form/<slug>` returns the `action` for a form you render yourself. See [Where a check counts](apps/docs/src/content/docs/guides/protecting-forms.md).
+- **A robot token is taken once by this app, whatever Cloudflare says to it again.** Trying a real widget in a browser, the same token sent three times was answered yes by Cloudflare three times, where its documentation says a second use is refused. Laravel now remembers each token it has taken for ten minutes, in the cache, and refuses it a second time without asking.
 
 ### Fixed
 
