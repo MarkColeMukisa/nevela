@@ -257,7 +257,7 @@ class ClosedAccountsTest extends TestCase
         // Allowed again, made again and removed again: one entry for the mailbox, under today's key.
         $this->signedInAs($admin);
         $this->deleteJson('/api/_nevela/blocked-emails/'.DB::table(ClosedAccounts::BLOCKED)->value('id'))->assertNoContent();
-        DB::table(ClosedAccounts::BLOCKED)->insert(['id' => 'from-before', 'fingerprint' => hash_hmac('sha256', 'mark@gmail.com', (string) $old), 'hint' => 'm•••@gmail.com', 'user_id' => null, 'blocked_at' => now()->subYear()]);
+        DB::table(ClosedAccounts::BLOCKED)->insert(['id' => (string) \Illuminate\Support\Str::uuid(), 'fingerprint' => hash_hmac('sha256', 'mark@gmail.com', (string) $old), 'hint' => 'm•••@gmail.com', 'user_id' => null, 'blocked_at' => now()->subYear()]);
         $again = $this->user('USER', ['email' => 'mark@gmail.com']);
         $this->deleteJson("/api/_nevela/users/{$again->id}")->assertNoContent();
         $this->deleteJson("/api/_nevela/deleted-accounts/{$again->id}")->assertNoContent();
