@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "Adopt the tables you have, and open part of them to the public";
+export const RELEASE_HEADLINE = "A blog with every new app, and public forms that keep bots out";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "an app you already have: adopt its tables as they are, then give them rich text, actions, private files and a public side.",
-  href: "/guides/existing-app/",
-  label: "An app you already have",
+  text: "a blog in every new app, and public forms that turn bots away, limit the mail they cause and can prove an address.",
+  href: "/guides/protecting-forms/",
+  label: "Protecting a public form",
 };
