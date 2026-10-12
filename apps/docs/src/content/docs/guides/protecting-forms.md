@@ -104,7 +104,9 @@ A check refused for the site is counted on its own, as "robot check solved on an
 | No site to accept a check from, in production | The same: `NEVELA_WEB_URL` is still `localhost` and `TURNSTILE_HOSTNAMES` isn't set. |
 | Cloudflare doesn't answer | **503**: "We couldn't check the form just now. Please try again in a moment." Not let through. |
 
-A token is good once. That is why the form in the web app starts the widget over after every attempt: a corrected form sent with the same token would be refused.
+A token is good once. Cloudflare says so, and Laravel keeps its own count as well: a token it has taken is refused for the next ten minutes, whatever Cloudflare would say to it a second time. That is why the form in the web app starts the widget over after every attempt: a corrected form sent with the same token would be refused.
+
+The count is kept in the app's cache, so with several servers the cache has to be one they share, as for the throttle.
 
 ## The form in the web app
 
