@@ -7,7 +7,7 @@ import type { PublicForm } from "@/hooks/use-public-form";
 interface Turnstile {
   render: (
     element: HTMLElement,
-    options: { sitekey: string; callback: (token: string) => void; "expired-callback": () => void; "error-callback": () => void },
+    options: { sitekey: string; action?: string; callback: (token: string) => void; "expired-callback": () => void; "error-callback": () => void },
   ) => string;
   reset: (id: string) => void;
   remove: (id: string) => void;
@@ -61,7 +61,7 @@ function turnstile(): Promise<Turnstile> {
  * makes every one of them.
  */
 export function PublicFormGuard({ form, className }: { form: PublicForm; className?: string }) {
-  const { honeypot, turnstile: asked, attempt, robot } = form.guard;
+  const { honeypot, turnstile: asked, action, attempt, robot } = form.guard;
   const holder = React.useRef<HTMLDivElement>(null);
   const widget = React.useRef<string | null>(null);
   const shown = asked && SITE_KEY !== "";
@@ -78,6 +78,8 @@ export function PublicFormGuard({ form, className }: { form: PublicForm; classNa
         api = ready;
         widget.current = ready.render(holder.current, {
           sitekey: SITE_KEY,
+          // Which form this check is for. Laravel refuses a token solved for another.
+          ...(action ? { action } : {}),
           callback: (token) => robot(token),
           "expired-callback": () => robot(null),
           "error-callback": () => robot(null),
@@ -90,7 +92,7 @@ export function PublicFormGuard({ form, className }: { form: PublicForm; classNa
       widget.current = null;
       robot(null);
     };
-  }, [shown, robot]);
+  }, [shown, action, robot]);
 
   // A used answer is refused the second time, so a corrected form needs a new one.
   React.useEffect(() => {

@@ -38,6 +38,7 @@ php artisan vendor:publish --tag=nevela-config
 | `rich_text.tags`, `.attributes`, `.schemes` | the editor's toolbar; `href` on links; `http`, `https`, `mailto` | What a [rich text](/concepts/field-types/#rich-text) field keeps. Everything else is removed when a record is saved and again when it is read. |
 | `trash.days` | `30` | How many days a deleted record stays in [the trash](/guides/trash/) before it is removed for good. `null` keeps it until someone removes it. |
 | `public.turnstile.secret` | `TURNSTILE_SECRET_KEY` | The secret key for a form's [robot check](/guides/protecting-forms/#setting-up-turnstile). |
+| `public.turnstile.hostnames` | `TURNSTILE_HOSTNAMES`, or the web app's own | The sites a robot check may be [solved on](/guides/protecting-forms/#where-a-check-counts). Never `localhost` in production. |
 | `public.form_lifetime` | `7200` | How long a protected form can sit open before it is asked to try again, in seconds. |
 | `public.mail.visitor_per_hour`, `visitor_per_day` | `1`, `3` | How often one address is emailed because someone typed it into a form. See [The mail a form causes](/guides/protecting-forms/#the-mail-a-form-causes). |
 | `public.notify.to` | `NEVELA_NOTIFY_TO`, or the address the app sends from | Who is told a form was sent. |
@@ -58,6 +59,7 @@ php artisan vendor:publish --tag=nevela-config
 |---|---|
 | `NEVELA_WEB_PATH` | Overrides `web_path`. Use it when the web app is not at `../web`. |
 | `TURNSTILE_SECRET_KEY` | Cloudflare's secret key, for forms with `"turnstile": true`. |
+| `TURNSTILE_HOSTNAMES` | The sites a robot check may be solved on, with commas between, when they aren't `NEVELA_WEB_URL`'s. |
 | `NEVELA_NOTIFY_TO` | Who `PublicMail::toOwner()` writes to. The address the app sends from, unless set. |
 
 ### If you change the prefix

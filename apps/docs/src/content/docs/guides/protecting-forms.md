@@ -77,7 +77,23 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAA…
 
 The site key is public and is built into the web app, so rebuild after changing it. The secret key is Laravel's alone. The browser is never trusted about its own check: it gets a token from Cloudflare, and Laravel asks Cloudflare whether that token is good, with the visitor's address the web app [passes on](/guides/public-site/#throttling).
 
-To try it without an account, Cloudflare publishes keys that always pass: site key `1x00000000000000000000AA` with secret `1x0000000000000000000000000000000AA`. The secret `2x0000000000000000000000000000000AA` always fails.
+To try it without an account, Cloudflare publishes keys that always pass: site key `1x00000000000000000000AA` with secret `1x0000000000000000000000000000000AA`. The secret `2x0000000000000000000000000000000AA` always fails. They work while you build. In production a form refuses them: they say yes to everyone, which is no check at all.
+
+### Where a check counts
+
+Cloudflare's yes means a person solved a check for your widget. Laravel takes it only if it was also solved **on your site** and **for this form**:
+
+- **The site.** A widget usually lists `localhost` beside the real domain, so the form can be built. Without this, a token solved on someone's own machine could be spent on your live form. The site is the web app's own address (`NEVELA_WEB_URL` in the Laravel app), or what `TURNSTILE_HOSTNAMES` lists:
+
+  ```sh
+  # apps/api/.env, only if the form is on other names than NEVELA_WEB_URL's
+  TURNSTILE_HOSTNAMES=example.com,shop.example.org
+  ```
+
+  A name stands for its subdomains, as it does on the widget: `example.com` accepts `www.example.com`. In development `localhost` and `127.0.0.1` are accepted too. In production they never are, whatever the setting says.
+- **The form.** The widget is rendered with the form's name, Cloudflare hands it back, and the two must agree. A token solved for the contact form can't be spent on the newsletter's.
+
+A check refused for the site is counted on its own, as "robot check solved on another site", and written to the log with the name it came from. If that name is yours, the setting is what is wrong.
 
 ### When the check can't be made
 
@@ -85,9 +101,12 @@ To try it without an account, Cloudflare publishes keys that always pass: site k
 |---|---|
 | No secret key, in development | The check is skipped, so you can build the form before the keys exist. `nevela status` and the resource's page both say so. |
 | No secret key, in production | The form answers **503** to everyone, and `nevela status` is red. A form that asked for the check and quietly went without would be open, and nobody would know. |
+| No site to accept a check from, in production | The same: `NEVELA_WEB_URL` is still `localhost` and `TURNSTILE_HOSTNAMES` isn't set. |
 | Cloudflare doesn't answer | **503**: "We couldn't check the form just now. Please try again in a moment." Not let through. |
 
-A token is good once. That is why the form in the web app starts the widget over after every attempt: a corrected form sent with the same token would be refused.
+A token is good once. Cloudflare says so, and Laravel keeps its own count as well: a token it has taken is refused for the next ten minutes, whatever Cloudflare would say to it a second time. That is why the form in the web app starts the widget over after every attempt: a corrected form sent with the same token would be refused.
+
+The count is kept in the app's cache, so with several servers the cache has to be one they share, as for the throttle.
 
 ## The form in the web app
 
@@ -139,13 +158,13 @@ The form's token comes from Laravel, and goes back with the submission:
 
 ```
 GET  /api/public/_nevela/form/contact-messages
-→ { "token": "…", "honeypot": "website", "minSeconds": 3, "turnstile": true }
+→ { "token": "…", "honeypot": "website", "minSeconds": 3, "turnstile": true, "action": "contact-messages" }
 
 POST /api/public/contact-messages
 { "name": "…", "email": "…", "message": "…", "_form": "<token>", "_turnstile": "<Cloudflare's token>" }
 ```
 
-Ask for the token when the form is shown, not when it is sent: it says when the form was handed out. Render a field named by `honeypot` where no person will reach it, and send it only if it was filled in.
+Ask for the token when the form is shown, not when it is sent: it says when the form was handed out. Render a field named by `honeypot` where no person will reach it, and send it only if it was filled in. Render the Turnstile widget with `action` as its action (`data-action`, or `action` when rendering it yourself): a check made under another name is refused.
 
 ## The mail a form causes
 

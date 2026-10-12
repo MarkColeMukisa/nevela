@@ -58,6 +58,8 @@ class FormProtectionTest extends TestCase
         parent::setUp();
         Access::reset();
         Mail::fake();
+        // Whatever keys this machine's .env has are not the test's: each test says what it has.
+        config(['nevela.public.turnstile.secret' => null, 'nevela.public.turnstile.hostnames' => null, 'nevela.auth.web_url' => 'http://localhost:3000']);
         // No DNS to ask in a test: every domain takes mail but this one.
         FormGuard::$takesMail = fn (string $domain) => $domain !== 'nomail.test';
         $this->resources(fn () => [
@@ -119,6 +121,16 @@ class FormProtectionTest extends TestCase
         ]);
     }
 
+    /**
+     * Cloudflare's yes: a check solved on a site, for a form.
+     *
+     * @param  array<string, mixed>  $over
+     */
+    private function yes(string $hostname = 'localhost', string $action = 'contacts', array $over = [])
+    {
+        return Http::response($over + ['success' => true, 'hostname' => $hostname, 'action' => $action]);
+    }
+
     private function turnstile(mixed ...$answers): void
     {
         config(['nevela.public.turnstile.secret' => 'the-secret']);
@@ -149,12 +161,13 @@ class FormProtectionTest extends TestCase
     public function test_a_person_filling_the_form_in_is_let_through(): void
     {
         $form = $this->getJson('/api/public/_nevela/form/contacts')->assertOk()->json();
-        $this->assertSame(['token', 'honeypot', 'minSeconds', 'turnstile'], array_keys($form));
+        $this->assertSame(['token', 'honeypot', 'minSeconds', 'turnstile', 'action'], array_keys($form));
         // Not a field of the form, and something a bot would fill in.
         $this->assertSame('website', $form['honeypot']);
         $this->assertSame(3, $form['minSeconds']);
         // No secret key in development: the robot check is skipped, and the form is told so.
         $this->assertFalse($form['turnstile']);
+        $this->assertNull($form['action']);
 
         $response = $this->send(['website' => ''])->assertStatus(201);
         $this->assertSame('', $response->getContent());
@@ -219,8 +232,11 @@ class FormProtectionTest extends TestCase
 
     public function test_the_robot_check_is_made_by_this_server_and_a_token_is_good_once(): void
     {
-        $this->turnstile(Http::response(['success' => true]), Http::response(['success' => false, 'error-codes' => ['timeout-or-duplicate']]));
-        $this->assertTrue($this->getJson('/api/public/_nevela/form/contacts')->json('turnstile'));
+        $this->turnstile($this->yes(), Http::response(['success' => false, 'error-codes' => ['timeout-or-duplicate']]));
+        $form = $this->getJson('/api/public/_nevela/form/contacts')->json();
+        $this->assertTrue($form['turnstile']);
+        // What the widget is rendered with, so the check is known to be this form's.
+        $this->assertSame('contacts', $form['action']);
 
         // Nothing from Cloudflare came with it.
         $this->send()->assertStatus(422)->assertJsonPath('error', self::NOT_A_PERSON)->assertJsonPath('code', 'ROBOT');
@@ -235,6 +251,92 @@ class FormProtectionTest extends TestCase
 
         $this->assertSame(1, DB::table('contacts')->count());
         $this->assertSame(['robot' => 2], $this->blocked());
+    }
+
+    public function test_a_token_is_good_once_here_even_when_cloudflare_would_take_it_again(): void
+    {
+        // Seen with a real widget: the same token, sent three times, answered yes three times.
+        // So Cloudflare's answers here are all yes, but for one check solved somewhere else.
+        $this->turnstile($this->yes(), $this->yes(), $this->yes('evil.example'), $this->yes());
+
+        $this->send(['_turnstile' => 'the-same-token'])->assertStatus(201);
+        $this->send(['_turnstile' => 'the-same-token', 'email' => 'kofi@example.com'])->assertStatus(422)->assertJsonPath('code', 'ROBOT');
+        // Refused from memory: Cloudflare was asked once.
+        Http::assertSentCount(1);
+        // Another token is another check.
+        $this->send(['_turnstile' => 'another-token', 'email' => 'kofi@example.com'])->assertStatus(201);
+        Http::assertSentCount(2);
+
+        // One that was refused was never taken: sent again, it is Cloudflare's to answer.
+        $this->send(['_turnstile' => 'a-third-token', 'email' => 'ama@example.com'])->assertStatus(422)->assertJsonPath('code', 'HOSTNAME');
+        $this->send(['_turnstile' => 'a-third-token', 'email' => 'ama@example.com'])->assertStatus(201);
+        $this->assertSame(3, DB::table('contacts')->count());
+    }
+
+    public function test_a_check_solved_somewhere_else_or_for_another_form_is_not_this_forms(): void
+    {
+        $this->turnstile($this->yes('evil.example'), $this->yes('localhost', 'joiners'), $this->yes('localhost', ''), $this->yes('127.0.0.1'));
+
+        // A real person passed a real check, for this widget, on a site that isn't this one.
+        $this->send(['_turnstile' => 'a-token'])->assertStatus(422)->assertJsonPath('error', self::NOT_A_PERSON)->assertJsonPath('code', 'HOSTNAME');
+        // Here, and for another form, or for none.
+        $this->send(['_turnstile' => 'a-token'])->assertStatus(422)->assertJsonPath('code', 'ROBOT');
+        $this->send(['_turnstile' => 'a-token'])->assertStatus(422)->assertJsonPath('code', 'ROBOT');
+        $this->assertSame(0, DB::table('contacts')->count());
+
+        // Where a form is built, the machine it is built on counts as here.
+        $this->send(['_turnstile' => 'a-token'])->assertStatus(201);
+        $this->assertSame(1, DB::table('contacts')->count());
+        $this->assertSame(['hostname' => 1, 'robot' => 2], $this->blocked());
+        // Longer than any token Cloudflare makes: not one, and Cloudflare isn't asked.
+        Http::fake();
+        $this->send(['_turnstile' => str_repeat('a', 2049)])->assertStatus(422)->assertJsonPath('code', 'ROBOT');
+    }
+
+    public function test_on_a_live_site_a_check_solved_on_someones_own_machine_is_refused(): void
+    {
+        config(['nevela.auth.web_url' => 'https://kianrover.com']);
+        $this->app->detectEnvironment(fn () => 'production');
+        $this->turnstile($this->yes('localhost'), $this->yes('notkianrover.com'), $this->yes('kianrover.com'), $this->yes('www.kianrover.com'));
+
+        // The widget lists localhost beside the site, so the form can be built. That is not the site.
+        $this->assertSame(['kianrover.com'], FormGuard::hostnames());
+        $this->send(['_turnstile' => 'a-token'])->assertStatus(422)->assertJsonPath('code', 'HOSTNAME');
+        $this->send(['_turnstile' => 'a-token'])->assertStatus(422)->assertJsonPath('code', 'HOSTNAME');
+        // The site, and a name under it, as on the widget.
+        $this->send(['_turnstile' => 'a-token'])->assertStatus(201);
+        $this->send(['_turnstile' => 'b-token', 'email' => 'kofi@example.com'])->assertStatus(201);
+        $this->assertSame(2, DB::table('contacts')->count());
+
+        // Said outright, it is those sites and no others. localhost is still not one of them.
+        config(['nevela.public.turnstile.hostnames' => ' Shop.Example , localhost, kianrover.com']);
+        $this->assertSame(['shop.example', 'kianrover.com'], FormGuard::hostnames());
+    }
+
+    public function test_cloudflares_test_keys_pass_where_a_form_is_built_and_never_on_a_live_site(): void
+    {
+        $testing = fn () => Http::response(['success' => true, 'hostname' => 'example.com', 'metadata' => ['result_with_testing_key' => true]]);
+        $this->turnstile($testing(), $testing());
+
+        $this->send(['_turnstile' => 'XXXX.DUMMY.TOKEN.XXXX'])->assertStatus(201);
+
+        config(['nevela.auth.web_url' => 'https://kianrover.com']);
+        $this->app->detectEnvironment(fn () => 'production');
+        $this->send(['_turnstile' => 'XXXX.DUMMY.TOKEN.XXXX', 'email' => 'kofi@example.com'])->assertStatus(503)->assertJsonPath('code', 'UNCONFIGURED');
+        $this->assertSame(1, DB::table('contacts')->count());
+    }
+
+    public function test_a_live_site_that_was_never_told_its_own_address_refuses_everyone_and_says_why(): void
+    {
+        // The secret is there. The site's address is still the one a new app starts with.
+        config(['nevela.public.turnstile.secret' => 'the-secret']);
+        Http::fake();
+        $this->app->detectEnvironment(fn () => 'production');
+
+        $this->assertSame([], FormGuard::hostnames());
+        $this->assertFalse($this->getJson('/api/public/_nevela/form/contacts')->json('turnstile'));
+        $this->send(['_turnstile' => 'a-token'])->assertStatus(503)->assertJsonPath('code', 'UNCONFIGURED');
+        $this->artisan('nevela:status')->expectsOutputToContain('no site to accept a check from')->assertFailed();
     }
 
     public function test_cloudflare_not_answering_is_not_a_yes(): void
