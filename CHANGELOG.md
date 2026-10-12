@@ -8,16 +8,24 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_A blog with every new app_
+_A blog with every new app, and public forms that keep bots out_
 
 ### Added
 
 - **A blog.** A new app has one: a Post resource to write in under Posts in the dashboard, `/blog` and `/blog/<slug>` on the site, an RSS feed at `/blog/feed.xml`, a sitemap, a Blog link in the site's header, and three sample posts. The pages are written once into `apps/web` and are yours. `nevela new my-app --no-blog` leaves it out, and `nevela blog` adds it to an app that has none. For posts in a table of the app's own, `nevela blog --resource=Post --title=… --body=…` writes only the pages. See [The blog](apps/docs/src/content/docs/guides/blog.md).
 - **A slug that fills itself.** `slug:slug(title)!`, or `"from": "title"` in the descriptor: left empty on create, the slug is made from that field, and `-2`, `-3` are added while it is taken, counting records in the trash. In the dashboard's form it follows the title as it is typed. It is never remade when the title changes later.
 - **Publishing.** `"publish": "publishedAt"` in a descriptor names the date a record is published by. The dashboard shows a Published, Draft or Scheduled badge in place of the date, a filter on it, and Publish and Unpublish on the record's page and in its row's menu, under the permission to edit. `filter[publishedAt]=draft` (or `published`, `scheduled`) narrows a list over the API. A model generated for such a resource has a `publicQuery` scope that lets through the records whose time has come.
+- **Protection for a public form.** `"protect": { "turnstile": true, "honeypot": true, "minSeconds": 3, "email": "email" }` on a `public.create`. Laravel checks, cheapest first and before anything is validated or stored: a field no person sees, the time the form took (by a signed token it hands out at `GET /api/public/_nevela/form/<slug>`), Cloudflare Turnstile, whether the address's domain takes mail or is a throwaway one, and how often that address has sent the form from anywhere. A bot is answered 201 and nothing is stored; a person who fails the robot check is told so; a bad address is a message on its field. Turnstile is verified by Laravel with `TURNSTILE_SECRET_KEY`. With no secret the check is skipped in development, and in production the form answers 503 and `nevela status` is red: it never falls open. A form with no `protect` is unchanged. See [Protecting a public form](apps/docs/src/content/docs/guides/protecting-forms.md).
+- **What a form blocked.** Every refusal is counted by resource, reason and day, and the resource's page in the dashboard shows the week: "Blocked this week: 132 (118 robot check, 14 throwaway address)". Also at `GET /api/_nevela/forms/<slug>`.
+- **Limits on the mail a form causes.** `PublicMail::toVisitor($address, $mail)` writes to an address at most once an hour and three times a day, across every form, and drops the rest, so a form can't be used to mail strangers. `PublicMail::toOwner($mail, line:, url:)` sends ten notices an hour as they happen and holds the rest for one email at the top of the hour: "14 more enquiries since 14:05". Both are queued, and the limits are in `config/nevela.php` under `public`.
+- **Proving an address.** `"confirm": "email"` on a `public.create`, for a list people join. The record is saved unconfirmed and a link is emailed; until it is followed the record is marked Not confirmed in the dashboard and left out of counts, charts and the export, and after 48 hours it is removed. Signing up twice answers the same as the first time, so the form doesn't say who is on the list. `Subscriber::confirmed()` is who to write to. The link opens `/confirm` in the web app.
+- **`usePublicForm()` and `<PublicFormGuard>`** in the web app: a public form in a few lines, with its token, the honeypot, the Turnstile widget (loaded once, reset after every attempt, set with `NEXT_PUBLIC_TURNSTILE_SITE_KEY`), and 422 issues sorted onto their fields.
+- `nevela disposable` fetches the current list of throwaway email domains, and `nevela digest` sends the held notices by hand.
 
 ### Changed
 
+- A public create that has `protect` or `confirm` answers 201 with no body, even where the resource has `read`: the answer to a form that was taken has to be the answer to one that was quietly turned away.
+- `nevela dev` works the queue as well, where the app's queue isn't `sync`, so queued mail is sent while you develop.
 - `nevela new` creates the blog unless told `--no-blog`, so a new app starts with one resource and three records in it.
 
 ## [0.8.0] - 2026-10-11

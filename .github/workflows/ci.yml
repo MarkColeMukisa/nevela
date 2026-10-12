@@ -211,6 +211,23 @@ jobs:
           grep -q "nevela.throttle:3,1,signups.create:" apps/api/routes/nevela-public.php
           grep -q "scopePublicQuery" apps/api/app/Models/Signup.php
           if grep -q "products\|categories" apps/api/routes/nevela-public.php; then echo "a resource with no public section got a public route"; exit 1; fi
+          # A list people join: a form with a hidden field for bots, and an address that has to be proved.
+          node -e '
+            const fs = require("fs"), file = "apps/api/nevela/resources/member.json";
+            fs.writeFileSync(file, JSON.stringify({
+              name: "Member",
+              fields: { email: { kind: "string", format: "email", unique: true } },
+              public: { create: { fields: ["email"], protect: { honeypot: true }, confirm: "email" } },
+            }, null, 4) + "\n");
+          '
+          php nevela generate Member
+          php nevela migrate
+          grep -q "Route::get('_nevela/form/members'" apps/api/routes/nevela-public.php
+          grep -q "Route::post('_nevela/confirm/members/{id}/{key}'" apps/api/routes/nevela-public.php
+          grep -q 'Concerns\\Confirmable' apps/api/app/Models/Member.php
+          grep -q "confirmed_at" apps/api/database/migrations/*_create_members_table.php
+          grep -q '"confirm": "email"' apps/web/resources/index.ts
+          if grep -q "_nevela/form/signups\|_nevela/confirm/signups" apps/api/routes/nevela-public.php; then echo "a form with no protect got a token route"; exit 1; fi
           # An action: named in the descriptor, it gets a class to be written in, a permission and a button.
           node -e '
             const fs = require("fs"), file = "apps/api/nevela/resources/article.json";
@@ -452,6 +469,24 @@ jobs:
           test "$(open POST signups '{"email":"second@example.com"}')" = 201
           test "$(open POST signups '{"email":"third@example.com"}')" = 429
           grep -q 'Too many requests' public.json
+          # A protected form hands out a token and the name of a field no person fills in.
+          curl -s http://127.0.0.1:8000/api/public/_nevela/form/members -H 'Accept: application/json' | tee form.json | grep -q '"honeypot":"website"'
+          token="$(sed -E 's/.*"token":"([^"]+)".*/\1/' form.json)"
+          # A bot that fills it in is told it worked, and nothing is kept. So is one with no token.
+          test "$(open POST members "{\"email\":\"bot@example.com\",\"website\":\"https://spam.test\",\"_form\":\"$token\"}")" = 201
+          test "$(open POST members '{"email":"tokenless@example.com"}')" = 201
+          # A person joins, unconfirmed: listed and marked, and not among the confirmed.
+          test "$(open POST members "{\"email\":\"member@example.com\",\"_form\":\"$token\"}")" = 201
+          curl -s -g "http://127.0.0.1:8000/api/members" -H 'Accept: application/json' -H "Authorization: Bearer $admin" | tee members.json | grep -q '"total":1'
+          grep -q '"email":"member@example.com"' members.json
+          grep -q '"confirmedAt":null' members.json
+          curl -s -g "http://127.0.0.1:8000/api/members?filter[confirmed]=true" -H 'Accept: application/json' -H "Authorization: Bearer $admin" | grep -q '"total":0'
+          # Joining twice is answered as the first time, and is still one record.
+          test "$(open POST members "{\"email\":\"member@example.com\",\"_form\":\"$token\"}")" = 201
+          # What was turned away is counted, for the dashboard to show.
+          curl -s "http://127.0.0.1:8000/api/_nevela/forms/members" -H 'Accept: application/json' -H "Authorization: Bearer $admin" | tee blocked.json | grep -q '"total":2'
+          grep -q '"reason":"honeypot","label":"filled the hidden field","count":1' blocked.json
+          grep -q '"reason":"forged","label":"no form token","count":1' blocked.json
           # A private file: its key opens nothing, and the record's own address hands it to someone who may view the record.
           printf '%%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%%%EOF\n' > cv.pdf
           curl -s -X PUT "http://127.0.0.1:8000/api/_nevela/uploads/Candidate/cv?name=cv.pdf" -H 'Accept: application/json' -H 'Content-Type: application/pdf' -H "Authorization: Bearer $admin" --data-binary @cv.pdf > upload.json

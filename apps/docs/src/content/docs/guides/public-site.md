@@ -25,7 +25,9 @@ Run `nevela generate` after adding or changing it.
 | `read.throttle` | Requests a minute for each visitor, as `"how many,minutes"`. Default `"60,1"`. |
 | `create.fields` | The fields a visitor may send. Anything else is refused. |
 | `create.throttle` | The same, for the form. Default `"10,1"`. |
-| `middleware` | More middleware for these routes, by name: your own spam check. |
+| `create.protect` | What stands between the form and a bot: a honeypot, a minimum time, Cloudflare's robot check and checks on the address. See [Protecting a public form](/guides/protecting-forms/). |
+| `create.confirm` | The field holding an address that has to be proved by a link sent to it, for a list people join. |
+| `middleware` | More middleware for these routes, by name: a check of your own. |
 
 A resource can have `read`, `create` or both. With `read` alone there is no way to write to it.
 
@@ -80,6 +82,8 @@ POST /api/public/contact-messages
 The rules are the resource's own, the ones the dashboard's form is checked by, so they are written once. A key that isn't in `create.fields` is refused as unknown. Rich text is cleaned.
 
 The answer is 201 with the record's `read.fields`, or with nothing where the resource has no `read`.
+
+A form that is live will be found by bots. [Protecting a public form](/guides/protecting-forms/) is the next thing to read before one goes on a real site: it also covers the limits on what a form emails.
 
 Anything the app does when a record is saved (an email, a notification) belongs on the model, where it runs however the record was made:
 

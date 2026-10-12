@@ -37,6 +37,13 @@ php artisan vendor:publish --tag=nevela-config
 | `bulk_max` | `500` | The most rows `POST /{slug}/_bulk` creates in one request. The dashboard's "Add several" grid stops at 500 rows itself; set this lower and Laravel refuses a larger grid, saying what the limit is. |
 | `rich_text.tags`, `.attributes`, `.schemes` | the editor's toolbar; `href` on links; `http`, `https`, `mailto` | What a [rich text](/concepts/field-types/#rich-text) field keeps. Everything else is removed when a record is saved and again when it is read. |
 | `trash.days` | `30` | How many days a deleted record stays in [the trash](/guides/trash/) before it is removed for good. `null` keeps it until someone removes it. |
+| `public.turnstile.secret` | `TURNSTILE_SECRET_KEY` | The secret key for a form's [robot check](/guides/protecting-forms/#setting-up-turnstile). |
+| `public.form_lifetime` | `7200` | How long a protected form can sit open before it is asked to try again, in seconds. |
+| `public.mail.visitor_per_hour`, `visitor_per_day` | `1`, `3` | How often one address is emailed because someone typed it into a form. See [The mail a form causes](/guides/protecting-forms/#the-mail-a-form-causes). |
+| `public.notify.to` | `NEVELA_NOTIFY_TO`, or the address the app sends from | Who is told a form was sent. |
+| `public.notify.max_per_hour` | `10` | Notices sent as they happen. The rest wait for one email at the top of the hour. |
+| `public.confirm.hours` | `48` | How long an address has to follow its link before the record is removed. |
+| `public.confirm.path` | `/confirm` | The page of the web app the link opens. |
 | `uploads.disk` | `public`, or `NEVELA_UPLOADS_DISK` | The disk file and image fields store on. |
 | `uploads.url` | none, or `NEVELA_UPLOADS_URL` | The address files are served from, when a CDN or your web server serves the disk. |
 | `uploads.originals_disk` | `local`, or `NEVELA_ORIGINALS_DISK` | Where untouched originals of images are kept. |
@@ -50,6 +57,8 @@ php artisan vendor:publish --tag=nevela-config
 | Variable | Meaning |
 |---|---|
 | `NEVELA_WEB_PATH` | Overrides `web_path`. Use it when the web app is not at `../web`. |
+| `TURNSTILE_SECRET_KEY` | Cloudflare's secret key, for forms with `"turnstile": true`. |
+| `NEVELA_NOTIFY_TO` | Who `PublicMail::toOwner()` writes to. The address the app sends from, unless set. |
 
 ### If you change the prefix
 
@@ -64,6 +73,7 @@ The dashboard's export reads 100 records per request (`EXPORT_PAGE` in `apps/web
 | Variable | Default | Meaning |
 |---|---|---|
 | `NEVELA_API_URL` | `http://127.0.0.1:8000/api` | Where the Laravel API is, including the prefix. |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | none | Cloudflare's site key, for forms with the [robot check](/guides/protecting-forms/#setting-up-turnstile). Built in: rebuild after changing it. |
 
 Copy `.env.example` to `.env.local` and change it there. The dev server reads the file on its own when it changes.
 

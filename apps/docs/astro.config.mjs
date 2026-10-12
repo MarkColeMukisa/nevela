@@ -58,6 +58,7 @@ export default defineConfig({
             { label: "Files and images", slug: "guides/images" },
             { label: "Actions on a record", slug: "guides/actions" },
             { label: "A public site on your API", slug: "guides/public-site" },
+            { label: "Protecting a public form", slug: "guides/protecting-forms" },
             { label: "The blog", slug: "guides/blog" },
             { label: "The web app", slug: "guides/web-app" },
             { label: "Authentication", slug: "guides/authentication" },

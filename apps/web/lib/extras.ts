@@ -47,6 +47,15 @@ interface ResourceExtras {
   publish?: string;
   /** Where on the site its public records are a blog: "/blog". */
   blog?: string;
+  /** What its public form checks, and the address it has proved (the descriptor's "protect" and "confirm"). */
+  form?: ResourceForm;
+}
+
+/** A resource's public form, as far as the dashboard needs to know of it. */
+export interface ResourceForm {
+  protect?: { turnstile?: boolean; honeypot?: boolean; minSeconds?: number; email?: string };
+  /** The field holding an address that is proved by a link sent to it. Until then a record is "Not confirmed". */
+  confirm?: string;
 }
 
 /** What a record with a publish date is: on the site, waiting for its time, or neither. */
@@ -65,6 +74,11 @@ export function actionsOf(resourceName: string): ResourceAction[] {
 /** The field a resource's records are published by, if it has one. */
 export function publishFieldOf(resourceName: string): string | undefined {
   return extras[resourceName]?.publish;
+}
+
+/** What a resource's public form checks and confirms, if its descriptor says either. */
+export function formOf(resourceName: string): ResourceForm | undefined {
+  return extras[resourceName]?.form;
 }
 
 /** Which of the three a record is, from its publish date and the time now. */

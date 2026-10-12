@@ -77,7 +77,7 @@ const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
     nevela resource <Name> --fields="…" [--seed]
     nevela adopt <table>       Make a resource of a table you already have
     nevela blog                Give the site a blog, if it was created without one
-    nevela seed | user | generate | migrate | trash | artisan <command>
+    nevela seed | user | generate | migrate | trash | disposable | artisan <command>
 
   ${bold('Options')}
     --pm <pnpm|npm|yarn|bun>   Package manager for the dashboard. Default: the one you ran this with.

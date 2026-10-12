@@ -19,12 +19,13 @@ import {
 } from "@/components/ui/pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { resourcePath, adminPermissions, allowedActions, allResources, dashboardStore, requireAccess } from "@/lib/dashboard";
-import { actionApplies, PUBLISH_LABELS, publishFieldOf, publishState } from "@/lib/extras";
+import { actionApplies, formOf, PUBLISH_LABELS, publishFieldOf, publishState } from "@/lib/extras";
 import { site } from "@/lib/site";
 import { trashFor } from "@/lib/trash";
 import { cn } from "@/lib/utils";
 import { ColumnMenu } from "./column-menu";
 import { ExportButton } from "./export-button";
+import { FormActivity } from "./form-activity";
 import { isInlineEditable } from "./editable";
 import { InlineCell } from "./inline-cell";
 import type { RelationMeta } from "./fields/field-widget";
@@ -103,6 +104,8 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
   // The field this resource's records are published by, where it has one, and the time to judge them by.
   const publishField = publishFieldOf(resource.name);
   const now = new Date();
+  // The field holding an address its owner has to prove, where the public form asks for that.
+  const confirmField = formOf(resource.name)?.confirm;
   // The resource's own actions this person may run: on the list as a whole, and on a record.
   const actions = await allowedActions(resource.name);
   const onRecords = actions.filter((action) => action.on === "record");
@@ -120,6 +123,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
     <TableSelection ids={rowIds}>
       <div className="flex flex-col gap-4">
       <ResourceInsights resource={forClient} total={meta.total} />
+      <FormActivity resource={resource} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <ResourceTableToolbar resource={forClient} publish={publishField ? { field: publishField, label: resource.fields[publishField]?.label ?? "Published" } : undefined} />
         <div className="flex flex-wrap items-center gap-2">
@@ -230,6 +234,14 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
                                 <LocalTime value={value as string} />
                               </span>
                             )}
+                          </span>
+                        );
+                      } else if (column.key === confirmField && row.confirmedAt == null) {
+                        // Joined through the form and hasn't followed the link yet: listed, and not counted or exported.
+                        content = (
+                          <span className="inline-flex items-center gap-2">
+                            {content}
+                            <Badge variant="warning">Not confirmed</Badge>
                           </span>
                         );
                       } else if ((column.def.kind === "timestamp" || column.def.kind === "datetime") && value != null) {
