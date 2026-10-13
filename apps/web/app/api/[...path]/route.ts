@@ -18,7 +18,7 @@ import { API_URL, callerHeaders, sessionToken } from "@/lib/laravel";
  *
  * And for a site's visitors, who have no session: what a resource's "public" section
  * opens (`/api/public/…`). Reading it, a form's create (`POST /api/public/<slug>`) and a
- * file for that form (`PUT /api/public/_nevela/uploads/<Resource>/<field>`) go through
+ * file for that form (`PUT /api/public/<slug>/_uploads/<field>`) go through
  * with no token. Laravel has those routes only for resources whose descriptor opens them.
  */
 export const dynamic = "force-dynamic";
@@ -104,8 +104,11 @@ export async function POST(request: NextRequest, context: Context) {
 export async function PUT(request: NextRequest, context: Context) {
   const { path } = await context.params;
   const url = target(path, request.nextUrl.search);
-  // A visitor's file for a public form: /api/public/_nevela/uploads/<Resource>/<field>.
-  const forVisitor = path.length === 5 && path[0] === "public" && path[1] === "_nevela" && path[2] === "uploads";
+  // A visitor's file for a public form: /api/public/_nevela/uploads/<Resource>/<field>,
+  // or by the form's own address, /api/public/<slug>/_uploads/<field>.
+  const forVisitor =
+    path[0] === "public" &&
+    ((path.length === 5 && path[1] === "_nevela" && path[2] === "uploads") || (path.length === 4 && !path[1].startsWith("_") && path[2] === "_uploads"));
   if (!url || !(forVisitor || (path[0] === "_nevela" && path[1] === "uploads"))) {
     return Response.json({ error: "Only uploads are sent this way. Records are saved through the dashboard." }, { status: 405 });
   }

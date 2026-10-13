@@ -8,6 +8,13 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_A public form's files, uploaded by the form hook_
+
+### Added
+
+- **`usePublicForm` uploads files.** A file input in the form is sent in the two steps Laravel wants: the file first, then its key as the field's value. What Laravel refuses is shown under the field; a file already uploaded isn't uploaded again when the form fails for another reason. `form.uploading` names the field in flight, `form.upload(field, file)` does one by hand, and `values` gets the keys as its second argument.
+- A form's file can be sent to the form's own address, `PUT /api/public/<slug>/_uploads/<field>`, so a page needs only the slug. The address by the resource's name still works.
+
 ## [0.9.1] - 2026-10-12
 
 _A robot check counts only if it was solved on your site, for that form_
