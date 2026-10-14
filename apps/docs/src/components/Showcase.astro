@@ -1,0 +1,621 @@
+---
+import { asked, projects, SUBMIT_URL } from "../showcase";
+/**
+ * Projects built in Nevela. The entries are in src/showcase.ts; this only lays them out.
+ * Same visual language as the home page (Landing.astro): the ruled frame, the hero grid,
+ * the pill and the two buttons.
+ */
+const featured = projects.filter((project) => project.featured);
+const community = projects.filter((project) => !project.featured);
+const host = (url: string) => url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+const STATUS = { live: "Live", building: "Moving to Nevela" } as const;
+---
+
+<div class="sc not-content">
+  <div class="sc-frame">
+    <section class="sc-hero" aria-labelledby="sc-title">
+      <div class="sc-hero-grid" aria-hidden="true"></div>
+      <p class="sc-eyebrow">Built with Nevela</p>
+      <h1 id="sc-title" class="sc-title">Projects built in <span class="sc-ember">Nevela</span></h1>
+      <p class="sc-lead">
+        Apps running on a Laravel API and a Next.js dashboard that Nevela wrote from their descriptors. See what others have
+        made, and add yours.
+      </p>
+      <div class="sc-actions">
+        <a class="sc-btn sc-btn-primary" href="/start/quickstart/">Start building</a>
+        <a class="sc-btn sc-btn-quiet" href={SUBMIT_URL}>
+          Submit your project
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M6 3h7v7M13 3 4 12" /></svg>
+        </a>
+      </div>
+    </section>
+
+    {
+      featured.map((project) => (
+        <section class="sc-rail sc-featured" aria-label={project.name}>
+          <div class="sc-featured-mark" aria-hidden="true">
+            <span>{project.name.slice(0, 1)}</span>
+          </div>
+          <div class="sc-featured-body">
+            <div class="sc-row">
+              <h2>{project.name}</h2>
+              <span class="sc-badge">Featured</span>
+              <span class:list={["sc-status", `sc-status-${project.status}`]}>{STATUS[project.status]}</span>
+            </div>
+            <p class="sc-tagline">{project.tagline}</p>
+            <p>{project.description}</p>
+            <ul class="sc-tags" aria-label="What it is">
+              {project.tags.map((tag) => (
+                <li>{tag}</li>
+              ))}
+            </ul>
+            <p class="sc-label">Built on</p>
+            <ul class="sc-uses">
+              {project.uses.map((use) => (
+                <li>{use}</li>
+              ))}
+            </ul>
+            <div class="sc-foot">
+              {project.url && (
+                <a class="sc-btn sc-btn-quiet sc-btn-small" href={project.url}>
+                  {host(project.url)}
+                </a>
+              )}
+              <span class="sc-by">
+                by {project.by.href ? <a href={project.by.href}>{project.by.name}</a> : project.by.name}
+              </span>
+            </div>
+          </div>
+        </section>
+      ))
+    }
+
+    <section class="sc-rail sc-section" aria-labelledby="sc-community">
+      <p class="sc-step"><span>01</span>Community projects</p>
+      <h2 id="sc-community" class="sc-h2">{community.length > 0 ? "Made by people building with Nevela" : "Yours could be the first one here"}</h2>
+      <div class="sc-grid">
+        {
+          community.map((project) => (
+            <article class="sc-card">
+              <div class="sc-row">
+                <h3>{project.name}</h3>
+                <span class:list={["sc-status", `sc-status-${project.status}`]}>{STATUS[project.status]}</span>
+              </div>
+              <p class="sc-tagline">{project.tagline}</p>
+              <p>{project.description}</p>
+              <ul class="sc-tags">
+                {project.tags.map((tag) => (
+                  <li>{tag}</li>
+                ))}
+              </ul>
+              <div class="sc-foot">
+                {project.url && <a href={project.url}>{host(project.url)}</a>}
+                <span class="sc-by">by {project.by.href ? <a href={project.by.href}>{project.by.name}</a> : project.by.name}</span>
+              </div>
+            </article>
+          ))
+        }
+        <a class="sc-card sc-card-add" href={SUBMIT_URL}>
+          <span class="sc-plus" aria-hidden="true">+</span>
+          <span class="sc-add-title">Add your project</span>
+          <span class="sc-add-body">Built something with Nevela? Tell us about it and we'll put it here.</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="sc-rail sc-section sc-submit" aria-labelledby="sc-submit">
+      <p class="sc-step"><span>02</span>Submit</p>
+      <div class="sc-submit-grid">
+        <div>
+          <h2 id="sc-submit" class="sc-h2">Built something with Nevela?</h2>
+          <p class="sc-muted">
+            Fill in the showcase form on GitHub. It asks for everything we need, so there is no back and forth, and we add
+            your project once it is reviewed. It can be live, or still being built.
+          </p>
+          <div class="sc-actions sc-actions-left">
+            <a class="sc-btn sc-btn-primary" href={SUBMIT_URL}>Open the showcase form</a>
+          </div>
+        </div>
+        <div class="sc-asked">
+          <p class="sc-label">The form asks for</p>
+          <ol>
+            {asked.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ol>
+          <p class="sc-muted sc-small">
+            Rather open a pull request? Add an entry to <code>apps/docs/src/showcase.ts</code>: every field is described
+            there.
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<style>
+  /* Like the home page, it breaks out of Starlight's content column, and its own title is the page's. */
+  :global(:root:has(.sc)) {
+    --fl-page: #fafafa;
+  }
+  :global(:root[data-theme="dark"]:has(.sc)),
+  :global(:root:not([data-theme]):has(.sc)) {
+    --fl-page: #121212;
+  }
+  :global(body:has(.sc)) {
+    background: var(--fl-page);
+    overflow-x: clip;
+  }
+  :global(body:has(.sc) .header) {
+    background: color-mix(in srgb, var(--fl-page) 88%, transparent);
+  }
+  :global(.main-frame:has(.sc) .content-panel) {
+    padding: 0;
+    border: 0;
+  }
+  :global(.main-frame:has(.sc) .sl-container) {
+    max-width: none;
+    margin: 0;
+  }
+  :global(.main-frame:has(.sc) .sl-markdown-content) {
+    margin: 0;
+  }
+  :global(.main-frame:has(.sc) h1#_top) {
+    display: none;
+  }
+
+  .sc {
+    overflow-x: clip;
+    --frame: 75rem;
+    --gutter: clamp(1rem, 4vw, 2.5rem);
+    color: var(--fl-body);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .sc code {
+    font-family: var(--sl-font-mono);
+    font-size: 0.9em;
+    color: var(--fl-ink);
+  }
+
+  .sc-frame {
+    max-width: var(--frame);
+    margin: 0 auto;
+    border-inline: 1px solid var(--fl-rule);
+  }
+
+  .sc-rail {
+    position: relative;
+    border-top: 1px solid var(--fl-rule);
+  }
+
+  .sc-rail::before,
+  .sc-rail::after {
+    content: "+";
+    position: absolute;
+    top: -0.8rem;
+    font-family: var(--sl-font-mono);
+    line-height: 1.5rem;
+    color: var(--fl-ember);
+    pointer-events: none;
+  }
+
+  .sc-rail::before {
+    left: -0.4rem;
+  }
+
+  .sc-rail::after {
+    right: -0.4rem;
+  }
+
+  .sc-ember {
+    color: var(--fl-ember);
+    background-image: var(--fl-fuse);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    padding-bottom: 0.08em;
+  }
+
+  @media (forced-colors: active) {
+    .sc-ember {
+      background-image: none;
+      -webkit-text-fill-color: currentColor;
+    }
+  }
+
+  /* ---- Hero ---- */
+  .sc-hero {
+    position: relative;
+    text-align: center;
+    padding: clamp(3.5rem, 9vw, 6rem) var(--gutter) clamp(3rem, 6vw, 4.5rem);
+    isolation: isolate;
+  }
+
+  .sc-hero-grid {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      linear-gradient(var(--fl-rule) 1px, transparent 1px),
+      linear-gradient(90deg, var(--fl-rule) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: center top;
+    mask-image: radial-gradient(ellipse 60% 70% at 50% 35%, #000 10%, transparent 75%);
+    opacity: 0.55;
+  }
+
+  .sc-eyebrow,
+  .sc-step,
+  .sc-label {
+    margin: 0;
+    font-family: var(--sl-font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fl-muted);
+  }
+
+  .sc-eyebrow {
+    display: inline-block;
+    padding: 0.3125rem 0.875rem;
+    border: 1px solid var(--fl-rule);
+    border-radius: 999px;
+    background: var(--fl-paper);
+  }
+
+  .sc-title {
+    margin: 1.5rem auto 0;
+    max-width: 18ch;
+    font-size: clamp(2.25rem, 1.2rem + 4.5vw, 4.25rem);
+    font-weight: 650;
+    line-height: 1.04;
+    letter-spacing: -0.045em;
+    color: var(--fl-ink);
+    text-wrap: balance;
+  }
+
+  .sc-lead {
+    margin: 1.25rem auto 0;
+    max-width: 38rem;
+    font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
+    color: var(--fl-muted);
+    text-wrap: pretty;
+  }
+
+  .sc-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  .sc-actions-left {
+    justify-content: flex-start;
+  }
+
+  .sc-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 2.75rem;
+    padding: 0 1.25rem;
+    border-radius: 0.625rem;
+    font-size: 0.9375rem;
+    font-weight: 560;
+    text-decoration: none;
+    transition: border-color 0.15s ease, filter 0.15s ease;
+  }
+
+  .sc-btn svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .sc-btn-small {
+    height: 2.25rem;
+    padding: 0 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  .sc-btn-primary {
+    background: var(--fl-fuse-fill, #6f00ff);
+    color: #fff;
+  }
+
+  .sc-btn-primary:hover {
+    filter: brightness(1.12);
+  }
+
+  .sc-btn-quiet {
+    border: 1px solid var(--fl-rule-strong);
+    background: var(--fl-paper);
+    color: var(--fl-ink);
+  }
+
+  .sc-btn-quiet:hover {
+    border-color: var(--fl-muted);
+  }
+
+  /* ---- Featured ---- */
+  .sc-featured {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  }
+
+  .sc-featured-mark {
+    display: grid;
+    place-items: center;
+    min-height: 18rem;
+    border-right: 1px solid var(--fl-rule);
+    background:
+      radial-gradient(ellipse 70% 60% at 30% 30%, var(--fl-ember-soft), transparent 70%),
+      var(--fl-surface);
+  }
+
+  .sc-featured-mark span {
+    display: grid;
+    place-items: center;
+    width: 6rem;
+    height: 6rem;
+    border-radius: 1.5rem;
+    background: var(--fl-fuse-fill, #6f00ff);
+    color: #fff;
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+  }
+
+  .sc-featured-body {
+    padding: clamp(2rem, 4vw, 3rem) clamp(1.25rem, 4vw, 3rem);
+  }
+
+  .sc-featured-body h2,
+  .sc-card h3 {
+    margin: 0;
+    color: var(--fl-ink);
+    font-weight: 650;
+    letter-spacing: -0.03em;
+  }
+
+  .sc-featured-body h2 {
+    font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.375rem);
+  }
+
+  .sc-featured-body p,
+  .sc-card p {
+    margin: 0.75rem 0 0;
+  }
+
+  .sc-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .sc-tagline {
+    color: var(--fl-ink);
+    font-weight: 560;
+  }
+
+  .sc-badge,
+  .sc-status {
+    padding: 0.125rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .sc-badge {
+    background: var(--fl-ember-soft);
+    color: var(--fl-ember-strong);
+  }
+
+  .sc-status {
+    border: 1px solid var(--fl-rule-strong);
+    color: var(--fl-muted);
+  }
+
+  .sc-status-live {
+    border-color: color-mix(in srgb, #16a34a 45%, transparent);
+    color: #16a34a;
+  }
+
+  .sc-tags,
+  .sc-uses {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .sc-tags li,
+  .sc-uses li {
+    margin: 0;
+    padding: 0.25rem 0.625rem;
+    border: 1px solid var(--fl-rule);
+    border-radius: 0.5rem;
+    background: var(--fl-surface);
+    font-size: 0.8125rem;
+  }
+
+  .sc-uses li {
+    font-family: var(--sl-font-mono);
+    font-size: 0.75rem;
+  }
+
+  .sc-featured-body .sc-label {
+    margin-top: 1.5rem;
+  }
+
+  .sc-uses {
+    margin-top: 0.625rem;
+  }
+
+  .sc-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .sc-by {
+    color: var(--fl-muted);
+  }
+
+  .sc a:not(.sc-btn):not(.sc-card) {
+    color: var(--fl-ink);
+    text-decoration-color: var(--fl-rule-strong);
+    text-underline-offset: 0.2em;
+  }
+
+  .sc a:not(.sc-btn):not(.sc-card):hover {
+    text-decoration-color: var(--fl-ember);
+  }
+
+  /* ---- Community ---- */
+  .sc-section {
+    padding: clamp(3rem, 6vw, 4.5rem) clamp(1rem, 4vw, 3rem);
+  }
+
+  .sc-step {
+    margin-bottom: 1.25rem;
+  }
+
+  .sc-step span {
+    color: var(--fl-ember);
+    margin-right: 0.5rem;
+  }
+
+  .sc-h2 {
+    margin: 0;
+    font-size: clamp(1.75rem, 1.2rem + 2.2vw, 2.625rem);
+    font-weight: 650;
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+    color: var(--fl-ink);
+    text-wrap: balance;
+  }
+
+  .sc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .sc-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    border: 1px solid var(--fl-rule);
+    border-radius: 0.875rem;
+    background: var(--fl-paper);
+  }
+
+  .sc-card h3 {
+    font-size: 1.25rem;
+  }
+
+  .sc-card .sc-foot {
+    margin-top: auto;
+    padding-top: 1.25rem;
+  }
+
+  .sc-card-add {
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.375rem;
+    min-height: 12rem;
+    border-style: dashed;
+    border-color: var(--fl-rule-strong);
+    background: transparent;
+    color: var(--fl-body);
+    text-decoration: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .sc-card-add:hover {
+    border-color: var(--fl-ember);
+  }
+
+  .sc-plus {
+    font-family: var(--sl-font-mono);
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--fl-ember);
+  }
+
+  .sc-add-title {
+    color: var(--fl-ink);
+    font-weight: 600;
+    font-size: 1.0625rem;
+  }
+
+  .sc-add-body {
+    color: var(--fl-muted);
+    font-size: 0.9375rem;
+  }
+
+  /* ---- Submit ---- */
+  .sc-submit-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 2rem 3rem;
+    align-items: start;
+  }
+
+  .sc-muted {
+    margin: 1rem 0 0;
+    max-width: 34rem;
+    color: var(--fl-muted);
+  }
+
+  .sc-small {
+    font-size: 0.875rem;
+  }
+
+  .sc-asked {
+    padding: 1.5rem;
+    border: 1px solid var(--fl-rule);
+    border-radius: 0.875rem;
+    background: var(--fl-surface);
+  }
+
+  .sc-asked ol {
+    margin: 0.75rem 0 0;
+    padding-left: 1.25rem;
+  }
+
+  .sc-asked li {
+    margin: 0.375rem 0 0;
+  }
+
+  @media (max-width: 50rem) {
+    .sc-featured,
+    .sc-submit-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sc-featured-mark {
+      min-height: 10rem;
+      border-right: 0;
+      border-bottom: 1px solid var(--fl-rule);
+    }
+
+    .sc-featured-mark span {
+      width: 4.5rem;
+      height: 4.5rem;
+      font-size: 2.25rem;
+      border-radius: 1.125rem;
+    }
+  }
+</style>

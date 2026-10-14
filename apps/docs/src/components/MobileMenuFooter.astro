@@ -1,0 +1,8 @@
+---
+import Default from "@astrojs/starlight/components/MobileMenuFooter.astro";
+import SiteNav from "./SiteNav.astro";
+/** The phone menu: the site's own links first, then Starlight's footer (social icons, theme). */
+---
+
+<SiteNav place="menu" />
+<Default />

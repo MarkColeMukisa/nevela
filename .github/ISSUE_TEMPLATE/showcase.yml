@@ -1,0 +1,139 @@
+name: Submit a project to the showcase
+description: Built something with Nevela? Tell us about it, and we'll add it to "Projects built in Nevela" on the docs site.
+title: "Showcase: "
+labels: ["showcase"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for building with Nevela. Answer what you can below: it is everything we need to add your project to [Projects built in Nevela](https://nevela-docs.vercel.app/showcase/), so there is no back and forth.
+
+        Your project can be live or still being built. Put its name after "Showcase: " in the title above.
+
+  - type: input
+    id: name
+    attributes:
+      label: Project name
+      placeholder: Kian Rover
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+      label: Where it can be seen
+      description: The live site, or "not public yet".
+      placeholder: https://example.com
+    validations:
+      required: true
+
+  - type: input
+    id: tagline
+    attributes:
+      label: One line about it
+      description: Shown under the name. A few words, at most 60 characters.
+      placeholder: Online shops for businesses that sell on WhatsApp
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What it does
+      description: Two or three sentences. What it does, who uses it, and what Nevela does in it.
+      placeholder: Shop owners list their products in the dashboard, and customers order from the public site. The orders, products and customers are Nevela resources...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: Where it is
+      options:
+        - Live, in production
+        - Being built, or moving to Nevela
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Nevela version
+      description: "What `nevela version` (or `php nevela version`) says in the project."
+      placeholder: "0.9.2"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: uses
+    attributes:
+      label: The parts of Nevela it uses
+      description: Tick what applies. It is shown on the project's card.
+      options:
+        - label: Dashboard and resources
+        - label: Adopted tables (an app that was already there)
+        - label: Public site (pages and the public API)
+        - label: Blog
+        - label: Protected public forms (Turnstile, honeypot, address checks)
+        - label: Address confirmation (a list people join)
+        - label: Files and images
+        - label: Actions on a record
+        - label: Roles and permissions
+        - label: Passkeys or two-factor sign-in
+
+  - type: input
+    id: kind
+    attributes:
+      label: What kind of app it is
+      description: Two to four words, with commas between.
+      placeholder: E-Commerce, Multi-tenant, WhatsApp
+    validations:
+      required: true
+
+  - type: input
+    id: scale
+    attributes:
+      label: Its size (optional)
+      description: The number of resources or tables, and anything else worth saying about its scale.
+      placeholder: 14 resources, 9 of them adopted; 30,000 orders a month
+
+  - type: input
+    id: stack
+    attributes:
+      label: Where it runs (optional)
+      description: Hosting and services, with commas between.
+      placeholder: Laravel Cloud, Vercel, Neon Postgres, Cloudflare R2
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: A screenshot
+      description: Drag an image of the site or the dashboard into this box. 1600 by 900 pixels or larger, with no personal data in it.
+    validations:
+      required: true
+
+  - type: input
+    id: repository
+    attributes:
+      label: Source code (optional)
+      description: If the project is open source.
+      placeholder: https://github.com/you/your-project
+
+  - type: input
+    id: credit
+    attributes:
+      label: Credit
+      description: The name to show as the maker, and a link to you if you want one.
+      placeholder: Jane Doe, https://x.com/janedoe
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Before you send it
+      options:
+        - label: I built this project, or I have permission to submit it.
+          required: true
+        - label: The name, description, screenshot and links above may be shown on the Nevela docs site.
+          required: true

@@ -1,0 +1,119 @@
+---
+/**
+ * The site's own links, beside the title as on gritframework.dev: the docs, and the
+ * projects built in Nevela.
+ *
+ * In the header on a wide screen. On a narrow one a docs page has its menu, which
+ * carries them instead (MobileMenuFooter.astro); a page with no sidebar (the home page,
+ * the showcase) has no menu, so they stay in the header there, with a shorter label.
+ */
+interface Props {
+  /** Where it is drawn, for its layout. */
+  place: "header" | "menu";
+}
+
+const { place } = Astro.props;
+const path = Astro.url.pathname.replace(/\/+$/, "") || "/";
+const links = [
+  { label: "Docs", short: "Docs", href: "/start/introduction/", active: path !== "/" && !path.startsWith("/showcase") },
+  { label: "Projects built in Nevela", short: "Projects", href: "/showcase/", active: path.startsWith("/showcase") },
+];
+---
+
+<nav class:list={["fl-nav", `fl-nav-${place}`]} aria-label="Site">
+  {
+    links.map((link) => (
+      <a href={link.href} aria-current={link.active ? "page" : undefined}>
+        {place === "header" && link.short !== link.label ? (
+          <>
+            <span class="fl-long">{link.label}</span>
+            <span class="fl-short" aria-hidden="true">{link.short}</span>
+          </>
+        ) : (
+          link.label
+        )}
+      </a>
+    ))
+  }
+</nav>
+
+<style>
+  .fl-nav {
+    display: flex;
+    align-items: center;
+  }
+
+  .fl-nav a {
+    color: var(--fl-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .fl-nav a:hover,
+  .fl-nav a[aria-current="page"] {
+    color: var(--fl-ink);
+  }
+
+  .fl-nav a[aria-current="page"] {
+    text-decoration: underline;
+    text-decoration-color: var(--fl-ember);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.45em;
+  }
+
+  .fl-short {
+    display: none;
+  }
+
+  .fl-nav-header {
+    display: none;
+    gap: 1.25rem;
+    margin-inline-start: 0.75rem;
+  }
+
+  /* No sidebar, so no menu to carry them: always in the header. */
+  :global(:root:not([data-has-sidebar])) .fl-nav-header {
+    display: flex;
+  }
+
+  @media (min-width: 50rem) {
+    .fl-nav-header {
+      display: flex;
+    }
+  }
+
+  @media (max-width: 49.99rem) {
+    .fl-nav-header {
+      gap: 0.875rem;
+      margin-inline-start: 0.5rem;
+    }
+
+    .fl-long {
+      display: none;
+    }
+
+    .fl-short {
+      display: inline;
+    }
+  }
+
+  .fl-nav-menu {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding-block: 0.75rem 1rem;
+    border-bottom: 1px solid var(--sl-color-gray-6);
+  }
+
+  .fl-nav-menu a {
+    font-size: 1rem;
+  }
+
+  @media (min-width: 50rem) {
+    .fl-nav-menu {
+      display: none;
+    }
+  }
+</style>

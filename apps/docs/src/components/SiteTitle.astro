@@ -1,11 +1,13 @@
 ---
 import Default from "@astrojs/starlight/components/SiteTitle.astro";
 import { NEVELA_VERSION, RELEASE_URL } from "../version";
+import SiteNav from "./SiteNav.astro";
 ---
 
 <div class="fl-title">
   <Default />
   <a class="fl-version" href={RELEASE_URL} title={`Docs for Nevela ${NEVELA_VERSION}: release notes`}>v{NEVELA_VERSION}</a>
+  <SiteNav place="header" />
 </div>
 
 <style>
