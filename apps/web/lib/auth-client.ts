@@ -179,7 +179,8 @@ export const authClient = {
     magicLink: ({ email, callbackURL }: { email: string; callbackURL?: string; errorCallbackURL?: string }) => post("magic-link", { email, next: callbackURL }),
     emailOtp: ({ email, otp }: { email: string; otp: string }) => orSecondStep(post<{ twoFactorRedirect?: boolean }>("email-code/verify", { email, code: otp })),
     passkey: signInWithPasskey,
-    social: (_options: { provider: string; callbackURL?: string; errorCallbackURL?: string }) => unsupported("Signing in with that provider"),
+    /** Off to the provider's page: the browser leaves, and comes back signed in. */
+    social: ({ provider, callbackURL }: { provider: string; callbackURL?: string; errorCallbackURL?: string }) => toProvider(provider, callbackURL),
   },
   signUp: {
     email: ({ name, email, password }: { name: string; email: string; password: string; callbackURL?: string }) =>
@@ -247,11 +248,27 @@ export const authClient = {
     deletePasskey: ({ id }: { id: string }) => call("DELETE", `passkeys/${encodeURIComponent(id)}`),
   },
 
-  // Signing in with Google, GitHub and the like isn't part of Nevela yet.
-  listAccounts: async (): Promise<AuthResult<{ id: string; providerId: string; accountId: string }[]>> => ({ data: [], error: null }),
-  linkSocial: (_options: { provider: string; callbackURL?: string }) => unsupported("Connecting that provider"),
-  unlinkAccount: (_options: { providerId?: string; accountId?: string }) => unsupported("Disconnecting that provider"),
+  /** The providers connected to this account. */
+  listAccounts: async (): Promise<AuthResult<{ id: string; providerId: string; accountId: string }[]>> => {
+    const result = await call<{ data?: { id: string; provider: string }[] }>("GET", "social");
+    if (result.error) return { data: null, error: result.error };
+    return { data: (result.data?.data ?? []).map((row) => ({ id: row.id, providerId: row.provider, accountId: row.id })), error: null };
+  },
+  /** Off to the provider's page, to come back connected to this account. */
+  linkSocial: ({ provider, callbackURL }: { provider: string; callbackURL?: string }) => toProvider(provider, callbackURL ?? "/dashboard/account/security", true),
+  unlinkAccount: ({ accountId }: { providerId?: string; accountId?: string }) => call("DELETE", `social/${encodeURIComponent(accountId ?? "")}`),
 };
+
+/**
+ * Leave for Google or GitHub. The browser goes to this app's own route, which asks Laravel
+ * where the provider's page is: nothing about the sign-in passes through the page's script.
+ */
+async function toProvider(provider: string, next?: string, link = false): Promise<AuthResult<never>> {
+  const query = new URLSearchParams({ next: next ?? "/dashboard", ...(link ? { link: "1" } : {}) });
+  window.location.assign(`/api/auth/oauth/${encodeURIComponent(provider)}?${query}`);
+  // The page is going; nothing more happens here.
+  return new Promise(() => {});
+}
 
 /**
  * Upload a profile picture. It is the request body, so the browser can report progress,

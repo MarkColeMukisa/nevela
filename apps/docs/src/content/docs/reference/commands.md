@@ -301,7 +301,7 @@ nevela status
 
 `nevela status -v` also lists the dashboard files you have changed, which are the ones an upgrade will leave alone.
 
-Anything that needs attention is in red, with the command that fixes it: migrations that have not run, a resource whose table is missing, nobody able to sign in, a form whose [robot check](/guides/protecting-forms/#when-the-check-cant-be-made) has no secret key in production, or the dashboard's API address being answered by a different program. The command exits with an error code when it finds a problem, so it works in scripts.
+Anything that needs attention is in red, with the command that fixes it: migrations that have not run, a resource whose table is missing, nobody able to sign in, a form whose [robot check](/guides/protecting-forms/#when-the-check-cant-be-made) has no secret key in production, Google or GitHub sign-in switched on with no provider's keys set (in yellow), or the dashboard's API address being answered by a different program. The command exits with an error code when it finds a problem, so it works in scripts.
 
 ## nevela trash
 

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { SignUpForm } from "@/components/auth/sign-up-form";
-import { authConfig, enabledSocialProviders } from "@/lib/auth-config";
+import { authConfig } from "@/lib/auth-config";
+import { enabledSocialProviders } from "@/lib/social";
 import { getSession, safeRedirectPath } from "@/lib/session";
 import { site } from "@/lib/site";
 import { theme } from "@/lib/theme";
@@ -32,7 +33,7 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
       }
     >
       <SignUpForm
-        providers={enabledSocialProviders()}
+        providers={await enabledSocialProviders()}
         socialPlacement={theme.social}
         socialStyle={theme.socialStyle}
         next={next}

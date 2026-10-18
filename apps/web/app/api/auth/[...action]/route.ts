@@ -86,6 +86,69 @@ async function callLaravel(request: NextRequest, method: string, path: string, b
   return { status: response.status, body: parsed };
 }
 
+/**
+ * Which browser started a sign-in with Google or GitHub. The provider's answer is taken
+ * only in the browser that asked for it, so nobody can sign someone else in to their own
+ * account by sending them a link.
+ */
+const OAUTH_COOKIE = "nevela_oauth";
+const OAUTH_PATH = "/api/auth/oauth";
+
+const redirectTo = (request: NextRequest, path: string) => Response.redirect(new URL(path, request.url), 303);
+
+/** A path with something added to its query: "/dashboard/account/security" + social=linked. */
+function withQuery(path: string, name: string, value: string): string {
+  return `${path}${path.includes("?") ? "&" : "?"}${name}=${encodeURIComponent(value)}`;
+}
+
+/** The button: ask Laravel where the provider's page is, and send the browser there. */
+async function oauthStart(request: NextRequest, provider: string): Promise<Response> {
+  const params = request.nextUrl.searchParams;
+  const linking = params.get("link") === "1";
+  const next = safeRedirectPath(params.get("next"), linking ? "/dashboard/account/security" : "/dashboard");
+  const result = await callLaravel(request, "POST", `oauth/${provider}/start`, { next, link: linking });
+  const { url, state } = result.body;
+  if (result.status !== 200 || typeof url !== "string" || typeof state !== "string") {
+    const code = typeof result.body.code === "string" ? result.body.code : "OAUTH_FAILED";
+    return redirectTo(request, linking ? withQuery(next, "social", code) : `/sign-in?error=oauth&reason=${code}`);
+  }
+  (await cookies()).set(OAUTH_COOKIE, state, { ...cookieOptions(60 * 10), path: OAUTH_PATH });
+  return Response.redirect(url, 303);
+}
+
+/** Back from the provider: hand Laravel the code, and sign in as any other way does. */
+async function oauthCallback(request: NextRequest, provider: string): Promise<Response> {
+  const params = request.nextUrl.searchParams;
+  const jar = await cookies();
+  const state = params.get("state") ?? "";
+  const started = jar.get(OAUTH_COOKIE)?.value;
+  jar.set(OAUTH_COOKIE, "", { ...cookieOptions(0), path: OAUTH_PATH });
+  if (!started || started !== state) return redirectTo(request, "/sign-in?error=oauth&reason=OAUTH_STATE");
+
+  const result = await callLaravel(request, "POST", `oauth/${provider}/callback`, {
+    state,
+    code: params.get("code") ?? "",
+    ...(params.get("error") ? { error: params.get("error") } : {}),
+  });
+  const next = safeRedirectPath(result.body.next);
+  // Connected to the account that asked, from the Account page.
+  if (result.body.linked === true) return redirectTo(request, withQuery(next, "social", "linked"));
+
+  const waiting = result.status === 200 ? secondStep(result.body) : null;
+  if (waiting) {
+    jar.set(PENDING_COOKIE, encodePending(waiting), cookieOptions(PENDING_MAX_AGE));
+    return redirectTo(request, `/two-factor?next=${encodeURIComponent(next)}`);
+  }
+  const token = result.body.token;
+  if (result.status >= 400 || typeof token !== "string") {
+    const code = typeof result.body.code === "string" ? result.body.code : "OAUTH_FAILED";
+    return redirectTo(request, next.startsWith("/dashboard/account") ? withQuery(next, "social", code) : `/sign-in?error=oauth&reason=${code}&next=${encodeURIComponent(next)}`);
+  }
+  jar.set(TOKEN_COOKIE, token, cookieOptions(TOKEN_MAX_AGE));
+  jar.set(PENDING_COOKIE, "", cookieOptions(0));
+  return redirectTo(request, next);
+}
+
 /** A sign-in that needs its second step: Laravel answered with a challenge instead of a token. */
 function secondStep(body: Body): { challenge: string; methods: SecondStepMethod[] } | null {
   if (body.twoFactor !== true || typeof body.challenge !== "string") return null;
@@ -135,6 +198,10 @@ async function handle(request: NextRequest, context: Context, method: string): P
     // Belt and braces: whatever the path was, the destination is this site.
     return Response.redirect(destination.origin === new URL(request.url).origin ? destination : new URL("/dashboard", request.url), 303);
   }
+
+  // Google and GitHub: the button opens the first, and the provider sends the browser back to the second.
+  const oauth = /^oauth\/([a-z]+)(\/callback)?$/.exec(action);
+  if (method === "GET" && oauth) return oauth[2] ? oauthCallback(request, oauth[1]) : oauthStart(request, oauth[1]);
 
   if (method !== "GET" && !fromThisSite(request)) {
     return Response.json({ error: "That request didn't come from this site.", code: "CROSS_SITE" }, { status: 403 });

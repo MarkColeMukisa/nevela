@@ -9,7 +9,7 @@
  */
 export type SocialProvider = "google" | "github" | "apple" | "microsoft";
 
-// nevela:generated:start hash=68b0e3641ced
+// nevela:generated:start hash=f61dde748946
 export const authConfig = {
   /** People can create their own account at /sign-up. */
   registration: false,
@@ -31,7 +31,10 @@ export const authConfig = {
   checkBreachedPasswords: true,
   /** People can close their own account, from the Account page. */
   closeAccount: true,
-  /** Signing in with Google, GitHub and the like isn't part of Nevela yet. */
+  /**
+   * Always empty here. Which of Google and GitHub show is asked of Laravel on each
+   * page, so SOCIAL_AUTH_ENABLED needs no generate or rebuild: see lib/social.ts.
+   */
   social: [] as SocialProvider[],
 };
 // nevela:generated:end

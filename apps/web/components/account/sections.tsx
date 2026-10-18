@@ -524,9 +524,9 @@ export function Passkeys() {
   );
 }
 
-export function ConnectedAccounts({ providers }: { providers: SocialProvider[] }) {
+export function ConnectedAccounts({ providers, initialError = null }: { providers: SocialProvider[]; initialError?: string | null }) {
   const [linked, setLinked] = useState<{ providerId: string; accountId: string }[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
 
   const load = useCallback(async () => {
     const { data } = await authClient.listAccounts();
@@ -537,7 +537,7 @@ export function ConnectedAccounts({ providers }: { providers: SocialProvider[] }
   }, [load]);
 
   const connect = async (provider: SocialProvider) => {
-    const { error } = await authClient.linkSocial({ provider, callbackURL: "/dashboard/account" });
+    const { error } = await authClient.linkSocial({ provider, callbackURL: "/dashboard/account/security" });
     if (error) setError(authErrorMessage(error));
   };
   const disconnect = async (provider: SocialProvider) => {

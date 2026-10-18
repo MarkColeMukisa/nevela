@@ -36,5 +36,6 @@ If the app has [public pages](/guides/public-site/), two more things:
 - [ ] Both apps served over HTTPS
 - [ ] `NEVELA_PROXY_SECRET` set to the same value in both, if anything is public
 - [ ] `nevela status` run on the server: it is red where a form's robot check has no secret key
+- [ ] With [Google or GitHub sign-in](/guides/authentication/#google-and-github) on: the production callback address registered with each provider, and `php artisan config:clear` after changing `SOCIAL_AUTH_ENABLED` on a server that caches its config
 - [ ] `routes/nevela-public.php` read through: it lists everything that is open without signing in
 - [ ] At least one user created on the server with `php artisan nevela:user`. The starter `admin@example.com` account is not there, and should not be

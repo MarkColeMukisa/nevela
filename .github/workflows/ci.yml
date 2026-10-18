@@ -458,6 +458,12 @@ jobs:
           signin admin@example.com | tee admin.json | grep -q '"token"'
           grep -q '"isAdmin":true' admin.json
           grep -q '"roles":\["ADMIN"\]' admin.json
+          # Google and GitHub: listed in the new app's .env, and off until switched on.
+          grep -q '^SOCIAL_AUTH_ENABLED=false' .env
+          grep -q '^GOOGLE_CLIENT_ID=' .env
+          curl -s http://127.0.0.1:8000/api/auth/config -H 'Accept: application/json' | grep -q '"social":\[\]'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8000/api/auth/oauth/google/start -H 'Accept: application/json')" = 404
+          php artisan nevela:status | grep -q 'Social sign-in.*off'
           # And the ten sample users beside it: two editors, eight users, one of those switched off.
           admin="$(bearer admin@example.com)"
           curl -s "http://127.0.0.1:8000/api/_nevela/users?perPage=100" -H 'Accept: application/json' -H "Authorization: Bearer $admin" > users.json
