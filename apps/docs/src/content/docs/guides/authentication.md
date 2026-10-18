@@ -166,6 +166,8 @@ An address is matched only if the provider says it is verified. Google says so o
 
 Once connected, the provider account is found by the provider's own id for the person, so a later change of address at Google or GitHub doesn't lose the account.
 
+If the account's own address was never verified here, the provider is the first to prove it belongs to whoever is signing in. Someone else could have made that account in their name, with sign-up open, so its password stops working and every device signed in to it is signed out. The owner carries on with the provider, or sets a new password with **Forgot password**. An account whose address was verified keeps its password.
+
 An account made this way has a password nobody knows. Its owner signs in with the provider, or sets a password with **Forgot password**.
 
 Two-factor still applies. An account with an authenticator app is asked for it after the provider, as after a password.

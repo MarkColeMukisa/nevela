@@ -131,6 +131,7 @@ class SocialLoginTest extends TestCase
 
         $answer = $this->back($this->start()['state'], 'first')->assertCreated();
         $this->assertNotEmpty($answer->json('token'));
+        // (Nobody had proved her address, so her old password was retired: see the test below.)
         $this->assertSame('ada@example.com', $answer->json('user.email'));
         $this->assertSame('/dashboard/orders', $answer->json('next'));
         // Google has seen the address work.
@@ -140,6 +141,51 @@ class SocialLoginTest extends TestCase
         // Her address at Google changes. She is still she.
         $this->atGoogle('later', 'google-ada', 'ada.new@gmail.com');
         $this->back($this->start()['state'], 'later')->assertCreated()->assertJsonPath('user.email', 'ada@example.com');
+    }
+
+    public function test_an_account_nobody_had_proved_the_address_of_is_handed_over_without_its_password(): void
+    {
+        // Someone signed up with Ada's address before she did, with a password of their own.
+        $squatter = $this->user(['email_verified_at' => null, 'password' => Hash::make('the squatters password')]);
+        $theirs = $squatter->createToken('their laptop')->plainTextToken;
+        $this->atGoogle('ada', 'google-ada', 'ada@example.com');
+
+        $this->back($this->start()['state'], 'ada')->assertCreated()->assertJsonPath('user.email', 'ada@example.com');
+
+        // Google proved the address is Ada's. What wasn't proved stops working.
+        $this->assertFalse(Hash::check('the squatters password', $squatter->refresh()->password));
+        $this->postJson('/api/auth/token', ['email' => 'ada@example.com', 'password' => 'the squatters password'])->assertUnauthorized();
+        $this->app['auth']->forgetGuards();
+        $this->getJson('/api/auth/me', ['Authorization' => "Bearer {$theirs}"])->assertUnauthorized();
+        $this->assertNotNull($squatter->email_verified_at);
+    }
+
+    public function test_an_account_whose_address_was_proved_keeps_its_password(): void
+    {
+        $ada = $this->user(['email_verified_at' => now()]);
+        $this->atGoogle('ada', 'google-ada', 'ada@example.com');
+
+        $this->back($this->start()['state'], 'ada')->assertCreated();
+
+        $this->assertTrue(Hash::check('a password of hers', $ada->refresh()->password));
+    }
+
+    public function test_an_account_removed_for_good_takes_its_connections_with_it(): void
+    {
+        $ada = $this->user(['email_verified_at' => now()]);
+        $this->atGoogle('ada', 'google-ada', 'ada@example.com');
+        $this->back($this->start()['state'], 'ada')->assertCreated();
+        $this->assertSame(1, DB::table('nevela_social_accounts')->count());
+
+        ClosedAccounts::close($ada);
+        ClosedAccounts::remove($ada);
+
+        $this->assertSame(0, DB::table('nevela_social_accounts')->count());
+        // A connection left from before (an account deleted another way) is cleared when it is found, not followed.
+        DB::table('nevela_social_accounts')->insert(['id' => (string) \Illuminate\Support\Str::uuid(), 'user_id' => '999999', 'provider' => 'google', 'provider_id' => 'google-ada', 'email' => null, 'created_at' => now(), 'updated_at' => now()]);
+        $grace = $this->user(['email' => 'ada@example.com', 'email_verified_at' => now()]);
+        $this->back($this->start()['state'], 'ada')->assertCreated()->assertJsonPath('user.id', (string) $grace->id);
+        $this->assertSame([(string) $grace->id], DB::table('nevela_social_accounts')->pluck('user_id')->all());
     }
 
     public function test_an_address_the_provider_has_not_verified_is_not_matched_to_an_account(): void
