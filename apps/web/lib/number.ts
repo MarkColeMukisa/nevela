@@ -8,6 +8,33 @@
  * Kept free of server imports: the field widgets that use it run in the browser.
  */
 
+/**
+ * How many decimals a currency is written with: 0 for UGX and JPY, 2 for USD. Two when
+ * there is no currency, or the browser doesn't know it.
+ */
+export function currencyDigits(currency?: string | null): number {
+  if (!currency) return 2;
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency }).resolvedOptions().maximumFractionDigits ?? 2;
+  } catch {
+    return 2;
+  }
+}
+
+/**
+ * An amount of money, in its currency and with that currency's decimals: "UGX 4,500,000",
+ * "$4,500,000.00". Null when there is no currency to show it in, so the caller shows it
+ * as it always has.
+ */
+export function formatMoney(value: unknown, currency?: string | null, locale = "en-US"): string | null {
+  if (!currency || value === null || value === undefined || value === "" || Number.isNaN(Number(value))) return null;
+  try {
+    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(Number(value));
+  } catch {
+    return null;
+  }
+}
+
 /** "2000.5" → "2,000.5". A half-typed "1," or "12." is left alone so typing isn't fought. */
 export function groupDigits(value: string): string {
   if (!value) return "";

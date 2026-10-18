@@ -11,9 +11,11 @@ class Product extends Model
 
     protected $table = 'products';
 
-    // nevela:generated:start hash=b9081e6056f7
+    // nevela:generated:start hash=a4513f16b611
     // Deleted records go to the trash, where they can be restored for a while.
     use \Nevela\Laravel\Concerns\Trashable;
+    // $record->optionLabel('status'): what its value is called, in the dashboard's words.
+    use \Nevela\Laravel\Concerns\OptionLabels;
 
     protected $fillable = ['name', 'sku', 'price', 'image', 'category_id', 'active', 'kind', 'notes'];
 

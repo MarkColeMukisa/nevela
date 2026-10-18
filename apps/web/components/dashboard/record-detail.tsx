@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { clientResource, formatValue, optionLabel, relationGraph, statusTone, storedFields, type Resource } from "@flaredev/core";
+import { displayValue } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { FileCell } from "@/components/dashboard/fields/file-cell";
 import { Button } from "@/components/ui/button";
@@ -110,7 +111,7 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
           <CardContent className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
             {fields.map(([key, def]) => {
               const value = record[key];
-              let content: React.ReactNode = formatValue(def, value);
+              let content: React.ReactNode = displayValue(def, value);
               if ((def.kind === "datetime") && value != null) {
                 content = <LocalTime value={value as string | number | Date} />;
               } else if (def.kind === "enum" && value != null) {

@@ -58,6 +58,7 @@ php artisan vendor:publish --tag=nevela-config
 | Variable | Meaning |
 |---|---|
 | `NEVELA_WEB_PATH` | Overrides `web_path`. Use it when the web app is not at `../web`. |
+| `NEVELA_CURRENCY` | The currency money is shown in, as its ISO 4217 code: `UGX`. A money field can name its own. Run `nevela generate` after changing it. See [Money and its currency](/concepts/field-types/#money-and-its-currency). |
 | `SOCIAL_AUTH_ENABLED` | `true` turns on signing in with [Google and GitHub](/guides/authentication/#google-and-github). Off unless set. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google's keys. Google is offered once both are set. |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | GitHub's, the same. |

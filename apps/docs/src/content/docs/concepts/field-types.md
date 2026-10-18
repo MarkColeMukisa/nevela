@@ -50,6 +50,50 @@ Both can be combined: `code:string?!`.
 
 The dashboard picks the input and the table column from the type.
 
+## What an enum's values are called
+
+A value is what is stored, validated and sent over the API, so it is a short key: `asap`, `quarter`. What people read can be words, given after `=`:
+
+```sh
+nevela resource ProjectRequest --fields="name:string, timeline:enum(asap=As soon as possible|month=Within a month|quarter=In 1 to 3 months|flexible)"
+```
+
+or in the descriptor:
+
+```json
+"timeline": {
+    "kind": "enum",
+    "options": ["asap", "month", "quarter", "flexible"],
+    "optionLabels": { "asap": "As soon as possible", "month": "Within a month", "quarter": "In 1 to 3 months" }
+}
+```
+
+The dashboard uses the words everywhere it shows the value: the table, its filters, the form, a record's page, the stat cards and the charts. A value with no label is made readable from the key: `flexible` reads "Flexible", `on_hold` "On hold". A label for a value that isn't one of `options` is refused when the descriptor is read.
+
+Your own code can say the same words, for an email or a PDF, without keeping a copy of them:
+
+```php
+$request->optionLabel('timeline');   // "In 1 to 3 months"
+```
+
+Every generated model with an enum field has it. The descriptor has it too: `Nevela::resource('ProjectRequest')->fields['timeline']->optionLabel('quarter')`.
+
+## Money and its currency
+
+A money field is shown in a currency when one is set: for the whole app in `apps/api/.env`, or on the field.
+
+```sh
+NEVELA_CURRENCY=UGX
+```
+
+```json
+"quoteAmount": { "kind": "float", "format": "money", "currency": "UGX" }
+```
+
+A field's own wins. It is written with the currency's own decimals, so `UGX 4,500,000` and `$4,500,000.00`, and the input shows the code beside the number. A currency with no decimals, such as UGX, takes whole numbers only. The code is ISO 4217's, in capitals: anything else is refused. With neither set, money looks as it always has.
+
+Run `nevela generate` after changing `NEVELA_CURRENCY`.
+
 ## Rich text
 
 `body:richtext` is text with formatting. The dashboard gives it an editor with bold, italic, strikethrough, links, two sizes of heading, bullet and numbered lists, quotes, undo and redo, and the value is stored as HTML.
