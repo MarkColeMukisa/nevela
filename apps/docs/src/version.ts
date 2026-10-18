@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "A blog with every new app, and public forms that keep bots out";
+export const RELEASE_HEADLINE = "Sign in with Google or GitHub, behind one switch";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "a blog in every new app, and public forms that turn bots away, limit the mail they cause and can prove an address.",
-  href: "/guides/protecting-forms/",
-  label: "Protecting a public form",
+  text: "sign in with Google or GitHub. One setting turns it on, and nothing needs rebuilding.",
+  href: "/guides/authentication/#google-and-github",
+  label: "Google and GitHub",
 };
