@@ -739,6 +739,15 @@ async function main() {
     if (fs.existsSync(env) && !/^NEVELA_PROXY_SECRET=/m.test(fs.readFileSync(env, 'utf8'))) {
       fs.appendFileSync(env, `\n# The same value as in apps/web/.env.local.\nNEVELA_PROXY_SECRET=${proxySecret}\n`);
     }
+    // Where to switch on Google and GitHub, and the keys they need, so nobody has to look the names up.
+    if (fs.existsSync(env) && !/^SOCIAL_AUTH_ENABLED=/m.test(fs.readFileSync(env, 'utf8'))) {
+      fs.appendFileSync(
+        env,
+        '\n# Sign in with Google and GitHub: https://nevela-docs.vercel.app/guides/authentication/#google-and-github\n' +
+          '# Off until this is true. A provider shows once both its keys are set.\n' +
+          'SOCIAL_AUTH_ENABLED=false\nGOOGLE_CLIENT_ID=\nGOOGLE_CLIENT_SECRET=\nGITHUB_CLIENT_ID=\nGITHUB_CLIENT_SECRET=\n',
+      );
+    }
     const sqlite = path.join(api, 'database', 'database.sqlite');
     if (/^DB_CONNECTION=sqlite\s*$/m.test(fs.readFileSync(env, 'utf8')) && !fs.existsSync(sqlite)) fs.writeFileSync(sqlite, '');
     return addApiTokens(path.join(api, 'app', 'Models', 'User.php'));

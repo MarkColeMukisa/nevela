@@ -1,6 +1,6 @@
 ---
 title: "Authentication"
-description: "Signing in with a password, a passkey, an emailed link or code, with two-factor, a profile picture and a list of devices. Laravel holds the accounts; the screens are Flare's."
+description: "Signing in with a password, Google or GitHub, a passkey, an emailed link or code, with two-factor, a profile picture and a list of devices. Laravel holds the accounts; the screens are Flare's."
 ---
 
 Laravel holds the accounts and decides who gets in. The sign-in and account screens are Flare's, unchanged, and talk to Laravel through the web app. A signed-in browser keeps a [Sanctum](https://laravel.com/docs/sanctum) token in an httpOnly cookie: the browser sends it, and scripts on the page cannot read it.
@@ -10,6 +10,7 @@ Laravel holds the accounts and decides who gets in. The sign-in and account scre
 | | |
 |---|---|
 | **Password** | Sign in, forgot password, reset by an emailed link, change it from the account page. |
+| **Google, GitHub** | Sign in with either, once switched on. Connect and disconnect them from the account page. |
 | **Two-factor** | A code from an authenticator app, or a code by email, after the password. Ten backup codes. |
 | **Passkeys** | Face ID, Touch ID, Windows Hello or a security key. No password to type. |
 | **Emailed link, emailed code** | Sign in from an email, without a password. |
@@ -18,7 +19,6 @@ Laravel holds the accounts and decides who gets in. The sign-in and account scre
 | **Devices** | Every browser signed in to the account, and signing them out. |
 | **Sign-up** | Off until you switch it on. See below. |
 
-Not included yet: signing in with Google, GitHub and other providers.
 
 ## The pages
 
@@ -31,7 +31,7 @@ Not included yet: signing in with Google, GitHub and other providers.
 | `/verify-email` | Enter the code from the email, or arrive by its link. |
 | `/dashboard/account` | Profile: picture, name, email. |
 | `/dashboard/account/password` | Change the password. |
-| `/dashboard/account/security` | Two-factor and passkeys. |
+| `/dashboard/account/security` | Two-factor, passkeys, and connected Google and GitHub accounts. |
 | `/dashboard/account/sessions` | Devices. |
 
 ## Creating users
@@ -117,6 +117,71 @@ Passkeys are tied to the address of the dashboard, so two things have to be true
 - The dashboard is on `https`, or on `localhost`. Browsers refuse passkeys anywhere else.
 - Laravel knows the dashboard's address: set `NEVELA_WEB_URL` (see [Going to production](#going-to-production)).
 
+## Google and GitHub
+
+Off until you switch it on. One setting in `apps/api/.env` is the switch for the whole app, as in Grit:
+
+```sh
+SOCIAL_AUTH_ENABLED=true
+
+GOOGLE_CLIENT_ID=…
+GOOGLE_CLIENT_SECRET=…
+GITHUB_CLIENT_ID=…
+GITHUB_CLIENT_SECRET=…
+```
+
+- **The switch** turns every provider on or off. Off, no button shows and Laravel refuses the routes.
+- **A provider shows once both of its keys are set.** Set Google's only, and there is one button.
+- **The dashboard asks Laravel which to show on every page**, so turning the switch needs no `nevela generate` and no rebuild. Where the config is cached (`php artisan config:cache` in production), run `php artisan config:clear` after changing it.
+
+`nevela status` says what is on: `Social sign-in .. on: Google (GitHub has no keys)`.
+
+It is built on [Laravel Socialite](https://laravel.com/docs/socialite).
+
+### Getting the keys
+
+Each provider asks for the address to send people back to. It is the dashboard's, not the API's:
+
+```
+https://app.example.com/api/auth/oauth/google/callback
+https://app.example.com/api/auth/oauth/github/callback
+```
+
+In development, register `http://localhost:3000/api/auth/oauth/google/callback` as well (and the same for GitHub). If the dashboard moves to another port because 3000 is taken, the address moves with it, so keep 3000 free or register that port too.
+
+**Google.** In the [Google Cloud console](https://console.cloud.google.com/apis/credentials), choose **Create credentials → OAuth client ID**, application type **Web application**. Add the address above under **Authorised redirect URIs**. Copy the client ID and secret. The consent screen asks for an app name and a support address the first time.
+
+**GitHub.** In **Settings → Developer settings → [OAuth Apps](https://github.com/settings/developers) → New OAuth App**, set the **Authorization callback URL** to the address above. Copy the client ID, then generate a client secret.
+
+### Who gets in
+
+It follows [`registration`](#letting-people-sign-up):
+
+| | Registration off (the default) | Registration on |
+|---|---|---|
+| An account here has that address | Signs in, and the provider account is connected to it | The same |
+| No account has it | Refused: "There's no account here for that address" | A new account, with the role new sign-ups get |
+
+An address is matched only if the provider says it is verified. Google says so of each address. GitHub gives only a verified one. A closed account, a switched-off account and a [blocked address](/guides/deleted-accounts/) are refused, as for every other way in.
+
+Once connected, the provider account is found by the provider's own id for the person, so a later change of address at Google or GitHub doesn't lose the account.
+
+An account made this way has a password nobody knows. Its owner signs in with the provider, or sets a password with **Forgot password**.
+
+Two-factor still applies. An account with an authenticator app is asked for it after the provider, as after a password.
+
+### Connecting from the account page
+
+**Account → Security → Connected accounts** lists the providers that are on. **Connect** goes to the provider and back, and connects that provider account to the one signed in. One provider account can be connected to one account here. **Disconnect** is always allowed: every account has its email address, so there is still a way in by a reset link, a sign-in link or a code.
+
+### How it works
+
+The browser never talks to Laravel, and never holds a token:
+
+1. The button opens `/api/auth/oauth/google` on the dashboard. Its server asks Laravel where Google's page is, and sends the browser there.
+2. Laravel makes the state that goes with it, good once for ten minutes. The dashboard keeps it in an httpOnly cookie, so Google's answer is taken only in the browser that asked. Nobody can sign you in to their own account by sending you a link.
+3. Google sends the browser back to `/api/auth/oauth/google/callback` on the dashboard. Its server hands the code to Laravel, which asks Google who it is and signs the person in. The token goes into the cookie, as after a password.
+
 ## The profile picture
 
 Uploading a picture on the profile page sends it through the same optimiser as any [image field](/guides/images/), with the `avatar` profile: it is turned the right way up, stripped of its metadata, cropped to a 400×400 square in WebP, and given an 80×80 thumbnail for the menus. A 1.2 MB, 4000×3000 photo came out as 37 KB, with a 4 KB thumbnail.
@@ -149,6 +214,7 @@ nevela artisan vendor:publish --tag=nevela-config
 | `two_factor.email` | `true` | Emailed codes as the second step. |
 | `require_email_verification` | `false` | Refuse password sign-in until the address is verified. |
 | `check_breached_passwords` | `true` | Refuse a new password that appears in a known breach. |
+| `social.enabled` | `SOCIAL_AUTH_ENABLED`, `false` | Signing in with Google and GitHub. See [above](#google-and-github): it needs no `generate`. |
 
 Then run `nevela generate`. That writes the choices to `apps/web/lib/auth-config.ts`, so the screens stop offering what is off. Laravel refuses a method that is off whatever the screens show.
 
@@ -181,6 +247,11 @@ MAIL_FROM_ADDRESS=hello@example.com
 
 # The same value as in the dashboard's environment. See Devices, above.
 NEVELA_PROXY_SECRET=a-long-random-string
+
+# Only if people sign in with Google or GitHub. Register the production callback address with each.
+SOCIAL_AUTH_ENABLED=true
+GOOGLE_CLIENT_ID=…
+GOOGLE_CLIENT_SECRET=…
 ```
 
 And `NEVELA_PROXY_SECRET` with the same value wherever the dashboard runs. An app created with 0.4.0 or later has one in both `.env` files already; copy it to your hosts. Without it, a device is listed with the address the request reached Laravel from, which in production is your dashboard's server.

@@ -1,12 +1,13 @@
 import { AccountNav } from "@/components/account/account-nav";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { authConfig, enabledSocialProviders, twoFactorAvailable } from "@/lib/auth-config";
+import { authConfig, twoFactorAvailable } from "@/lib/auth-config";
+import { enabledSocialProviders } from "@/lib/social";
 import { requireSession } from "@/lib/session";
 
 /** The frame the account's pages share: one header, one set of links. */
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
   await requireSession("/dashboard/account");
-  const security = twoFactorAvailable || authConfig.passkeys || enabledSocialProviders().length > 0;
+  const security = twoFactorAvailable || authConfig.passkeys || (await enabledSocialProviders()).length > 0;
 
   return (
     <>
