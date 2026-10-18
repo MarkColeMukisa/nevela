@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "Sign in with Google or GitHub, behind one switch";
+export const RELEASE_HEADLINE = "Enum values in words, and money in its own currency";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "sign in with Google or GitHub. One setting turns it on, and nothing needs rebuilding.",
-  href: "/guides/authentication/#google-and-github",
-  label: "Google and GitHub",
+  text: "enum values shown in words, and money in its own currency, in the dashboard and in your own code.",
+  href: "/concepts/field-types/#what-an-enums-values-are-called",
+  label: "Labels and currency",
 };
