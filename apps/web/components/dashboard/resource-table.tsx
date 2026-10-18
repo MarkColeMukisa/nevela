@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { FileCell } from "@/components/dashboard/fields/file-cell";
 import { ArrowDownIcon, ArrowUpIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsUpDownIcon, PlusIcon } from "lucide-react";
-import { clientResource, formatValue, optionLabel, statusTone, storedFields, type Resource, type StoredField } from "@flaredev/core";
+import { clientResource, optionLabel, statusTone, storedFields, type Resource, type StoredField } from "@flaredev/core";
 import { isSortable } from "@/lib/resource/query";
 import { privateFileUrl } from "@/lib/files";
+import { displayValue } from "@/lib/format";
 import { isRich, richToText } from "@/lib/rich";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -220,7 +221,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
                     </TableCell>
                     {columns.map((column, index) => {
                       const value = row[column.key];
-                      let content: React.ReactNode = formatValue(column.def, value);
+                      let content: React.ReactNode = displayValue(column.def, value);
                       // Timestamps are formatted in the browser: the Worker's clock is UTC,
                       // so a date rendered here would be in nobody's timezone.
                       if (column.key === publishField) {

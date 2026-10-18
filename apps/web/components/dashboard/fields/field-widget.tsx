@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { groupDigits, ungroup } from "@/lib/number";
+import { currencyDigits, groupDigits, ungroup } from "@/lib/number";
 import { isRich } from "@/lib/rich";
 import { DateField, DateTimeField } from "./date-field";
 import { CountryField } from "./country-field";
@@ -107,7 +107,8 @@ export function FieldWidget(props: WidgetProps) {
               inputMode="decimal"
               className="tabular-nums"
               value={groupDigits(text)}
-              onChange={(event) => onChange(ungroup(event.target.value, true))}
+              // UGX has no cents: a currency with no decimals takes whole numbers only.
+              onChange={(event) => onChange(ungroup(event.target.value, field.format !== "money" || currencyDigits(field.currency) > 0))}
             />
             {field.format === "percent" && <InputGroupAddon align="inline-end">%</InputGroupAddon>}
           </InputGroup>

@@ -14,6 +14,10 @@ export interface ActionField {
   required?: boolean;
   label?: string;
   maxLength?: number;
+  /** enum: what each value is called. */
+  optionLabels?: Record<string, string>;
+  /** money: the ISO 4217 code it is in, "UGX". */
+  currency?: string;
 }
 
 /**

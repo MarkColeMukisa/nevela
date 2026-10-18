@@ -47,6 +47,8 @@ Each field has a `kind` (`string`, `text`, `int`, `float`, `boolean`, `date`, `d
 |---|---|
 | `format` | For strings: `email`, `url`, `tel`, `slug`, `color`. For numbers: `money`, `percent`, `rating`. For text: `rich`, which is [rich text](/concepts/field-types/#rich-text). |
 | `options` | The allowed values of an enum. |
+| `optionLabels` | For an enum: what each value is called where people read it, `{ "asap": "As soon as possible" }`. See [What an enum's values are called](/concepts/field-types/#what-an-enums-values-are-called). |
+| `currency` | For money: the ISO 4217 code it is in, `"UGX"`. The app's `NEVELA_CURRENCY` unless set. See [Money and its currency](/concepts/field-types/#money-and-its-currency). |
 | `private` | For a file: `true` keeps it where only someone who may view the record can fetch it. See [private files](/guides/images/#private-files). |
 | `maxLength` | For `string` and `text`: the most characters it holds, where that isn't the usual 255 or 65,535. |
 | `required` | `false` makes the field optional. Defaults to `true`. |

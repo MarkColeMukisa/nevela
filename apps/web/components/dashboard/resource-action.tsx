@@ -85,7 +85,7 @@ function widgetField(key: string, def: ActionField): StoredField & { label: stri
   const options = { required: def.required !== false, ...(def.maxLength ? { maxLength: def.maxLength } : {}) };
   const made =
     def.kind === "enum"
-      ? build.enum((def.options?.length ? def.options : [""]) as [string, ...string[]], { required: options.required })
+      ? build.enum((def.options?.length ? def.options : [""]) as [string, ...string[]], { required: options.required, ...(def.optionLabels ? { optionLabels: def.optionLabels } : {}) })
       : def.kind === "string" && def.format === "email"
         ? build.email(options)
         : def.kind === "string" && def.format === "url"
@@ -99,7 +99,11 @@ function widgetField(key: string, def: ActionField): StoredField & { label: stri
                 : def.kind === "int"
                   ? build.int({ required: options.required })
                   : def.kind === "float"
-                    ? build.float({ required: options.required })
+                    ? build.float({
+                        required: options.required,
+                        ...(def.format === "money" || def.format === "percent" ? { format: def.format } : {}),
+                        ...(def.currency ? { currency: def.currency } : {}),
+                      })
                     : def.kind === "boolean"
                       ? build.boolean({ required: options.required })
                       : def.kind === "date"

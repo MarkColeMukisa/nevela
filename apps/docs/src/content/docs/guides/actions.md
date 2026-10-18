@@ -106,7 +106,7 @@ class Announce
 }
 ```
 
-A field is written as in a resource: a `kind` (`string`, `text`, `int`, `float`, `boolean`, `date`, `datetime` or `enum`), and optionally `format`, `options`, `required`, `label` and `maxLength`. They are validated by the rules a resource's field of that kind has, and a problem is shown on the field in the sheet. `$input` holds what passed.
+A field is written as in a resource: a `kind` (`string`, `text`, `int`, `float`, `boolean`, `date`, `datetime` or `enum`), and optionally `format`, `options`, `optionLabels`, `currency`, `required`, `label` and `maxLength`. A money field (`"format": "money"`) on the sheet shows its currency, or the app's, as on a resource. They are validated by the rules a resource's field of that kind has, and a problem is shown on the field in the sheet. `$input` holds what passed.
 
 An action on the collection has no record, so its `handle()` takes `$input` alone.
 

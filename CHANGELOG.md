@@ -8,6 +8,13 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_Enum values in words, and money in its own currency_
+
+### Added
+
+- **What an enum's values are called.** `"optionLabels": { "asap": "As soon as possible" }` on an enum field, or `timeline:enum(asap=As soon as possible|month=Within a month)` in `--fields`. The value stays what is stored and sent; the dashboard shows the words in the table, filters, form, record page, stat cards, charts and action sheets. A value with no label reads as before. `$record->optionLabel('timeline')` on a generated model, and `optionLabel()` on the descriptor's field, give an app's emails and PDFs the same words. A label for a value the field doesn't have is refused.
+- **A currency for money.** `NEVELA_CURRENCY=UGX` for the app, or `"currency": "UGX"` on a money field. Money is written in it with its own decimals (`UGX 4,500,000`, `$4,500,000.00`) in tables and on a record's page, the input shows the code in place of `$`, and a currency with no decimals takes whole numbers. Action sheets do the same. A code that isn't ISO 4217's is refused. With neither, money looks as it did. Closes #49.
+
 ## [0.10.0] - 2026-10-18
 
 _Sign in with Google or GitHub, behind one switch_
