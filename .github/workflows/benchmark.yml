@@ -29,7 +29,7 @@ jobs:
   benchmark:
     name: Nevela against plain Laravel
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     defaults:
       run:
         working-directory: benchmarks

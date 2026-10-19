@@ -13,7 +13,13 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const dir = path.resolve(here, process.argv[2] ?? 'results/latest');
-const APPS = { laravel: 'Laravel', 'laravel-auth': 'Laravel + Sanctum', nevela: 'Nevela' };
+const APPS = {
+  laravel: 'Laravel',
+  'laravel-auth': 'Laravel + Sanctum',
+  nevela: 'Nevela',
+  'laravel-auth-octane': 'Laravel + Sanctum, Octane',
+  'nevela-octane': 'Nevela, Octane',
+};
 const SCENARIOS = {
   show: 'show: one product by its id',
   list: 'list: a page of 20, and the total',
@@ -106,10 +112,14 @@ for (const [scenario, title] of Object.entries(SCENARIOS)) {
 
   // Each app against the one before it in the line: what signing in costs, then what Nevela costs.
   const by = Object.fromEntries(rows);
+  // Then what Octane does for each, and Nevela against Laravel on Octane.
   const pairs = [
     ['laravel-auth', 'laravel'],
     ['nevela', 'laravel-auth'],
     ['nevela', 'laravel'],
+    ['laravel-auth-octane', 'laravel-auth'],
+    ['nevela-octane', 'nevela'],
+    ['nevela-octane', 'laravel-auth-octane'],
   ];
   for (const [a, b] of pairs) {
     if (!by[a] || !by[b]) continue;

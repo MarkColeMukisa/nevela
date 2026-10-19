@@ -8,7 +8,7 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_Sign-ins that end, as in Grit, and a benchmark that measures Nevela_
+_Faster and ready for Octane, with sign-ins that end, as in Grit_
 
 ### Added
 
@@ -18,6 +18,7 @@ _Sign-ins that end, as in Grit, and a benchmark that measures Nevela_
 ### Changed
 
 - **Faster requests.** Nevela checks that a migration's table or column is there before using it, so an app that hasn't migrated yet keeps working. The answer was remembered for one request only, and PHP-FPM starts every request afresh, so a deployed app asked the database about the roles table and the trash column on every request. A yes is now kept across requests in `bootstrap/cache/nevela-schema.json`, and forgotten when migrations run or by `php artisan optimize:clear`. Against Laravel with Sanctum, Nevela went from 0.79–0.83× to 0.83–0.88× the requests a second in the benchmark, and a single read uses half the database CPU it did.
+- **Ready for Octane and queue workers.** A process that serves many requests (Octane) or jobs (`queue:work`) now starts each one without what Nevela kept for the last: whose roles grant what, the uploads a page looked up, and the note of which tables and columns are there, which is read again, so a migration run from another process is seen. The benchmark measures Nevela on Octane with FrankenPHP too: 1.4 to 1.8 times as many requests a second as on PHP-FPM. See [Faster, with Octane](https://nevela-docs.vercel.app/guides/deploying/#faster-with-octane).
 - **Tokens that belong to no sign-in now end too:** those from before this version, and any your code makes with `createToken()`, keep to the same idle and absolute limits, measured from their last use and creation. A dashboard signed in before the upgrade stays signed in until its token reaches them.
 - **`POST /api/auth/token` and the other sign-ins answer with more:** `expiresAt`, `refreshToken` and `refreshExpiresAt` beside `token`. An API client should refresh before `expiresAt` (`POST /api/auth/refresh`); one that doesn't is signed out after 15 minutes. **Breaking** for API clients that keep one token for good.
 
