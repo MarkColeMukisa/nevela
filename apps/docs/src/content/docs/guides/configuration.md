@@ -19,7 +19,11 @@ php artisan vendor:publish --tag=nevela-config
 | `prefix` | `api` | The URL prefix for every Nevela route. |
 | `middleware` | `['api', 'auth:sanctum']` | Middleware on the resource routes. |
 | `auth.enabled` | `true` | Whether Nevela registers the token endpoints. Turn off to provide your own. |
-| `auth.token_name` | `nevela-web` | The name given to tokens when the request sends no `deviceName`. |
+| `auth.token_name` | `nevela-web` | The name given to a device when the request sends no `deviceName`. |
+| `auth.session.access` | 15, or `NEVELA_SESSION_ACCESS` | Minutes an access token works. See [How long a sign-in lasts](/guides/authentication/#how-long-a-sign-in-lasts). |
+| `auth.session.idle` | 7 days, or `NEVELA_SESSION_IDLE` | Minutes unused before a sign-in ends. Null for no limit. |
+| `auth.session.absolute` | 30 days, or `NEVELA_SESSION_ABSOLUTE` | Minutes after which a sign-in ends, however busy. Null for no limit. |
+| `auth.session.reuse_seconds` | 60 | How long after a refresh token is swapped a second request with it is still let through. |
 | `auth.registration` | `false`, or `NEVELA_REGISTRATION` | Whether people can create their own account. See [Letting people sign up](/guides/authentication/#letting-people-sign-up). |
 | `auth.magic_link`, `auth.email_code`, `auth.passkeys` | `true` | Ways of signing in beside the password. |
 | `auth.two_factor.authenticator`, `auth.two_factor.email` | `true` | What the second step can be. |
@@ -59,6 +63,7 @@ php artisan vendor:publish --tag=nevela-config
 |---|---|
 | `NEVELA_WEB_PATH` | Overrides `web_path`. Use it when the web app is not at `../web`. |
 | `NEVELA_CURRENCY` | The currency money is shown in, as its ISO 4217 code: `UGX`. A money field can name its own. Run `nevela generate` after changing it. See [Money and its currency](/concepts/field-types/#money-and-its-currency). |
+| `NEVELA_SESSION_ACCESS`, `NEVELA_SESSION_IDLE`, `NEVELA_SESSION_ABSOLUTE` | How long a sign-in lasts, in minutes: 15, 7 days and 30 days unless set. See [How long a sign-in lasts](/guides/authentication/#how-long-a-sign-in-lasts). |
 | `SOCIAL_AUTH_ENABLED` | `true` turns on signing in with [Google and GitHub](/guides/authentication/#google-and-github). Off unless set. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google's keys. Google is offered once both are set. |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | GitHub's, the same. |
@@ -80,6 +85,8 @@ The dashboard's export reads 100 records per request (`EXPORT_PAGE` in `apps/web
 |---|---|---|
 | `NEVELA_API_URL` | `http://127.0.0.1:8000/api` | Where the Laravel API is, including the prefix. |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | none | Cloudflare's site key, for forms with the [robot check](/guides/protecting-forms/#setting-up-turnstile). Built in: rebuild after changing it. |
+| `NEXT_PUBLIC_SESSION_IDLE_MS` | `870000` (14 min 30 s) | How long without activity before the dashboard asks "Still there?". `0` turns it off. Built in. See [How long a sign-in lasts](/guides/authentication/#how-long-a-sign-in-lasts). |
+| `NEXT_PUBLIC_SESSION_COUNTDOWN_MS` | `30000` | How long it counts down before signing out. Built in. |
 
 Copy `.env.example` to `.env.local` and change it there. The dev server reads the file on its own when it changes.
 

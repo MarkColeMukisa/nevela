@@ -1,8 +1,9 @@
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
-import { API_URL, callerHeaders, sessionToken, TOKEN_COOKIE } from "@/lib/laravel";
+import { API_URL, callerHeaders, REFRESH_COOKIE, sessionToken } from "@/lib/laravel";
 import { encodePending, PENDING_COOKIE, PENDING_MAX_AGE, pendingSecondStep, type SecondStepMethod } from "@/lib/second-step";
 import { safeRedirectPath } from "@/lib/session";
+import { cookieOptions, forgetSignIn, keepSignIn, refreshSignIn, SIGN_IN_FIELDS } from "@/lib/session-cookies";
 
 /**
  * Signing in and looking after an account, for the browser.
@@ -10,8 +11,8 @@ import { safeRedirectPath } from "@/lib/session";
  * Every auth screen calls this route (through lib/auth-client.ts), and this route calls
  * Laravel's `auth/…` endpoints. It exists so the browser never holds a token:
  *
- * - when Laravel answers with a token, it goes into an httpOnly cookie and is taken out
- *   of the answer,
+ * - when Laravel answers with tokens, they go into httpOnly cookies (lib/session-cookies.ts)
+ *   and are taken out of the answer,
  * - a password sign-in that needs a second step is kept in a short-lived httpOnly cookie
  *   until the code arrives, and
  * - every other call has the token from the cookie added on the way through.
@@ -21,21 +22,12 @@ import { safeRedirectPath } from "@/lib/session";
  */
 export const dynamic = "force-dynamic";
 
-/** Sanctum tokens don't expire unless Laravel is told to; the cookie lasts 30 days. */
-const TOKEN_MAX_AGE = 60 * 60 * 24 * 30;
 /** The largest profile picture passed on; Laravel enforces its own limit. */
 const MAX_UPLOAD_BYTES = 64 * 1024 * 1024;
 
 type Context = { params: Promise<{ action: string[] }> };
 type Body = Record<string, unknown>;
 
-const cookieOptions = (maxAge: number) => ({
-  httpOnly: true,
-  sameSite: "lax" as const,
-  secure: process.env.NODE_ENV === "production",
-  path: "/",
-  maxAge,
-});
 
 /**
  * A request that changes something has to come from this site's own pages. The cookie is
@@ -139,12 +131,10 @@ async function oauthCallback(request: NextRequest, provider: string): Promise<Re
     jar.set(PENDING_COOKIE, encodePending(waiting), cookieOptions(PENDING_MAX_AGE));
     return redirectTo(request, `/two-factor?next=${encodeURIComponent(next)}`);
   }
-  const token = result.body.token;
-  if (result.status >= 400 || typeof token !== "string") {
+  if (result.status >= 400 || !keepSignIn(jar, result.body)) {
     const code = typeof result.body.code === "string" ? result.body.code : "OAUTH_FAILED";
     return redirectTo(request, next.startsWith("/dashboard/account") ? withQuery(next, "social", code) : `/sign-in?error=oauth&reason=${code}&next=${encodeURIComponent(next)}`);
   }
-  jar.set(TOKEN_COOKIE, token, cookieOptions(TOKEN_MAX_AGE));
   jar.set(PENDING_COOKIE, "", cookieOptions(0));
   return redirectTo(request, next);
 }
@@ -168,11 +158,9 @@ async function finish(result: { status: number; body: Body }): Promise<Response>
     jar.set(PENDING_COOKIE, encodePending(waiting), cookieOptions(PENDING_MAX_AGE));
     return Response.json({ twoFactorRedirect: true, methods: waiting.methods });
   }
-  const { token, ...rest } = result.body;
-  if (typeof token === "string" && token) {
-    jar.set(TOKEN_COOKIE, token, cookieOptions(TOKEN_MAX_AGE));
-    jar.set(PENDING_COOKIE, "", cookieOptions(0));
-  }
+  if (keepSignIn(jar, result.body)) jar.set(PENDING_COOKIE, "", cookieOptions(0));
+  const rest = { ...result.body };
+  for (const field of SIGN_IN_FIELDS) delete rest[field];
   return Response.json(rest, { status: result.status });
 }
 
@@ -191,9 +179,7 @@ async function handle(request: NextRequest, context: Context, method: string): P
       jar.set(PENDING_COOKIE, encodePending(waiting), cookieOptions(PENDING_MAX_AGE));
       return Response.redirect(new URL(`/two-factor?next=${encodeURIComponent(safe)}`, request.url), 303);
     }
-    const token = result.body.token;
-    if (result.status >= 400 || typeof token !== "string") return Response.redirect(new URL("/sign-in?error=link", request.url), 303);
-    jar.set(TOKEN_COOKIE, token, cookieOptions(TOKEN_MAX_AGE));
+    if (result.status >= 400 || !keepSignIn(jar, result.body)) return Response.redirect(new URL("/sign-in?error=link", request.url), 303);
     const destination = new URL(safe, request.url);
     // Belt and braces: whatever the path was, the destination is this site.
     return Response.redirect(destination.origin === new URL(request.url).origin ? destination : new URL("/dashboard", request.url), 303);
@@ -228,14 +214,26 @@ async function handle(request: NextRequest, context: Context, method: string): P
     }
   }
 
-  // Signing out: the cookie goes whether or not Laravel could be told.
+  // Signing out: the cookies go whether or not Laravel could be told. (proxy.ts has
+  // already renewed an access token that had run out, so Laravel ends the whole sign-in.)
   if (method === "DELETE" && action === "token") {
     const result = await callLaravel(request, "DELETE", "token");
-    // Removed with the attributes they were set with: a browser won't let a cookie marked
-    // Secure be replaced by one that isn't.
-    jar.set(TOKEN_COOKIE, "", cookieOptions(0));
+    forgetSignIn(jar);
     jar.set(PENDING_COOKIE, "", cookieOptions(0));
     return Response.json({}, { status: result.status === 204 || result.status === 401 ? 200 : result.status });
+  }
+
+  // "Stay signed in", from the dashboard's inactivity warning: a new pair now.
+  if (method === "POST" && action === "refresh") {
+    const refresh = jar.get(REFRESH_COOKIE)?.value;
+    if (!refresh) return Response.json({ error: "Sign in again to carry on.", code: "SESSION_REVOKED" }, { status: 401 });
+    const result = await refreshSignIn(refresh, request.headers);
+    if (result.ok) {
+      keepSignIn(jar, result.body);
+      return Response.json({ refreshed: true });
+    }
+    if (result.ended) forgetSignIn(jar);
+    return Response.json({ error: "Sign in again to carry on.", code: result.code }, { status: result.ended ? 401 : 502 });
   }
 
   // The second step. The browser sends only the code; which sign-in it belongs to is in the cookie.

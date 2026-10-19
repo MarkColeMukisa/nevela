@@ -460,8 +460,9 @@ class AuthTest extends TestCase
         $this->app['auth']->forgetGuards();
         // Someone calling the API directly can send the same headers, and is not believed.
         $this->postJson('/api/auth/token', ['email' => $user->email, 'password' => self::PASSWORD], ['X-Nevela-User-Agent' => 'Trusted Laptop', 'X-Nevela-Ip' => '198.51.100.7', 'X-Nevela-Proxy-Secret' => 'a guess']);
-        $this->assertSame(0, \Illuminate\Support\Facades\DB::table('personal_access_tokens')->where('ip_address', '198.51.100.7')->orWhere('user_agent', 'Trusted Laptop')->count());
-        \Illuminate\Support\Facades\DB::table('personal_access_tokens')->whereNull('user_agent')->orWhere('user_agent', 'Symfony')->delete();
+        // A device is a sign-in, and the browser and address are kept on it.
+        $this->assertSame(0, \Illuminate\Support\Facades\DB::table('nevela_sessions')->where('ip_address', '198.51.100.7')->orWhere('user_agent', 'Trusted Laptop')->count());
+        \Illuminate\Support\Facades\DB::table('nevela_sessions')->whereNull('user_agent')->orWhere('user_agent', 'Symfony')->delete();
         $this->app['auth']->forgetGuards();
         $laptop = $this->signedIn($user);
 

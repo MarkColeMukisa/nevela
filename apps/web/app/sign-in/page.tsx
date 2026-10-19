@@ -28,6 +28,15 @@ const OAUTH_REASONS: Record<string, string> = {
   NOT_ENABLED: "Signing in with that provider isn't switched on.",
 };
 
+/** Why a sign-in ended, as proxy.ts and the inactivity warning say it (?reason=, with no ?error=). */
+const SIGNED_OUT: Record<string, string> = {
+  inactive: "You were signed out after a while with no activity. Sign in again to carry on.",
+  idle: "You were signed out because this sign-in wasn't used for a while. Sign in again to carry on.",
+  expired: "Your sign-in reached its time limit. Sign in again to carry on.",
+  replayed: "For your safety you were signed out: this sign-in was used from somewhere else. Sign in again, and change your password if that wasn't you.",
+  "signed-out": "You were signed out. Sign in again to carry on.",
+};
+
 export default async function SignInPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; reason?: string; reset?: string; closed?: string }> }) {
   const params = await searchParams;
   const next = safeRedirectPath(params.next);
@@ -65,7 +74,9 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
             ? "Your password is changed. Sign in with the new one."
             : params.closed
               ? "Your account is closed, and you are signed out everywhere. To have it back, ask an administrator."
-              : null
+              : !params.error && params.reason
+                ? (SIGNED_OUT[params.reason] ?? null)
+                : null
         }
       />
     </AuthShell>

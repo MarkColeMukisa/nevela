@@ -8,15 +8,18 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_A benchmark: what Nevela costs, next to the same API written by hand_
+_Sign-ins that end, as in Grit, and a benchmark that measures Nevela_
 
 ### Added
 
 - **A benchmark**, in `benchmarks/`, modelled on Grit's: plain Laravel, plain Laravel behind Sanctum, and the API Nevela generates, answering the same requests with the same JSON in production PHP-FPM, one at a time, against one Postgres. It runs with Docker (`./run.sh`) and on GitHub as the Benchmark workflow. The first results, on the docs' new [Benchmarks](https://nevela-docs.vercel.app/benchmarks/) page: Nevela serves four requests for every five that Laravel with Sanctum does, and the page says where the rest goes.
+- **Sign-ins that end, as in Grit.** A sign-in is now a 15-minute access token and a refresh token that is swapped for a new one each time it is used. A sign-in ends after 7 days unused or 30 days however busy (`NEVELA_SESSION_ACCESS`, `NEVELA_SESSION_IDLE`, `NEVELA_SESSION_ABSOLUTE`, in minutes). A refresh token used a second time ends that sign-in on every device holding it. The dashboard renews tokens in `proxy.ts` before each page and API call, so nobody working is interrupted, and an ended sign-in lands on `/sign-in` saying why. After 14 min 30 s with no activity it asks "Still there?", counts down 30 s and signs out (`NEXT_PUBLIC_SESSION_IDLE_MS`, `NEXT_PUBLIC_SESSION_COUNTDOWN_MS`); activity in another tab counts. **Account → Devices** shows when each sign-in ends, `nevela status` shows the limits, and the scheduler removes ended sign-ins nightly. Run `php artisan migrate`. Closes #55.
 
 ### Changed
 
 - **Faster requests.** Nevela checks that a migration's table or column is there before using it, so an app that hasn't migrated yet keeps working. The answer was remembered for one request only, and PHP-FPM starts every request afresh, so a deployed app asked the database about the roles table and the trash column on every request. A yes is now kept across requests in `bootstrap/cache/nevela-schema.json`, and forgotten when migrations run or by `php artisan optimize:clear`. Against Laravel with Sanctum, Nevela went from 0.79–0.83× to 0.83–0.88× the requests a second in the benchmark, and a single read uses half the database CPU it did.
+- **Tokens that belong to no sign-in now end too:** those from before this version, and any your code makes with `createToken()`, keep to the same idle and absolute limits, measured from their last use and creation. A dashboard signed in before the upgrade stays signed in until its token reaches them.
+- **`POST /api/auth/token` and the other sign-ins answer with more:** `expiresAt`, `refreshToken` and `refreshExpiresAt` beside `token`. An API client should refresh before `expiresAt` (`POST /api/auth/refresh`); one that doesn't is signed out after 15 minutes. **Breaking** for API clients that keep one token for good.
 
 ## [0.11.0] - 2026-10-18
 
