@@ -78,7 +78,7 @@ The harness follows [Grit's](https://github.com/MUKE-coder/grit/tree/main/benchm
 - **The median of three runs,** never the best one.
 - **The same JSON from each app.** The hand-written app takes the same `page`, `perPage`, `sort` and `q` as Nevela's, and returns the same `{ data, meta }` with the same keys, so neither does less work by answering a simpler question.
 
-A shared GitHub runner is not a quiet machine, which is why the apps are compared within one run and not across runs. On another machine the numbers will differ, and the ratios between the apps should hold.
+A shared GitHub runner is not a quiet machine, which is why the apps are compared within one run and not across runs. On another machine the numbers will differ, and the ratios between the apps should hold. They did on [a second run](https://github.com/MarkColeMukisa/nevela/actions/runs/39237169050) the same day, on a runner with a faster CPU (an AMD EPYC 9V74): every app served 29 to 54% more requests a second, and Nevela against Laravel with Sanctum came out at 0.77 to 0.85×, against 0.79 to 0.83× above.
 
 ## Run it yourself
 

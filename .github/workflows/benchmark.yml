@@ -16,6 +16,10 @@ on:
       - benchmarks/**
       - .github/workflows/benchmark.yml
 
+# It runs scripts from the pull request, so its token can read and nothing more.
+permissions:
+  contents: read
+
 # One at a time: two benchmarks sharing a runner pool measure each other.
 concurrency:
   group: benchmark
@@ -31,6 +35,9 @@ jobs:
         working-directory: benchmarks
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Nothing here pushes, so the token isn't left in .git/config for the scripts to find.
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
