@@ -76,7 +76,13 @@ k6() { # app scenario duration run-name [summary file]
 rm -rf "$OUT" && mkdir -p "$OUT"
 
 echo "── building"
-docker compose build laravel nevela laravel-auth-octane nevela-octane
+# The two PHP-FPM images always: setting up the databases uses them. The Octane ones only
+# when they are measured, so a run without them doesn't wait on (or fail with) their build.
+octane=""
+for app in laravel-auth-octane nevela-octane; do
+  case " $APPS " in *" $app "*) octane="$octane $app" ;; esac
+done
+docker compose build laravel nevela $octane
 docker compose up -d --wait postgres
 for db in bench_laravel bench_nevela; do
   psql_in -d bench -c "DROP DATABASE IF EXISTS $db WITH (FORCE);" -c "CREATE DATABASE $db;" >/dev/null
