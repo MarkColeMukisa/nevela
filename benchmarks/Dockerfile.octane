@@ -4,7 +4,7 @@
 # OPcache with its JIT, Composer's production autoloader, Laravel's caches at start.
 #
 #   docker build -f benchmarks/Dockerfile.octane --build-arg APP=nevela .
-FROM dunglas/frankenphp:1.12.7-php8.4-alpine
+FROM dunglas/frankenphp:1.13.1-php8.4-alpine
 
 RUN install-php-extensions pdo_pgsql opcache bcmath pcntl
 
