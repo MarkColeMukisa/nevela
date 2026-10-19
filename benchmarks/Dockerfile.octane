@@ -13,7 +13,8 @@ COPY benchmarks/docker/php.ini /usr/local/etc/php/conf.d/zz-bench.ini
 COPY benchmarks/docker/entrypoint-octane.sh /usr/local/bin/bench-entrypoint
 
 ARG LARAVEL=13.11.0
-RUN composer create-project laravel/laravel /app ${LARAVEL} --no-install --no-scripts --no-interaction --no-progress --prefer-dist
+# The image comes with a page of its own in /app; the skeleton goes there instead.
+RUN rm -rf /app && composer create-project laravel/laravel /app ${LARAVEL} --no-install --no-scripts --no-interaction --no-progress --prefer-dist
 WORKDIR /app
 
 COPY packages/laravel /nevela-laravel
