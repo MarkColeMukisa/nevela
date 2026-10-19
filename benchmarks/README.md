@@ -18,8 +18,8 @@ All three answer the same requests with the same JSON: `page`, `perPage`, `sort`
 
 ## Fair
 
-- **Production shape.** nginx and PHP-FPM (16 workers for 2 CPUs), OPcache with its tracing JIT and `validate_timestamps=0`, `composer install --no-dev` with an authoritative classmap, `APP_DEBUG=false`, and `artisan optimize` at start. Persistent connections to Postgres, without TLS. Not `artisan serve`, and not Octane.
-- **Same limits.** Every app gets the same CPUs and memory (`APP_CPUS`, default 2). One Postgres for all of them, with durability off so the disk isn't what's measured.
+- **Production shape.** nginx and PHP-FPM (8 workers per CPU), OPcache with its tracing JIT and `validate_timestamps=0`, `composer install --no-dev` with an authoritative classmap, `APP_DEBUG=false`, and `artisan optimize` at start. Persistent connections to Postgres, without TLS. Not `artisan serve`, and not Octane.
+- **Same limits.** Every app gets the same CPUs and memory (`APP_CPUS`, default 1). One Postgres for all of them, with more CPUs (`PG_CPUS`, default 2) so the apps give out before it does, and with durability off so the disk isn't what's measured.
 - **Same table.** Both migrations make the same `products` table. `run.sh` compares the two databases' tables before anything is measured, and stops if they differ.
 - **Same rows.** 10,000 products, from a seeded generator (`seed/make.mjs`), so every machine gets the same ids, names and prices.
 - **Reset every run.** The table goes back to the 10,000 rows before each run. The write scenario adds rows for good, and a table that grew makes the next run's count slower.
@@ -51,7 +51,7 @@ cd benchmarks
 node report.mjs       # the tables, from results/latest
 ```
 
-Settings, as environment variables: `REPS` (3), `DURATION` (30s), `VUS` (50), `SCENARIOS`, `APPS`, `APP_CPUS` (2), `PG_CPUS` (1) and `FPM_WORKERS` (16). On a machine with more cores, Grit's limits are `APP_CPUS=4 PG_CPUS=8 FPM_WORKERS=32`.
+Settings, as environment variables: `REPS` (3), `DURATION` (30s), `VUS` (50), `SCENARIOS`, `APPS`, `APP_CPUS` (1), `PG_CPUS` (2) and `FPM_WORKERS` (8). On a machine with more cores, Grit's limits are `APP_CPUS=4 PG_CPUS=8 FPM_WORKERS=32`.
 
 It also runs on GitHub: the **Benchmark** workflow, by hand from the Actions tab, and on any pull request that changes this folder. The tables are in the run's summary and the raw results in its artifact.
 

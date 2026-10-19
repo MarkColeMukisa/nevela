@@ -30,6 +30,7 @@ const fixed = (n, digits = 1) => (n == null || Number.isNaN(n) ? '–' : n.toFix
 
 const environment = fs.readFileSync(path.join(dir, 'environment.txt'), 'utf8');
 const limit = (name) => Number(new RegExp(`${name} ([0-9.]+) CPUs`).exec(environment)?.[1] ?? NaN);
+const seconds = Number(/load: .*?, (\d+)s per run/.exec(environment)?.[1] ?? 30);
 const appLimit = limit('app') * 100;
 const dbLimit = limit('postgres') * 100;
 
@@ -39,7 +40,8 @@ function runs(app, scenario) {
   for (const file of fs.readdirSync(dir)) {
     const match = new RegExp(`^${app}-${scenario}-(\\d+)\\.json$`).exec(file);
     if (!match) continue;
-    const m = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8')).metrics;
+    const summary = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
+    const m = summary.metrics;
     const cpu = {};
     const cpuFile = path.join(dir, file.replace(/\.json$/, '.cpu'));
     if (fs.existsSync(cpuFile)) {
@@ -55,6 +57,8 @@ function runs(app, scenario) {
       p95: m.http_req_duration?.values['p(95)'],
       p99: m.http_req_duration?.values['p(99)'],
       failed: m.failed_requests?.values.rate ?? 1,
+      // k6 waited past the run's end for requests that never finished, and counted them nowhere.
+      overran: summary.state.testRunDurationMs > seconds * 1000 + 2000,
       app: cpu.app,
       db: cpu.db,
     });
@@ -75,6 +79,7 @@ function summary(app, scenario) {
     p95: pick('p95'),
     p99: pick('p99'),
     failed: Math.max(...all.map((r) => r.failed)),
+    overran: all.filter((r) => r.overran).length,
     app: pick('app'),
     db: pick('db'),
   };
@@ -95,7 +100,7 @@ for (const [scenario, title] of Object.entries(SCENARIOS)) {
   lines.push('| App | Requests/s | Median | p95 | p99 | App CPU | Postgres CPU | Gave out first | Failed |');
   lines.push('|---|--:|--:|--:|--:|--:|--:|---|--:|');
   for (const [app, r] of rows) {
-    lines.push(`| ${APPS[app]} | ${fixed(r.rps, 0)} | ${fixed(r.med, 2)} ms | ${fixed(r.p95, 2)} ms | ${fixed(r.p99, 2)} ms | ${fixed(r.app, 0)}% | ${fixed(r.db, 0)}% | ${r.bound} | ${fixed(r.failed * 100, 2)}% |`);
+    lines.push(`| ${APPS[app]} | ${fixed(r.rps, 0)} | ${fixed(r.med, 2)} ms | ${fixed(r.p95, 2)} ms | ${fixed(r.p99, 2)} ms | ${fixed(r.app, 0)}% | ${fixed(r.db, 0)}% | ${r.bound} | ${fixed(r.failed * 100, 2)}%${r.overran ? `, ${r.overran} run(s) left requests unanswered` : ''} |`);
   }
   lines.push('');
 

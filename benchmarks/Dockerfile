@@ -41,6 +41,6 @@ RUN composer dump-autoload --no-dev --optimize --classmap-authoritative --no-int
     && chmod +x /usr/local/bin/bench-entrypoint \
     && chown -R www-data:www-data storage bootstrap/cache
 
-ENV FPM_WORKERS=16
+ENV FPM_WORKERS=8
 EXPOSE 8080
 ENTRYPOINT ["bench-entrypoint"]

@@ -78,8 +78,9 @@ export function show() {
 
 export function write() {
   // __VU and __ITER keep the SKU unique without a shared counter, which would make the
-  // virtual users wait on each other and measure the counter.
-  const n = `${__VU}-${__ITER}`;
+  // virtual users wait on each other and measure the counter. RUN keeps it apart from
+  // the warm-up's, which ran against the same table.
+  const n = `${__ENV.RUN || 'run'}-${__VU}-${__ITER}`;
   const body = JSON.stringify({
     name: `Bench product ${n}`,
     sku: `BENCH-${n}`,
@@ -103,6 +104,9 @@ export function handleSummary(data) {
   const m = data.metrics;
   const reqs = m.http_reqs ? m.http_reqs.values : { count: 0, rate: 0 };
   const failed = m.failed_requests ? m.failed_requests.values.rate : 1;
-  const line = `${SCENARIO}: ${reqs.count} requests, ${reqs.rate.toFixed(1)}/s, failed ${(failed * 100).toFixed(2)}%\n`;
+  // A run that took longer than asked had requests that never finished: k6 waited for
+  // them until gracefulStop, and they are in no other number.
+  const overran = data.state.testRunDurationMs > parseInt(DURATION, 10) * 1000 + 2000;
+  const line = `${SCENARIO}: ${reqs.count} requests, ${reqs.rate.toFixed(1)}/s, failed ${(failed * 100).toFixed(2)}%${overran ? ', OVERRAN: requests left unanswered' : ''}\n`;
   return __ENV.SUMMARY ? { [__ENV.SUMMARY]: JSON.stringify(data, null, 1), stdout: line } : { stdout: line };
 }

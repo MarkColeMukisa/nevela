@@ -27,7 +27,9 @@ APPS="${APPS:-laravel laravel-auth nevela}"
 OUT="${OUT:-results/latest}"
 K6_IMAGE=grafana/k6:1.8.2
 NETWORK=nevela-bench_default
-export APP_CPUS="${APP_CPUS:-2}" PG_CPUS="${PG_CPUS:-1}" FPM_WORKERS="${FPM_WORKERS:-16}"
+# Postgres gets more than an app, so the app gives out first and the database is not a
+# ceiling every app meets. On a 4-CPU machine (a GitHub runner) that leaves one for k6.
+export APP_CPUS="${APP_CPUS:-1}" PG_CPUS="${PG_CPUS:-2}" FPM_WORKERS="${FPM_WORKERS:-8}"
 
 seconds() { echo "${1%s}"; }
 case "$DURATION$WARMUP" in *[!0-9s]* | *m*) echo "DURATION and WARMUP are in seconds: 30s" >&2; exit 2 ;; esac
@@ -61,11 +63,11 @@ reset_products() {
   [ "$(psql_in -d "$db" -tA -c 'SELECT count(*) FROM products;' | tr -d '[:space:]')" = 10000 ]
 }
 
-k6() { # app scenario duration [summary file]
+k6() { # app scenario duration run-name [summary file]
   # As this user, so the results it writes into the folder are this user's.
   docker run --rm --network "$NETWORK" --user "$(id -u):$(id -g)" -v "$PWD:/bench" -w /bench \
     -e BASE="http://$1:8080" -e SCENARIO="$2" -e VUS="$VUS" -e DURATION="$3" \
-    -e TOKEN="$(cat "$OUT/token-$1" 2>/dev/null || true)" -e SUMMARY="${4:-}" \
+    -e TOKEN="$(cat "$OUT/token-$1" 2>/dev/null || true)" -e RUN="$4" -e SUMMARY="${5:-}" \
     "$K6_IMAGE" run --quiet k6/bench.js || true
 }
 
@@ -127,7 +129,7 @@ for scenario in $SCENARIOS; do
       stop_apps
       reset_products "$app" || { echo "!! $app: the products did not reset" >&2; exit 1; }
       start_app "$app"
-      k6 "$app" "$scenario" "$WARMUP" >/dev/null   # warm-up: OPcache, the JIT, connections. Not kept.
+      k6 "$app" "$scenario" "$WARMUP" warmup >/dev/null   # warm-up: OPcache, the JIT, connections. Not kept.
 
       # CPU, sampled while the run is going, so it's known what gave out first.
       half=$(( $(seconds "$DURATION") / 2 ))
@@ -137,12 +139,18 @@ for scenario in $SCENARIOS; do
       sampler=$!
 
       printf '   %-13s r%s  ' "$app" "$rep"
-      k6 "$app" "$scenario" "$DURATION" "$OUT/$app-$scenario-$rep.json" | tail -1
+      k6 "$app" "$scenario" "$DURATION" "r$rep" "$OUT/$app-$scenario-$rep.json" | tail -1
       wait "$sampler" || true
 
-      rate=$(node -e 'const s=require(process.argv[1]); console.log(s.metrics.failed_requests ? s.metrics.failed_requests.values.rate : 1)' "$OUT/$app-$scenario-$rep.json" 2>/dev/null || echo 1)
-      if [ "$rate" != 0 ]; then
-        echo "   !! $app $scenario: failed requests ($rate)" >&2
+      # Clean: no failed request, and none left unanswered (a run that overran its time).
+      problem=$(node -e '
+        const s = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+        const failed = s.metrics.failed_requests ? s.metrics.failed_requests.values.rate : 1;
+        const overran = s.state.testRunDurationMs > parseInt(process.argv[2], 10) * 1000 + 2000;
+        console.log(failed > 0 ? `failed requests (${failed})` : overran ? "requests left unanswered" : "");
+      ' "$OUT/$app-$scenario-$rep.json" "$DURATION" 2>/dev/null || echo "no results")
+      if [ -n "$problem" ]; then
+        echo "   !! $app $scenario: $problem" >&2
         docker compose logs --tail 20 "$app" >&2
         failed=1
       fi
