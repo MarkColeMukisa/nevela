@@ -14,6 +14,10 @@ _A benchmark: what Nevela costs, next to the same API written by hand_
 
 - **A benchmark**, in `benchmarks/`, modelled on Grit's: plain Laravel, plain Laravel behind Sanctum, and the API Nevela generates, answering the same requests with the same JSON in production PHP-FPM, one at a time, against one Postgres. It runs with Docker (`./run.sh`) and on GitHub as the Benchmark workflow. The first results, on the docs' new [Benchmarks](https://nevela-docs.vercel.app/benchmarks/) page: Nevela serves four requests for every five that Laravel with Sanctum does, and the page says where the rest goes.
 
+### Changed
+
+- **Faster requests.** Nevela checks that a migration's table or column is there before using it, so an app that hasn't migrated yet keeps working. The answer was remembered for one request only, and PHP-FPM starts every request afresh, so a deployed app asked the database about the roles table and the trash column on every request. A yes is now kept across requests in `bootstrap/cache/nevela-schema.json`, and forgotten when migrations run or by `php artisan optimize:clear`. Against Laravel with Sanctum, Nevela went from 0.79–0.83× to 0.83–0.88× the requests a second in the benchmark, and a single read uses half the database CPU it did.
+
 ## [0.11.0] - 2026-10-18
 
 _Enum values in words, and money in its own currency_

@@ -13,6 +13,7 @@ Nevela is two apps. Deploy each the way you would deploy any Laravel or Next.js 
 - Install with `composer install --no-dev --optimize-autoloader`. A new app has Composer's optimized autoloader turned off, because building it made creating an app take minutes longer; production should have it, and the flag turns it on.
 - If you ever change `APP_KEY`, keep the old one in `APP_PREVIOUS_KEYS`. Beside what Laravel itself needs it for, it is what keeps [blocked emails](/guides/deleted-accounts/#what-is-kept-of-a-removed-account) blocked.
 - Run `php artisan config:cache` and `php artisan route:cache` as usual. Nevela's routes are cached with the rest.
+- Keep `bootstrap/cache` writable, as Laravel needs it to be. Nevela keeps a note there of the tables and columns it has found (`nevela-schema.json`), so it doesn't ask the database again on every request. Migrations clear it. If you ever remove a table or column without a migration, run `php artisan optimize:clear`.
 - Add Laravel's scheduler to cron: `* * * * * cd /path/to/api && php artisan schedule:run >> /dev/null 2>&1`. It is what empties [the trash](/guides/trash/) of records past their 30 days each night. Without it they go the next time someone opens the Trash page. The same run removes files visitors uploaded through a [public form](/guides/public-site/) and never sent, and people who joined a list and never [confirmed their address](/guides/protecting-forms/#proving-an-address). The scheduler also sends the hourly digest of form notices that were held back.
 
 ## The web app
