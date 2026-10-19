@@ -95,7 +95,7 @@ stop_apps
 # The same table on both sides, or the comparison is of the tables.
 for db in bench_laravel bench_nevela; do
   docker compose exec -T postgres pg_dump -U bench --schema-only --no-owner --table=products "$db" \
-    | grep -vE '^(--|SET |SELECT pg_catalog)' | grep -v '^$' > "$OUT/schema-$db.sql"
+    | grep -vE '^(--|SET |SELECT pg_catalog|[\](un)?restrict )' | grep -v '^$' > "$OUT/schema-$db.sql"
 done
 if ! diff -u "$OUT/schema-bench_laravel.sql" "$OUT/schema-bench_nevela.sql"; then
   echo "!! the products tables differ: fix the plain app's migration first" >&2
