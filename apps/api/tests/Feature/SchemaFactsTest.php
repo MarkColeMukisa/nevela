@@ -45,6 +45,7 @@ class SchemaFactsTest extends TestCase
     protected function tearDown(): void
     {
         SchemaFacts::forget();
+        @unlink(SchemaFacts::path().'.lock');
         SchemaFacts::$persistInTests = false;
         Schema::dropIfExists('later');
         parent::tearDown();
@@ -54,7 +55,6 @@ class SchemaFactsTest extends TestCase
     private function newRequest(): void
     {
         (new ReflectionProperty(SchemaFacts::class, 'known'))->setValue(null, null);
-        (new ReflectionProperty(Gadget::class, 'hasTrash'))->setValue(null, false);
         Access::forget();
     }
 
@@ -118,6 +118,34 @@ class SchemaFactsTest extends TestCase
         $this->assertFileExists(SchemaFacts::path());
         event(new CommandStarting('optimize:clear', new ArrayInput([]), new NullOutput));
         $this->assertFileDoesNotExist(SchemaFacts::path());
+    }
+
+    public function test_a_trash_column_that_was_forgotten_is_asked_about_again(): void
+    {
+        $this->assertTrue(Gadget::trashes());
+        Schema::table('gadgets', fn (Blueprint $table) => $table->dropSoftDeletes());
+
+        // What a migration that removes it does: forget. Nothing else remembers the yes.
+        SchemaFacts::forget();
+        $this->assertFalse(Gadget::trashes());
+    }
+
+    public function test_validation_asks_once_a_request_about_a_table_without_a_trash(): void
+    {
+        Schema::create('later', fn (Blueprint $table) => $table->id());
+        $hasTrash = new \ReflectionMethod(\Nevela\Laravel\Http\ResourceRequest::class, 'hasTrash');
+
+        // What one check costs (two queries on SQLite, one on Postgres)...
+        $once = $this->schemaQueries(fn () => SchemaFacts::hasColumn('later', 'deleted_at'));
+        $this->assertNotEmpty($once);
+
+        // ...and an import that checks each of its 50 rows against the same table pays it once.
+        $asked = $this->schemaQueries(function () use ($hasTrash) {
+            for ($row = 0; $row < 50; $row++) {
+                $this->assertFalse($hasTrash->invoke(null, 'later'));
+            }
+        });
+        $this->assertCount(count($once), $asked);
     }
 
     public function test_tests_keep_no_file_unless_asked(): void
