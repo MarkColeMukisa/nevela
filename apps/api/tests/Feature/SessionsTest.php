@@ -110,6 +110,44 @@ class SessionsTest extends TestCase
         $this->me($owners['token'])->assertUnauthorized();
     }
 
+    public function test_a_copy_swapped_many_times_since_is_found_out_when_the_owner_comes_back(): void
+    {
+        $this->user();
+        $owners = $this->signIn();
+
+        // The copy is taken and refreshed, again and again, while the owner is away.
+        $thiefs = $owners;
+        for ($i = 0; $i < 3; $i++) {
+            $this->travel(14)->minutes();
+            $thiefs = $this->refresh($thiefs['refreshToken'])->assertOk()->json();
+        }
+
+        // The owner's token is three swaps old: the sign-in ends, the thief's with it.
+        $this->refresh($owners['refreshToken'])->assertUnauthorized()->assertJsonPath('code', 'SESSION_REPLAYED');
+        $this->refresh($thiefs['refreshToken'])->assertUnauthorized()->assertJsonPath('code', 'SESSION_REVOKED');
+        $this->me($thiefs['token'])->assertUnauthorized();
+    }
+
+    public function test_spent_refresh_tokens_go_with_their_sign_in(): void
+    {
+        $user = $this->user();
+        $pair = $this->signIn();
+        $this->refresh($pair['refreshToken'])->assertOk();
+        $this->assertSame(1, DB::table(Sessions::SPENT)->count());
+
+        // Pruned a day after the sign-in ends.
+        $this->travel(9)->days();
+        Sessions::prune();
+        $this->assertSame(0, DB::table(Sessions::TABLE)->count());
+        $this->assertSame(0, DB::table(Sessions::SPENT)->count());
+
+        // And at once when the account is deleted.
+        $pair = $this->signIn();
+        $this->refresh($pair['refreshToken'])->assertOk();
+        \Nevela\Laravel\Access\ClosedAccounts::remove($user);
+        $this->assertSame(0, DB::table(Sessions::SPENT)->count());
+    }
+
     public function test_two_requests_that_refresh_at_the_same_moment_both_carry_on(): void
     {
         $this->user();

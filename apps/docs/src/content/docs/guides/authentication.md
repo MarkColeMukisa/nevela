@@ -201,11 +201,11 @@ A sign-in ends on its own, as it does in Grit:
 | A sign-in ends, however busy, after | 30 days | `NEVELA_SESSION_ABSOLUTE` |
 | The dashboard warns, with no mouse or keyboard, after | 14 min 30 s, then counts down 30 s | `NEXT_PUBLIC_SESSION_IDLE_MS`, `NEXT_PUBLIC_SESSION_COUNTDOWN_MS` (`apps/web/.env.local`) |
 
-The settings in `apps/api/.env` are in minutes. Empty, or `0`, is no limit.
+The settings in `apps/api/.env` are in minutes. For the idle and absolute limits, empty or `0` is no limit. An access token always expires: empty or `0` gives 15 minutes.
 
 - **Someone working is never interrupted.** A sign-in is a short access token and a refresh token. Before the access token runs out, the dashboard swaps the refresh token for a new pair, so a copy of an access token taken from a browser stops working within 15 minutes.
 - **A screen left unattended signs itself out.** After 14 min 30 s with no mouse, keyboard, touch or wheel, the dashboard asks "Still there?" and counts down 30 seconds. **Stay signed in** carries on. Otherwise the sign-in ends in Laravel, not only in the browser, and the sign-in page says why. Moving the mouse while it counts doesn't dismiss it. Working in another tab of the dashboard counts as being there, and signing out in one tab signs the others out. `NEXT_PUBLIC_SESSION_IDLE_MS=0` turns the warning off; the server's limits still apply.
-- **A stolen refresh token gives itself away.** Each refresh token is used once and swapped for a new one. If one that was already swapped is used again, by a thief or by the person it was taken from, the sign-in ends on every device holding it, and the sign-in page says why. The one exception is a second request that set out with the same token at the same moment, within a minute: it is given an access token and carries on.
+- **A stolen refresh token gives itself away.** Each refresh token is used once and swapped for a new one. If one that was already swapped is used again, however many swaps ago, by a thief or by the person it was taken from, the sign-in ends on every device holding it, and the sign-in page says why. The one exception is a second request that set out with the same token at the same moment, within a minute: it is given an access token and carries on.
 - **Signing out takes effect at once.** From the account menu, from **Account → Devices**, by an administrator, by changing the password or closing the account: the sign-in's tokens are deleted, and the next request is refused.
 
 The scheduler removes ended sign-ins each night (`nevela:prune-sessions`). `nevela status` shows the limits in use.
