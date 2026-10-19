@@ -15,7 +15,7 @@ Three apps answer the same products API with the same JSON, one at a time, again
 
 ## Results
 
-Measured on 19 October 2026, [on a GitHub runner](https://github.com/MarkColeMukisa/nevela/actions/runs/39232976949), with Nevela 0.11.0:
+Measured on 19 October 2026, [on a GitHub runner](https://github.com/MarkColeMukisa/nevela/actions/runs/39249357784), with Nevela as it is after 0.11.0 (the [change below](#what-changed-after-the-first-run) is in the next release):
 
 ```
 machine: 4 CPUs (AMD EPYC 7763), 16 GB, Ubuntu 24.04
@@ -28,45 +28,57 @@ Requests a second (more is better):
 
 | Scenario | Laravel | Laravel + Sanctum | Nevela | Nevela against Laravel + Sanctum |
 |---|--:|--:|--:|--:|
-| `show`: one product by its id | 190 | 141 | 112 | 0.79× |
-| `list`: a page of 20, and the total | 119 | 93 | 76 | 0.82× |
-| `write`: validate and insert | 155 | 118 | 96 | 0.82× |
-| `mixed`: 85% list, 10% show, 5% write | 121 | 95 | 79 | 0.83× |
+| `show`: one product by its id | 185 | 143 | 123 | 0.86× |
+| `list`: a page of 20, and the total | 126 | 102 | 89 | 0.88× |
+| `write`: validate and insert | 168 | 129 | 107 | 0.83× |
+| `mixed`: 85% list, 10% show, 5% write | 135 | 109 | 95 | 0.87× |
 
-In every row the app was the limit: its one CPU was at 100% while Postgres had room. So these are each app's ceiling on one CPU, not the database's. The three runs of each app were within 11% of each other, and never overlapped another app's.
+In every row the app was the limit: its one CPU was at 100% while Postgres had room. So these are each app's ceiling on one CPU, not the database's. The three runs of each app were within 10% of each other, and never overlapped another app's.
 
 Median time to answer, at that load:
 
 | Scenario | Laravel | Laravel + Sanctum | Nevela |
 |---|--:|--:|--:|
-| `show` | 285 ms | 378 ms | 427 ms |
-| `list` | 412 ms | 524 ms | 662 ms |
-| `write` | 308 ms | 409 ms | 507 ms |
-| `mixed` | 412 ms | 522 ms | 633 ms |
+| `show` | 289 ms | 323 ms | 401 ms |
+| `list` | 398 ms | 494 ms | 571 ms |
+| `write` | 299 ms | 395 ms | 486 ms |
+| `mixed` | 389 ms | 477 ms | 522 ms |
 
 These times are mostly waiting. Fifty users are sending requests as fast as they get answers, to eight workers on one CPU, so a request spends most of its time in the queue. They show how the apps compare when full, not how long one request takes on its own: an app that isn't full answers in a few milliseconds.
 
 ## What the numbers say
 
-**Signing in costs more than Nevela does.** Putting the hand-written routes behind Sanctum takes 22 to 26% off. Every request looks up its token and its user, and every second or so writes when the token was last used. An API people sign in to pays this whatever it is built with.
+**Signing in costs more than Nevela does.** Putting the hand-written routes behind Sanctum takes 19 to 23% off. Every request looks up its token and its user, and every second or so writes when the token was last used. An API people sign in to pays this whatever it is built with.
 
-**Nevela's own work costs 17 to 21% on top.** Against Laravel with Sanctum, the fair comparison since Nevela's API always asks for a sign-in, Nevela serves about four requests for every five.
+**Nevela's own work costs 12 to 17% on top.** Against Laravel with Sanctum, the fair comparison since Nevela's API always asks for a sign-in, Nevela serves about seven requests for every eight.
 
-**Against an open API written by hand, Nevela serves 59 to 65% as many requests.** That is the price of sign-in, roles and permissions, validation, the trash, and a list API with sorting, search and filters, none of which anyone wrote.
+**Against an open API written by hand, Nevela serves 63 to 71% as many requests.** That is the price of sign-in, roles and permissions, validation, the trash, and a list API with sorting, search and filters, none of which anyone wrote.
 
 ## Where Nevela loses, and why
 
-For one product, the hand-written app with Sanctum asks Postgres three things: the token, the user, the product. Nevela asks six:
+For one product, the hand-written app with Sanctum asks Postgres three things: the token, the user, the product. Nevela asks four: the same three, and **the user's roles**, for the permission check (`products.view`). An administrator's are looked up like anyone else's. That is the cost of permissions, which the plain app doesn't check.
 
-- **Whether the roles table exists.** So an app that has been upgraded and not yet migrated keeps working: until the table is there, everyone may do everything, as before. Nevela remembers the answer, but only for one request, and PHP-FPM starts each request afresh, so it is asked every time.
-- **The user's roles,** for the permission check (`products.view`). An administrator's are looked up like anyone else's.
-- **Whether the products table has `deleted_at`.** For the same reason as the roles table: the trash only applies once its migration has run.
+A write also reads the new product back after inserting it, so the answer has every column as the database stored it. Writes are where Nevela is furthest behind.
 
-A write also reads the new product back after inserting it, so the answer has every column as the database stored it.
+On top of the queries, the generated code does more in PHP: an API Resource for each product, a policy check on each request, and a form request for each write. The app's CPU was the limit, and building and running a query costs CPU too, so which of these costs the most isn't measured separately here.
 
-On top of the queries, the generated code does more in PHP: an API Resource for each product, a policy check on each request, and a form request for each write.
+## What changed after the first run
 
-Which of these costs the most isn't measured separately here: the app's CPU was the limit, and building and running a query costs CPU too. The first and third queries are the ones to remove, since in a deployed app their answer doesn't change between requests. Removing them, and measuring again, is how this page will find out. The roles lookup is the cost of permissions, which the plain app doesn't check.
+[The first run](https://github.com/MarkColeMukisa/nevela/actions/runs/39232976949), with Nevela 0.11.0, found Nevela asking six things for one product, not four. Two were about the database itself:
+
+- **Whether the roles table exists,** so an app that has been upgraded and not yet migrated keeps working: until the table is there, everyone may do everything, as before.
+- **Whether the products table has `deleted_at`,** for the same reason: the trash only applies once its migration has run.
+
+Nevela remembered each answer, but only for one request, and PHP-FPM starts every request afresh, so a deployed app asked them on every request. Now a yes is kept across requests (in `bootstrap/cache/nevela-schema.json`) and forgotten when migrations run. Against Laravel with Sanctum, measured on the same kind of runner:
+
+| Scenario | 0.11.0 | Now |
+|---|--:|--:|
+| `show` | 0.79× | 0.86× |
+| `list` | 0.82× | 0.88× |
+| `write` | 0.82× | 0.83× |
+| `mixed` | 0.83× | 0.87× |
+
+On a single read, Postgres's CPU went from 57% to 26%.
 
 ## Fair to both
 
@@ -78,7 +90,7 @@ The harness follows [Grit's](https://github.com/MUKE-coder/grit/tree/main/benchm
 - **The median of three runs,** never the best one.
 - **The same JSON from each app.** The hand-written app takes the same `page`, `perPage`, `sort` and `q` as Nevela's, and returns the same `{ data, meta }` with the same keys, so neither does less work by answering a simpler question.
 
-A shared GitHub runner is not a quiet machine, which is why the apps are compared within one run and not across runs. On another machine the numbers will differ, and the ratios between the apps should hold. They did on [a second run](https://github.com/MarkColeMukisa/nevela/actions/runs/39237169050) the same day, on a runner with a faster CPU (an AMD EPYC 9V74): every app served 29 to 54% more requests a second, and Nevela against Laravel with Sanctum came out at 0.77 to 0.85×, against 0.79 to 0.83× above.
+A shared GitHub runner is not a quiet machine, which is why the apps are compared within one run and not across runs. On another machine the numbers will differ, and the ratios between the apps should hold. They did for 0.11.0 on [a second run](https://github.com/MarkColeMukisa/nevela/actions/runs/39237169050) the same day, on a runner with a faster CPU (an AMD EPYC 9V74): every app served 29 to 54% more requests a second, and Nevela against Laravel with Sanctum came out at 0.77 to 0.85×, against 0.79 to 0.83× on the first.
 
 ## Run it yourself
 
