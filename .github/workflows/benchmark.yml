@@ -1,0 +1,48 @@
+name: Benchmark
+
+# Nevela against plain Laravel, on one GitHub runner, every app in turn. See
+# benchmarks/README.md for what is measured and how to read it.
+on:
+  workflow_dispatch:
+    inputs:
+      reps:
+        description: Runs of each app in each scenario (the median is reported)
+        default: "3"
+      duration:
+        description: Length of each run, in seconds (30s)
+        default: 30s
+  pull_request:
+    paths:
+      - benchmarks/**
+      - .github/workflows/benchmark.yml
+
+# One at a time: two benchmarks sharing a runner pool measure each other.
+concurrency:
+  group: benchmark
+  cancel-in-progress: false
+
+jobs:
+  benchmark:
+    name: Nevela against plain Laravel
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: benchmarks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Every app answers every scenario without a failure, before half an hour is spent measuring.
+      - run: ./run.sh check
+      - run: ./run.sh
+        env:
+          REPS: ${{ inputs.reps || '3' }}
+          DURATION: ${{ inputs.duration || '30s' }}
+      - run: node report.mjs >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-results
+          path: benchmarks/results/

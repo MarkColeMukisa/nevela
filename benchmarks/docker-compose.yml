@@ -1,0 +1,109 @@
+# Plain Laravel, plain Laravel behind Sanctum, and Nevela, against one Postgres.
+#
+#   - every app gets the same CPUs and memory (APP_CPUS, default 2)
+#   - only one app runs at a time: run.sh stops the others, because an idle container still takes a share
+#   - k6 runs on this network, not through a published port, which on Docker Desktop
+#     goes through a proxy that gives out before the apps do
+#
+# run.sh does everything; this file is what it starts.
+
+name: nevela-bench
+
+x-app: &app
+  deploy:
+    resources:
+      limits:
+        cpus: "${APP_CPUS:-2}"
+        memory: 2G
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+x-env: &env
+  APP_ENV: production
+  APP_DEBUG: "false"
+  # A fixed key so the image needs no .env. It signs nothing that matters here.
+  APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+  LOG_CHANNEL: stderr
+  LOG_LEVEL: error
+  DB_CONNECTION: pgsql
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_USERNAME: bench
+  # Plaintext to a container on the same network. "prefer" would try TLS on every connection first.
+  DB_SSLMODE: disable
+  DB_PERSISTENT: "true"
+  CACHE_STORE: file
+  SESSION_DRIVER: array
+  QUEUE_CONNECTION: sync
+  # PHP-FPM workers: 8 per CPU, as Grit's harness gives Laravel (32 for 4).
+  FPM_WORKERS: "${FPM_WORKERS:-16}"
+
+services:
+  postgres:
+    image: postgres:16.15-alpine
+    environment:
+      POSTGRES_USER: bench
+      POSTGRES_DB: bench
+      # A database for this network only, never published: it asks for no password.
+      POSTGRES_HOST_AUTH_METHOD: trust
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - work_mem=16MB
+      # Durability off: this measures the apps, not the disk. With fsync on, every write
+      # waits for the disk, and the differences between the apps shrink into that wait.
+      - -c
+      - fsync=off
+      - -c
+      - synchronous_commit=off
+      - -c
+      - full_page_writes=off
+    deploy:
+      resources:
+        limits:
+          cpus: "${PG_CPUS:-1}"
+          memory: 1G
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bench -d bench"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  laravel:
+    <<: *app
+    image: nevela-bench/laravel
+    build:
+      context: ..
+      dockerfile: benchmarks/Dockerfile
+      args:
+        APP: laravel
+    environment:
+      <<: *env
+      DB_DATABASE: bench_laravel
+
+  # The same image, with its routes behind auth:sanctum, and the same database.
+  laravel-auth:
+    <<: *app
+    image: nevela-bench/laravel
+    pull_policy: never
+    environment:
+      <<: *env
+      DB_DATABASE: bench_laravel
+      BENCH_AUTH: "1"
+
+  nevela:
+    <<: *app
+    image: nevela-bench/nevela
+    build:
+      context: ..
+      dockerfile: benchmarks/Dockerfile
+      args:
+        APP: nevela
+    environment:
+      <<: *env
+      DB_DATABASE: bench_nevela
