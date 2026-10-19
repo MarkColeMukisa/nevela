@@ -22,6 +22,9 @@ curl -X POST http://127.0.0.1:8000/api/auth/token \
 ```json
 {
   "token": "1|x8Jq…",
+  "expiresAt": "2026-10-20T09:15:00.000000Z",
+  "refreshToken": "kq0…",
+  "refreshExpiresAt": "2026-10-27T09:00:00.000000Z",
   "user": {
     "id": "1", "name": "Admin", "email": "admin@example.com",
     "roles": ["ADMIN"], "permissions": ["products.create", "products.view", "…"], "isAdmin": true
@@ -31,7 +34,30 @@ curl -X POST http://127.0.0.1:8000/api/auth/token \
 
 The response status is 201. Wrong credentials give 401 with `code: INVALID_EMAIL_OR_PASSWORD`, and the same answer whether or not the address has an account. Ten attempts a minute are allowed per account.
 
-`deviceName` is an optional third field that names the token.
+`deviceName` is an optional third field that names the device.
+
+The token works until `expiresAt`, 15 minutes unless [set otherwise](/guides/authentication/#how-long-a-sign-in-lasts). `refreshToken` gets a new one.
+
+### Keep it going
+
+```sh
+curl -X POST http://127.0.0.1:8000/api/auth/refresh \
+  -H "Accept: application/json" -H "Content-Type: application/json" \
+  -d '{"refreshToken": "kq0…"}'
+```
+
+The answer has a new `token`, `expiresAt`, `refreshToken` and `refreshExpiresAt`. Keep the new refresh token and drop the old one, which won't work again: presented later, it is taken as stolen and the sign-in ends. Within a minute of the swap it is a second request that set out at the same moment, and gets a `token` with `"refreshToken": null`; keep the one you have.
+
+A sign-in that has ended answers 401 with a `code`:
+
+| `code` | Why |
+|---|---|
+| `SESSION_IDLE` | Not refreshed for 7 days. |
+| `SESSION_EXPIRED` | 30 days have passed since it began. |
+| `SESSION_REPLAYED` | A refresh token that was already swapped was used again. |
+| `SESSION_REVOKED` | Signed out, from this device or another, or the account was switched off. |
+
+`refreshExpiresAt` is when the sign-in ends if it isn't refreshed again. It is `null` when there are no limits.
 
 ### Use the token
 
@@ -67,6 +93,7 @@ All are under `/api/auth`. The ones marked 🔒 need a token.
 |---|---|---|
 | | `GET /config` | Which sign-in methods are switched on. |
 | | `POST /token` | Sign in with `email` and `password`. |
+| | `POST /refresh` | A new pair for `refreshToken`. See [Keep it going](#keep-it-going). |
 | | `POST /two-factor/send`, `/two-factor/verify` | The second step of a password sign-in. |
 | | `POST /passkey/options`, `/passkey` | Sign in with a passkey. |
 | | `POST /magic-link`, `/magic-link/verify` | Email a sign-in link; sign in with its `token`. |
@@ -81,7 +108,7 @@ All are under `/api/auth`. The ones marked 🔒 need a token.
 | 🔒 | `GET /sessions`, `DELETE /sessions`, `DELETE /sessions/{id}` | List devices; sign out the others, or one. |
 | 🔒 | `POST /two-factor/enable`, `/confirm`, `/disable`, `/backup-codes` | Set up and manage the second step. |
 | 🔒 | `GET /passkeys`, `POST /passkeys/options`, `POST /passkeys`, `PATCH`/`DELETE /passkeys/{id}` | List, add, rename and remove passkeys. |
-| 🔒 | `DELETE /token` | Sign out: the token stops working. |
+| 🔒 | `DELETE /token` | Sign out: the sign-in ends, and its tokens stop working. |
 
 An error has a `code` beside its message, such as `INVALID_EMAIL_OR_PASSWORD`, `INVALID_TWO_FACTOR_CODE`, `OTP_EXPIRED`, `TOO_MANY_ATTEMPTS`, or `ACCOUNT_CLOSED` for an account that was closed. A method that is switched off answers 404. Attempts are limited to ten a minute per account, after which the answer is 429.
 

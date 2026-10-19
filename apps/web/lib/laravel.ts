@@ -9,6 +9,13 @@ import { cookies, headers } from "next/headers";
  */
 export const TOKEN_COOKIE = "nevela_token";
 
+/**
+ * The refresh token, swapped for a new access token (and a new refresh token) before the
+ * access token runs out: by proxy.ts, before any page or API call that needs one. See
+ * lib/session-cookies.ts.
+ */
+export const REFRESH_COOKIE = "nevela_refresh";
+
 /** Where Nevela's routes live in the Laravel app, e.g. http://127.0.0.1:8000/api. */
 export const API_URL = (process.env.NEVELA_API_URL ?? "http://127.0.0.1:8000/api").replace(/\/+$/, "");
 
@@ -23,7 +30,11 @@ export async function sessionToken(): Promise<string | undefined> {
  * (for the list of devices signed in to an account).
  */
 export async function callerHeaders(): Promise<Record<string, string>> {
-  const incoming = await headers();
+  return callerHeadersFrom(await headers());
+}
+
+/** callerHeaders(), from the headers of a request in hand: proxy.ts has one, and no `headers()`. */
+export function callerHeadersFrom(incoming: Headers): Record<string, string> {
   const sent: Record<string, string> = {};
   const host = incoming.get("x-forwarded-host") ?? incoming.get("host");
   if (host) {

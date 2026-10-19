@@ -3,6 +3,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { DashboardHeader, type Theme } from "@/components/dashboard/dashboard-header";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
+import { SessionWatchdog } from "@/components/dashboard/session-watchdog";
 import { dashboardLinks } from "@/lib/dashboard-nav";
 import { allResources, dashboardSession, mayDo, visibleResources } from "@/lib/dashboard";
 import { fileUrl } from "@/lib/files";
@@ -46,6 +47,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <main className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">{children}</main>
       </SidebarInset>
       <Toaster theme={theme} />
+      <SessionWatchdog />
     </SidebarProvider>
   );
 }

@@ -190,9 +190,31 @@ Uploading a picture on the profile page sends it through the same optimiser as a
 
 Change the sizes under `uploads.profiles.avatar` in `config/nevela.php`.
 
+## How long a sign-in lasts
+
+A sign-in ends on its own, as it does in Grit:
+
+| | Default | Setting (`apps/api/.env`) |
+|---|---|---|
+| An access token works for | 15 minutes | `NEVELA_SESSION_ACCESS` |
+| A sign-in ends when it isn't used for | 7 days | `NEVELA_SESSION_IDLE` |
+| A sign-in ends, however busy, after | 30 days | `NEVELA_SESSION_ABSOLUTE` |
+| The dashboard warns, with no mouse or keyboard, after | 14 min 30 s, then counts down 30 s | `NEXT_PUBLIC_SESSION_IDLE_MS`, `NEXT_PUBLIC_SESSION_COUNTDOWN_MS` (`apps/web/.env.local`) |
+
+The settings in `apps/api/.env` are in minutes. Empty, or `0`, is no limit.
+
+- **Someone working is never interrupted.** A sign-in is a short access token and a refresh token. Before the access token runs out, the dashboard swaps the refresh token for a new pair, so a copy of an access token taken from a browser stops working within 15 minutes.
+- **A screen left unattended signs itself out.** After 14 min 30 s with no mouse, keyboard, touch or wheel, the dashboard asks "Still there?" and counts down 30 seconds. **Stay signed in** carries on. Otherwise the sign-in ends in Laravel, not only in the browser, and the sign-in page says why. Moving the mouse while it counts doesn't dismiss it. Working in another tab of the dashboard counts as being there, and signing out in one tab signs the others out. `NEXT_PUBLIC_SESSION_IDLE_MS=0` turns the warning off; the server's limits still apply.
+- **A stolen refresh token gives itself away.** Each refresh token is used once and swapped for a new one. If one that was already swapped is used again, by a thief or by the person it was taken from, the sign-in ends on every device holding it, and the sign-in page says why. The one exception is a second request that set out with the same token at the same moment, within a minute: it is given an access token and carries on.
+- **Signing out takes effect at once.** From the account menu, from **Account → Devices**, by an administrator, by changing the password or closing the account: the sign-in's tokens are deleted, and the next request is refused.
+
+The scheduler removes ended sign-ins each night (`nevela:prune-sessions`). `nevela status` shows the limits in use.
+
+Tokens your own code makes with `createToken()`, and those from before 0.12, belong to no sign-in. They keep to the same idle and absolute limits, measured from when each was last used and when it was made. An app with its own `Sanctum::authenticateAccessTokensUsing()` replaces that check; Nevela's own tokens still expire.
+
 ## Devices
 
-Each sign-in creates a token, and each token is a device in **Account → Devices**, with its browser, its address and when it was last used. The browser and address are what the dashboard reports about the visitor, which Laravel believes because the two share a secret (`NEVELA_PROXY_SECRET`, written into both apps when the app is created). Someone calling the API directly cannot choose how their device is listed. The page can sign out every other device. Changing the password does the same, and resetting a forgotten password signs out every device, this one included.
+Each sign-in is a device in **Account → Devices**, with its browser, its address, when it was last used and when it ends if it isn't used again. The browser and address are what the dashboard reports about the visitor, which Laravel believes because the two share a secret (`NEVELA_PROXY_SECRET`, written into both apps when the app is created). Someone calling the API directly cannot choose how their device is listed. The page can sign out every other device. Changing the password does the same, and resetting a forgotten password signs out every device, this one included.
 
 ## Closing an account
 
@@ -271,14 +293,25 @@ curl -X POST http://127.0.0.1:8000/api/auth/token \
 ```
 
 ```json
-{ "token": "1|…", "user": { "id": "1", "name": "Ada Okafor", "email": "ada@example.com" } }
+{
+  "token": "1|…",
+  "expiresAt": "2026-10-20T09:15:00.000000Z",
+  "refreshToken": "kq0…",
+  "refreshExpiresAt": "2026-10-27T09:00:00.000000Z",
+  "user": { "id": "1", "name": "Ada Okafor", "email": "ada@example.com" }
+}
 ```
 
-Send it as `Authorization: Bearer <token>` on every other request. If the account has two-factor on, there is no token in that answer yet: see the reference.
+Send the token as `Authorization: Bearer <token>` on every other request. Before `expiresAt`, swap the refresh token for a new pair with `POST /api/auth/refresh`, and keep the new refresh token: the old one won't work again. If the account has two-factor on, there is no token in that answer yet: see the reference.
 
 ## How the browser stays signed in
 
-Scripts on the page never see the token. The auth screens call the web app's own `/api/auth/…` route, which passes each request to Laravel. When Laravel answers with a token, the route puts it in an httpOnly cookie named `nevela_token`, which the browser stores and sends but page scripts cannot read, and removes it from the answer. It lasts 30 days. Signing out revokes the token in Laravel and removes the cookie.
+Scripts on the page never see a token. The auth screens call the web app's own `/api/auth/…` route, which passes each request to Laravel. When Laravel answers with tokens, the route puts them in httpOnly cookies, which the browser stores and sends but page scripts cannot read, and removes them from the answer:
+
+- `nevela_token`, the access token, lasting a minute less than the token does;
+- `nevela_refresh`, the refresh token, lasting until the sign-in would end unused.
+
+When the first has gone and the second is there, the web app's `proxy.ts` swaps the refresh token for a new pair before the page or API call goes ahead (`lib/session-cookies.ts`). When Laravel says the sign-in has ended, both cookies go and the page is sent to the sign-in page, which says why. Signing out ends the sign-in in Laravel and removes both cookies.
 
 `lib/auth-client.ts` in the web app has the browser's side of this, under the method names Flare's screens call. That is why the screens could be copied without changes.
 
