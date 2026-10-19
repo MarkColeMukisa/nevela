@@ -1,0 +1,5 @@
+# Made by seed/make.mjs, the same every time.
+seed/products.sql
+seed/ids.json
+# Made by run.sh.
+results/

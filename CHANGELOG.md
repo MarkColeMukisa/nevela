@@ -8,6 +8,12 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_A benchmark: what Nevela costs, next to the same API written by hand_
+
+### Added
+
+- **A benchmark**, in `benchmarks/`, modelled on Grit's: plain Laravel, plain Laravel behind Sanctum, and the API Nevela generates, answering the same requests with the same JSON in production PHP-FPM, one at a time, against one Postgres. It runs with Docker (`./run.sh`) and on GitHub as the Benchmark workflow. The first results, on the docs' new [Benchmarks](https://nevela-docs.vercel.app/benchmarks/) page: Nevela serves four requests for every five that Laravel with Sanctum does, and the page says where the rest goes.
+
 ## [0.11.0] - 2026-10-18
 
 _Enum values in words, and money in its own currency_
