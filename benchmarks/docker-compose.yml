@@ -107,3 +107,33 @@ services:
     environment:
       <<: *env
       DB_DATABASE: bench_nevela
+
+  # ── The same two signed-in apps on Octane (FrankenPHP), which keeps the app booted ──
+  laravel-auth-octane:
+    <<: *app
+    image: nevela-bench/laravel-octane
+    build:
+      context: ..
+      dockerfile: benchmarks/Dockerfile.octane
+      args:
+        APP: laravel
+    environment:
+      <<: *env
+      DB_DATABASE: bench_laravel
+      BENCH_AUTH: "1"
+      OCTANE_SERVER: frankenphp
+      OCTANE_WORKERS: "${FPM_WORKERS:-8}"
+
+  nevela-octane:
+    <<: *app
+    image: nevela-bench/nevela-octane
+    build:
+      context: ..
+      dockerfile: benchmarks/Dockerfile.octane
+      args:
+        APP: nevela
+    environment:
+      <<: *env
+      DB_DATABASE: bench_nevela
+      OCTANE_SERVER: frankenphp
+      OCTANE_WORKERS: "${FPM_WORKERS:-8}"

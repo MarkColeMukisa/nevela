@@ -1,0 +1,37 @@
+# The same apps as Dockerfile, served by Laravel Octane on FrankenPHP instead of nginx and
+# PHP-FPM. Octane boots the app once per worker and keeps it between requests, where
+# PHP-FPM boots it for every request. Everything else is as in Dockerfile: PHP 8.4,
+# OPcache with its JIT, Composer's production autoloader, Laravel's caches at start.
+#
+#   docker build -f benchmarks/Dockerfile.octane --build-arg APP=nevela .
+FROM dunglas/frankenphp:1.13.1-php8.4-alpine
+
+RUN install-php-extensions pdo_pgsql opcache bcmath pcntl
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY benchmarks/docker/php.ini /usr/local/etc/php/conf.d/zz-bench.ini
+COPY benchmarks/docker/entrypoint-octane.sh /usr/local/bin/bench-entrypoint
+
+ARG LARAVEL=13.11.0
+# The image comes with a page of its own in /app; the skeleton goes there instead.
+RUN rm -rf /app && composer create-project laravel/laravel /app ${LARAVEL} --no-install --no-scripts --no-interaction --no-progress --prefer-dist
+WORKDIR /app
+
+COPY packages/laravel /nevela-laravel
+COPY benchmarks/apps /bench
+
+ARG APP
+RUN test -n "${APP}" || { echo "build with --build-arg APP=laravel|nevela"; exit 1; } \
+    && sh /bench/${APP}/build.sh \
+    && php /bench/prepare.php ${APP} \
+    && sh /bench/octane.sh
+
+RUN composer dump-autoload --no-dev --optimize --classmap-authoritative --no-interaction \
+    && rm -f .env \
+    && chmod +x /usr/local/bin/bench-entrypoint
+
+# The same number of workers as PHP-FPM gets (docker-compose.yml), and Octane's own
+# default for how many requests a worker serves before it is replaced.
+ENV OCTANE_WORKERS=8 OCTANE_MAX_REQUESTS=500
+EXPOSE 8080
+ENTRYPOINT ["bench-entrypoint"]

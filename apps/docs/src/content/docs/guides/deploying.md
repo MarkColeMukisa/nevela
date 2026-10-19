@@ -16,6 +16,23 @@ Nevela is two apps. Deploy each the way you would deploy any Laravel or Next.js 
 - Keep `bootstrap/cache` writable, as Laravel needs it to be. Nevela keeps a note there of the tables and columns it has found (`nevela-schema.json`), so it doesn't ask the database again on every request. Migrations clear it. If you ever remove a table or column without a migration, run `php artisan optimize:clear`.
 - Add Laravel's scheduler to cron: `* * * * * cd /path/to/api && php artisan schedule:run >> /dev/null 2>&1`. It is what empties [the trash](/guides/trash/) of records past their 30 days each night. Without it they go the next time someone opens the Trash page. The same run removes files visitors uploaded through a [public form](/guides/public-site/) and never sent, and people who joined a list and never [confirmed their address](/guides/protecting-forms/#proving-an-address). The scheduler also sends the hourly digest of form notices that were held back.
 
+### Faster, with Octane
+
+[Octane](https://laravel.com/docs/octane) serves the Laravel app from workers that start it once and keep it, where PHP-FPM starts it for every request. In the [benchmark](/benchmarks/) that made Nevela's API 1.4 to 1.8 times as fast on the same CPU, most for single records, least for pages of many.
+
+Nevela works on it as it is. What Nevela keeps for one request (whose roles grant what, the files a page looked up, which tables and columns are there) is let go of when the next one starts, and the same happens at the start of each queued job. To try it with FrankenPHP:
+
+```sh
+cd apps/api
+composer require laravel/octane
+php artisan octane:install --server=frankenphp
+php artisan octane:start --server=frankenphp --workers=8
+```
+
+- **After each deploy, run `php artisan octane:reload`,** so the workers load the new code. A migration needs nothing more: Nevela reads its note of the tables again on every request, so a column a migration removed is asked about again.
+- **Your own code follows Octane's rules:** nothing about one request kept in a static property or a singleton, because the next request finds it there. The [Octane docs](https://laravel.com/docs/octane#dependency-injection-and-octane) list what to look out for.
+- **Workers are replaced after 500 requests** by default (`--max-requests`), which keeps a slow leak from growing. The benchmark ran with that default.
+
 ## The web app
 
 The web app needs one setting: `NEVELA_API_URL`, the address of the Laravel API including its prefix, for example `https://api.example.com/api`. The Next.js server must be able to reach that address; visitors' browsers do not need to.

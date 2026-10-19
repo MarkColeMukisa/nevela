@@ -1,0 +1,8 @@
+# The image is built from the repository root. It needs only these.
+*
+!benchmarks/apps
+!benchmarks/docker
+!packages/laravel
+packages/laravel/vendor
+packages/laravel/tests
+packages/laravel/composer.lock
