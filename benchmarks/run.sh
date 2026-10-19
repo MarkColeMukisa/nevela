@@ -23,7 +23,7 @@ VUS="${VUS:-50}"
 DURATION="${DURATION:-30s}"
 WARMUP="${WARMUP:-8s}"
 SCENARIOS="${SCENARIOS:-show list write mixed}"
-APPS="${APPS:-laravel laravel-auth nevela}"
+APPS="${APPS:-laravel laravel-auth nevela laravel-auth-octane nevela-octane}"
 OUT="${OUT:-results/latest}"
 K6_IMAGE=grafana/k6:1.8.2
 NETWORK=nevela-bench_default
@@ -34,11 +34,11 @@ export APP_CPUS="${APP_CPUS:-1}" PG_CPUS="${PG_CPUS:-2}" FPM_WORKERS="${FPM_WORK
 seconds() { echo "${1%s}"; }
 case "$DURATION$WARMUP" in *[!0-9s]* | *m*) echo "DURATION and WARMUP are in seconds: 30s" >&2; exit 2 ;; esac
 
-database() { [ "$1" = nevela ] && echo bench_nevela || echo bench_laravel; }
+database() { case "$1" in nevela*) echo bench_nevela ;; *) echo bench_laravel ;; esac; }
 psql_in() { docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -q -U bench "$@"; }
 # As the web server's user, so nothing it writes is out of reach of the app afterwards.
 artisan() { local app="$1"; shift; docker compose exec -T -u www-data "$app" php artisan "$@"; }
-stop_apps() { docker compose stop laravel laravel-auth nevela >/dev/null 2>&1 || true; }
+stop_apps() { docker compose stop laravel laravel-auth nevela laravel-auth-octane nevela-octane >/dev/null 2>&1 || true; }
 
 # Up and answering. Asked from inside the network, as k6 asks.
 start_app() {
@@ -76,7 +76,7 @@ k6() { # app scenario duration run-name [summary file]
 rm -rf "$OUT" && mkdir -p "$OUT"
 
 echo "── building"
-docker compose build laravel nevela
+docker compose build laravel nevela laravel-auth-octane nevela-octane
 docker compose up -d --wait postgres
 for db in bench_laravel bench_nevela; do
   psql_in -d bench -c "DROP DATABASE IF EXISTS $db WITH (FORCE);" -c "CREATE DATABASE $db;" >/dev/null
@@ -93,6 +93,9 @@ artisan nevela nevela:user --name=Bench --email=bench@example.com \
   --password="bench-$(od -An -N12 -tx1 /dev/urandom | tr -d ' \n')" --no-interaction >/dev/null
 artisan nevela bench:token | tr -d '\r\n' > "$OUT/token-nevela"
 stop_apps
+# The Octane apps use the same databases, and so the same accounts.
+cp "$OUT/token-laravel-auth" "$OUT/token-laravel-auth-octane"
+cp "$OUT/token-nevela" "$OUT/token-nevela-octane"
 
 # The same table on both sides, or the comparison is of the tables.
 for db in bench_laravel bench_nevela; do
@@ -109,7 +112,7 @@ fi
   echo "commit: $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
   echo "machine: $(docker info --format '{{.NCPU}} CPUs, {{.MemTotal}} bytes, {{.OperatingSystem}}')"
   echo "cpu: $( (grep -m1 'model name' /proc/cpuinfo 2>/dev/null || echo unknown) | sed 's/.*: //')"
-  echo "limits: app $APP_CPUS CPUs, postgres $PG_CPUS CPUs, $FPM_WORKERS PHP-FPM workers"
+  echo "limits: app $APP_CPUS CPUs, postgres $PG_CPUS CPUs, $FPM_WORKERS PHP-FPM or Octane workers"
   echo "load: $VUS virtual users, $DURATION per run, $REPS runs per app and scenario"
   start_app nevela >/dev/null
   echo "php: $(docker compose exec -T nevela php -r 'echo PHP_VERSION;')"
