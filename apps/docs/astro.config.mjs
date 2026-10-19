@@ -78,6 +78,7 @@ export default defineConfig({
           items: [
             { label: "Commands", slug: "reference/commands" },
             { label: "REST API", slug: "reference/api" },
+            { label: "Benchmarks", slug: "benchmarks" },
             { label: "Changelog", slug: "reference/changelog" },
           ],
         },
