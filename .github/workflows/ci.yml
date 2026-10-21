@@ -134,6 +134,8 @@ jobs:
         run: pnpm test:create
       - name: Docs changelog tests
         run: pnpm test:docs
+      - name: Dashboard unit tests
+        run: pnpm test:web
       - run: pnpm --filter nevela-web typecheck
       - run: pnpm --filter nevela-web build
 

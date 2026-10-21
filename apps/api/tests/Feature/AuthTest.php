@@ -515,6 +515,20 @@ class AuthTest extends TestCase
         $this->postJson('/api/auth/token', ['email' => 'ada@example.com', 'password' => self::PASSWORD])->assertStatus(429);
     }
 
+    public function test_the_dashboard_is_told_whether_its_proxy_secret_is_this_apps(): void
+    {
+        $config = fn (array $headers = []) => $this->getJson('/api/auth/config', $headers)->assertOk()->json('proxySecret');
+
+        config(['nevela.auth.proxy_secret' => null]);
+        $this->assertSame('none', $config());
+        $this->assertSame('missingInApi', $config(['X-Nevela-Proxy-Secret' => 'the-dashboards']));
+
+        config(['nevela.auth.proxy_secret' => 'the-shared-secret']);
+        $this->assertSame('missingInDashboard', $config());
+        $this->assertSame('different', $config(['X-Nevela-Proxy-Secret' => 'another-one']));
+        $this->assertSame('ok', $config(['X-Nevela-Proxy-Secret' => 'the-shared-secret']));
+    }
+
     public function test_the_sign_in_methods_are_published_and_account_pages_need_a_token(): void
     {
         $this->getJson('/api/auth/config')->assertOk()->assertJson(['registration' => false, 'passkeys' => true, 'twoFactor' => ['authenticator' => true, 'email' => true]]);

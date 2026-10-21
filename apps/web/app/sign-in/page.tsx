@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { apiProblems } from "@/lib/api-check";
 import { SignInFlow } from "@/components/auth/sign-in-flow";
 import { FormMessage } from "@/components/auth/ui";
 import { authConfig } from "@/lib/auth-config";
@@ -44,6 +45,8 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   if (await getSession()) redirect(next);
 
   const copy = theme.signIn(site.name);
+  // Asked once per server, and logged; shown here only in development.
+  const problems = await apiProblems();
   return (
     <AuthShell
       page="sign-in"
@@ -61,6 +64,13 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
         ) : undefined
       }
     >
+      {problems.length > 0 && process.env.NODE_ENV !== "production" && (
+        <div className="mb-4 flex flex-col gap-2">
+          {problems.map((problem) => (
+            <FormMessage key={problem}>{problem}</FormMessage>
+          ))}
+        </div>
+      )}
       {(await socialNeedsKeys()) && (
         // Laravel says so outside production only: the switch is on, and no button can be drawn.
         <div className="mb-4">

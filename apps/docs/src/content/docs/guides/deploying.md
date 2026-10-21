@@ -37,6 +37,7 @@ php artisan octane:start --server=frankenphp --workers=8
 
 The web app needs one setting: `NEVELA_API_URL`, the address of the Laravel API including its prefix, for example `https://api.example.com/api`. The Next.js server must be able to reach that address; visitors' browsers do not need to.
 
+A host such as Laravel Cloud gives you the bare address, `https://your-api.laravel.cloud`. Add `/api` to it. Without it, every sign-in fails with "The dashboard can't find the API's sign-in". The web app checks the address and `NEVELA_PROXY_SECRET` once when it starts. It writes what is wrong to its log, with the value to use, and in development shows it on the sign-in page.
 In production the token cookie is marked `Secure`, so the web app must be served over HTTPS.
 
 If the app has [public pages](/guides/public-site/), two more things:

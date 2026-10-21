@@ -75,6 +75,12 @@ async function callLaravel(request: NextRequest, method: string, path: string, b
     parsed.error = issues?.[0]?.message ?? (parsed.error as string | undefined) ?? (parsed.message as string | undefined) ?? "Something went wrong. Try again.";
   }
   if (response.status === 429 && !parsed.code) parsed = { error: "Too many attempts. Wait a minute and try again.", code: "TOO_MANY_ATTEMPTS" };
+  // Laravel's own "The route auth/token could not be found": the dashboard is asking in the
+  // wrong place (NEVELA_API_URL, usually without its /api), not a sign-in that failed.
+  if (response.status === 404 && !parsed.code && /^The route .+ could not be found\.$/.test(String(parsed.message ?? ""))) {
+    const tried = process.env.NODE_ENV === "production" ? "" : ` (asked at ${API_URL}/auth/${path})`;
+    parsed = { error: `The dashboard can't find the API's sign-in${tried}. Check NEVELA_API_URL: it is the Laravel app's address with its prefix, such as https://api.example.com/api.`, code: "API_NOT_FOUND" };
+  }
   return { status: response.status, body: parsed };
 }
 
