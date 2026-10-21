@@ -11,6 +11,8 @@ The package works without a config file. To change a setting, publish it:
 php artisan vendor:publish --tag=nevela-config
 ```
 
+The file is yours, and an upgrade never changes it. A setting it doesn't have takes the package's default, including those added to a section since you published it, so a file from an older Nevela still gets the new settings. A list, such as `middleware` or `rich_text.tags`, is yours whole: it replaces the package's, not adds to it. The same goes for `rich_text.attributes` and for each image profile you define. `nevela status` and `nevela upgrade` name the settings your file doesn't have.
+
 | Key | Default | Meaning |
 |---|---|---|
 | `descriptors_path` | `base_path('nevela/resources')` | Where the resource descriptors are kept. |

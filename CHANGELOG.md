@@ -8,6 +8,12 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_Sign-ins end in apps whose config/nevela.php is from before 0.12_
+
+### Fixed
+
+- **A published `config/nevela.php` no longer hides the settings added since.** Laravel merges a package's config one level deep, so the `auth` section of a file from before 0.12 replaced Nevela's whole: `auth.session` was missing, and sign-ins in an upgraded app had no idle or absolute limit at all. `auth.social` was missing too, so `SOCIAL_AUTH_ENABLED=true` did nothing in an app from before 0.10. Nevela now merges its config key by key: a setting your file doesn't have takes Nevela's value, and one it does have wins. A list (`middleware`, `rich_text.tags`) and an allowlist (`rich_text.attributes`) are yours whole, as is each image profile you define. Only a limit set to `null` or `0` means no limit. `nevela upgrade` and `nevela status` name the settings your file is missing, and the release that added each. Closes #58.
+
 ## [0.12.0] - 2026-10-19
 
 _Faster and ready for Octane, with sign-ins that end, as in Grit_
