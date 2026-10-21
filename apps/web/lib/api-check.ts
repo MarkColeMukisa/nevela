@@ -1,4 +1,4 @@
-import { diagnose, type ApiProbe } from "@/lib/api-diagnosis";
+import { diagnose, isNevelaConfig, type ApiProbe } from "@/lib/api-diagnosis";
 import { API_URL } from "@/lib/laravel";
 
 let checked: Promise<string[]> | null = null;
@@ -27,31 +27,27 @@ export function apiProblems(): Promise<string[]> {
 
 async function probe(): Promise<{ problems: string[]; settled: boolean }> {
   const secret = process.env.NEVELA_PROXY_SECRET;
-  const ask = async (url: string): Promise<{ status: number; body: Record<string, unknown> } | "unreachable"> => {
+  const ask = async (url: string): Promise<{ status: number; nevela: boolean; proxySecret?: unknown } | "unreachable"> => {
     try {
       const response = await fetch(url, {
         headers: { Accept: "application/json", ...(secret ? { "X-Nevela-Proxy-Secret": secret } : {}) },
         cache: "no-store",
         signal: AbortSignal.timeout(5000),
       });
-      const body = response.ok ? ((await response.json().catch(() => ({}))) as Record<string, unknown>) : {};
-      return { status: response.status, body };
+      // Anything can answer 200: it counts only if it is Nevela's sign-in settings.
+      const body: unknown = response.ok ? await response.json().catch(() => null) : null;
+      return isNevelaConfig(body) ? { status: response.status, nevela: true, proxySecret: body.proxySecret } : { status: response.status, nevela: false };
     } catch {
       return "unreachable";
     }
   };
 
   const config = await ask(`${API_URL}/auth/config`);
-  let withApi: ApiProbe["withApi"] = null;
-  if (config !== "unreachable" && config.status === 404 && !/\/api$/.test(API_URL)) {
-    const answer = await ask(`${API_URL}/api/auth/config`);
-    withApi = answer === "unreachable" ? "unreachable" : answer.status;
+  let nevelaUnderApi: ApiProbe["nevelaUnderApi"] = null;
+  if (config !== "unreachable" && !config.nevela && !/\/api$/.test(API_URL)) {
+    const underApi = await ask(`${API_URL}/api/auth/config`);
+    nevelaUnderApi = underApi !== "unreachable" && underApi.nevela;
   }
 
-  const problems = diagnose({
-    apiUrl: API_URL,
-    config: config === "unreachable" ? config : { status: config.status, proxySecret: config.body.proxySecret },
-    withApi,
-  });
-  return { problems, settled: config !== "unreachable" };
+  return { problems: diagnose({ apiUrl: API_URL, config, nevelaUnderApi }), settled: config !== "unreachable" };
 }
