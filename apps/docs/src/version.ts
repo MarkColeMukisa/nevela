@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "nevela publish, and a sign-in page that says when Google has no keys";
+export const RELEASE_HEADLINE = "A quote from Nevela's maker, real customers, and Docs on the home page";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "Google and GitHub sign-in in four steps, all in .env, and a sign-in page that says when the keys are missing.",
-  href: "/guides/authentication/#google-and-github",
-  label: "Social sign-in",
+  text: "New apps quote Nevela's maker, list apps built with Nevela, and link the docs from the home page.",
+  href: "/guides/web-app/",
+  label: "New apps",
 };
