@@ -119,22 +119,28 @@ Passkeys are tied to the address of the dashboard, so two things have to be true
 
 ## Google and GitHub
 
-Off until you switch it on. One setting in `apps/api/.env` is the switch for the whole app, as in Grit:
+Off until you switch it on. Everything is in `apps/api/.env`: no config file to publish, no `nevela generate` and no rebuild.
 
-```sh
-SOCIAL_AUTH_ENABLED=true
+1. **Get each provider's keys**, a client ID and a client secret. See [Getting the keys](#getting-the-keys), below.
+2. **Put them in `apps/api/.env`, with the switch**, as in Grit:
 
-GOOGLE_CLIENT_ID=…
-GOOGLE_CLIENT_SECRET=…
-GITHUB_CLIENT_ID=…
-GITHUB_CLIENT_SECRET=…
-```
+   ```sh
+   SOCIAL_AUTH_ENABLED=true
+
+   GOOGLE_CLIENT_ID=…
+   GOOGLE_CLIENT_SECRET=…
+   GITHUB_CLIENT_ID=…
+   GITHUB_CLIENT_SECRET=…
+   ```
+
+3. **Reload the sign-in page.** There is a button for each provider with both its keys.
+4. **Check with `nevela status`:** `Social sign-in .. on: Google (GitHub has no keys)`.
+
+How it decides:
 
 - **The switch** turns every provider on or off. Off, no button shows and Laravel refuses the routes.
-- **A provider shows once both of its keys are set.** Set Google's only, and there is one button.
-- **The dashboard asks Laravel which to show on every page**, so turning the switch needs no `nevela generate` and no rebuild. Where the config is cached (`php artisan config:cache` in production), run `php artisan config:clear` after changing it.
-
-`nevela status` says what is on: `Social sign-in .. on: Google (GitHub has no keys)`.
+- **A provider shows once both of its keys are set.** Set Google's only, and there is one button. With the switch on and no provider's keys, there are no buttons. In development the sign-in page says so, and so does `nevela status`.
+- **The dashboard asks Laravel which to show on every page.** Where the config is cached (`php artisan config:cache` in production), run `php artisan config:clear` after changing `.env`.
 
 It is built on [Laravel Socialite](https://laravel.com/docs/socialite).
 
@@ -222,15 +228,15 @@ At the foot of **Account → Profile**, **Close account** lets someone close the
 
 ## Switching methods on and off
 
-The choices are in the `auth` section of `config/nevela.php` in the Laravel app. Publish the file to change them:
+The choices are in the `auth` section of `config/nevela.php` in the Laravel app. Two of them need no file, because they come from `apps/api/.env`: `NEVELA_REGISTRATION` and `SOCIAL_AUTH_ENABLED`. For the rest, write the file:
 
 ```sh
-nevela artisan vendor:publish --tag=nevela-config
+nevela publish
 ```
 
 | Key | Default | |
 |---|---|---|
-| `registration` | `false` | People can create their own account. |
+| `registration` | `NEVELA_REGISTRATION`, `false` | People can create their own account. Set it in `.env`. |
 | `magic_link` | `true` | Sign in with an emailed link. |
 | `email_code` | `true` | Sign in with an emailed code. |
 | `passkeys` | `true` | Passkeys. |
@@ -238,7 +244,7 @@ nevela artisan vendor:publish --tag=nevela-config
 | `two_factor.email` | `true` | Emailed codes as the second step. |
 | `require_email_verification` | `false` | Refuse password sign-in until the address is verified. |
 | `check_breached_passwords` | `true` | Refuse a new password that appears in a known breach. |
-| `social.enabled` | `SOCIAL_AUTH_ENABLED`, `false` | Signing in with Google and GitHub. See [above](#google-and-github): it needs no `generate`. |
+| `social.enabled` | `SOCIAL_AUTH_ENABLED`, `false` | Signing in with Google and GitHub. Set it in `.env`, with each provider's keys. See [above](#google-and-github): it needs no file and no `generate`. |
 
 Then run `nevela generate`. That writes the choices to `apps/web/lib/auth-config.ts`, so the screens stop offering what is off. Laravel refuses a method that is off whatever the screens show.
 

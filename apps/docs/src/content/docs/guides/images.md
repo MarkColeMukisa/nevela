@@ -33,10 +33,10 @@ GIFs are stored as they are: decoding one keeps only its first frame. If an imag
 
 ## Profiles
 
-A profile says how big, which format and which renditions. They are in `config/nevela.php`, under `uploads.profiles`. Publish the file to change them:
+A profile says how big, which format and which renditions. They are in `config/nevela.php`, under `uploads.profiles`. Write the file to change them:
 
 ```sh
-nevela artisan vendor:publish --tag=nevela-config
+nevela publish
 ```
 
 Name a profile on the field: `image:image(product)`. A field that names none uses `default`.

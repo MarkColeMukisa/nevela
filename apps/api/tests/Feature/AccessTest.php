@@ -214,6 +214,8 @@ class AccessTest extends TestCase
     public function test_an_administrator_creates_edits_and_deletes_users(): void
     {
         Sanctum::actingAs($admin = $this->user('ADMIN'));
+        // Not left to Faker, which has an Amara among its names: the search below would find two.
+        $admin->forceFill(['name' => 'Ada Lovelace', 'email' => 'ada@example.com'])->save();
         $editor = $this->role('EDITOR');
 
         $created = $this->postJson('/api/_nevela/users', ['name' => 'Amara Okafor', 'email' => 'Amara@Example.com', 'password' => 'a-long-password', 'roles' => [$editor->id]])
