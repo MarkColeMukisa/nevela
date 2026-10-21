@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "Faster and ready for Octane, with sign-ins that end, as in Grit";
+export const RELEASE_HEADLINE = "Sign-ins end in apps whose config/nevela.php is from before 0.12";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "15-minute tokens, refresh tokens swapped on every use, and a \"Still there?\" before an unattended screen signs out.",
-  href: "/guides/authentication/#how-long-a-sign-in-lasts",
-  label: "Sign-ins that end",
+  text: "A config/nevela.php from an older Nevela now gets the settings added since, so upgraded apps' sign-ins end too.",
+  href: "/guides/configuration/",
+  label: "Upgraded apps",
 };
