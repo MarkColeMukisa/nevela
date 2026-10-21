@@ -34,23 +34,32 @@ export const site = {
     { icon: "plug", title: "Connects to your tools", description: "A documented API for every record, ready for your scripts and integrations." },
     { icon: "credit-card", title: "Billing when you need it", description: "Plans, checkout and invoices through Stripe, without building a billing system." },
   ],
-  /** Placeholder names for the logo strip: replace them with your customers (or remove the strip). */
-  customers: ["Acme", "Globex", "Initech", "Vandelay", "Northwind", "Brightline"],
+  /** The home page's logo strip, with a link where there is one. These are apps built with Nevela: put your own customers here, or empty it to hide the strip. */
+  customers: [
+    { name: "Kian Rover", href: "https://kianrover.com" },
+    { name: "IKIPS", href: "https://ikips.laravel.cloud" },
+    { name: "Rotus Imeir" },
+  ] as { name: string; href?: string }[],
   /** Shown beside the sign-up form. */
   highlights: [
     "Set up in minutes, with nothing to install",
     "Secure sign-in with passkeys and two-factor",
     "Your data stays yours: export it any time",
   ],
-  /** Shown on the sign-in screen of themes with a quote panel. */
+  /**
+   * The quote on the home page, and on the sign-in screen of themes with a quote panel.
+   * It starts as Nevela's own, from the person who made it: put one of yours here.
+   */
   testimonial: {
-    quote: "We moved our whole workflow over in an afternoon. The team hasn't looked back.",
-    author: "Alex Rivera",
-    role: "Head of Operations",
+    quote: "One place to change it. That was the whole idea.",
+    author: "MarkCole MUKISA",
+    role: "Creator of Nevela Framework",
   },
   links: {
     terms: "/terms",
     privacy: "/privacy",
     support: "mailto:support@example.com",
+    /** The home page footer's "Docs". */
+    docs: "https://nevela-docs.vercel.app",
   },
 };

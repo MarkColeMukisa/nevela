@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CheckIcon, XIcon } from "lucide-react";
+import { TestimonialByline } from "@/components/testimonial-byline";
 import { site } from "@/lib/site";
 import { authLayout } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -86,10 +87,6 @@ function Highlights() {
 }
 
 function Testimonial({ large = false }: { large?: boolean }) {
-  const initials = site.testimonial.author
-    .split(" ")
-    .map((part) => part.charAt(0))
-    .join("");
   return (
     <figure className="flex max-w-lg flex-col gap-6">
       <blockquote className={cn("leading-snug text-foreground text-balance", large ? "text-3xl" : "text-xl")}>
@@ -98,12 +95,8 @@ function Testimonial({ large = false }: { large?: boolean }) {
         </span>
         {site.testimonial.quote}
       </blockquote>
-      <figcaption className="flex items-center gap-3">
-        <span className="grid size-10 place-items-center rounded-full bg-brand/15 text-sm font-semibold text-link">{initials}</span>
-        <span className="flex flex-col text-sm">
-          <span className="font-medium text-foreground">{site.testimonial.author}</span>
-          <span className="text-foreground-muted">{site.testimonial.role}</span>
-        </span>
+      <figcaption>
+        <TestimonialByline />
       </figcaption>
     </figure>
   );
@@ -208,12 +201,12 @@ export function AuthShell({ title, subtitle, children, footer, page = "flow" }: 
             <Legal className="relative max-w-[420px] text-center" />
           </section>
           <aside className="hidden flex-col justify-center gap-10 border-l border-border bg-surface-muted p-12 lg:flex">
-            <div className="flex flex-col gap-6 rounded-2xl bg-gradient-to-br from-foreground to-foreground/80 p-8 text-background shadow-xl">
-              <p className="text-2xl leading-snug font-semibold text-balance">&ldquo;{site.testimonial.quote}&rdquo;</p>
-              <p className="text-sm opacity-80">
-                {site.testimonial.author}, {site.testimonial.role}
-              </p>
-            </div>
+            <figure className="flex flex-col gap-6 rounded-2xl bg-gradient-to-br from-foreground to-foreground/80 p-8 text-background shadow-xl">
+              <blockquote className="text-2xl leading-snug font-semibold text-balance">&ldquo;{site.testimonial.quote}&rdquo;</blockquote>
+              <figcaption>
+                <TestimonialByline inverse />
+              </figcaption>
+            </figure>
             <ul className="grid grid-cols-1 gap-3">
               {site.highlights.map((item) => (
                 <li key={item} className="flex items-center gap-3 text-sm text-foreground-muted">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BrandMark } from "@/components/auth/auth-shell";
 import { siteLinks } from "@/lib/extras";
 import { site } from "@/lib/site";
+import { docsUrl } from "@/lib/site-content";
 
 /** The public site's top bar. Static on purpose: it doesn't read the session, so the home page can be cached. */
 export function SiteHeader() {
@@ -25,8 +26,8 @@ export function SiteHeader() {
               {link.label}
             </Link>
           ))}
-          <a href={site.links.support} className="hover:text-foreground">
-            Contact
+          <a href={docsUrl} target="_blank" rel="noreferrer" className="hover:text-foreground">
+            Docs
           </a>
         </nav>
         <div className="flex items-center gap-2">

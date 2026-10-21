@@ -96,6 +96,8 @@ To change a page's layout, edit the page under `app/dashboard/<slug>/`. For exam
 
 `lib/site.ts` holds the name, tagline and the text on the sign-in and home pages. Its `theme` picks the look: `default`, `coral`, `amber`, `sky`, `mono` or `emerald`.
 
+A new app's quote is Nevela's own, from the person who made it, and its logo strip lists apps built with Nevela. Put your own in `testimonial` and `customers`. A customer can have an `href`, and an empty `customers` hides the strip.
+
 ## What was removed from Flare's app
 
 These parts depended on Flare's own database, and Laravel has no endpoints for them yet: saved table views, the change history on a record, the records-per-day chart, product search, and the costs and observability pages. Signing in with Google, GitHub and other providers is not there either.

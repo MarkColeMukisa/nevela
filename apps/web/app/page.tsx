@@ -2,7 +2,9 @@ import Link from "next/link";
 import { ArrowRightIcon, CreditCardIcon, LayoutDashboardIcon, PlugIcon, ShieldCheckIcon, SparklesIcon, UsersIcon, ZapIcon } from "lucide-react";
 import { ProductPreview } from "@/components/marketing/product-preview";
 import { SiteHeader } from "@/components/marketing/site-header";
+import { TestimonialByline } from "@/components/testimonial-byline";
 import { site } from "@/lib/site";
+import { customers, docsUrl } from "@/lib/site-content";
 
 const ICONS = { zap: ZapIcon, "shield-check": ShieldCheckIcon, "layout-dashboard": LayoutDashboardIcon, users: UsersIcon, plug: PlugIcon, "credit-card": CreditCardIcon };
 
@@ -50,13 +52,19 @@ export default function Home() {
         </section>
 
         {/* Logos */}
-        {site.customers.length > 0 && (
+        {customers.length > 0 && (
           <section id="customers" aria-label="Customers" className="border-y border-border bg-surface-muted/50 py-12">
             <p className="text-center text-sm text-foreground-muted">Trusted by teams at</p>
             <ul className="mx-auto mt-6 flex max-w-5xl flex-wrap items-center justify-center gap-x-12 gap-y-4 px-6">
-              {site.customers.map((name) => (
+              {customers.map(({ name, href }) => (
                 <li key={name} className="text-2xl font-semibold tracking-tight text-foreground/35">
-                  {name}
+                  {href ? (
+                    <a href={href} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-foreground/70">
+                      {name}
+                    </a>
+                  ) : (
+                    name
+                  )}
                 </li>
               ))}
             </ul>
@@ -89,9 +97,8 @@ export default function Home() {
         <section className="border-t border-border bg-surface-muted/50 px-6 py-24">
           <figure className="mx-auto flex max-w-3xl flex-col items-center gap-8 text-center">
             <blockquote className="text-3xl leading-snug text-balance">&ldquo;{site.testimonial.quote}&rdquo;</blockquote>
-            <figcaption className="text-sm">
-              <span className="font-semibold">{site.testimonial.author}</span>
-              <span className="text-foreground-muted">, {site.testimonial.role}</span>
+            <figcaption>
+              <TestimonialByline align="center" />
             </figcaption>
           </figure>
         </section>
@@ -125,8 +132,8 @@ export default function Home() {
             <Link href={site.links.privacy} className="hover:text-foreground">
               Privacy
             </Link>
-            <a href={site.links.support} className="hover:text-foreground">
-              Contact
+            <a href={docsUrl} target="_blank" rel="noreferrer" className="hover:text-foreground">
+              Docs
             </a>
           </nav>
         </div>
