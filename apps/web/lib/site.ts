@@ -54,7 +54,7 @@ export const site = {
    * author can be followed, each shown as that network's icon.
    */
   testimonial: {
-    quote: "I built Nevela because, every time I started a new application, I found myself wishing the same things were already there. So I built the framework I kept wishing I had.",
+    quote: "I built Nevela because, every time I started a new application, I found myself wishing the same things were already there. … So I built the framework I kept wishing I had.",
     author: "Mark Cole Mukisa",
     role: "Creator of Nevela",
     photo: "/nevela/mark-cole-mukisa.jpg" as string | null,
