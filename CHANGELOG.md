@@ -8,6 +8,15 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_A quote from Nevela's maker, real customers, and Docs on the home page_
+
+### Changed
+
+- **A new app's quote is Nevela's maker's, not a made-up one.** The sign-in screen and the home page showed "We moved our whole workflow over in an afternoon", from an "Alex Rivera" who doesn't exist. They now quote Mark Cole Mukisa, Creator of Nevela, with his photo and links to follow him on WhatsApp, X, Facebook, Instagram, LinkedIn and TikTok. Each network shows as its own icon. Replace it with yours in `lib/site.ts`: `testimonial` takes a `photo` from `public/` and a `follow` list. Part of #60.
+- **The logo strip lists apps built with Nevela:** Kian Rover and IKIPS, each a link, and Rotus Imeir, in place of Acme, Globex and the rest. A customer in `site.ts` can have an `href`.
+- **Docs in place of Contact** on the home page's menu and footer, linking to the Nevela docs. Contact went to `support@example.com`.
+- An upgraded app keeps its own `site.ts`, as before, and the pages read it in its older shape too: its quote, its customers as plain names, and a Docs link to the Nevela docs.
+
 ## [0.13.0] - 2026-10-21
 
 _nevela publish, and a sign-in page that says when Google has no keys_
