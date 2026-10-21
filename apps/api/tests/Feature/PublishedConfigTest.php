@@ -66,6 +66,33 @@ class PublishedConfigTest extends TestCase
         $this->assertSame(60 * 24 * 30, Sessions::absoluteMinutes());
     }
 
+    public function test_nevela_publish_writes_the_file_once_and_then_says_what_it_is_missing(): void
+    {
+        $dir = sys_get_temp_dir().'/nevela-publish-'.bin2hex(random_bytes(4));
+        mkdir($dir);
+        $this->app->useConfigPath($dir);
+        $package = base_path('vendor/nevela/laravel/config/nevela.php');
+
+        $this->artisan('nevela:publish')->expectsOutputToContain('Wrote config/nevela.php')->assertSuccessful();
+        $this->assertFileEquals($package, "{$dir}/nevela.php");
+
+        // There already: left as it is, and what it lacks is named.
+        file_put_contents("{$dir}/nevela.php", '<?php return '.var_export(self::FROM_0_1, true).';');
+        $this->artisan('nevela:publish', ['--tag' => 'nevela-config'])
+            ->expectsOutputToContain('already here')
+            ->expectsOutputToContain('auth.session (new in 0.12.0)')
+            ->assertSuccessful();
+        $this->assertStringContainsString("'token_name' => 'nevela-web'", (string) file_get_contents("{$dir}/nevela.php"));
+
+        $this->artisan('nevela:publish', ['--force' => true])->assertSuccessful();
+        $this->assertFileEquals($package, "{$dir}/nevela.php");
+
+        $this->artisan('nevela:publish', ['--tag' => 'sanctum-config'])->assertFailed();
+
+        unlink("{$dir}/nevela.php");
+        rmdir($dir);
+    }
+
     public function test_every_setting_since_0_1_says_which_release_added_it(): void
     {
         // A setting added to config/nevela.php needs a line in PublishedConfig::ADDED, so an

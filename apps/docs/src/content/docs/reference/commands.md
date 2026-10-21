@@ -1,6 +1,6 @@
 ---
 title: "Commands"
-description: "Every nevela command and option: new, update, resource, adopt, blog, generate, seed, user, upgrade, trash, disposable, dev, status and --version."
+description: "Every nevela command and option: new, update, resource, adopt, blog, generate, seed, user, upgrade, trash, disposable, publish, dev, status and --version."
 ---
 
 Install the `nevela` command once, and everything is this short, in every shell:
@@ -33,6 +33,7 @@ nevela upgrade             # bring the app to the latest Nevela
 nevela migrate
 nevela trash               # remove deleted records whose 30 days are up
 nevela disposable          # fetch the current list of throwaway email domains
+nevela publish             # write config/nevela.php, to change a setting
 ```
 
 You don't have to install it. [Without the nevela command](#without-the-nevela-command), at the end of this page, has the longer forms that do the same.
@@ -327,6 +328,22 @@ Fetches the current list of throwaway email domains, which a form with [`"email"
 |---|---|
 | `--url=` | Fetch the list from somewhere else: one domain a line. |
 
+## nevela publish
+
+```sh
+nevela publish
+```
+
+Writes Nevela's settings to `apps/api/config/nevela.php`, with a comment on each, so you can change them. This is Laravel's `vendor:publish --tag=nevela-config`, which works too, and so does `nevela publish --tag=nevela-config`.
+
+Many settings don't need the file: they come from `apps/api/.env`, such as `SOCIAL_AUTH_ENABLED`, `NEVELA_REGISTRATION` and `NEVELA_SESSION_IDLE`. The [Configuration](/guides/configuration/) page lists which. A setting the file doesn't have keeps Nevela's default, so the file can stay short.
+
+If the file is already there, it is left as it is, and the command names the settings it doesn't have, with the release that added each.
+
+| Option | Meaning |
+|---|---|
+| `--force` | Replace the file with Nevela's. What you changed in it is lost. |
+
 ## nevela digest
 
 ```sh
@@ -373,6 +390,7 @@ With npm the first is `npm create nevela@latest my-app`, and the second is `npm 
 | `php nevela seed …` | `php artisan nevela:seed …` |
 | `php nevela user` | `php artisan nevela:user` |
 | `php nevela trash` | `php artisan nevela:trash` |
+| `php nevela publish` | `php artisan nevela:publish` |
 | `php nevela upgrade` | `php artisan nevela:upgrade` |
 | `php nevela update` | the same: the name it had before 0.3.0 |
 | `php nevela migrate` | `php artisan migrate` |

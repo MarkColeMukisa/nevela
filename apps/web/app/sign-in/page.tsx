@@ -2,8 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { SignInFlow } from "@/components/auth/sign-in-flow";
+import { FormMessage } from "@/components/auth/ui";
 import { authConfig } from "@/lib/auth-config";
-import { enabledSocialProviders } from "@/lib/social";
+import { enabledSocialProviders, socialNeedsKeys } from "@/lib/social";
 import { getSession, safeRedirectPath } from "@/lib/session";
 import { site } from "@/lib/site";
 import { theme } from "@/lib/theme";
@@ -60,6 +61,15 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
         ) : undefined
       }
     >
+      {(await socialNeedsKeys()) && (
+        // Laravel says so outside production only: the switch is on, and no button can be drawn.
+        <div className="mb-4">
+          <FormMessage tone="info">
+            Google and GitHub sign-in is switched on (SOCIAL_AUTH_ENABLED), but neither has its keys, so there are no buttons. Set GOOGLE_CLIENT_ID and
+            GOOGLE_CLIENT_SECRET, or GitHub&apos;s, in apps/api/.env. Shown in development only.
+          </FormMessage>
+        </div>
+      )}
       <SignInFlow
         providers={await enabledSocialProviders()}
         socialPlacement={theme.social}

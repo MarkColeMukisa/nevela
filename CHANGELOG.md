@@ -8,6 +8,13 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_nevela publish, and a sign-in page that says when Google has no keys_
+
+### Added
+
+- **`nevela publish`** writes `config/nevela.php` for you to change, in place of `php artisan vendor:publish --tag=nevela-config` (which still works, as does `nevela publish --tag=nevela-config`). If the file is already there, it is left alone and the command names the settings it doesn't have; `--force` starts it again from Nevela's. The docs now say which settings need no file because they come from `.env`, such as `SOCIAL_AUTH_ENABLED` and `NEVELA_REGISTRATION`.
+- **The sign-in page says when Google and GitHub sign-in has no keys.** With `SOCIAL_AUTH_ENABLED=true` and no provider's client ID and secret, there are no buttons, and nothing said why. In development the page now says which variables to set in `apps/api/.env`. Laravel's `auth/config` answers `socialNeedsKeys`, which is never true in production. The docs' Google and GitHub section is now steps, in order.
+
 ## [0.12.1] - 2026-10-21
 
 _Sign-ins end in apps whose config/nevela.php is from before 0.12_

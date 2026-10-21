@@ -92,8 +92,17 @@ class SocialLoginTest extends TestCase
 
         // A provider with no keys isn't offered, and can't be started.
         config(['nevela.auth.social.github' => ['client_id' => '', 'client_secret' => '']]);
-        $this->getJson('/api/auth/config')->assertJsonPath('social', ['google']);
+        $this->getJson('/api/auth/config')->assertJsonPath('social', ['google'])->assertJsonPath('socialNeedsKeys', false);
         $this->postJson('/api/auth/oauth/github/start')->assertNotFound()->assertJsonPath('code', 'NOT_ENABLED');
+
+        // Switched on with no keys at all: the sign-in page is told, so it can say so. Not in production.
+        $google = config('nevela.auth.social.google');
+        config(['nevela.auth.social.google' => ['client_id' => '', 'client_secret' => '']]);
+        $this->getJson('/api/auth/config')->assertJsonPath('social', [])->assertJsonPath('socialNeedsKeys', true);
+        $this->app['env'] = 'production';
+        $this->getJson('/api/auth/config')->assertJsonPath('socialNeedsKeys', false);
+        $this->app['env'] = 'testing';
+        config(['nevela.auth.social.google' => $google]);
 
         // Switched off, there is none, whatever keys there are.
         config(['nevela.auth.social.enabled' => false]);
