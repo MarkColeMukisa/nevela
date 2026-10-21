@@ -8,6 +8,20 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_The dashboard says when NEVELA_API_URL or the proxy secret is wrong_
+
+### Added
+
+- **The dashboard checks that it can talk to the Laravel app**, once when it starts, and writes what is wrong to its log with what to change. In development the sign-in page shows it too.
+  - **The address:** a `NEVELA_API_URL` without its `/api`, the usual slip with the bare address a host such as Laravel Cloud gives, is named with the address to use. So is an address where nothing answers as Nevela, or a Laravel app that can't be reached.
+  - **The secret:** a `NEVELA_PROXY_SECRET` that differs between the two apps, or is set in only one. It used to fail quietly: every device was listed with the dashboard server's address.
+  - Laravel's `auth/config` answers `proxySecret`, which says whether the secret the dashboard sent is its own. Closes #61.
+
+### Changed
+
+- **A sign-in that reaches the wrong address says so.** Laravel's "The route auth/token could not be found" becomes "The dashboard can't find the API's sign-in. Check NEVELA_API_URL", with the address it asked at, in development.
+- `.env.example` in the web app says the prefix is part of `NEVELA_API_URL` (`https://api.example.com/api`, not the host alone), and lists `NEVELA_PROXY_SECRET`.
+
 ## [0.14.0] - 2026-10-21
 
 _A quote from Nevela's maker, real customers, and Docs on the home page_
