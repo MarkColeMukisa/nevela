@@ -1,4 +1,3 @@
-import type { SocialNetwork } from "@/components/social-icons";
 import type { ThemeName } from "./theme";
 
 /**
@@ -50,22 +49,11 @@ export const site = {
   /**
    * The quote on the home page, and on the sign-in screen of themes with a quote panel.
    * It starts as Nevela's own, from the person who made it: put one of yours here.
-   * `photo` is a file under public/ (null shows initials), and `follow` the places its
-   * author can be followed, each shown as that network's icon.
    */
   testimonial: {
-    quote: "I built Nevela because, every time I started a new application, I found myself wishing the same things were already there. … So I built the framework I kept wishing I had.",
-    author: "Mark Cole Mukisa",
-    role: "Creator of Nevela",
-    photo: "/nevela/mark-cole-mukisa.jpg" as string | null,
-    follow: [
-      { network: "whatsapp", href: "https://wa.me/256702262806" },
-      { network: "x", href: "https://x.com/MarkColeMUKISA" },
-      { network: "facebook", href: "https://www.facebook.com/profile.php?id=61578393883785" },
-      { network: "instagram", href: "https://www.instagram.com/markcolemukisa/" },
-      { network: "linkedin", href: "https://www.linkedin.com/in/mark-cole-mukisa-3247a7334/" },
-      { network: "tiktok", href: "https://www.tiktok.com/@markcolemukisa" },
-    ] as { network: SocialNetwork; href: string }[],
+    quote: "One place to change it. That was the whole idea.",
+    author: "MarkCole MUKISA",
+    role: "Creator of Nevela Framework",
   },
   links: {
     terms: "/terms",
