@@ -7,8 +7,9 @@ import { enabledSocialProviders } from "@/lib/social";
 import { getSession, safeRedirectPath } from "@/lib/session";
 import { site } from "@/lib/site";
 import { theme } from "@/lib/theme";
+import { noIndex } from "@/lib/seo";
 
-export const metadata = { title: "Create an account" };
+export const metadata = { title: "Create an account", robots: noIndex };
 
 export default async function SignUpPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const params = await searchParams;

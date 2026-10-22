@@ -9,8 +9,9 @@ import { enabledSocialProviders, socialNeedsKeys } from "@/lib/social";
 import { getSession, safeRedirectPath } from "@/lib/session";
 import { site } from "@/lib/site";
 import { theme } from "@/lib/theme";
+import { noIndex } from "@/lib/seo";
 
-export const metadata = { title: "Sign in" };
+export const metadata = { title: "Sign in", robots: noIndex };
 
 const ERRORS: Record<string, string> = {
   oauth: "Sign-in with that provider didn't finish. Try again.",

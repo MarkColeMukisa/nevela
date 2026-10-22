@@ -4,8 +4,9 @@ import { TwoFactorForm } from "@/components/auth/two-factor-form";
 import { redirect } from "next/navigation";
 import { pendingSecondStep } from "@/lib/second-step";
 import { safeRedirectPath } from "@/lib/session";
+import { noIndex } from "@/lib/seo";
 
-export const metadata = { title: "Verify it's you" };
+export const metadata = { title: "Verify it's you", robots: noIndex };
 
 /** Reached after a correct password on an account with two-factor on (lib/auth-client.ts sends people here). */
 export default async function TwoFactorPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {

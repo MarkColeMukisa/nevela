@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { siteUrl } from "@/lib/seo";
 import { site } from "@/lib/site";
 import { activeTheme } from "@/lib/theme";
 import "./globals.css";
@@ -12,9 +13,18 @@ import "@fontsource-variable/noto-sans";
 import "@fontsource-variable/geist";
 import "@fontsource-variable/figtree";
 
+/**
+ * What search engines and shared links are told about every page, unless the page says
+ * otherwise. `metadataBase` makes canonical links and the share image absolute, from
+ * NEXT_PUBLIC_SITE_URL. The image and the icon are drawn by app/opengraph-image.tsx and app/icon.tsx.
+ */
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl()),
   title: { default: site.name, template: `%s · ${site.name}` },
   description: site.description,
+  applicationName: site.name,
+  openGraph: { type: "website", siteName: site.name, title: site.name, description: site.description },
+  twitter: { card: "summary_large_image", title: site.name, description: site.description },
 };
 
 /**

@@ -98,6 +98,22 @@ To change a page's layout, edit the page under `app/dashboard/<slug>/`. For exam
 
 A new app's quote is Nevela's own, from the person who made it, and its logo strip lists apps built with Nevela. Put your own in `testimonial` and `customers`. A customer can have an `href`, and an empty `customers` hides the strip.
 
+## Search engines and shared links
+
+What a search engine and a shared link are told comes from `lib/site.ts`, through `lib/seo.ts`. Set `NEXT_PUBLIC_SITE_URL` to the address people reach the site at (`https://example.com`). Canonical links, the share image and the sitemap are made from it. It is built in, so redeploy after changing it.
+
+| | |
+|---|---|
+| **Every page** | A title (`Sign in · Your app`), the site's description, and an Open Graph and X card. |
+| **The share image** | Drawn by `app/opengraph-image.tsx`: the site's name and tagline on the theme's brand colour. A link pasted into WhatsApp, X or LinkedIn shows it. For a designed one, put your image at `app/opengraph-image.png` and delete that file and `app/twitter-image.tsx`. |
+| **The icon** | `app/icon.tsx` and `app/apple-icon.tsx`: the site's first letter on the brand colour, for the browser tab and a phone's home screen. Replace them with `app/icon.png` the same way. |
+| **robots.txt** | `app/robots.ts`. Search engines may read the site, but not `/dashboard` or `/api`, except stored files, which link previews fetch. It names the sitemap when the app has a blog. |
+| **Kept out of search results** | The dashboard and every page of signing in say `noindex`. They are still readable in robots.txt, because a page closed off there can be listed from links to it, its `noindex` never read. |
+| **Structured data** | The home page says who the site is (schema.org `WebSite` and `Organization`). Each [blog](/guides/blog/) post is a `BlogPosting`, with its date, picture and publisher. |
+| **The sitemap** | The blog's: the home page, `/blog` and every post. A site with no blog is its home page, which needs none. |
+
+In development, a shared link's image points at `localhost`, so it can be looked at. Next.js gives it the site's address in a production build.
+
 ## What was removed from Flare's app
 
 These parts depended on Flare's own database, and Laravel has no endpoints for them yet: saved table views, the change history on a record, the records-per-day chart, product search, and the costs and observability pages. Signing in with Google, GitHub and other providers is not there either.

@@ -3,15 +3,28 @@ import { ArrowRightIcon, CreditCardIcon, LayoutDashboardIcon, PlugIcon, ShieldCh
 import { ProductPreview } from "@/components/marketing/product-preview";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { TestimonialByline } from "@/components/testimonial-byline";
+import { jsonLd, siteUrl } from "@/lib/seo";
 import { site } from "@/lib/site";
 import { customers, docsUrl } from "@/lib/site-content";
 
 const ICONS = { zap: ZapIcon, "shield-check": ShieldCheckIcon, "layout-dashboard": LayoutDashboardIcon, users: UsersIcon, plug: PlugIcon, "credit-card": CreditCardIcon };
 
+export const metadata = { alternates: { canonical: "/" } };
+
+/** Who the site is, for search engines (schema.org): its name, address and icon. */
+const structured = {
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "WebSite", name: site.name, url: siteUrl(), description: site.description },
+    { "@type": "Organization", name: site.name, url: siteUrl(), logo: `${siteUrl()}/apple-icon` },
+  ],
+};
+
 /** The public home page. Every word comes from lib/site.ts; the look from the theme. */
 export default function Home() {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(structured)} />
       <SiteHeader />
       <main>
         {/* Hero */}
