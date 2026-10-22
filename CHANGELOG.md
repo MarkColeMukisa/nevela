@@ -8,6 +8,18 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_A guide to deploying both apps on Laravel Cloud_
+
+### Added
+
+- **[Deploying to Laravel Cloud](https://nevela-docs.vercel.app/guides/laravel-cloud/)**, a guide in the docs to both applications, step by step.
+  - The two root directories, and every variable with which ones must match.
+  - Neon's pooled address for the app, and its direct one for migrations.
+  - The pnpm build command, the scheduler and a queue worker, and making the first administrator.
+  - Checking it all with `nevela deploy:check`, and changing to your domain.
+  - Running one web replica until the web app has a shared cache, and a table of symptoms and their causes.
+  - Closes #63.
+
 ## [0.17.0] - 2026-10-22
 
 _nevela deploy:check: what a server needs, checked after each deploy_
