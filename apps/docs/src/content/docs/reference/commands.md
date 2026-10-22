@@ -135,6 +135,8 @@ It refuses while another resource belongs to this one: take that `belongsTo` fie
 | `--with-yours` | Delete the files you have changed as well. |
 | `--drop-table` | Also write a migration that drops the table. |
 
+To make a resource of the same name again after its table was dropped, delete its old `create_…_table` migration first. While it is there, `nevela resource` takes the table as made, and writes no migration for it.
+
 ## nevela adopt
 
 Make a resource of a table that is already in the database. The descriptor is read from the table, which is left as it is.
