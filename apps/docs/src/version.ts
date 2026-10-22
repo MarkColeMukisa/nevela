@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "The dashboard says when NEVELA_API_URL or the proxy secret is wrong";
+export const RELEASE_HEADLINE = "Reset a password, verify or promote an account from the command line";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "A NEVELA_API_URL without /api, or a proxy secret that differs, is named on start-up with the value to use.",
-  href: "/guides/deploying/#the-web-app",
-  label: "Deploying",
+  text: "nevela user owner@example.com --reset: a new password without it ever being in a command, and a one-time sign-in link.",
+  href: "/reference/commands/#an-account-that-exists",
+  label: "nevela user",
 };
