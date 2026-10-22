@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { VerifyEmailForm } from "@/components/auth/verify-email-form";
 import { getSession, safeRedirectPath } from "@/lib/session";
+import { noIndex } from "@/lib/seo";
 
-export const metadata = { title: "Verify your email" };
+export const metadata = { title: "Verify your email", robots: noIndex };
 
 /**
  * Confirm an email address: by the code in the message, or by asking for a fresh link

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
@@ -7,9 +8,13 @@ import { SessionWatchdog } from "@/components/dashboard/session-watchdog";
 import { dashboardLinks } from "@/lib/dashboard-nav";
 import { allResources, dashboardSession, mayDo, visibleResources } from "@/lib/dashboard";
 import { fileUrl } from "@/lib/files";
+import { noIndex } from "@/lib/seo";
 import { requireSession } from "@/lib/session";
 import { site } from "@/lib/site";
 import { listViews } from "@/lib/views";
+
+/** Behind a sign-in, so nothing here belongs in search results. */
+export const metadata: Metadata = { robots: noIndex };
 
 /**
  * The frame around every signed-in page: the app's resources in the sidebar, the

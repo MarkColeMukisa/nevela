@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { ForgotPasswordForm } from "@/components/auth/password-forms";
+import { noIndex } from "@/lib/seo";
 
-export const metadata = { title: "Reset your password" };
+export const metadata = { title: "Reset your password", robots: noIndex };
 
 export default async function ForgotPasswordPage({ searchParams }: { searchParams: Promise<{ email?: string }> }) {
   const { email } = await searchParams;

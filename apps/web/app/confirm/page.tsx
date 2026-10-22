@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { laravel } from "@/lib/laravel";
+import { noIndex } from "@/lib/seo";
 
-export const metadata = { title: "Confirm your address", robots: { index: false } };
+export const metadata = { title: "Confirm your address", robots: noIndex };
 
 /**
  * Where the link in a confirmation email leads: a list someone joined through a public

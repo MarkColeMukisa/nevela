@@ -2,8 +2,9 @@ import Link from "next/link";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { ResetPasswordForm } from "@/components/auth/password-forms";
 import { FormMessage } from "@/components/auth/ui";
+import { noIndex } from "@/lib/seo";
 
-export const metadata = { title: "Choose a new password" };
+export const metadata = { title: "Choose a new password", robots: noIndex };
 
 export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<{ token?: string; error?: string }> }) {
   const { token, error } = await searchParams;

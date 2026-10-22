@@ -8,6 +8,19 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_SEO for every app: robots.txt, share images, icons and noindex_
+
+### Added
+
+- **What search engines and shared links are told, in every new app.** It all comes from `lib/site.ts` through `lib/seo.ts`, with `NEXT_PUBLIC_SITE_URL` as the site's address.
+  - **A share image** (`app/opengraph-image.tsx`, also used for X): the site's name and tagline on the theme's brand colour. A link pasted into WhatsApp, X or LinkedIn shows a card, not a bare address.
+  - **An icon** for the browser tab and a phone's home screen (`app/icon.tsx`, `app/apple-icon.tsx`): the site's first letter on its brand colour. Browsers used to get a 404 for `/favicon.ico`.
+  - **`robots.txt`:** the site readable, `/dashboard` and `/api` not (stored files, which previews fetch, excepted), and the sitemap named when there is a blog.
+  - **`noindex`** on the dashboard and every page of signing in, so a sign-in screen isn't listed in search results.
+  - **`metadataBase`**, so canonical links and the share image are absolute, and Open Graph and X cards on every page.
+  - **Structured data** (schema.org): `WebSite` and `Organization` on the home page, and `BlogPosting` for each post of a blog made with `nevela blog` from now on.
+- The [web app guide](https://nevela-docs.vercel.app/guides/web-app/#search-engines-and-shared-links) says what each file does, and how to swap in a designed image or icon.
+
 ## [0.18.0] - 2026-10-22
 
 _nevela resource:remove, and a guide to deploying on Laravel Cloud_
