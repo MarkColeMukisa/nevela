@@ -8,6 +8,18 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_Reset a password, verify or promote an account from the command line_
+
+### Added
+
+- **`nevela user <email>` changes an account that exists.** `nevela user` used to refuse an email in use ("Someone already has this email"), and "Forgot password" needs mail and a queue worker a new server may not have yet. What was left was tinker, with the new password in the shell's history. Closes #62.
+  - **`--reset`** gives it a new password, asked for twice and not shown, and checked as the dashboard checks one. It is never taken from the command line. Where nothing can ask, `--password-stdin` reads it from standard input.
+  - **`--sign-out-everywhere`** ends every sign-in and token the account has.
+  - **`--verify`** marks the address verified, and **`--role=ADMIN`** gives it a role as well as the ones it has.
+  - **`--link`** prints a sign-in link that works once, within 15 minutes. It still asks for a second step, and doesn't mark the address verified, since it wasn't sent there.
+  - Everything is checked before anything is changed, a closed account is refused, and `nevela user <email>` alone describes the account.
+- **`nevela status` names the administrators** who can sign in, and is red when there are none.
+
 ## [0.15.0] - 2026-10-21
 
 _The dashboard says when NEVELA_API_URL or the proxy secret is wrong_
