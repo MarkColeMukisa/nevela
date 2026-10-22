@@ -50,6 +50,8 @@ If the app has [public pages](/guides/public-site/), two more things:
 
 ## Checklist
 
+Run `php artisan nevela:deploy:check` on the server after each deploy. It checks most of this list for you, and the dashboard as well. See [nevela deploy:check](/reference/commands/#nevela-deploycheck).
+
 - [ ] Roles and policies reviewed, and the sample users deleted, then removed for good under Deleted accounts
 - [ ] `NEVELA_API_URL` points at the production API, with its prefix
 - [ ] Both apps served over HTTPS

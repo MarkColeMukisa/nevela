@@ -78,6 +78,7 @@ const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
     nevela adopt <table>       Make a resource of a table you already have
     nevela blog                Give the site a blog, if it was created without one
     nevela publish             Write config/nevela.php, to change settings that have no .env variable
+    nevela deploy:check        On the server: the scheduler, a queue worker, mail and the dashboard
     nevela seed | user | generate | migrate | trash | disposable | artisan <command>
 
   ${bold('Options')}
