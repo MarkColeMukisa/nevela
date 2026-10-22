@@ -57,6 +57,30 @@ class BulkCreateTest extends TestCase
         $this->assertSame(0, Category::query()->count());
     }
 
+    public function test_a_row_that_clashes_as_it_is_written_takes_the_earlier_rows_with_it(): void
+    {
+        // Every row passes the checks. Then, as row 2 is about to be written, another request
+        // saves a category with its slug first: the database's own unique index refuses row 2.
+        Category::creating(function (Category $category) {
+            if ($category->slug === 'garden' && ! Category::query()->where('slug', 'garden')->exists()) {
+                Category::query()->insert(['id' => (string) \Illuminate\Support\Str::uuid(), 'name' => 'Garden, by someone else', 'slug' => 'garden', 'created_at' => now(), 'updated_at' => now()]);
+            }
+        });
+
+        $this->postJson('/api/categories/_bulk', ['items' => [
+            ['name' => 'Kitchen', 'slug' => 'kitchen'],
+            ['name' => 'Garden', 'slug' => 'garden'],
+            ['name' => 'Office', 'slug' => 'office'],
+        ]])
+            ->assertStatus(422)
+            ->assertJsonPath('rows.0.row', 2)
+            ->assertJsonPath('rows.0.issues.0.message', 'A record with one of these values was created a moment ago.');
+
+        // Row 1 was written before the clash, and went with it: all of them, or none.
+        $this->assertFalse(Category::query()->where('slug', 'kitchen')->exists());
+        $this->assertFalse(Category::query()->where('slug', 'office')->exists());
+    }
+
     public function test_rows_obey_the_same_rules_as_the_form(): void
     {
         $category = Category::create(['name' => 'Kitchen', 'slug' => 'kitchen']);
