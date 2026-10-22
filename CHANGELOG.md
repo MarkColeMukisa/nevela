@@ -21,7 +21,7 @@ _nevela resource:remove takes a resource out of both apps_
 
 ### Fixed
 
-- **`nevela resource:remove` points out what reads the resource's public section.** For the blog's Post, that is the `/blog` pages through `lib/blog.ts`; a site's form posts to `/api/public/<slug>`. They used to go unnoticed: they still build, and only fail when someone opens the page. Code in comments, such as the example in `lib/laravel.ts`, no longer counts as a use.
+- **`nevela resource:remove` points out what reads the resource's public section.** For the blog's Post, that is the `/blog` pages through `lib/blog.ts`; a site's form posts to `/api/public/<slug>`. They used to go unnoticed: they still build, and fail only in use, a page when it loads and a form when it is sent. Code in comments, such as the example in `lib/laravel.ts`, no longer counts as a use.
 
 _A guide to deploying both apps on Laravel Cloud_
 
