@@ -8,6 +8,17 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_nevela resource:remove takes a resource out of both apps_
+
+### Added
+
+- **`nevela resource:remove Product`** takes a resource out of the Laravel app and the dashboard. Kian Rover removed four by hand, each about twenty files across both apps. Closes #59.
+  - **It shows first.** Without `--force` it lists what it would do, and nothing changes.
+  - **What is still as Nevela wrote it is deleted:** the descriptor, model, request, API resource, controller, policy, `.resource.ts`, pages and actions. Then the routes, the dashboard's menu and the related resources are regenerated, and its permissions come out of every role.
+  - **What you have changed is listed and kept,** unless `--with-yours`. An adopted model loses only Nevela's block.
+  - **The table and its rows stay.** `--drop-table` writes a migration that drops it, for you to run.
+  - **It refuses while another resource belongs to it,** and lists your own code that still names it.
+
 _A guide to deploying both apps on Laravel Cloud_
 
 ### Added

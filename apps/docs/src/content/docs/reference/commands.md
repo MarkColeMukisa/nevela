@@ -1,6 +1,6 @@
 ---
 title: "Commands"
-description: "Every nevela command and option: new, update, resource, adopt, blog, generate, seed, user, upgrade, trash, disposable, publish, deploy:check, dev, status and --version."
+description: "Every nevela command and option: new, update, resource, resource:remove, adopt, blog, generate, seed, user, upgrade, trash, disposable, publish, deploy:check, dev, status and --version."
 ---
 
 Install the `nevela` command once, and everything is this short, in every shell:
@@ -25,6 +25,7 @@ nevela dev                 # run the API and the dashboard
 nevela status              # check the app
 nevela resource Product --fields="name:string, price:money" --seed
 nevela adopt posts         # make a resource of a table you already have
+nevela resource:remove Product   # take a resource out again
 nevela blog                # give the site a blog, if it has none
 nevela generate
 nevela seed Product
@@ -108,6 +109,31 @@ nevela resource Product --fields="name:string, price:money, kind:enum(stock|digi
 It writes the descriptor to `nevela/resources/<name>.json`, generates the files listed in [What gets generated](/concepts/resources/#what-gets-generated), and creates the table, because a new resource is no use without it.
 
 If the resource already exists, the command stops and points you at `nevela generate`, so a typo cannot wipe out an existing descriptor.
+
+## nevela resource:remove
+
+Take a resource out of both apps: the opposite of `nevela resource`.
+
+```sh
+nevela resource:remove Product            # what it would do; nothing changes
+nevela resource:remove Product --force    # do it
+```
+
+Without `--force` it lists every file it would delete or change, and stops. With it:
+
+- **What is still as Nevela wrote it is deleted:** the descriptor, the model, request, API resource, controller and policy, the dashboard's `.resource.ts`, its pages and its actions. A file is Nevela's if nobody has changed it, including inside its generated block. A comment worded differently by an older Nevela, or a loading skeleton made before the resource had all its fields, doesn't count as a change.
+- **What you have changed is kept, and listed** for you to remove yourself. `--with-yours` deletes it too.
+- **An adopted model loses only Nevela's block.** The model the app had before `nevela adopt` stays.
+- **The table and its rows stay, and so do its migrations,** which are the database's history. `--drop-table` writes a migration that drops the table, named so it reads plainly, for you to read and then run with `nevela migrate`. The preview says how many rows there are.
+- **Then it regenerates the rest:** the routes, the dashboard's menu, and the relations of the resources it pointed at. Its permissions come out of every role.
+
+It refuses while another resource belongs to this one: take that `belongsTo` field out of the other's descriptor first, or remove that resource. It also lists your own code that still names the resource, such as a controller that uses its model or a page that imports its `.resource.ts`. That code would no longer build, so change it.
+
+| Option | Meaning |
+|---|---|
+| `--force` | Do it. Without it, nothing changes. |
+| `--with-yours` | Delete the files you have changed as well. |
+| `--drop-table` | Also write a migration that drops the table. |
 
 ## nevela adopt
 
@@ -437,6 +463,7 @@ With npm the first is `npm create nevela@latest my-app`, and the second is `npm 
 | `php nevela --version` | `php artisan nevela:version`: the version of Nevela the app is on |
 | `php nevela resource …` | `php artisan nevela:resource … --migrate` |
 | `php nevela adopt …` | `php artisan nevela:adopt …` |
+| `php nevela resource:remove …` | `php artisan nevela:resource:remove …` |
 | `php nevela blog` | `php artisan nevela:blog` |
 | `php nevela generate` | `php artisan nevela:generate` |
 | `php nevela seed …` | `php artisan nevela:seed …` |
