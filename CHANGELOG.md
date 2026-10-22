@@ -8,7 +8,9 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_nevela resource:remove takes a resource out of both apps_
+## [0.18.0] - 2026-10-22
+
+_nevela resource:remove, and a guide to deploying on Laravel Cloud_
 
 ### Added
 
@@ -17,16 +19,8 @@ _nevela resource:remove takes a resource out of both apps_
   - **What is still as Nevela wrote it is deleted:** the descriptor, model, request, API resource, controller, policy, `.resource.ts`, pages and actions. Then the routes, the dashboard's menu and the related resources are regenerated, and its permissions come out of every role.
   - **What you have changed is listed and kept,** unless `--with-yours`. An adopted model loses only Nevela's block.
   - **The table and its rows stay.** `--drop-table` writes a migration that drops it, for you to run.
-  - **It refuses while another resource belongs to it,** and lists your own code that still names it.
-
-### Fixed
-
-- **`nevela resource:remove` points out what reads the resource's public section.** For the blog's Post, that is the `/blog` pages through `lib/blog.ts`; a site's form posts to `/api/public/<slug>`. They used to go unnoticed: they still build, and fail only in use, a page when it loads and a form when it is sent. Code in comments, such as the example in `lib/laravel.ts`, no longer counts as a use.
-
-_A guide to deploying both apps on Laravel Cloud_
-
-### Added
-
+  - **It refuses while another resource belongs to it.**
+  - **It lists your own code that still uses the resource:** code that would no longer build, and what reads or posts to its public section, which builds and then fails in use, a page when it loads and a form when it is sent. For the blog's Post, that is the `/blog` pages, through `lib/blog.ts`. Code in comments doesn't count.
 - **[Deploying to Laravel Cloud](https://nevela-docs.vercel.app/guides/laravel-cloud/)**, a guide in the docs to both applications, step by step.
   - The two root directories, and every variable with which ones must match.
   - Neon's pooled address for the app, and its direct one for migrations.
@@ -560,7 +554,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.14.0...v0.15.0
