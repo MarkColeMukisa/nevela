@@ -71,6 +71,7 @@ export default defineConfig({
             { label: "Updating and upgrading", slug: "guides/updating" },
             { label: "Configuration", slug: "guides/configuration" },
             { label: "Deploying", slug: "guides/deploying" },
+            { label: "Deploying to Laravel Cloud", slug: "guides/laravel-cloud" },
           ],
         },
         {

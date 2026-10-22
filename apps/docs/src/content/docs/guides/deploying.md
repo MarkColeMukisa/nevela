@@ -3,7 +3,7 @@ title: "Deploying"
 description: "What each of the two apps needs in production."
 ---
 
-Nevela is two apps. Deploy each the way you would deploy any Laravel or Next.js app.
+Nevela is two apps. Deploy each the way you would deploy any Laravel or Next.js app. On Laravel Cloud, follow [Deploying to Laravel Cloud](/guides/laravel-cloud/), which goes through both step by step.
 
 ## The Laravel app
 
