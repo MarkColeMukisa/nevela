@@ -19,6 +19,10 @@ _nevela resource:remove takes a resource out of both apps_
   - **The table and its rows stay.** `--drop-table` writes a migration that drops it, for you to run.
   - **It refuses while another resource belongs to it,** and lists your own code that still names it.
 
+### Fixed
+
+- **`nevela resource:remove` points out what reads the resource's public section.** For the blog's Post, that is the `/blog` pages through `lib/blog.ts`; a site's form posts to `/api/public/<slug>`. They used to go unnoticed: they still build, and only fail when someone opens the page. Code in comments, such as the example in `lib/laravel.ts`, no longer counts as a use.
+
 _A guide to deploying both apps on Laravel Cloud_
 
 ### Added

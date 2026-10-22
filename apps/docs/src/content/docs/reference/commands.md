@@ -127,7 +127,10 @@ Without `--force` it lists every file it would delete or change, and stops. With
 - **The table and its rows stay, and so do its migrations,** which are the database's history. `--drop-table` writes a migration that drops the table, named so it reads plainly, for you to read and then run with `nevela migrate`. The preview says how many rows there are.
 - **Then it regenerates the rest:** the routes, the dashboard's menu, and the relations of the resources it pointed at. Its permissions come out of every role.
 
-It refuses while another resource belongs to this one: take that `belongsTo` field out of the other's descriptor first, or remove that resource. It also lists your own code that still names the resource, such as a controller that uses its model or a page that imports its `.resource.ts`. That code would no longer build, so change it.
+It refuses while another resource belongs to this one: take that `belongsTo` field out of the other's descriptor first, or remove that resource. It also lists your own code that still uses the resource, so you can change it:
+
+- a controller that uses its model, or a page that imports its `.resource.ts`, which would no longer build;
+- what reads or posts to its public section, such as the blog's `lib/blog.ts` or a site's form, which would build and then fail on the page.
 
 | Option | Meaning |
 |---|---|
