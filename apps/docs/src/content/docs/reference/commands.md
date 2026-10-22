@@ -233,6 +233,34 @@ Pass the options to create a user without being asked anything. On a server, whe
 php artisan nevela:user --name="Ada Okafor" --email=ada@example.com --password="$ADMIN_PASSWORD" --role=ADMIN
 ```
 
+### An account that exists
+
+Name the account, and say what to change:
+
+```sh
+nevela user --reset owner@example.com                       # a new password, asked for twice, not shown
+nevela user --reset owner@example.com --sign-out-everywhere
+nevela user --verify owner@example.com                      # mark the address verified
+nevela user --role=ADMIN owner@example.com                  # one more role
+nevela user --link owner@example.com                        # a sign-in link that works once
+nevela user owner@example.com                               # what the account is: roles, address, devices
+```
+
+Everything is checked before anything is changed: an unknown role, or a password that is too short or [breached](/guides/authentication/#passwords), changes nothing. Options can be combined.
+
+| Option | Meaning |
+|---|---|
+| `--reset` | A new password. It is asked for twice, without showing, and never taken from the command line, where your shell's history would keep it. The account's other sign-ins carry on, unless you add `--sign-out-everywhere`. |
+| `--password-stdin` | With `--reset`, read the password from standard input, for a server's one-off command with nobody to ask: `printf '%s' "$NEW_PASSWORD" \| php artisan nevela:user owner@example.com --password-stdin` |
+| `--sign-out-everywhere` | End every sign-in the account has, on every device, and any token of its own. |
+| `--verify` | Mark the address verified. Only for an address you know is theirs. |
+| `--role=` | Give the account this role as well as the ones it has. |
+| `--link` | Print a sign-in link. It works once, within 15 minutes, and asks for a second step if the account has one. It doesn't mark the address verified, because it wasn't sent there. Whoever opens it is signed in as the account, so send it only to them. Needs sign-in links switched on (`auth.magic_link`). |
+
+A closed account is refused: restore it first, under Deleted accounts. A switched-off one can be changed, and is told it can't sign in until it is switched on.
+
+`nevela status` lists the administrators who can sign in, and is red when there are none.
+
 ## nevela upgrade
 
 Bring the app up to the latest Nevela: the package, the generated code and the dashboard.

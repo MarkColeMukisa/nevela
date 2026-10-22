@@ -6,7 +6,9 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
+use Nevela\Laravel\Access\Access;
 use Nevela\Laravel\Access\ClosedAccounts;
+use Nevela\Laravel\Auth\Account;
 use Nevela\Laravel\Auth\Sessions;
 use Nevela\Laravel\Auth\Social;
 use Nevela\Laravel\Forms\FormGuard;
@@ -70,6 +72,20 @@ final class StatusCommand extends Command
                     $users = ClosedAccounts::open()->count();
                     $closed = ClosedAccounts::closed()->count();
                     $row('Users who can sign in', ($users > 0 ? (string) $users : $bad('none: php nevela user')).($closed > 0 ? " <fg=gray>and {$closed} deleted, kept to restore</>" : ''));
+                    // Someone has to be able to manage the rest. "Is there an admin at all?" in one look.
+                    if ($users > 0 && Access::ready()) {
+                        $admins = Access::administrators()->orderBy('email')->pluck('email')->all();
+                        if ($admins === []) {
+                            // Roles that only together come to everything make an administrator
+                            // too. They aren't counted as the last way in, but they are one.
+                            $several = DB::table('nevela_role_user')->select('user_id')->groupBy('user_id')->havingRaw('count(*) > 1')->limit(500)->pluck('user_id')->all();
+                            $key = (new (Account::model()))->getKeyName();
+                            $admins = ClosedAccounts::open()->whereIn($key, $several)->get()->filter(fn ($user) => Access::isAdmin($user))->pluck('email')->sort()->values()->all();
+                        }
+                        $row('Administrators', $admins === []
+                            ? $bad('none can sign in: php nevela user --role=ADMIN owner@example.com')
+                            : implode(', ', array_slice($admins, 0, 3)).(count($admins) > 3 ? ' <fg=gray>and '.(count($admins) - 3).' more</>' : ''));
+                    }
                 } catch (Throwable) {
                     $row('Users who can sign in', $bad('the users table is missing: php nevela migrate'));
                 }
