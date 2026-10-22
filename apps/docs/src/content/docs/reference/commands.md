@@ -1,6 +1,6 @@
 ---
 title: "Commands"
-description: "Every nevela command and option: new, update, resource, adopt, blog, generate, seed, user, upgrade, trash, disposable, publish, dev, status and --version."
+description: "Every nevela command and option: new, update, resource, adopt, blog, generate, seed, user, upgrade, trash, disposable, publish, deploy:check, dev, status and --version."
 ---
 
 Install the `nevela` command once, and everything is this short, in every shell:
@@ -34,6 +34,7 @@ nevela migrate
 nevela trash               # remove deleted records whose 30 days are up
 nevela disposable          # fetch the current list of throwaway email domains
 nevela publish             # write config/nevela.php, to change a setting
+nevela deploy:check        # on the server: scheduler, queue worker, mail, the dashboard
 ```
 
 You don't have to install it. [Without the nevela command](#without-the-nevela-command), at the end of this page, has the longer forms that do the same.
@@ -372,6 +373,29 @@ If the file is already there, it is left as it is, and the command names the set
 |---|---|
 | `--force` | Replace the file with Nevela's. What you changed in it is lost. |
 
+## nevela deploy:check
+
+```sh
+php artisan nevela:deploy:check
+```
+
+Run it on the server, in the Laravel app, after a deploy. On Laravel Cloud that is a command on the API app. It checks what a deployed app needs and a local one doesn't, and says what to change for each thing that is wrong:
+
+| | Checked |
+|---|---|
+| **This app** | `APP_KEY` set and `APP_DEBUG` off; migrations run (with a hint when a pooled database address is the reason they fail); a cache that keeps things between requests, which sign-in codes and links need; the scheduler, which leaves a sign every 5 minutes; a queue worker, by sending it a job and waiting for it; mail that is sent, not logged. |
+| **Signing in** | `NEVELA_WEB_URL` set to the dashboard's https address; `NEVELA_PROXY_SECRET` set; an administrator who can sign in. |
+| **The dashboard** | Asked over `/api/nevela/health`, with the shared secret: whether it answers, whether its secret is this app's, whether it reaches this API (a `NEVELA_API_URL` without `/api` is named with the address to use), and whether `NEXT_PUBLIC_SITE_URL` matches `NEVELA_WEB_URL`. |
+
+It exits with an error when something is wrong, so a deploy script can stop on it.
+
+| Option | Meaning |
+|---|---|
+| `--wait=` | Seconds to give a queue worker to take the test job. Default 15. |
+| `--no-dashboard` | Leave out the questions to the dashboard. |
+
+The test job it sends to the queue does nothing but note that it ran, so one left waiting for a worker does no harm.
+
 ## nevela digest
 
 ```sh
@@ -419,6 +443,7 @@ With npm the first is `npm create nevela@latest my-app`, and the second is `npm 
 | `php nevela user` | `php artisan nevela:user` |
 | `php nevela trash` | `php artisan nevela:trash` |
 | `php nevela publish` | `php artisan nevela:publish` |
+| `php nevela deploy:check` | `php artisan nevela:deploy:check` |
 | `php nevela upgrade` | `php artisan nevela:upgrade` |
 | `php nevela update` | the same: the name it had before 0.3.0 |
 | `php nevela migrate` | `php artisan migrate` |

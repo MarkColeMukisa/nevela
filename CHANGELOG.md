@@ -8,6 +8,19 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_nevela deploy:check: what a server needs, checked after each deploy_
+
+### Added
+
+- **`nevela deploy:check`** (`php artisan nevela:deploy:check` on the server) checks what a deployed app needs and a local one doesn't, and names what to change for each problem. Part of #63.
+  - **This app:** `APP_KEY`, `APP_DEBUG` off, migrations (with a hint about pooled database addresses), a cache that keeps things between requests, the scheduler, a queue worker and mail.
+  - **Signing in:** `NEVELA_WEB_URL`, `NEVELA_PROXY_SECRET` and an administrator who can sign in.
+  - **The dashboard,** asked with the shared secret: whether it reaches the API, whether the two secrets are the same, and whether `NEXT_PUBLIC_SITE_URL` matches.
+  - It exits with an error when something is wrong, so a deploy script can stop on it.
+- **The scheduler leaves a sign every 5 minutes**, which is how `deploy:check` knows it is running, and the queue check sends a job that does nothing but say it ran.
+- **The dashboard answers `GET /api/nevela/health`** with what it sees, only to a caller with the shared secret.
+- `nevela status` points to `deploy:check` in production.
+
 ## [0.16.0] - 2026-10-22
 
 _Reset a password, verify or promote an account from the command line_
