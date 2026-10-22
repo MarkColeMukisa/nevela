@@ -117,6 +117,19 @@ class DeployCheckTest extends TestCase
         $this->assertTrue(Cache::get(QueueProbe::key('seen')));
     }
 
+    public function test_a_queue_that_needs_no_worker_is_not_waited_for(): void
+    {
+        $this->wellSetUp();
+
+        // Laravel's deferred driver runs a job after the command has finished: waiting would see nothing.
+        foreach (['deferred' => 'needs no worker', 'sync' => 'while the visitor waits'] as $driver => $said) {
+            config(['queue.connections.later' => ['driver' => $driver], 'queue.default' => 'later']);
+            $this->artisan('nevela:deploy:check', ['--no-dashboard' => true])->expectsOutputToContain($said)->assertSuccessful();
+        }
+        config(['queue.connections.later' => ['driver' => 'null']]);
+        $this->artisan('nevela:deploy:check', ['--no-dashboard' => true])->expectsOutputToContain('throws every job away')->assertFailed();
+    }
+
     public function test_the_dashboard_says_what_it_sees(): void
     {
         $this->wellSetUp();
