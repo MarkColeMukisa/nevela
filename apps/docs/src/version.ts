@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "Reset a password, verify or promote an account from the command line";
+export const RELEASE_HEADLINE = "nevela deploy:check: what a server needs, checked after each deploy";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "nevela user owner@example.com --reset: a new password without it ever being in a command, and a one-time sign-in link.",
-  href: "/reference/commands/#an-account-that-exists",
-  label: "nevela user",
+  text: "One command on the server checks the scheduler, a queue worker, mail, the secret both apps share, and the dashboard itself.",
+  href: "/reference/commands/#nevela-deploycheck",
+  label: "deploy:check",
 };
