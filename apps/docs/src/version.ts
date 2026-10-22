@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "nevela resource:remove, and a guide to deploying on Laravel Cloud";
+export const RELEASE_HEADLINE = "SEO for every app: robots.txt, share images, icons and noindex";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "nevela resource:remove Product shows what it would take out, then --force removes it. What you changed stays, and so does the data.",
-  href: "/reference/commands/#nevela-resourceremove",
-  label: "resource:remove",
+  text: "A shared link now shows a card with your site's name, browsers get an icon, and sign-in pages stay out of search results.",
+  href: "/guides/web-app/#search-engines-and-shared-links",
+  label: "SEO",
 };
