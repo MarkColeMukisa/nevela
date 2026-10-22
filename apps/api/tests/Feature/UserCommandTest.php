@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Nevela\Laravel\Access\Access;
 use Nevela\Laravel\Access\ClosedAccounts;
+use Nevela\Laravel\Access\Permissions;
+use Nevela\Laravel\Models\Role;
 use Tests\TestCase;
 
 /**
@@ -110,9 +112,29 @@ class UserCommandTest extends TestCase
         $this->artisan('nevela:user', ['account' => 'owner@example.com', '--role' => 'ADMIN'])->expectsOutputToContain('was already ADMIN')->assertSuccessful();
     }
 
+    public function test_status_names_an_administrator_whose_roles_only_together_come_to_everything(): void
+    {
+        $user = $this->owner();
+        $grants = Permissions::keys();
+        // Everything, split across two roles: neither alone is an administrator.
+        [$first, $second] = array_chunk($grants, (int) ceil(count($grants) / 2));
+        Role::query()->create(['name' => 'HALF_ONE', 'grants' => $first]);
+        Role::query()->create(['name' => 'HALF_TWO', 'grants' => $second]);
+        Access::grant($user, 'HALF_ONE');
+        Access::grant($user, 'HALF_TWO');
+        $this->assertTrue(Access::isAdmin($user->fresh()));
+        $this->assertSame(0, Access::otherAdmins());
+
+        $this->artisan('nevela:status')->expectsOutputToContain('owner@example.com');
+    }
+
     public function test_a_printed_link_signs_in_once_without_proving_the_address(): void
     {
         $user = $this->owner();
+
+        // The tests' cache is kept in one process, where a real web server would never find the link.
+        $this->artisan('nevela:user', ['account' => 'owner@example.com', '--link' => true])->expectsOutputToContain('shared cache store')->assertFailed();
+        config(['cache.default' => 'file']);
 
         Artisan::call('nevela:user', ['account' => 'owner@example.com', '--link' => true]);
         $this->assertTrue(preg_match('#https?://\S+/api/auth/magic-link\?\S+#', Artisan::output(), $match) === 1, Artisan::output());
@@ -133,6 +155,7 @@ class UserCommandTest extends TestCase
         $this->postJson('/api/auth/two-factor/enable', ['password' => self::PASSWORD, 'method' => 'email'], ['Authorization' => "Bearer {$token}"])->assertOk();
         $this->app['auth']->forgetGuards();
 
+        config(['cache.default' => 'file']);
         Artisan::call('nevela:user', ['account' => 'owner@example.com', '--link' => true]);
         preg_match('#https?://\S+/api/auth/magic-link\?\S+#', Artisan::output(), $match);
         parse_str((string) parse_url($match[0], PHP_URL_QUERY), $query);
@@ -141,7 +164,7 @@ class UserCommandTest extends TestCase
         $this->postJson('/api/auth/magic-link/verify', ['token' => $query['token']])->assertOk()->assertJsonPath('twoFactor', true)->assertJsonMissingPath('token');
     }
 
-    public function test_an_account_is_described_and_one_that_is_missing_or_closed_is_refused(): void
+    public function test_an_account_is_described_and_one_that_is_missing_closed_or_blocked_is_refused(): void
     {
         $user = $this->owner();
 
@@ -154,9 +177,19 @@ class UserCommandTest extends TestCase
             ->expectsOutputToContain('nevela user --email=nobody@example.com')
             ->assertFailed();
 
+        // A rename here would be taken quietly and look as if it had worked.
+        $this->artisan('nevela:user', ['account' => 'owner@example.com', '--name' => 'New Name'])->expectsOutputToContain('Users screen')->assertFailed();
+        $this->assertSame('Ada', $user->fresh()->name);
+
         ClosedAccounts::close($user);
         $this->artisan('nevela:user', ['account' => 'owner@example.com', '--reset' => true])
             ->expectsOutputToContain('is closed')
+            ->assertFailed();
+
+        // Removed for good, its address is blocked.
+        ClosedAccounts::purge($user);
+        $this->artisan('nevela:user', ['account' => 'owner@example.com', '--verify' => true])
+            ->expectsOutputToContain('is blocked')
             ->assertFailed();
 
         // These are for an account that exists, so one has to be named.
