@@ -11,6 +11,7 @@
     "index.mjs",
     "nevela.mjs",
     "banner.mjs",
+    "composer.mjs",
     "net.mjs",
     "template.mjs",
     "packagist.mjs",

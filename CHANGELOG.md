@@ -8,6 +8,12 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_A new app's install gets past a download Windows refuses_
+
+### Fixed
+
+- **`nevela new` tries Composer again when a download doesn't go through.** On Windows the first files Composer writes into a new app's `vendor` folder can be refused ("could not be written … Permission denied"), most likely while antivirus looks at them, and the install stopped there. It failed three new apps in four on one machine, always on the first download. A second run goes through, so the installer now runs `composer install` up to three times when a download couldn't be written or fetched. What already arrived is in Composer's cache. A problem that lasts, such as a version that can't be had or a missing PHP extension, still stops it at once. If downloads keep failing, it says to run it again and how to keep antivirus out of the folder.
+
 ## [0.19.0] - 2026-10-22
 
 _SEO for every app: robots.txt, share images, icons and noindex_
