@@ -18,13 +18,16 @@ const PASSING = [
   /curl error \d+/i,
   /Connection (timed out|reset|refused)/i,
   /Could not resolve host/i,
-  /SSL( connection| certificate problem|_ERROR)/i,
+  /SSL connection|SSL_ERROR_SYSCALL/i,
   /is not a valid zip archive|The archive may contain|Failed to extract/i,
   /checksum/i,
   /The process .* exceeded the timeout/i,
 ];
 
+// Checked first: a download that failed for one of these fails the same way again.
 const LASTING = [
+  // A certificate PHP can't check: the CA setup needs fixing, and Composer's own message says how.
+  /curl error 60\b|SSL certificate problem|certificate verify failed|unable to get local issuer certificate/i,
   /Your requirements could not be resolved/i,
   /requires (php|ext-)/i,
   /could not find (a matching version|package)/i,

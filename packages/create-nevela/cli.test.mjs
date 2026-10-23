@@ -284,5 +284,8 @@ test('a composer install that failed on a download is tried again, and a real pr
   assert.equal(worthRetrying('Your requirements could not be resolved to an installable set of packages.\n  Problem 1\n    - laravel/framework requires php ^8.3'), false);
   assert.equal(worthRetrying('laravel/framework v13.0.0 requires ext-mbstring * -> it is missing from your system.'), false);
   assert.equal(worthRetrying(''), false);
+  // A certificate PHP can't check fails every time, though it is a download that failed.
+  assert.equal(worthRetrying('Failed to download laravel/framework from dist: curl error 60 while downloading https://codeload.github.com/laravel/framework/legacy.zip/abc: SSL certificate problem: unable to get local issuer certificate'), false);
+  assert.equal(worthRetrying('The "https://repo.packagist.org/packages.json" file could not be downloaded: SSL operation failed with code 1. OpenSSL Error messages: error:0A000086:SSL routines::certificate verify failed'), false);
   assert.ok(ATTEMPTS >= 2);
 });
