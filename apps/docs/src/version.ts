@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "SEO for every app: robots.txt, share images, icons and noindex";
+export const RELEASE_HEADLINE = "A new app's install gets past a download Windows refuses";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "A shared link now shows a card with your site's name, browsers get an icon, and sign-in pages stay out of search results.",
-  href: "/guides/web-app/#search-engines-and-shared-links",
-  label: "SEO",
+  text: "nevela new tries Composer again when Windows refuses a download, so a first app installs without help.",
+  href: "/start/quickstart/",
+  label: "nevela new",
 };
