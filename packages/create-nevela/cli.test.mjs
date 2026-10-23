@@ -6,6 +6,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
+import { ATTEMPTS, worthRetrying } from './composer.mjs';
 import { banner, ROWS, TAGLINE, WIDTH } from './banner.mjs';
 import { get } from './net.mjs';
 import { artisanArguments, COMMANDS, findProject, repairManifest, repairScripts } from './project.mjs';
@@ -268,4 +269,20 @@ test('an npm tarball unpacks, long paths included, and nothing escapes the folde
   const again = scratch();
   untar(zlib.gunzipSync(zlib.gzipSync(fs.readFileSync(archive))), again);
   assert.ok(fs.existsSync(path.join(again, 'package', 'index.mjs')));
+});
+
+test('a composer install that failed on a download is tried again, and a real problem is not', () => {
+  // As it failed on Windows, three new apps in four: the first file into a new vendor folder refused.
+  const refused = `  - Downloading nette/schema (v1.4.0)
+    Failed to download nette/schema from dist: The "https://codeload.github.com/nette/schema/legacy.zip/af9fa8a86bfca9b02b10346220db26e62ef942ec" file could not be written to D:\\apps\\shop\\apps\\api/vendor/composer/tmp-87be07877ce347185fbebe888c37a81c.zip: Failed to open stream: Permission denied
+    Now trying to download from source`;
+  assert.equal(worthRetrying(refused), true);
+  assert.equal(worthRetrying('curl error 28 while downloading https://repo.packagist.org/p2/laravel/framework.json: Operation timed out'), true);
+  assert.equal(worthRetrying('Could not resolve host: repo.packagist.org'), true);
+
+  // These fail the same way every time: say so at once.
+  assert.equal(worthRetrying('Your requirements could not be resolved to an installable set of packages.\n  Problem 1\n    - laravel/framework requires php ^8.3'), false);
+  assert.equal(worthRetrying('laravel/framework v13.0.0 requires ext-mbstring * -> it is missing from your system.'), false);
+  assert.equal(worthRetrying(''), false);
+  assert.ok(ATTEMPTS >= 2);
 });

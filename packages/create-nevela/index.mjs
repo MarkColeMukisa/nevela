@@ -14,6 +14,7 @@ import path from 'node:path';
 import readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { banner } from './banner.mjs';
+import { ATTEMPTS, worthRetrying } from './composer.mjs';
 import { isNewer, latestRelease, onPackagist } from './packagist.mjs';
 import { COMMANDS, findProject, forward, upgrade } from './project.mjs';
 import { shellLine, spawnCommand, windows } from './shell.mjs';
@@ -151,6 +152,7 @@ function start(command, args, { cwd }) {
  * Run a command without blocking, handing each line of its output to `onLine`. For the one
  * long step, so there is something to show while it works. Fails like run() does.
  */
+/** Run a command, handing each line it prints to `onLine`. Resolves to whether it worked, and all it printed. */
 function runLive(command, args, { cwd, onLine }) {
   return new Promise((resolve) => {
     const child = windows
@@ -167,10 +169,7 @@ function runLive(command, args, { cwd, onLine }) {
     child.stdout.setEncoding('utf8').on('data', read);
     child.stderr.setEncoding('utf8').on('data', read);
     child.on('error', (error) => fail(`\`${command} ${args.join(' ')}\` failed.`, String(error)));
-    child.on('close', (code) => {
-      if (code !== 0) fail(`\`${command} ${args.join(' ')}\` failed.`, output);
-      resolve(output);
-    });
+    child.on('close', (code) => resolve({ ok: code === 0, output }));
   });
 }
 
@@ -722,17 +721,37 @@ async function main() {
     manifest.require = { ...manifest.require, 'laravel/sanctum': '^4.0', 'nevela/laravel': nevela };
     fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 4)}\n`);
 
-    let total = 0;
-    let done = 0;
-    await runLive('composer', ['install', '--no-interaction', '--no-progress', '--no-scripts', ...(options.devTools ? [] : ['--no-dev'])], {
-      cwd: api,
-      onLine: (line) => {
-        const operations = /Package operations: (\d+) installs?/.exec(line);
-        if (operations) total = Number(operations[1]);
-        if (/- Installing .*Extracting archive|- Installing .*Symlinking|- Installing .*Junctioning/.test(line)) done++;
-        if (total) progress(`${Math.min(done, total)}/${total} packages`);
-      },
-    });
+    // A download Composer couldn't write or fetch is tried again: on Windows the first files
+    // into a new vendor folder can be refused while antivirus looks at them. What was already
+    // downloaded is in Composer's cache, so a second run picks up where the first stopped.
+    const install = ['install', '--no-interaction', '--no-progress', '--no-scripts', ...(options.devTools ? [] : ['--no-dev'])];
+    let installed = { ok: false, output: '' };
+    for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
+      let total = 0;
+      let done = 0;
+      installed = await runLive('composer', install, {
+        cwd: api,
+        onLine: (line) => {
+          const operations = /Package operations: (\d+) installs?/.exec(line);
+          if (operations) total = Number(operations[1]);
+          if (/- Installing .*Extracting archive|- Installing .*Symlinking|- Installing .*Junctioning/.test(line)) done++;
+          if (total) progress(`${Math.min(done, total)}/${total} packages`);
+        },
+      });
+      if (installed.ok || attempt === ATTEMPTS || !worthRetrying(installed.output)) break;
+      progress(`a download didn't go through: trying again (${attempt + 1} of ${ATTEMPTS})`);
+      // Where nothing is rewritten in place (a log, CI), it gets a line of its own.
+      if (!process.stdout.isTTY) console.log(`  ${dim(`A download didn't go through. Trying again (${attempt + 1} of ${ATTEMPTS})…`)}`);
+      await new Promise((resolve) => setTimeout(resolve, attempt * 3000));
+    }
+    if (!installed.ok) {
+      fail(
+        worthRetrying(installed.output)
+          ? `Composer couldn't download Laravel's packages, ${ATTEMPTS} times. On Windows that is usually antivirus holding the files as they arrive. Delete the ${name} folder and run this again: what did arrive is in Composer's cache now. If it keeps happening, add the folder to your antivirus's exclusions.`
+          : `\`composer ${install.join(' ')}\` failed.`,
+        installed.output,
+      );
+    }
 
     // What Composer's create-project scripts would have done, without starting Composer
     // again for each: the .env file, the SQLite database and the app key. The first
