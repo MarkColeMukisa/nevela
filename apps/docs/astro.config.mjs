@@ -67,6 +67,7 @@ export default defineConfig({
             { label: "Users, roles and permissions", slug: "guides/policies" },
             { label: "Deleted accounts", slug: "guides/deleted-accounts" },
             { label: "The trash", slug: "guides/trash" },
+            { label: "Notifications", slug: "guides/notifications" },
             { label: "Seeding data", slug: "guides/seeding" },
             { label: "Updating and upgrading", slug: "guides/updating" },
             { label: "Configuration", slug: "guides/configuration" },

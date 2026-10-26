@@ -8,9 +8,11 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_An eye on the sign-in password, to see what you typed_
+_The dashboard's bell works, and the sign-in password has an eye_
 
 ### Added
+
+- **The bell in the dashboard's header tells people what happened behind the scenes.** It was there with nothing behind it. Now a visitor sending a public form tells everyone who may view that resource, and so does someone confirming their address on a form that asks for it. A new account, by sign-up or a social sign-in, tells whoever may view users; a closed one tells whoever may restore it. Changes to how you sign in (password changed or reset, two-step sign-in on or off, a passkey added or removed) and an administrator changing your roles or password are told to you. A queued job that fails for good, and the night's clear-out of the trash, are told to the administrators. Several of a kind that arrive before they are read are one line with a count ("14 new enquiries"); a warning colours the bell; opening one marks it read, and **Mark all read** does the rest. The dashboard asks again every minute while it is in view. Above them, an administrator sees what is wrong with the app right now: migrations not run, a newer Nevela, jobs waiting with no worker, and in production a scheduler that isn't running, mail going to the log or a cache that keeps nothing. Your own code tells people with `Notices::toPermission('orders.view', new Notice(…))`, `Notices::send()` and `Notices::toAdmins()`. Run `php nevela migrate` for its table. See [Notifications](https://nevela-docs.vercel.app/guides/notifications/).
 
 - **The sign-in password has an eye that shows what you've typed.** Sign-up, reset and the change-password page had one; the box people use most didn't. Clicking it again hides the password, and signing in works either way. The "Your password" box that closing an account and turning on two-step sign-in ask for has it too. All of them now share one `PasswordInput` in `components/auth/password-field.tsx`, which takes a ref, so the sign-in step still puts the cursor in it.
 
