@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "nevela upgrade no longer stops at the old range's newest patch";
+export const RELEASE_HEADLINE = "The dashboard's bell works, and the sign-in password has an eye";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "nevela upgrade now widens an old range like ^0.5 even when it still had a newer patch, so it reaches the newest release.",
-  href: "/reference/commands/#nevela-upgrade",
-  label: "nevela upgrade",
+  text: "The bell tells people what happened behind the scenes: forms sent, new accounts, failed jobs, and what's wrong with the app.",
+  href: "/guides/notifications/",
+  label: "Notifications",
 };
