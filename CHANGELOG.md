@@ -8,6 +8,12 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_`nevela upgrade` no longer stops at the old range's newest patch_
+
+### Fixed
+
+- **`nevela upgrade` goes all the way to the newest release when the app's range still had a newer patch.** An app on 0.5.1 with `"nevela/laravel": "^0.5"` was moved to 0.5.3, the newest 0.5 release, and the upgrade ended there without a word while 0.19.1 was out. The range was only widened when Composer changed nothing at all. Now it is widened whenever Composer stops short of the newest release, and the "looks deliberate" note for a pin or a hand-written range shows up in that case too. When Composer has moved the package only part of the way, the dashboard is still brought up to the version that was installed. ([#76](https://github.com/MarkColeMukisa/nevela/issues/76))
+
 ## [0.19.1] - 2026-10-23
 
 _A new app's install gets past a download Windows refuses_
