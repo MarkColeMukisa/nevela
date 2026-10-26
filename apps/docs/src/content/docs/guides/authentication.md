@@ -252,6 +252,8 @@ Then run `nevela generate`. That writes the choices to `apps/web/lib/auth-config
 
 A new password needs eight characters. The forms show a strength reading and advice as it is typed, which is advice only: length matters more than punctuation.
 
+Every password box, the one on the sign-in screen included, has an eye at its end that shows what has been typed, and hides it again.
+
 A new password is also checked against [Have I Been Pwned](https://haveibeenpwned.com/Passwords)'s list of breached passwords, and refused if it is on it. Only the first five characters of the password's hash leave your server, and if the service cannot be reached the password is accepted.
 
 ## What protects sign-in

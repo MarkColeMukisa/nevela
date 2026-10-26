@@ -7,6 +7,7 @@ import { authClient } from "@/lib/auth-client";
 import type { SocialProvider } from "@/lib/auth-config";
 import { AuthInput, AuthLabel, Divider, FormMessage, PrimaryButton, SecondaryButton, TextButton } from "./ui";
 import { OtpInput } from "./otp-input";
+import { PasswordInput } from "./password-field";
 import { SocialButtons } from "./social-buttons";
 import { useResend } from "./use-resend";
 
@@ -222,11 +223,10 @@ export function SignInFlow({ providers, socialPlacement, socialStyle, methods, n
               Forgot password?
             </Link>
           </div>
-          <AuthInput
+          <PasswordInput
             ref={passwordRef}
             id="password"
             name="password"
-            type="password"
             autoComplete="current-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}

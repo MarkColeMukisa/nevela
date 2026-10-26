@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { forwardRef, useId, useMemo, useState } from "react";
 import { CheckIcon, EyeIcon, EyeOffIcon } from "lucide-react";
 import { checkPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/password-rules";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,28 @@ interface Props {
 
 const BAR_COLOURS = ["bg-danger", "bg-danger", "bg-warning", "bg-success/70", "bg-success"];
 
+/** A password input with the eye that shows what you've typed. Bring your own label. */
+export const PasswordInput = forwardRef<HTMLInputElement, Omit<React.ComponentProps<"input">, "type">>(function PasswordInput({ className, ...props }, ref) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="relative">
+      <AuthInput ref={ref} type={visible ? "text" : "password"} className={cn("pr-11", className)} {...props} />
+      <button
+        type="button"
+        onClick={() => setVisible(!visible)}
+        aria-pressed={visible}
+        aria-controls={props.id}
+        aria-label={visible ? "Hide password" : "Show password"}
+        title={visible ? "Hide password" : "Show password"}
+        className="absolute inset-y-0 right-0 grid w-11 place-items-center text-foreground-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+      >
+        {visible ? <EyeOffIcon className="size-4.5" /> : <EyeIcon className="size-4.5" />}
+      </button>
+    </div>
+  );
+});
+
 /**
  * A password input that says what it wants before you get it wrong: the rules and a
  * strength reading update as you type, and the eye shows what you've typed.
@@ -46,43 +68,28 @@ export function PasswordField({
   const generatedId = useId();
   const fieldId = id ?? generatedId;
   const hintId = `${fieldId}-hint`;
-  const [visible, setVisible] = useState(false);
   const check = useMemo(() => checkPassword(value, avoid), [value, avoid.join("\u0000")]);
   const started = value.length > 0;
 
   return (
     <div className="flex flex-col gap-2">
       <AuthLabel htmlFor={fieldId}>{label}</AuthLabel>
-      <div className="relative">
-        <AuthInput
-          id={fieldId}
-          name={name}
-          type={visible ? "text" : "password"}
-          autoComplete={autoComplete}
-          autoFocus={autoFocus}
-          required={required}
-          placeholder={placeholder}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          minLength={autoComplete === "new-password" ? PASSWORD_MIN_LENGTH : undefined}
-          maxLength={PASSWORD_MAX_LENGTH}
-          aria-describedby={showRules ? hintId : undefined}
-          // A styling hook, so the field can go green without any state plumbing.
-          data-has-passed-validation={showRules && check.valid ? "" : undefined}
-          className={cn("pr-11", showRules && check.valid && "border-success/60")}
-        />
-        <button
-          type="button"
-          onClick={() => setVisible(!visible)}
-          aria-pressed={visible}
-          aria-controls={fieldId}
-          aria-label={visible ? "Hide password" : "Show password"}
-          title={visible ? "Hide password" : "Show password"}
-          className="absolute inset-y-0 right-0 grid w-11 place-items-center text-foreground-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-        >
-          {visible ? <EyeOffIcon className="size-4.5" /> : <EyeIcon className="size-4.5" />}
-        </button>
-      </div>
+      <PasswordInput
+        id={fieldId}
+        name={name}
+        autoComplete={autoComplete}
+        autoFocus={autoFocus}
+        required={required}
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        minLength={autoComplete === "new-password" ? PASSWORD_MIN_LENGTH : undefined}
+        maxLength={PASSWORD_MAX_LENGTH}
+        aria-describedby={showRules ? hintId : undefined}
+        // A styling hook, so the field can go green without any state plumbing.
+        data-has-passed-validation={showRules && check.valid ? "" : undefined}
+        className={cn(showRules && check.valid && "border-success/60")}
+      />
 
       {showRules && (
         <div id={hintId} className="flex flex-col gap-2">
