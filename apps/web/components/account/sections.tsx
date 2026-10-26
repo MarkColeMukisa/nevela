@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { renderSVG } from "uqr";
 import { CheckIcon, CopyIcon, FingerprintIcon, LaptopIcon, ShieldCheckIcon, Trash2Icon } from "lucide-react";
 import { AuthInput, AuthLabel, FormMessage, PrimaryButton, SecondaryButton, TextButton } from "@/components/auth/ui";
-import { PasswordField } from "@/components/auth/password-field";
+import { PasswordField, PasswordInput } from "@/components/auth/password-field";
 import { authErrorMessage } from "@/components/auth/sign-in-flow";
 import { PROVIDER_LABELS, ProviderIcon } from "@/components/auth/provider-icons";
 import { UserAvatar } from "@/components/dashboard/user-menu";
@@ -53,7 +53,7 @@ function PasswordConfirm({ value, onChange, id }: { value: string; onChange: (va
   return (
     <div className="flex flex-col gap-2">
       <AuthLabel htmlFor={id}>Your password</AuthLabel>
-      <AuthInput id={id} type="password" autoComplete="current-password" value={value} onChange={(event) => onChange(event.target.value)} required />
+      <PasswordInput id={id} autoComplete="current-password" value={value} onChange={(event) => onChange(event.target.value)} required />
     </div>
   );
 }

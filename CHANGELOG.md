@@ -8,6 +8,12 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_An eye on the sign-in password, to see what you typed_
+
+### Added
+
+- **The sign-in password has an eye that shows what you've typed.** Sign-up, reset and the change-password page had one; the box people use most didn't. Clicking it again hides the password, and signing in works either way. The "Your password" box that closing an account and turning on two-step sign-in ask for has it too. All of them now share one `PasswordInput` in `components/auth/password-field.tsx`, which takes a ref, so the sign-in step still puts the cursor in it.
+
 ## [0.19.2] - 2026-10-26
 
 _nevela upgrade no longer stops at the old range's newest patch_
