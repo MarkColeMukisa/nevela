@@ -287,6 +287,29 @@ Emptying removes what it can and counts the rest in `kept`.
 
 A unique value held by a deleted record is still taken. Creating another with it answers 422, with a message that says the value belongs to a record in the trash.
 
+## Notifications
+
+The dashboard's bell. Each person reads and marks only their own; see [Notifications](/guides/notifications/).
+
+| Request | What it does | Success |
+|---|---|---|
+| `GET /_nevela/notifications` | The latest 30, newest first, how many are unread, and for an administrator what is wrong with the app | `200 { items, unread, conditions }` |
+| `POST /_nevela/notifications/read` | Mark one read (`{ "id": "…" }`), or all of them (no body). Another person's id changes nothing. | `200 { read }` |
+
+```json
+{
+  "items": [
+    { "id": "019a2f…", "kind": "form.received", "title": "3 new enquiries", "body": null, "url": "/dashboard/enquiries", "tone": "info", "count": 3, "read": false, "at": "2026-10-26T14:05:00+00:00" }
+  ],
+  "unread": 1,
+  "conditions": [
+    { "id": "release", "title": "Nevela 0.20.0 is out", "body": "This app is on 0.19.2. Run php nevela upgrade to move to it.", "tone": "info", "url": "https://nevela-docs.vercel.app/reference/changelog/" }
+  ]
+}
+```
+
+`conditions` is always empty for someone who isn't an administrator.
+
 ## Relations
 
 A `belongsTo` field is the related record's id, in what you send and in what comes back:

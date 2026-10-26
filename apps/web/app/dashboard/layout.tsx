@@ -8,6 +8,7 @@ import { SessionWatchdog } from "@/components/dashboard/session-watchdog";
 import { dashboardLinks } from "@/lib/dashboard-nav";
 import { allResources, dashboardSession, mayDo, visibleResources } from "@/lib/dashboard";
 import { fileUrl } from "@/lib/files";
+import { loadInbox } from "@/lib/notifications";
 import { noIndex } from "@/lib/seo";
 import { requireSession } from "@/lib/session";
 import { site } from "@/lib/site";
@@ -43,12 +44,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const access = { users: may("users.view"), roles: may("roles.view"), deleted: may("users.delete") };
   // The trash is for those who may delete: whoever can put a record there can deal with it there.
   const trash = (await Promise.all(allResources().map((resource) => mayDo(resource, "delete")))).some(Boolean);
+  // What the bell shows first. It asks again by itself from then on.
+  const inbox = await loadInbox();
 
   return (
     <SidebarProvider defaultOpen={!collapsed}>
       <DashboardSidebar appName={site.name} resources={resources} links={dashboardLinks} isAdmin={isAdmin} access={access} trash={trash} user={account} />
       <SidebarInset>
-        <DashboardHeader user={account} initialTheme={theme} notices={[]} />
+        <DashboardHeader user={account} initialTheme={theme} inbox={inbox} />
         <main className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">{children}</main>
       </SidebarInset>
       <Toaster theme={theme} />
