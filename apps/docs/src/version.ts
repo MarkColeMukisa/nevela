@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "An activity log, and the bell tells others when records change";
+export const RELEASE_HEADLINE = "Line items: an order's items, edited and saved with it";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "An activity log of who created, changed and deleted what, and the bell tells your team when records change.",
-  href: "/guides/notifications/#the-activity-log",
-  label: "Activity",
+  text: "Line items: an order's items edited as a table in its form, with their total, and saved with it.",
+  href: "/guides/line-items/",
+  label: "Line items",
 };
