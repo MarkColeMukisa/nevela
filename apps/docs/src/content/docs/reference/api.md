@@ -295,6 +295,9 @@ The dashboard's bell. Each person reads and marks only their own; see [Notificat
 |---|---|---|
 | `GET /_nevela/notifications` | The latest 30, newest first, how many are unread, and for an administrator what is wrong with the app | `200 { items, unread, conditions }` |
 | `POST /_nevela/notifications/read` | Mark one read (`{ "id": "…" }`), or all of them (no body). Another person's id changes nothing. | `200 { read }` |
+| `GET /_nevela/activity` | Who created, changed, deleted, restored or removed for good which records, newest first, on the resources the caller may view. Takes `resource`, `action`, `user`, `page` and `perPage` (at most 100). Needs `activity.view`; 403 without it. | `200 { data, meta }` |
+
+An activity entry is `{ id, action, resource, label, pluralLabel, slug, count, title, recordId, url, user: { id, name }, at, startedAt }`. `count` is how many records it stands for: the same thing done by one person within two minutes is one entry. `title` and `recordId` are set when it is one record; `url` is where to see it, and `null` once it was removed for good.
 
 ```json
 {

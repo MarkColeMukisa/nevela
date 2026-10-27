@@ -8,6 +8,13 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_An activity log, and the bell tells others when records change_
+
+### Added
+
+- **An activity log: who created, changed, deleted, restored or removed which records.** Every write to a resource's records by someone signed in is noted, whether it came from the dashboard, an import, an action or the app's own code, from Eloquent's own events. The same thing done to many records by one person within two minutes is one line ("You deleted 20 products"), so a selection deleted or a file imported one row at a time reads as one. **Recent activity** on the dashboard's home page shows the latest eight, and **Activity** under Manage has all of it, by resource and by what was done. It is for roles that include the new **Activity** permission (`activity.view`, under Access); administrators have it, and each person sees only the resources they may view. `GET /_nevela/activity` serves it. Rows are kept for 180 days. Seeding, the scheduler and visitors leave none. Run `php nevela migrate` for its table. Modelled on Grit's activity log, without its hash chain.
+- **The bell tells everyone else when records are created, deleted or restored.** On a team, someone deleting a product now reaches the others who may see products: "Ada deleted a product: Lamp", or "Ada deleted 20 products" for a batch, one line per person and kind while unread, with the count. Changes to a record go only to the activity log, so fixed typos don't fill the bell. What you did yourself isn't in your own bell; it is in the activity log. `Notice` takes a `count`, for one notice that stands for several things.
+
 ## [0.20.0] - 2026-10-26
 
 _The dashboard's bell works, and the sign-in password has an eye_

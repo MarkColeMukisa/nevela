@@ -74,7 +74,7 @@ export function DashboardSidebar({
   /** Whether to show the sections that manage the app itself. */
   isAdmin?: boolean;
   /** Which of the screens for managing people this person may open. */
-  access?: { users: boolean; roles: boolean; deleted?: boolean };
+  access?: { users: boolean; roles: boolean; deleted?: boolean; activity?: boolean };
   /** Whether this person may delete anything, and so has a trash to look in. */
   trash?: boolean;
   user: DashboardUser;
@@ -88,6 +88,7 @@ export function DashboardSidebar({
     ...(access.roles ? [{ href: "/dashboard/access/roles", label: "Roles", icon: ShieldCheckIcon }] : []),
     ...(access.deleted ? [{ href: "/dashboard/access/deleted", label: "Deleted accounts", icon: UserXIcon }] : []),
     ...(trash ? [{ href: "/dashboard/trash", label: "Trash", icon: Trash2Icon }] : []),
+    ...(access.activity ? [{ href: "/dashboard/activity", label: "Activity", icon: ActivityIcon }] : []),
     ...(isAdmin ? ADMIN_LINKS : []),
   ];
 

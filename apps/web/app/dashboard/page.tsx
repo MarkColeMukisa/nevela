@@ -2,13 +2,16 @@ import Link from "next/link";
 import { ArrowRightIcon, PlusIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { resourceIcon } from "@/components/dashboard/resource-icon";
 import { StatCards, type Stat } from "@/components/dashboard/stat-card";
-import { adminPermissions, allResources, resourcePath, resourceStats, trend, visibleResources } from "@/lib/dashboard";
+import { ActivityList } from "@/components/dashboard/activity-list";
+import { loadActivity } from "@/lib/activity";
+import { adminPermissions, allResources, dashboardSession, resourcePath, resourceStats, trend, visibleResources } from "@/lib/dashboard";
 import { requireSession } from "@/lib/session";
+import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Dashboard" };
 
@@ -27,6 +30,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       return { resource, total: stats.total, recent: stats, permissions };
     }),
   );
+
+  // Who did what lately, for those whose roles include the activity log.
+  const { may } = await dashboardSession();
+  const recent = may("activity.view") ? await loadActivity({ perPage: 8 }) : null;
 
   const stats: Stat[] = cards.slice(0, 4).map(({ resource, total, recent }) => ({
     label: resource.pluralLabel,
@@ -76,7 +83,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </Empty>
       )}
 
-      <div className="grid gap-6">
+      <div className={cn("grid gap-6", recent && cards.length > 0 && "lg:grid-cols-2")}>
         {cards.length > 0 && (
           <Card>
             <CardHeader>
@@ -118,6 +125,30 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </Card>
         )}
 
+        {recent && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Recent activity</CardTitle>
+              <CardDescription>Who created, changed and deleted what.</CardDescription>
+              {recent.meta.total > recent.data.length && (
+                <CardAction>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="/dashboard/activity">
+                      See all <ArrowRightIcon data-icon="inline-end" />
+                    </Link>
+                  </Button>
+                </CardAction>
+              )}
+            </CardHeader>
+            <CardContent>
+              {recent.data.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nothing yet. When someone creates, changes or deletes a record, it shows here.</p>
+              ) : (
+                <ActivityList entries={recent.data} you={user.id} />
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </>
   );
