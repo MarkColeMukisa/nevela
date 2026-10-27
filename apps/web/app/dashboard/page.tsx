@@ -33,7 +33,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   // Who did what lately, for those whose roles include the activity log.
   const { may } = await dashboardSession();
-  const recent = may("activity.view") ? await loadActivity({ perPage: 8 }) : null;
+  const activity = may("activity.view") ? await loadActivity({ perPage: 8 }) : null;
+  // Not migrated, or not reachable: the Activity page says which. Here it is left out.
+  const recent = activity?.status === "ok" ? activity.page : null;
 
   const stats: Stat[] = cards.slice(0, 4).map(({ resource, total, recent }) => ({
     label: resource.pluralLabel,

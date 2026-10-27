@@ -9,11 +9,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
 use Nevela\Laravel\Access\Access;
 use Nevela\Laravel\Access\Permissions;
 use Nevela\Laravel\Activity\Activity;
 use Nevela\Laravel\Models\Role;
+use Nevela\Laravel\Support\SchemaFacts;
 use Tests\TestCase;
 
 /**
@@ -70,7 +72,8 @@ class ActivityTest extends TestCase
     /** @return list<object> */
     private function bellOf(User $user): array
     {
-        return DB::table('nevela_notifications')->where('user_id', (string) $user->getKey())->orderBy('created_at')->get()->all();
+        // created_at is to the second; the id (a uuid7) is to the millisecond, for those written together.
+        return DB::table('nevela_notifications')->where('user_id', (string) $user->getKey())->orderBy('created_at')->orderBy('id')->get()->all();
     }
 
     public function test_each_change_is_noted_with_who_made_it_and_others_are_told(): void
@@ -94,7 +97,7 @@ class ActivityTest extends TestCase
 
         // Everyone else who may see products is told of the create, delete and restore. A change isn't.
         $this->assertSame(['Ada created a product: Kettle KET-1', 'Ada deleted a product: Kettle, steel', 'Ada restored a product: Kettle, steel'], array_column($this->bellOf($bo), 'title'));
-        $this->assertSame(["/dashboard/products/{$id}", '/dashboard/trash', "/dashboard/products/{$id}"], array_column($this->bellOf($bo), 'url'));
+        $this->assertSame(["/dashboard/products/{$id}", '/dashboard/trash?in=products', "/dashboard/products/{$id}"], array_column($this->bellOf($bo), 'url'));
         $this->assertSame([], $this->bellOf($ada), 'nobody is told what they did');
         $this->assertSame([], $this->bellOf($nobody), 'nor what they may not see');
 
@@ -130,7 +133,7 @@ class ActivityTest extends TestCase
         $bell = $this->bellOf($bo);
         $this->assertSame(['Ada created 5 products', 'Ada deleted 3 products'], array_column($bell, 'title'));
         $this->assertSame([5, 3], array_map('intval', array_column($bell, 'count')));
-        $this->assertSame(['/dashboard/products', '/dashboard/trash'], array_column($bell, 'url'));
+        $this->assertSame(['/dashboard/products', '/dashboard/trash?in=products'], array_column($bell, 'url'));
 
         // A while later, the next is a row of its own; the bell's line, still unread, keeps counting.
         Carbon::setTestNow(now()->addMinutes(5));
@@ -185,6 +188,37 @@ class ActivityTest extends TestCase
         $this->getJson('/api/_nevela/activity')->assertForbidden();
 
         $this->assertContains('activity.view', Permissions::keys());
+    }
+
+    public function test_a_deletion_leads_to_the_trash_only_for_those_who_may_use_it(): void
+    {
+        $ada = $this->user('Ada', 'ADMIN');
+        Role::query()->create(['name' => 'Watcher', 'description' => null, 'grants' => ['products.view', 'activity.view'], 'is_system' => false]);
+        $watcher = $this->user('Wen', 'Watcher');
+        $bo = $this->user('Bo', 'EDITOR');
+
+        Sanctum::actingAs($ada);
+        $id = $this->postJson('/api/products', $this->kettle('KET-1'))->assertCreated()->json('id');
+        $this->deleteJson("/api/products/{$id}")->assertNoContent();
+
+        $this->assertSame('/dashboard/trash?in=products', collect($this->bellOf($bo))->last()->url);
+        $this->assertSame('/dashboard/products', collect($this->bellOf($watcher))->last()->url);
+        $this->assertCount(2, $this->bellOf($watcher), 'told once, not once as a viewer and again as a deleter');
+
+        $this->getJson('/api/_nevela/activity?action=deleted')->assertJsonPath('data.0.url', '/dashboard/trash?in=products');
+        Sanctum::actingAs($watcher);
+        $this->getJson('/api/_nevela/activity?action=deleted')->assertJsonPath('data.0.url', '/dashboard/products');
+    }
+
+    public function test_before_the_migration_the_log_says_so(): void
+    {
+        Sanctum::actingAs($this->user('Ada', 'ADMIN'));
+        Schema::drop('nevela_activity');
+        SchemaFacts::forget();
+
+        // Changes still work, and are only not kept.
+        $this->postJson('/api/products', $this->kettle('KET-1'))->assertCreated();
+        $this->getJson('/api/_nevela/activity')->assertStatus(409)->assertJsonPath('code', 'MIGRATION_NEEDED');
     }
 
     public function test_old_rows_are_pruned(): void

@@ -2,8 +2,8 @@ import { laravel } from "./laravel";
 
 /**
  * The activity log, as Laravel serves it (`/_nevela/activity`): who created, changed,
- * deleted or restored which records. The same thing done to many records by one person
- * within a couple of minutes is one entry with a count.
+ * deleted or restored which records. The same thing done by one person within a couple of
+ * minutes is one entry with a count.
  *
  * For those whose roles include `activity.view`, and only on the resources they may view.
  */
@@ -17,11 +17,12 @@ export interface ActivityEntry {
   label: string;
   pluralLabel: string;
   slug: string;
+  /** How many times it was done: records, or the same record more than once. */
   count: number;
   /** The record's title, when the entry is one record. */
   title: string | null;
   recordId: string | null;
-  /** Where to see it: the record, the trash, the list, or nowhere once removed for good. */
+  /** Where to look: the record, the trash, the list, or nowhere once removed for good. */
   url: string | null;
   /** Who did it. Null name: their account has since been removed. */
   user: { id: string; name: string | null } | null;
@@ -34,6 +35,12 @@ export interface ActivityPage {
   data: ActivityEntry[];
   meta: { page: number; perPage: number; total: number; totalPages: number };
 }
+
+/**
+ * What asking for it came to: a page, or why there is none. "missing" is an app to upgrade
+ * or migrate; "error" is something an upgrade wouldn't fix.
+ */
+export type ActivityResult = { status: "ok"; page: ActivityPage } | { status: "missing" } | { status: "error"; message: string };
 
 export const ACTION_WORDS: Record<ActivityAction, string> = {
   created: "created",
@@ -51,8 +58,7 @@ export function describe(entry: ActivityEntry): string {
   return `${verb} ${/^[aeiou]/i.test(noun) ? "an" : "a"} ${noun}${entry.title ? `: ${entry.title}` : ""}`;
 }
 
-/** A page of it. Null when the person may not see it, or the API is from before there was one. */
-export async function loadActivity(params: { resource?: string; action?: string; page?: string; perPage?: number } = {}): Promise<ActivityPage | null> {
+export async function loadActivity(params: { resource?: string; action?: string; page?: string; perPage?: number } = {}): Promise<ActivityResult> {
   const query = new URLSearchParams();
   if (params.resource) query.set("resource", params.resource);
   if (params.action) query.set("action", params.action);
@@ -60,8 +66,12 @@ export async function loadActivity(params: { resource?: string; action?: string;
   if (params.perPage) query.set("perPage", String(params.perPage));
   try {
     const response = await laravel(`_nevela/activity${query.size ? `?${query}` : ""}`);
-    return response.ok ? (response.body as ActivityPage) : null;
+    if (response.ok) return { status: "ok", page: response.body as ActivityPage };
+    // No such route (an API from before the log), or its table not migrated yet.
+    const code = (response.body as { code?: string } | null)?.code;
+    if (response.status === 404 || code === "MIGRATION_NEEDED") return { status: "missing" };
+    return { status: "error", message: (response.body as { error?: string } | null)?.error ?? `Laravel answered ${response.status}.` };
   } catch {
-    return null;
+    return { status: "error", message: "Can't reach the API. Is the Laravel app running?" };
   }
 }

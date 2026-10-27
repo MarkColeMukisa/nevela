@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ActivityList } from "@/components/dashboard/activity-list";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
@@ -24,7 +25,8 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
   const resources = await visibleResources();
   const resource = resources.find((item) => item.name === params.resource)?.name;
   const action = ACTIONS.find((item) => item === params.action);
-  const activity = await loadActivity({ resource, action, page: params.page });
+  const result = await loadActivity({ resource, action, page: params.page });
+  const activity = result.status === "ok" ? result.page : null;
   const meta = activity?.meta ?? { page: 1, perPage: 25, total: 0, totalPages: 0 };
   const href = (over: Partial<Params>) => {
     const next = { resource, action, ...over };
@@ -58,16 +60,21 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
         </nav>
       </div>
 
-      {!activity ? (
+      {result.status === "missing" ? (
         <Empty className="rounded-xl border border-dashed">
           <EmptyHeader>
             <EmptyTitle>No activity log yet</EmptyTitle>
             <EmptyDescription>
-              This app&apos;s Laravel side is from before Nevela kept one. Run <code>nevela upgrade</code>, then <code>nevela migrate</code>.
+              Nothing is kept until it has its table. Run <code>nevela upgrade</code>, then <code>nevela migrate</code>.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
-      ) : activity.data.length === 0 ? (
+      ) : result.status === "error" ? (
+        <Alert variant="destructive">
+          <AlertTitle>The activity log couldn&apos;t be loaded</AlertTitle>
+          <AlertDescription>{result.message}</AlertDescription>
+        </Alert>
+      ) : !activity || activity.data.length === 0 ? (
         <Empty className="rounded-xl border border-dashed">
           <EmptyHeader>
             <EmptyTitle>Nothing yet</EmptyTitle>

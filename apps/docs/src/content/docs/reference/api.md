@@ -297,7 +297,7 @@ The dashboard's bell. Each person reads and marks only their own; see [Notificat
 | `POST /_nevela/notifications/read` | Mark one read (`{ "id": "…" }`), or all of them (no body). Another person's id changes nothing. | `200 { read }` |
 | `GET /_nevela/activity` | Who created, changed, deleted, restored or removed for good which records, newest first, on the resources the caller may view. Takes `resource`, `action`, `user`, `page` and `perPage` (at most 100). Needs `activity.view`; 403 without it. | `200 { data, meta }` |
 
-An activity entry is `{ id, action, resource, label, pluralLabel, slug, count, title, recordId, url, user: { id, name }, at, startedAt }`. `count` is how many records it stands for: the same thing done by one person within two minutes is one entry. `title` and `recordId` are set when it is one record; `url` is where to see it, and `null` once it was removed for good.
+An activity entry is `{ id, action, resource, label, pluralLabel, slug, count, title, recordId, url, user: { id, name }, at, startedAt }`. The same thing done by one person within two minutes is one entry, and `count` is how many times it was done: usually that many records, but deleting the same record twice in that time counts two. `title` and `recordId` are set when the count is one. `url` is where to look when the entry was written: the record, the list, or for a deletion the trash (the list, for someone who may not delete). It is `null` on an entry whose action is `purged`; an older entry's link can lead to a record that has since gone. Before `php nevela migrate` it answers 409 with `code: "MIGRATION_NEEDED"`.
 
 ```json
 {

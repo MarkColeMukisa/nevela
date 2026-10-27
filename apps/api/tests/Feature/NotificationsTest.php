@@ -76,7 +76,7 @@ class NotificationsTest extends TestCase
     /** @return list<object> */
     private function rowsOf(User $user): array
     {
-        return DB::table('nevela_notifications')->where('user_id', (string) $user->getKey())->orderBy('created_at')->get()->all();
+        return DB::table('nevela_notifications')->where('user_id', (string) $user->getKey())->orderBy('created_at')->orderBy('id')->get()->all();
     }
 
     // --- forms
