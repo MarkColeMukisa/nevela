@@ -27,6 +27,8 @@ An ordinary Laravel app. These are the parts Nevela adds to it:
 | `app/Http/Controllers/Api/` | A controller per resource. |
 | `app/Policies/` | Authorization per resource. Written once, then yours. |
 | `routes/nevela.php` | The resource routes. Add your own below the generated block. |
+| `routes/nevela-public.php` | The routes anyone may call without signing in, for resources with a [public side](/guides/public-site/). |
+| `app/Nevela/Actions/<Resource>/` | A class per [action](/guides/actions/), where you write what it does. Written once, then yours. |
 | `database/migrations/` | The create-table migration per resource. Written once, then yours. |
 
 ## apps/web, the dashboard
@@ -35,12 +37,14 @@ An ordinary Laravel app. These are the parts Nevela adds to it:
 |---|---|
 | `resources/` | The dashboard's description of each resource, generated from Laravel. |
 | `app/dashboard/<slug>/` | The list, new, detail and edit pages per resource. Written once, then yours. |
-| `app/sign-in/` | The sign-in page. |
+| `app/dashboard/` | Also the pages every app has: the home page, your account, users and roles, the trash and the activity log. |
+| `app/sign-in/`, `app/sign-up/`, … | Signing in, signing up, a forgotten password, two-factor and verifying an address. |
+| `app/page.tsx`, `app/blog/` | The public site: its home page and [the blog](/guides/blog/). |
 | `lib/laravel.ts` | The one place that calls Laravel. |
 | `lib/site.ts` | The app's name, text and theme. |
 | `components/` | The tables, forms and fields. |
 | `policies/` | Optional: hide buttons by role. |
-| `.env.local` | `NEVELA_API_URL`, the address of the Laravel API. |
+| `.env.local` | `NEVELA_API_URL`, the address of the Laravel API, and the [other settings](/guides/configuration/#web-app-envlocal). |
 | `.nevela.json` | The dashboard version the app is on, a fingerprint of every file in it, and the history of updates. It is how an update knows which files you changed. Commit it. |
 | `.nevela/` | Backups of files an update replaced, and new versions of files you had changed. It ignores itself in git. Appears after the first update. |
 

@@ -44,9 +44,10 @@ The dashboard is [Flare](https://github.com/MUKE-coder/flare-framework)'s Next.j
 
 ## What Nevela does not do yet
 
-- Many-to-many relations are not generated. One-to-many is: see [Relationships](/guides/relationships/).
-- Uploaded files are not deleted when their record is.
-- Signing in with Google, GitHub and other providers. Passwords, passkeys, two-factor and emailed links are there: see [Authentication](/guides/authentication/).
+- Many-to-many relations are not generated. One-to-many is: see [Relationships](/guides/relationships/). For many-to-many, make a resource for the link itself, with a `belongsTo` to each side.
+- Line items edited inside their parent's form, such as an order's items on the order. Today they are a resource of their own, with a `belongsTo` to the order, listed on the order's page.
+- A public file is not deleted when its record is removed for good. A [private file](/guides/images/#private-files) is.
+- Saved table views.
 
 The [roadmap](/concepts/architecture/#roadmap) lists what is planned.
 
@@ -54,4 +55,4 @@ The [roadmap](/concepts/architecture/#roadmap) lists what is planned.
 
 - [Quickstart](/start/quickstart/): create an app and add your first resource
 - [Resources](/concepts/resources/): how a resource is described and what is generated
-- [Commands](/reference/commands/): the three artisan commands
+- [Commands](/reference/commands/): every `nevela` command

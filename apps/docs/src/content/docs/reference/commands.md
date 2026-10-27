@@ -1,6 +1,6 @@
 ---
 title: "Commands"
-description: "Every nevela command and option: new, update, resource, resource:remove, adopt, blog, generate, seed, user, upgrade, trash, disposable, publish, deploy:check, dev, status and --version."
+description: "Every nevela command and option: new, update, resource, resource:remove, adopt, blog, generate, seed, user, upgrade, trash, disposable, publish, deploy:check, digest, dev, status and --version, and what the scheduler runs."
 ---
 
 Install the `nevela` command once, and everything is this short, in every shell:
@@ -36,6 +36,7 @@ nevela trash               # remove deleted records whose 30 days are up
 nevela disposable          # fetch the current list of throwaway email domains
 nevela publish             # write config/nevela.php, to change a setting
 nevela deploy:check        # on the server: scheduler, queue worker, mail, the dashboard
+nevela digest              # email the owner the form notices held back this hour
 ```
 
 You don't have to install it. [Without the nevela command](#without-the-nevela-command), at the end of this page, has the longer forms that do the same.
@@ -434,6 +435,21 @@ nevela digest
 ```
 
 Sends the owner one email naming the form notices that were [held back](/guides/protecting-forms/#the-mail-a-form-causes) in a busy hour. The scheduler runs it at the top of every hour; it is here for a server without one.
+
+## What the scheduler runs
+
+A new app's scheduler runs these by itself, once Laravel's one cron line is on the server (`nevela deploy:check` says whether it is). None needs typing; the ones that are commands can be.
+
+| When | What |
+|---|---|
+| Every 5 minutes | A sign of life, so `nevela deploy:check` can tell the scheduler is running. |
+| Every hour | [`nevela digest`](#nevela-digest). |
+| 03:40 | [`nevela trash`](#nevela-trash). |
+| 03:50 | `nevela prune-sessions`: removes sign-ins that have ended and access tokens that have expired. |
+| 03:55 | Removes notifications and activity older than they are kept. See [Notifications](/guides/notifications/). |
+| 04:10 | Looks up the latest release of Nevela, so the bell can say when there is a newer one. |
+
+`nevela setup` is run by `nevela new` to finish a new app: the key, the migrations, the generated files, the blog, the starter account and the sample users. There is no need to run it yourself.
 
 ## nevela migrate, and any other artisan command
 

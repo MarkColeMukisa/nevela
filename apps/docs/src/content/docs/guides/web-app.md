@@ -116,7 +116,9 @@ In development, a shared link's image points at `localhost`, so it can be looked
 
 ## What was removed from Flare's app
 
-These parts depended on Flare's own database, and Laravel has no endpoints for them yet: saved table views, the change history on a record, the records-per-day chart, product search, and the costs and observability pages. Signing in with Google, GitHub and other providers is not there either.
+These parts depended on Flare's own database, and Laravel has no endpoints for them yet: saved table views, product search, and the costs and observability pages.
+
+Others have come back with Laravel behind them: the records-per-day chart is the insights panel above each table, the change history is [the activity log](/guides/notifications/#the-activity-log), and signing in with [Google and GitHub](/guides/authentication/#google-and-github) is there.
 
 Sign-up, password reset, two-factor, passkeys and the account pages are Flare's screens, backed by Laravel. See [Authentication](/guides/authentication/).
 

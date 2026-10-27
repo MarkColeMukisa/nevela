@@ -38,8 +38,11 @@ The file is yours, and an upgrade never changes it. A setting it doesn't have ta
 | `auth.proxy_secret` | none, or `NEVELA_PROXY_SECRET` | Shared with the dashboard, so Laravel believes what it says about a visitor's browser. See [Devices](/guides/authentication/#devices). |
 | `auth.close_account` | `true` | Whether people can close their own account from the Account page. See [Deleted accounts](/guides/deleted-accounts/#switching-close-account-off). |
 | `auth.default_role` | `USER` | The [role](/guides/policies/) someone who signs up starts with. `null` gives none. |
+| `auth.social.enabled` | `false`, or `SOCIAL_AUTH_ENABLED` | Whether people can sign in with [Google and GitHub](/guides/authentication/#google-and-github). |
+| `auth.social.google`, `auth.social.github` | `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`; `GITHUB_…` the same | Each provider's keys. A provider is offered once both of its keys are set. |
 | `permissions` | `[]` | Permissions of your own, beside the ones every resource gets. See [Permissions of your own](/guides/policies/#permissions-of-your-own). |
 | `auth.issuer` | the app's name | The name an authenticator app and a passkey prompt show. |
+| `currency` | none, or `NEVELA_CURRENCY` | The currency money is shown in, as its ISO 4217 code: `UGX`. See [Money and its currency](/concepts/field-types/#money-and-its-currency). |
 | `per_page` | `25` | Records per page when a list request does not say. |
 | `max_per_page` | `100` | The most a list request may ask for. |
 | `bulk_max` | `500` | The most rows `POST /{slug}/_bulk` creates in one request. The dashboard's "Add several" grid stops at 500 rows itself; set this lower and Laravel refuses a larger grid, saying what the limit is. |
@@ -88,6 +91,9 @@ The dashboard's export reads 100 records per request (`EXPORT_PAGE` in `apps/web
 | Variable | Default | Meaning |
 |---|---|---|
 | `NEVELA_API_URL` | `http://127.0.0.1:8000/api` | Where the Laravel API is, including the prefix. |
+| `NEVELA_PROXY_SECRET` | none | The secret shared with Laravel, the same value as `NEVELA_PROXY_SECRET` in `apps/api/.env`. A new app has it in both already. See [Devices](/guides/authentication/#devices). |
+| `NEVELA_TRUSTED_PROXIES` | `1` | How many proxies stand in front of the web app, so the visitor's address is read from the right place. `0` when it is reached directly. See [Throttling](/guides/public-site/#throttling). |
+| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | The address people reach the site at. Canonical links, the sitemap, the feed and shared links are made from it. |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | none | Cloudflare's site key, for forms with the [robot check](/guides/protecting-forms/#setting-up-turnstile). Built in: rebuild after changing it. |
 | `NEXT_PUBLIC_SESSION_IDLE_MS` | `870000` (14 min 30 s) | How long without activity before the dashboard asks "Still there?". `0` turns it off. Built in. See [How long a sign-in lasts](/guides/authentication/#how-long-a-sign-in-lasts). |
 | `NEXT_PUBLIC_SESSION_COUNTDOWN_MS` | `30000` | How long it counts down before signing out. Built in. |

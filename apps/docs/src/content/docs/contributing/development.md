@@ -56,13 +56,23 @@ pnpm dev
 |---|---|
 | `src/Console/` | The artisan commands. |
 | `src/Generator/` | The templates, and the writer that keeps people's code. |
-| `src/Http/` | The base form request, the error format and the token endpoints. |
+| `src/Http/` | The base form request, the error format, and the controllers for sign-in, users and roles, uploads, actions, the trash, public forms, notifications and activity. |
 | `src/Support/` | Descriptors, fields, list-query parsing and seed values. Plain PHP, tested without Laravel. |
+| everything else | Sign-in, roles, files, the trash, public forms, notifications and activity. [The package map](/concepts/architecture/#package-map-packageslaravelsrc) has a line for each folder. |
+
+The package's unit tests:
 
 ```sh
 cd packages/laravel
 composer install
 vendor/bin/phpunit
+```
+
+The feature tests, which run the package inside `apps/api` over HTTP:
+
+```sh
+cd apps/api
+php artisan test
 ```
 
 ## The create command
@@ -104,7 +114,8 @@ Pages are Markdown in `apps/docs/src/content/docs`. The sidebar is in `apps/docs
 ## Before opening a pull request
 
 - Add a line to `CHANGELOG.md` under "Unreleased" if a user would notice the change.
-- CI runs the package tests on PHP 8.3 and 8.4, generates and seeds in `apps/api`, builds the dashboard and the docs, and creates a new app with `create-nevela` and builds it.
+- Run `php artisan test` in `apps/api`, and the package tests if you changed the package.
+- CI runs the package tests on PHP 8.3 and 8.4, the app's feature tests on SQLite and on Postgres, checks the generated code is up to date, builds the dashboard and the docs, and creates a new app with `create-nevela`, adds every kind of resource to it and builds it. See [How it is tested](/concepts/architecture/#how-it-is-tested).
 
 `packages/laravel` is also published on its own, from a read-only copy at [MarkColeMukisa/nevela-laravel](https://github.com/MarkColeMukisa/nevela-laravel). Change it here, never there.
 

@@ -32,4 +32,4 @@ app/Models/Product.php .. skipped — edited inside generated block
 
 Move your change outside the markers and run the command again, or use `--force` to overwrite it.
 
-Files marked "written once" above belong to you after they are created. Regeneration never changes them.
+Files that are "written once" in [what gets generated](/concepts/resources/#what-gets-generated), such as the policy, the migration and the dashboard pages, belong to you after they are created. Regeneration never changes them.

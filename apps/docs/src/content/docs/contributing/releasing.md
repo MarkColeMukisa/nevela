@@ -99,7 +99,7 @@ This prints the new version and the notes that will go under it, and writes noth
 pnpm release minor
 ```
 
-It moves the Unreleased notes under a new heading with today's date, leaves Unreleased empty, updates the links at the bottom of the changelog, and writes the version to the three files above.
+It moves the Unreleased notes under a new heading with today's date, leaves Unreleased empty, updates the links at the bottom of the changelog, and writes the version to the four files above.
 
 It stops without changing anything if:
 
@@ -107,10 +107,22 @@ It stops without changing anything if:
 - the version files disagree
 - the version is lower than the current one, or is already in the changelog
 
-**3. Review, commit, tag and push.** The script only edits files and prints these commands for you:
+**3. Update the docs site's headline.** `apps/docs/src/version.ts` holds the one-line summary shown in the banner and on the home page, and where the banner links. The version number beside it is read from `package.json`, so only the words need changing.
+
+**4. Check the docs say what is true now.** A change updates the pages it touches, and nothing else: the home page, its questions and the overview pages drift unless someone looks. Search them for claims that a release may have overtaken:
 
 ```sh
-git add CHANGELOG.md package.json apps/web/package.json packages/create-nevela/package.json packages/laravel/src/Nevela.php
+grep -rniE "not yet|still to come|(is|are) coming|for now|no .{0,30} yet|next:" apps/docs/src/components/Landing.astro apps/docs/src/content/docs --include=*.astro --include=*.md
+```
+
+Read what it finds, and the [roadmap](/concepts/architecture/#roadmap) and [What Nevela does not do yet](/start/introduction/#what-nevela-does-not-do-yet) in full. Then run `pnpm test:docs` and `pnpm docs:build`.
+
+**5. Upgrade an app from the last release.** Create an app with the version on npm, change a file in it by hand, then bring it up to this one with `nevela:upgrade`, pointed at the installer packed from your working copy (see [The update command](/contributing/development/#the-update-command)). The file you changed must be kept, the migrations must run, and the dashboard must build.
+
+**6. Review, commit, tag and push.** The script only edits files, and prints these commands for you. Add `apps/docs/src/version.ts` to the first, as here:
+
+```sh
+git add CHANGELOG.md package.json apps/web/package.json packages/create-nevela/package.json packages/laravel/src/Nevela.php apps/docs/src/version.ts
 git commit -m "Release v0.2.0"
 git tag -a v0.2.0 -m "v0.2.0"
 git push origin main --follow-tags
@@ -118,19 +130,9 @@ git push origin main --follow-tags
 
 The `-a` matters: `--follow-tags` only pushes annotated tags, so a plain `git tag v0.2.0` would stay on your machine.
 
-**4. Publish the packages.** `pnpm split:laravel v0.2.0` for Packagist and `npm publish` in `packages/create-nevela` for npm. Both are described below.
+**7. Publish the packages.** `pnpm split:laravel v0.2.0` for Packagist and `npm publish` in `packages/create-nevela` for npm. Both are described below.
 
-**5. Update the docs site's headline.** `apps/docs/src/version.ts` holds the one-line summary shown in the banner and on the home page. The version number beside it is read from `package.json`, so only the words need changing.
-
-**6. The GitHub release is created for you.** Pushing the tag runs `.github/workflows/release.yml`. It checks that the tag matches the version in `package.json`, takes that version's section from the changelog, and publishes it as the release notes.
-
-## The first release
-
-No version has been tagged yet. The files already say `0.1.0`, so the first release keeps that number:
-
-```sh
-pnpm release 0.1.0
-```
+**8. The GitHub release is created for you.** Pushing the tag runs `.github/workflows/release.yml`. It checks that the tag matches the version in `package.json`, takes that version's section from the changelog, and publishes it as the release notes.
 
 ## If something goes wrong
 
