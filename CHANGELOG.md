@@ -8,6 +8,8 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_The docs say what is true now_
+
 ### Changed
 
 - **The docs say what is true now.** Releases had updated only the pages a change touched, so the overview pages had fallen behind. The home page's questions said Nevela was not production-ready because relations, uploads and account pages were "still to come"; they now say what being 0.x means, what isn't there yet, and how to use Nevela with an app you already have. Its features show what has been added since: roles, Google and GitHub, relations, files, the trash, notifications and the activity log, and the public site. [How Nevela is built](https://nevela-docs.vercel.app/concepts/architecture/) says how each change is tested and has a current roadmap. The reference pages gained what they were missing: the scheduled tasks, the social sign-in endpoints, the `roles` and `permissions` on `/auth/me`, the `currency` and `auth.social` settings, three web app variables, and the `belongsTo` and file keys of a descriptor's field. [Releasing](https://nevela-docs.vercel.app/contributing/releasing/) now has a step that checks the docs before each release.

@@ -107,7 +107,7 @@ It stops without changing anything if:
 - the version files disagree
 - the version is lower than the current one, or is already in the changelog
 
-**3. Update the docs site's headline.** `apps/docs/src/version.ts` holds the one-line summary shown in the banner and on the home page, and where the banner links. The version number beside it is read from `package.json`, so only the words need changing.
+**3. Update the docs site's headline.** `apps/docs/src/version.ts` holds the one-line summary shown in the banner and on the home page, and where the banner links. The version number beside it is read from `package.json`. Change the headline, the banner's text, and where the banner links: it should point at what this release added.
 
 **4. Check the docs say what is true now.** A change updates the pages it touches, and nothing else: the home page, its questions and the overview pages drift unless someone looks. Search them for claims that a release may have overtaken:
 
@@ -139,7 +139,7 @@ The `-a` matters: `--follow-tags` only pushes annotated tags, so a plain `git ta
 **The release script made changes you do not want.** Nothing is committed yet. Discard them:
 
 ```sh
-git checkout -- CHANGELOG.md package.json apps/web/package.json packages/create-nevela/package.json packages/laravel/src/Nevela.php
+git checkout -- CHANGELOG.md package.json apps/web/package.json packages/create-nevela/package.json packages/laravel/src/Nevela.php apps/docs/src/version.ts
 ```
 
 **You tagged the wrong commit, and have not pushed.** Delete the tag and make it again:

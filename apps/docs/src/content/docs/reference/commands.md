@@ -1,6 +1,6 @@
 ---
 title: "Commands"
-description: "Every nevela command and option: new, update, resource, resource:remove, adopt, blog, generate, seed, user, upgrade, trash, disposable, publish, deploy:check, digest, dev, status and --version, and what the scheduler runs."
+description: "Every nevela command and option: new, update, resource, resource:remove, adopt, blog, generate, seed, user, upgrade, trash, disposable, publish, deploy:check, digest, dev, status and --version, the artisan commands it passes on, and what the scheduler runs."
 ---
 
 Install the `nevela` command once, and everything is this short, in every shell:
@@ -445,11 +445,11 @@ A new app's scheduler runs these by itself, once Laravel's one cron line is on t
 | Every 5 minutes | A sign of life, so `nevela deploy:check` can tell the scheduler is running. |
 | Every hour | [`nevela digest`](#nevela-digest). |
 | 03:40 | [`nevela trash`](#nevela-trash). |
-| 03:50 | `nevela prune-sessions`: removes sign-ins that have ended and access tokens that have expired. |
+| 03:50 | `nevela artisan nevela:prune-sessions`: removes sign-ins that have ended and access tokens that have expired. |
 | 03:55 | Removes notifications and activity older than they are kept. See [Notifications](/guides/notifications/). |
 | 04:10 | Looks up the latest release of Nevela, so the bell can say when there is a newer one. |
 
-`nevela setup` is run by `nevela new` to finish a new app: the key, the migrations, the generated files, the blog, the starter account and the sample users. There is no need to run it yourself.
+`nevela new` finishes a new app with `php artisan nevela:setup`: the key, the migrations and the generated files, and the blog, the starter account and the sample users unless `--no-blog`, `--no-user` or `--no-sample-users` leaves them out. There is no need to run it yourself.
 
 ## nevela migrate, and any other artisan command
 
