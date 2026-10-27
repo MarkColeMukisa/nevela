@@ -97,9 +97,8 @@ Before each release an app made with the previous version from npm is upgraded t
 
 ## Roadmap
 
-1. **Line items.** An order's items, an invoice's lines: edited as a table inside the parent's form, and saved with it.
-2. **Tutorials.** Three apps built from scratch, simple to hard: contacts, an online shop with orders, and a student app. Each with its finished code in the repository, built by CI.
-3. **Many-to-many relations**, generated rather than made by hand as a link resource.
-4. **Files.** Deleting a public file along with its record, and uploads sent straight to S3 or R2.
-5. **Saved table views** and search across resources, with Laravel endpoints.
-6. **A contract test:** the web app's store run against `php artisan serve` in CI.
+1. **Tutorials.** Three apps built from scratch, simple to hard: contacts, an online shop with orders, and a student app. Each with its finished code in the repository, built by CI.
+2. **Many-to-many relations**, generated rather than made by hand as a link resource.
+3. **Files.** Deleting a public file along with its record, and uploads sent straight to S3 or R2.
+4. **Saved table views** and search across resources, with Laravel endpoints.
+5. **A contract test:** the web app's store run against `php artisan serve` in CI.
