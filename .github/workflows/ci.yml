@@ -285,6 +285,14 @@ jobs:
           php nevela generate Article
           grep -q 'public function handle(Article $article, array $input): ?string' apps/api/app/Nevela/Actions/Article/Publish.php
           grep -q '"permission": "articles.publish"' apps/web/resources/index.ts
+          # Lines: an order's items, described with it, edited in its form and saved with it.
+          php nevela resource Order --fields="number:string!, customer:string, status:enum(pending|paid)" --items="OrderItem: product:belongsTo(Product), quantity:int, price:money" --seed=10
+          grep -q '"items": "OrderItem"' apps/api/nevela/resources/order.json
+          grep -q '"kind": "belongsTo"' apps/api/nevela/resources/order-item.json
+          grep -q 'request->saveItems($order);' apps/api/app/Http/Controllers/Api/OrderController.php
+          grep -q '"resource": "OrderItem"' apps/web/resources/index.ts
+          # The table of the lines is made after the table of what they are lines of.
+          test "$(ls apps/api/database/migrations | grep -n '_create_orders_table' | cut -d: -f1)" -lt "$(ls apps/api/database/migrations | grep -n '_create_order_items_table' | cut -d: -f1)"
           # A relation to a resource that doesn't exist is refused before anything is written.
           if php nevela resource Review --fields="body:text, author:belongsTo(Author)"; then echo "a relation to a missing resource was accepted"; exit 1; fi
           test ! -e apps/api/nevela/resources/review.json

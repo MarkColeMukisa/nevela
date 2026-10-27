@@ -11,7 +11,7 @@ class Product extends Model
 
     protected $table = 'products';
 
-    // nevela:generated:start hash=a4513f16b611
+    // nevela:generated:start hash=b8de03e547fc
     // Deleted records go to the trash, where they can be restored for a while.
     use \Nevela\Laravel\Concerns\Trashable;
     // $record->optionLabel('status'): what its value is called, in the dashboard's words.
@@ -30,6 +30,11 @@ class Product extends Model
     public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    public function orderItems(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(OrderItem::class, 'product_id');
     }
     // nevela:generated:end
 

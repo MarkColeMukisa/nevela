@@ -39,6 +39,7 @@ description: "The JSON file per resource that everything else is generated from.
 | `publish` | The optional date-and-time field a record is published by: empty is a draft, a time still to come is scheduled. See [The blog](/guides/blog/#how-it-is-described). Optional. |
 | `blog` | Where on the site the resource's public records are a blog (`"/blog"`). Written by `nevela blog`. Optional. |
 | `public` | What of the resource anyone may read or create without signing in. Nothing, without it. See [A public site on your API](/guides/public-site/), and [Protecting a public form](/guides/protecting-forms/) for its `protect` and `confirm`. Optional. |
+| `items` | The resource its lines are, such as `"OrderItem"`: edited in its form as a table and saved with it. That resource has a `belongsTo` pointing here. See [Line items](/guides/line-items/). Optional. |
 | `actions` | What can be done to a record, or to the list, beyond create, edit and delete. See [Actions on a record](/guides/actions/). Optional. |
 
 Each field has a `kind` (`string`, `text`, `int`, `float`, `boolean`, `date`, `datetime`, `enum`, `belongsTo` or `file`) and may have:

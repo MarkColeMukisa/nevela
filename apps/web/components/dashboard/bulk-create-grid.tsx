@@ -43,7 +43,7 @@ const MOST_ROWS = 500;
 /** Kinds that fit in a cell: one control, one value. A file needs its own upload, so it is left to the form. */
 const IN_A_CELL = new Set(["string", "text", "int", "float", "boolean", "date", "datetime", "enum", "belongsTo"]);
 /** A file needs an upload and rich text needs an editor: neither is something to type into a cell. */
-const fitsACell = (def: { kind: string }) => IN_A_CELL.has(def.kind) && !isRich(def);
+export const fitsACell = (def: { kind: string }) => IN_A_CELL.has(def.kind) && !isRich(def);
 
 /**
  * Add several records at once, in a grid.
@@ -292,7 +292,7 @@ function Grid({ resource, relations, onDone }: { resource: ClientResource; relat
  * quick nor readable. Everything else is the form's own control, so a date, a price or a
  * link to another record behaves exactly as it does there.
  */
-function Cell({
+export function Cell({
   id,
   resourceName,
   fieldKey,

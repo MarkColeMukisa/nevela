@@ -92,7 +92,7 @@ class AccessTest extends TestCase
         $this->assertFalse(Permissions::matches('products', 'products.view'));
         $this->assertFalse(Permissions::matches('products.view.extra', 'products.view'));
 
-        $this->assertSame(['categories.view', 'products.view'], Permissions::expand(['@resources.view']));
+        $this->assertSame(['categories.view', 'order_items.view', 'orders.view', 'products.view'], Permissions::expand(['@resources.view']));
         $this->assertTrue(Permissions::hasAll(['*']));
         $this->assertTrue(Permissions::hasAll(['@resources.*', '@access.*']));
         $this->assertFalse(Permissions::hasAll(['@resources.*', 'users.*']));
@@ -107,7 +107,7 @@ class AccessTest extends TestCase
         $this->assertSame(['products.*'], Permissions::beyond(['products.view'], ['products.*']));
         $this->assertSame(['*'], Permissions::beyond(['@resources.*', '@access.*'], ['*']));
         $this->assertSame(['@resources.*'], Permissions::beyond(['products.*'], ['@resources.*']));
-        $this->assertSame([], Permissions::beyond(['products.*', 'categories.*'], ['@resources.*']));
+        $this->assertSame([], Permissions::beyond(['products.*', 'categories.*', 'orders.*', 'order_items.*'], ['@resources.*']));
 
         $this->assertTrue(Permissions::understood('@resources.*'));
         $this->assertTrue(Permissions::understood('*.view'));
@@ -394,7 +394,7 @@ class AccessTest extends TestCase
         $id = $this->postJson('/api/_nevela/roles', ['name' => 'Support', 'description' => 'Reads everything.', 'grants' => ['@resources.view', 'users.view', 'users.view']])
             ->assertCreated()
             ->assertJsonPath('grants', ['@resources.view', 'users.view'])
-            ->assertJsonPath('permissions', ['categories.view', 'products.view', 'users.view'])
+            ->assertJsonPath('permissions', ['categories.view', 'order_items.view', 'orders.view', 'products.view', 'users.view'])
             ->assertJsonPath('isSystem', false)->assertJsonPath('users', 0)
             ->json('id');
 

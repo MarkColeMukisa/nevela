@@ -11,6 +11,8 @@ nevela resource Product --fields="name:string, category:belongsTo(Category)"
 
 The resource it points at has to exist first. If it does not, nothing is written and you are told the command to create it.
 
+When the children are part of the parent, like an order's items, make them its [line items](/guides/line-items/) instead: they are edited in the parent's form and saved, deleted and restored with it.
+
 ## How to write it
 
 | You write | Field | Column | Points at |

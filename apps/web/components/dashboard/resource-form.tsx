@@ -14,6 +14,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { canSuggest, suggestValue } from "@/lib/suggest";
 import { cn } from "@/lib/utils";
 import { FieldWidget, type RelationMeta } from "./fields/field-widget";
+import { LineItems, linesToSend, problemsFromServer, startRows, type LineItemsSetup, type LineProblems, type LineRow } from "./line-items";
 
 export interface ResourceFormProps {
   resource: ClientResource;
@@ -27,6 +28,8 @@ export interface ResourceFormProps {
   listHref: string;
   /** In a sheet: close it instead of navigating, and drop the card around the fields. */
   onDone?: () => void;
+  /** Its lines, when it has some: edited below the fields, on the last step, and saved with it. */
+  items?: LineItemsSetup;
 }
 
 const WIDE = new Set(["text", "file"]);
@@ -57,7 +60,7 @@ function toSteps(fields: Entry[]): Entry[][] {
  * with the descriptor's zod schemas, then again on the server by the same store the
  * REST API uses; server errors (e.g. unique conflicts) land on their fields.
  */
-export function ResourceForm({ resource, mode, id, record, relations = {}, listHref, onDone }: ResourceFormProps) {
+export function ResourceForm({ resource, mode, id, record, relations = {}, listHref, onDone, items }: ResourceFormProps) {
   const router = useRouter();
   const validators = useMemo(() => createValidators(resource), [resource]);
   const fields = useMemo(() => storedFields(resource), [resource]);
@@ -66,6 +69,8 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
   const [values, setValues] = useState(() => initialFormValues(resource, record));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, startTransition] = useTransition();
+  const [lines, setLines] = useState<LineRow[]>(() => (items ? startRows(items) : []));
+  const [lineProblems, setLineProblems] = useState<LineProblems>({});
 
   const last = step === steps.length - 1;
   const visible = steps[step] ?? [];
@@ -127,14 +132,24 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    const input = formValuesToInput(resource, values, mode);
+    const input = formValuesToInput(resource, values, mode) as Record<string, unknown>;
     const found = validate();
+    // Its lines go with it, checked with their own rules first.
+    const send = items ? linesToSend(items, lines) : null;
+    if (send) {
+      input.items = send.items;
+      setLineProblems(send.problems);
+    }
     if (Object.keys(found).length > 0) {
       setErrors(found);
       // Send them to the step that holds the problem, not just to the field.
       const broken = steps.findIndex((entries) => entries.some(([key]) => found[key]));
       if (broken >= 0 && broken !== step) setStep(broken);
       focusFirstError(found, broken >= 0 ? steps[broken]! : fields);
+      return;
+    }
+    if (send && Object.keys(send.problems).length > 0) {
+      setErrors({ _form: linesNeedFixing(Object.keys(send.problems).length, items!) });
       return;
     }
 
@@ -147,7 +162,19 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
         router.refresh();
         return;
       }
-      const fieldErrors = result.issues ? issuesByField(result.issues) : result.field ? { [result.field]: result.error } : { _form: result.error };
+      // What Laravel says of the lines goes on their rows; the rest on the fields.
+      const ofLines = (issue: { path: string }) => issue.path === "items" || issue.path.startsWith("items.");
+      const lineIssues = result.issues?.filter(ofLines) ?? [];
+      const issues = result.issues?.filter((issue) => !ofLines(issue)) ?? [];
+      const onRows = send ? problemsFromServer(items!, send.sent, lineIssues) : {};
+      setLineProblems(onRows);
+      const whole = lineIssues.find((issue) => issue.path === "items");
+      const fieldErrors =
+        issues.length > 0
+          ? issuesByField(issues)
+          : result.field
+            ? { [result.field]: result.error }
+            : { _form: whole?.message ?? (Object.keys(onRows).length > 0 ? linesNeedFixing(Object.keys(onRows).length, items!) : result.error) };
       setErrors(fieldErrors);
       const broken = steps.findIndex((entries) => entries.some(([key]) => fieldErrors[key]));
       if (broken >= 0 && broken !== step) setStep(broken);
@@ -204,6 +231,7 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
                 </Field>
               );
             })}
+            {items && last && <LineItems setup={items} rows={lines} onRowsChange={setLines} problems={lineProblems} onProblemsChange={setLineProblems} disabled={pending} />}
           </FieldGroup>
         </Body>
         <Footer className="flex items-center justify-end gap-2 border-t pt-4">
@@ -234,6 +262,11 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
       </Frame>
     </form>
   );
+}
+
+/** "2 items need fixing.", in the lines' own words. */
+function linesNeedFixing(count: number, items: LineItemsSetup): string {
+  return count === 1 ? `1 ${items.resource.label.toLowerCase()} needs fixing.` : `${count} ${items.resource.pluralLabel.toLowerCase()} need fixing.`;
 }
 
 /** Where you are in a multi-step form, and a way back to a step already passed. */

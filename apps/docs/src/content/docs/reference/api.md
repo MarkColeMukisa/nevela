@@ -331,6 +331,8 @@ Deleting a record that others are required to belong to is a 409:
 { "error": "8 products belong to this category. Move or delete them first." }
 ```
 
+A resource with [line items](/guides/line-items/#in-the-api) sends its lines with one record, as `items`, and takes them back the same way: a line with its `id` is changed, one without is added, and one left out is removed. A mistake in a line is named by its place, `items.1.quantity`.
+
 ## Files
 
 | Method | Path | Does |

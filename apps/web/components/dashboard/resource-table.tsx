@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { resourcePath, adminPermissions, allowedActions, allResources, dashboardStore, requireAccess } from "@/lib/dashboard";
-import { actionApplies, formOf, PUBLISH_LABELS, publishFieldOf, publishState } from "@/lib/extras";
+import { actionApplies, formOf, itemsOf, PUBLISH_LABELS, publishFieldOf, publishState } from "@/lib/extras";
 import { site } from "@/lib/site";
 import { trashFor } from "@/lib/trash";
 import { cn } from "@/lib/utils";
@@ -101,7 +101,8 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
     relations[key] = { name: target.name, label: target.label, pluralLabel: target.pluralLabel, slug: target.slug, titleField: target.titleField };
   }
 
-  const overlayForms = site.dashboard.forms === "sheet";
+  // A record with lines is edited on a page of its own: a table of them needs the room.
+  const overlayForms = site.dashboard.forms === "sheet" && !itemsOf(resource.name);
   // The field this resource's records are published by, where it has one, and the time to judge them by.
   const publishField = publishFieldOf(resource.name);
   const now = new Date();

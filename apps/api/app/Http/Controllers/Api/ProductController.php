@@ -18,7 +18,7 @@ use Nevela\Laravel\Nevela;
  */
 class ProductController extends Controller
 {
-    // nevela:generated:start hash=2446cfa10185
+    // nevela:generated:start hash=2dab3d4f5b85
     public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Product::class);
@@ -71,9 +71,14 @@ class ProductController extends Controller
         return new ProductResource($product->refresh());
     }
 
-    public function destroy(Product $product): Response
+    public function destroy(Product $product): Response|JsonResponse
     {
         Gate::authorize('delete', $product);
+        if (($count = \App\Models\OrderItem::query()->where('product_id', $product->getKey())->count()) > 0) {
+            return response()->json(['error' => $count === 1
+                ? '1 order item belongs to this product. Move or delete it first.'
+                : "{$count} order items belong to this product. Move or delete them first."], 409);
+        }
         $product->delete();
 
         return response()->noContent();
