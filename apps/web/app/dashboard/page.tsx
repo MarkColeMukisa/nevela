@@ -9,7 +9,8 @@ import { resourceIcon } from "@/components/dashboard/resource-icon";
 import { StatCards, type Stat } from "@/components/dashboard/stat-card";
 import { ActivityList } from "@/components/dashboard/activity-list";
 import { loadActivity } from "@/lib/activity";
-import { adminPermissions, allResources, dashboardSession, navigableResources, resourcePath, resourceStats, trend } from "@/lib/dashboard";
+import { adminPermissions, allResources, dashboardSession, resourcePath, resourceStats, trend } from "@/lib/dashboard";
+import { navigableResources } from "@/lib/lines";
 import { requireSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 

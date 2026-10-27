@@ -1,4 +1,4 @@
-import { actionsOf, isLines, type ResourceAction } from "@/lib/extras";
+import { actionsOf, type ResourceAction } from "@/lib/extras";
 import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { can, type Policy, type PolicyAction, type Resource } from "@flaredev/core";
@@ -162,18 +162,10 @@ export function allResources(): Resource[] {
   return [...resources] as unknown as Resource[];
 }
 
-/** Resources the current user may read. */
+/** Resources the current user may read, for the sidebar and dashboard. */
 export async function visibleResources(): Promise<Resource[]> {
   const visible = await Promise.all(allResources().map((resource) => mayDo(resource, "read")));
   return allResources().filter((_, index) => visible[index]);
-}
-
-/**
- * The ones that have a place of their own, for the sidebar and the dashboard's home: an
- * order's items are reached through their order, so they are left out.
- */
-export async function navigableResources(): Promise<Resource[]> {
-  return (await visibleResources()).filter((resource) => !isLines(resource.name));
 }
 
 export function resourcePath(resource: Resource, ...parts: string[]) {

@@ -7,7 +7,7 @@ import { clientResource, storedFields, type Resource } from "@flaredev/core";
 import type { LineItemsSetup } from "@/components/dashboard/line-items";
 import type { RelationMeta } from "@/components/dashboard/fields/field-widget";
 import { allResources, dashboardStore } from "./dashboard";
-import { itemsOf } from "./extras";
+import { itemsOf } from "./lines";
 
 /** The resource a record's lines are, when it has some. */
 export function linesResource(resource: Resource): { lines: Resource; field: string } | undefined {

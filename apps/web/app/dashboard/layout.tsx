@@ -6,7 +6,8 @@ import { DashboardHeader, type Theme } from "@/components/dashboard/dashboard-he
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { SessionWatchdog } from "@/components/dashboard/session-watchdog";
 import { dashboardLinks } from "@/lib/dashboard-nav";
-import { allResources, dashboardSession, mayDo, navigableResources } from "@/lib/dashboard";
+import { allResources, dashboardSession, mayDo } from "@/lib/dashboard";
+import { navigableResources } from "@/lib/lines";
 import { fileUrl } from "@/lib/files";
 import { loadInbox } from "@/lib/notifications";
 import { noIndex } from "@/lib/seo";
