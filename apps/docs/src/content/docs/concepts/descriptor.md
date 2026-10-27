@@ -41,11 +41,14 @@ description: "The JSON file per resource that everything else is generated from.
 | `public` | What of the resource anyone may read or create without signing in. Nothing, without it. See [A public site on your API](/guides/public-site/), and [Protecting a public form](/guides/protecting-forms/) for its `protect` and `confirm`. Optional. |
 | `actions` | What can be done to a record, or to the list, beyond create, edit and delete. See [Actions on a record](/guides/actions/). Optional. |
 
-Each field has a `kind` (`string`, `text`, `int`, `float`, `boolean`, `date`, `datetime` or `enum`) and may have:
+Each field has a `kind` (`string`, `text`, `int`, `float`, `boolean`, `date`, `datetime`, `enum`, `belongsTo` or `file`) and may have:
 
 | Key | Meaning |
 |---|---|
 | `format` | For strings: `email`, `url`, `tel`, `slug`, `color`. For numbers: `money`, `percent`, `rating`. For text: `rich`, which is [rich text](/concepts/field-types/#rich-text). |
+| `target` | For `belongsTo`: the resource it points at, `"Category"`. The field's name ends in `Id`. See [Relationships](/guides/relationships/). |
+| `accept` | For a file: the kinds it takes, `["image"]` or `["pdf", "document"]`. See [Files and images](/guides/images/). |
+| `profile` | For an image: the [profile](/guides/images/#profiles) it is optimised with, `"product"`. |
 | `options` | The allowed values of an enum. |
 | `optionLabels` | For an enum: what each value is called where people read it, `{ "asap": "As soon as possible" }`. See [What an enum's values are called](/concepts/field-types/#what-an-enums-values-are-called). |
 | `currency` | For money: the ISO 4217 code it is in, `"UGX"`. The app's `NEVELA_CURRENCY` unless set. See [Money and its currency](/concepts/field-types/#money-and-its-currency). |

@@ -34,8 +34,11 @@ In the Laravel app:
 | `app/Http/Resources/Nevela/ProductResource.php` | Between the markers |
 | `app/Http/Controllers/Api/ProductController.php` | Between the markers |
 | `routes/nevela.php` | Between the markers |
+| `routes/nevela-public.php`, with a [public side](/guides/public-site/) | Between the markers |
 | `database/migrations/…_create_products_table.php` | Written once |
+| `database/migrations/…_add_trash_to_products_table.php`, for a table made before it had a [trash](/guides/trash/) | Written once |
 | `app/Policies/ProductPolicy.php` | Written once |
+| `app/Nevela/Actions/Product/…`, one per [action](/guides/actions/) | Written once |
 
 In the web app:
 

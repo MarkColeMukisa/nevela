@@ -101,6 +101,7 @@ All are under `/api/auth`. The ones marked 🔒 need a token.
 | | `POST /register` | Create an account, when registration is on. |
 | | `POST /email/send`, `/email/verify` | Send the verification email; verify with `email` and `code`. |
 | | `POST /password/forgot`, `/password/reset` | Email a reset link; set `newPassword` with its `token`. |
+| | `POST /oauth/{provider}/start`, `/oauth/{provider}/callback` | Sign in with `google` or `github`: where to send the browser, then the code it came back with. See [how it works](/guides/authentication/#google-and-github). |
 | 🔒 | `GET /me`, `PATCH /me` | The signed-in user; change `name` or `avatar`. |
 | 🔒 | `PUT /avatar?name=me.jpg` | Upload a profile picture. The body is the file. |
 | 🔒 | `POST /password` | Change the password: `currentPassword`, `newPassword`. |
@@ -108,6 +109,7 @@ All are under `/api/auth`. The ones marked 🔒 need a token.
 | 🔒 | `GET /sessions`, `DELETE /sessions`, `DELETE /sessions/{id}` | List devices; sign out the others, or one. |
 | 🔒 | `POST /two-factor/enable`, `/confirm`, `/disable`, `/backup-codes` | Set up and manage the second step. |
 | 🔒 | `GET /passkeys`, `POST /passkeys/options`, `POST /passkeys`, `PATCH`/`DELETE /passkeys/{id}` | List, add, rename and remove passkeys. |
+| 🔒 | `GET /social`, `DELETE /social/{id}` | The Google and GitHub accounts connected to yours; disconnect one. |
 | 🔒 | `DELETE /token` | Sign out: the sign-in ends, and its tokens stop working. |
 
 An error has a `code` beside its message, such as `INVALID_EMAIL_OR_PASSWORD`, `INVALID_TWO_FACTOR_CODE`, `OTP_EXPIRED`, `TOO_MANY_ATTEMPTS`, or `ACCOUNT_CLOSED` for an account that was closed. A method that is switched off answers 404. Attempts are limited to ten a minute per account, after which the answer is 429.
@@ -116,7 +118,7 @@ An error has a `code` beside its message, such as `INVALID_EMAIL_OR_PASSWORD`, `
 
 | Request | Response |
 |---|---|
-| `GET /auth/me` | `200 { "user": { id, name, email, role, emailVerified, twoFactorEnabled, avatar, avatarFile, image }, "session": { id } }` |
+| `GET /auth/me` | `200 { "user": { id, name, email, role, roles, permissions, isAdmin, emailVerified, twoFactorEnabled, avatar, avatarFile, image }, "session": { id } }`. `role` is the first of `roles`, for code written when an account had one. |
 | `DELETE /auth/token` | `204`. The token used for the request stops working. |
 
 ## Resource endpoints

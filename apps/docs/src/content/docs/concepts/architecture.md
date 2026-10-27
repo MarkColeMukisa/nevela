@@ -1,6 +1,6 @@
 ---
 title: "How Nevela is built"
-description: "Why Nevela is built this way, what is verified, and the roadmap."
+description: "Why Nevela is built this way, how it is tested, and the roadmap."
 ---
 
 ## Benchmarks and what we take from each
@@ -20,30 +20,30 @@ description: "Why Nevela is built this way, what is verified, and the roadmap."
 4. **Monorepo**: `apps/api` (Laravel) + `apps/web` (Next.js) + `apps/docs` (this site) + `packages/*`.
 5. **Single source of input**: `apps/api/nevela/resources/*.json`. Laravel code generated from it is the runtime authority. The Flare `.resource.ts` is derived for rendering only. No validation logic is duplicated in TypeScript.
 
-## Where Flare's Next.js app touches data (the seam)
+## How the dashboard was taken from Flare
 
-Reading `examples/next-shop`, the dashboard pages and components read the database directly rather than calling the REST API (only the relation and file fields `fetch`). The core of that is:
+This is how the web app came to be, kept for whoever wonders why it is shaped as it is.
+
+Reading `examples/next-shop`, Flare's dashboard pages and components read the database directly rather than calling a REST API. The core of that was:
 
 - `lib/dashboard.ts`: `dashboardStore(name)` (a `ResourceStore` over Prisma), `dashboardSession()` (Better Auth), `resourceStats()` (raw SQL), `policyFor()`
 - `app/dashboard/actions.ts` / `import-actions.ts`: server actions calling the store
 - `lib/auth*.ts`, `app/api/auth/[...all]`: Better Auth
 - `resources/server.ts`: the resource → Prisma delegate registry
 
-Everything above that layer (pages, `ResourceTable`, forms, fields, themes) is driven by the `.resource.ts` descriptors. About 20 files outside `app/api` import Prisma or Better Auth in total: besides the ones above, `lib/api.ts`, `audit.ts`, `search.ts`, `views.ts`, `session.ts`, the dashboard layout and home page, the account pages, sign-in/sign-up, `resource-chart.tsx` and `proxy.ts`.
-
-**Slice 2 (built, `apps/web`)** replaces that layer with Laravel-backed versions:
+Everything above that layer (pages, `ResourceTable`, forms, fields, themes) is driven by the `.resource.ts` descriptors, so Nevela replaced only the layer:
 
 - `lib/laravel.ts`: the only `fetch` to Laravel, with the Bearer token from an httpOnly cookie
 - `lib/resource/store.ts`: `laravelStore(resource)`, the same `ResourceStore` methods (`list/get/titles/create/update/replace/delete`, returning `{ ok, data } | { ok: false, status, error, issues }`)
 - `lib/dashboard.ts`: `dashboardSession()` → `GET /api/auth/me`, `resourceStats()` → `GET /api/{slug}/_stats`
 - `app/auth-actions.ts`: sign-in → `POST /api/auth/token`, sign-out → `DELETE /api/auth/token`
-- Prisma, Better Auth and the `app/api/*` routes are gone from the web app
+- Prisma, Better Auth and their `app/api/*` routes are gone from the web app
 
-Removed with them, until Laravel has endpoints for each: sign-up, password reset, two-factor, passkeys, account pages, saved views, audit history, the per-day chart, search, costs and observability.
+What depended on Flare's database went with it. Most has come back with a Laravel endpoint behind it: sign-up, password reset, two-factor, passkeys, Google and GitHub, the account pages, the per-day chart (as [insights](/reference/api/#insights)) and the change history (as [the activity log](/guides/notifications/#the-activity-log)). Saved table views, product search, and the costs and observability pages have not.
 
 ## The REST contract (what Laravel serves)
 
-Matches Flare's `createResourceClient` and `ResourceStore`, so Flare's own client works against Laravel unchanged.
+It matches Flare's `createResourceClient` and `ResourceStore`, so Flare's own client works against Laravel unchanged. The core is below; the [REST API](/reference/api/) reference has all of it, including the trash, bulk create, insights, actions, files and sign-in.
 
 | Request | Response |
 |---|---|
@@ -66,27 +66,40 @@ Errors (only under the Nevela prefix):
 - `409 { error, field }`: unique conflict that slipped past validation (a race). Normally the `unique` rule catches it first and answers 422 with the field as `path`
 - `401` / `403` / `404` / `405` / `429 { error }`
 
-## Package map (`packages/laravel`)
+## Package map (`packages/laravel/src`)
 
-- `Support/`: `Descriptor`, `Field`, `ListQuery`, `Naming`. Pure PHP, unit-tested without Laravel.
-- `Generator/`: `ResourceGenerator` (templates) and `Writer` (generated-block merge, hash-based edit detection, CRLF-safe).
-- `Http/`: `ResourceRequest` (camelCase → columns, PATCH/PUT semantics, unknown-key rejection), `FlareErrors`, `TokenController`.
-- `Nevela.php`: `list()` and `stats()` used by generated controllers.
-- `Console/`: `nevela:resource`, `nevela:generate`, `nevela:seed` (rows from `Support/Fake`, timed). Both also write the web app's descriptor, registry (`resources/index.ts`) and dashboard pages when `nevela.web_path` exists.
+| Folder | What it holds |
+|---|---|
+| `Support/` | `Descriptor`, `Field`, `ListQuery`, `Naming`, the fake values seeding uses. Plain PHP, unit-tested without Laravel. |
+| `Generator/` | `ResourceGenerator` (the templates), `BlogPages`, and `Writer` (the generated-block merge, hash-based edit detection, CRLF-safe). |
+| `Console/` | Every `nevela:*` artisan command. See [Commands](/reference/commands/). |
+| `Http/` | `ResourceRequest` (camelCase → columns, PATCH/PUT semantics, unknown-key rejection), `FlareErrors`, and the controllers for sign-in (`Auth/`), users and roles (`Access/`), uploads, actions, the trash, public forms, notifications and activity. |
+| `Auth/` | Accounts, sign-in sessions, passkeys, one-time codes, two-factor and Google and GitHub. |
+| `Access/` | Roles and permissions, closed accounts and the sample users. |
+| `Media/` | File types, upload checks and the image optimiser with its profiles. |
+| `Trash/`, `Concerns/` | The trash, and the traits a generated model uses: `Trashable`, `Confirmable`, `OptionLabels`. |
+| `Forms/` | Public forms: the bot checks, proving an address, and the mail a form causes. |
+| `Notices/`, `Activity/` | The notification bell and the activity log. |
+| `Models/`, `Rules/` | Nevela's own tables (roles, passkeys, two-factor, uploads) and validation rules. |
+| `Nevela.php` | `list()`, `stats()` and the other helpers generated controllers call, and `Nevela::VERSION`. |
 
-## Verified so far
+## How it is tested
 
-- 19 unit tests pass: descriptor parsing and JSON round-trip, list-query parsing and rejection, generated-block writer (update, edit detection, once-files, CRLF), and generator output (`php -l` on every generated PHP file, rules, the web registry and dashboard pages, regeneration that keeps user code).
-- The package runs in a real Laravel 13 app (`apps/api`, PHP 8.5, SQLite). Every endpoint in the contract was called over HTTP: token, me, list with sort/search/filter/paging, show, create, PATCH, PUT, delete, stats, descriptors, and the 400/401/404/422 error bodies.
-- `apps/web` type-checks against `@flaredev/core` 0.9.1 (including the generated `product.resource.ts`) and `next build` passes.
-- With both apps running: the dashboard home, list, filtered list, detail and not-found pages render Laravel's data, and the sign-in, create, update, import, export, delete and bulk-delete server actions were called over HTTP and returned Laravel's results and validation messages.
-- **Not yet done:** clicking through the UI in a browser. The forms, dialogs and toasts are Flare's unchanged client components, but nobody has watched them work against Laravel.
+Every pull request runs all of this in CI, and a release is cut only when it is green:
+
+- **The package's unit tests**, on PHP 8.3 and 8.4: descriptor parsing, list queries, the generated-block writer, the generator's output (`php -l` on every generated PHP file), image optimisation, and more.
+- **The Laravel app's feature tests**, on SQLite and again on Postgres: sign-in in every form, roles, the trash, public forms, the activity log, notifications and the rest, over HTTP.
+- **The generated code is up to date:** the app's resources are regenerated, and CI fails if that changes a file. Then a thousand products are seeded, and the images checked for their renditions.
+- **A new app, end to end:** `create-nevela` is packed as it would be published, creates an app, and in it every kind of resource is made with `php nevela` (relations, rich text, private files, public forms, actions, an adopted table), migrated, seeded and checked. Then the dashboard is type-checked and built.
+- **The dashboard and the docs** are type-checked and built, and the release script, the installer and the dashboard's API checks have unit tests.
+
+Before each release an app made with the previous version from npm is upgraded to the new one, and checked: the files changed by hand are kept, the migrations run, and the dashboard builds. Changes to the dashboard are clicked through in a browser.
 
 ## Roadmap
 
-1. **Auth.** Sign-up, password reset, two-factor, passkeys and the account pages are done ([Authentication](/guides/authentication/)). Next: signing in with Google, GitHub and other providers, roles on the user, and policies generated from a descriptor `policy` block.
-2. **Contract test.** Run the web app's store against `php artisan serve` in CI. Bring back saved views, audit history and the per-day chart with Laravel endpoints.
-3. **Relations.** One-to-many is done ([Relationships](/guides/relationships/)). Many-to-many is next.
-4. **Files.** Uploads and image optimisation are done ([Files and images](/guides/images/)). Private files are done too. Next: deleting a public file with its record, and uploads sent straight to S3 or R2.
-5. **`nevela new`**: scaffold the monorepo (Laravel app + Flare web overlay) in one command. **`nevela dev`**: run both apps together.
-6. **Ship**: Laravel Cloud for `apps/api`, Vercel for `apps/web`, with preview environments.
+1. **Line items.** An order's items, an invoice's lines: edited as a table inside the parent's form, and saved with it.
+2. **Tutorials.** Three apps built from scratch, simple to hard: contacts, an online shop with orders, and a student app. Each with its finished code in the repository, built by CI.
+3. **Many-to-many relations**, generated rather than made by hand as a link resource.
+4. **Files.** Deleting a public file along with its record, and uploads sent straight to S3 or R2.
+5. **Saved table views** and search across resources, with Laravel endpoints.
+6. **A contract test:** the web app's store run against `php artisan serve` in CI.
