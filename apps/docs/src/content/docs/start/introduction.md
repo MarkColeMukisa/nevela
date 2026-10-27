@@ -45,7 +45,6 @@ The dashboard is [Flare](https://github.com/MUKE-coder/flare-framework)'s Next.j
 ## What Nevela does not do yet
 
 - Many-to-many relations are not generated. One-to-many is: see [Relationships](/guides/relationships/). For many-to-many, make a resource for the link itself, with a `belongsTo` to each side.
-- Line items edited inside their parent's form, such as an order's items on the order. Today they are a resource of their own, with a `belongsTo` to the order, listed on the order's page.
 - A public file is not deleted when its record is removed for good. A [private file](/guides/images/#private-files) is.
 - Saved table views.
 

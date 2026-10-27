@@ -99,6 +99,8 @@ class TrashTest extends TestCase
             ->assertJsonPath('days', 30)
             ->assertJsonPath('resources', [
                 ['name' => 'Category', 'label' => 'Category', 'pluralLabel' => 'Categories', 'slug' => 'categories', 'icon' => 'tags', 'count' => 0],
+                // Orders, and not their lines: those are in the trash with their order.
+                ['name' => 'Order', 'label' => 'Order', 'pluralLabel' => 'Orders', 'slug' => 'orders', 'icon' => 'shopping-cart', 'count' => 0],
                 ['name' => 'Product', 'label' => 'Product', 'pluralLabel' => 'Products', 'slug' => 'products', 'icon' => 'package', 'count' => 1],
             ]);
         $this->getJson('/api/_nevela/trash/products')->assertOk()
@@ -109,7 +111,7 @@ class TrashTest extends TestCase
             ->assertJsonPath('data.0.expiresAt', '2026-11-08T12:00:00.000000Z');
         $this->getJson('/api/_nevela/trash/unicorns')->assertNotFound();
         // What a delete button asks first, to say what pressing it will do.
-        $this->getJson('/api/_nevela/trash/_status')->assertOk()->assertExactJson(['days' => 30, 'resources' => ['categories', 'products']]);
+        $this->getJson('/api/_nevela/trash/_status')->assertOk()->assertExactJson(['days' => 30, 'resources' => ['categories', 'order-items', 'orders', 'products']]);
     }
 
     public function test_it_can_be_restored_or_removed_for_good(): void
@@ -310,8 +312,8 @@ class TrashTest extends TestCase
         $this->getJson('/api/products')->assertOk()->assertJsonPath('meta.total', 1);
         $this->deleteJson("/api/products/{$product->id}")->assertNoContent();
         $this->assertFalse(DB::table('products')->where('id', $product->id)->exists());
-        // Its trash isn't offered; the one resource that has migrated still has its own.
-        $this->getJson('/api/_nevela/trash')->assertOk()->assertJsonCount(1, 'resources')->assertJsonPath('resources.0.slug', 'categories');
+        // Its trash isn't offered; the resources that have migrated still have their own.
+        $this->getJson('/api/_nevela/trash')->assertOk()->assertJsonCount(2, 'resources')->assertJsonPath('resources.0.slug', 'categories')->assertJsonPath('resources.1.slug', 'orders');
         $this->getJson('/api/_nevela/trash/products')->assertNotFound();
         // And a value it held is free at once.
         $this->postJson('/api/products', ['name' => 'Kettle', 'sku' => 'KET-1', 'price' => 10, 'categoryId' => $this->kitchen->id, 'active' => true, 'kind' => 'stock'])->assertCreated();

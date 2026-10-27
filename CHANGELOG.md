@@ -8,11 +8,20 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_The docs say what is true now_
+_Line items, and docs that say what is true now_
+
+### Added
+
+- **Line items: an order's items, an invoice's lines, edited as a table inside its form and saved with it.** `nevela resource Order --fields="…" --items="OrderItem: product:belongsTo(Product), quantity:int, price:money"` makes both resources, and gives the lines a field pointing at their order (Grit's `--items` spelling works too). In the order's form, below its fields, the lines are a table: a row for each, a product picked as anywhere else, rows added and removed, and each checked with OrderItem's own rules before anything is sent. When the lines have a quantity and a price, each line's amount and the total are shown as you type, and again on the order's page. The order and its lines are saved together or not at all; deleting the order puts its lines in the trash with it, and restoring it brings them back. Order items stay out of the sidebar and the Trash page, and their changes don't ring the bell for the order's. Whoever may edit an order may change its lines. In the API the lines travel with one order as `items`: a line with its `id` is changed, one without is added, one left out is removed, and a mistake is named by its place (`items.1.quantity`). To store a total, give the model an `itemsSaved()` method; Nevela calls it once the lines are saved. A resource you already have gets lines with `"items": "OrderItem"` in its descriptor. See [Line items](https://nevela-docs.vercel.app/guides/line-items/).
 
 ### Changed
 
 - **The docs say what is true now.** Releases had updated only the pages a change touched, so the overview pages had fallen behind. The home page's questions said Nevela was not production-ready because relations, uploads and account pages were "still to come"; they now say what being 0.x means, what isn't there yet, and how to use Nevela with an app you already have. Its features show what has been added since: roles, Google and GitHub, relations, files, the trash, notifications and the activity log, and the public site. [How Nevela is built](https://nevela-docs.vercel.app/concepts/architecture/) says how each change is tested and has a current roadmap. The reference pages gained what they were missing: the scheduled tasks, the social sign-in endpoints, the `roles` and `permissions` on `/auth/me`, the `currency` and `auth.social` settings, three web app variables, and the `belongsTo` and file keys of a descriptor's field. [Releasing](https://nevela-docs.vercel.app/contributing/releasing/) now has a step that checks the docs before each release.
+
+### Fixed
+
+- Resources made together get their migrations a second apart, in order, so the table of an order's lines is created after the orders table it points at.
+- A new record's page says "Add an order", not "Add a order".
 
 ## [0.21.0] - 2026-10-27
 

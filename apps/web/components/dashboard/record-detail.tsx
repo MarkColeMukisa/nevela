@@ -7,8 +7,10 @@ import { FileCell } from "@/components/dashboard/fields/file-cell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { adminPermissions, allowedActions, allResources, dashboardStore, requireAccess, resourcePath } from "@/lib/dashboard";
-import { actionApplies, publishFieldOf, publishState } from "@/lib/extras";
+import { actionApplies, itemsOf, publishFieldOf, publishState } from "@/lib/extras";
 import { privateFileUrl } from "@/lib/files";
+import { lineTitles, linesOf, linesResource } from "@/lib/line-items";
+import { lineAmounts } from "@/lib/line-totals";
 import { isRich } from "@/lib/rich";
 import { site } from "@/lib/site";
 import { trashFor } from "@/lib/trash";
@@ -58,11 +60,19 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
     }
   }
 
+  // Its lines, if it has some: shown whole, in a table of their own, rather than as children.
+  const lines = linesResource(resource);
+  const lineRows = linesOf(record);
+  const lineColumns = lines ? storedFields(lines.lines).filter(([key]) => key !== lines.field) : [];
+  const titlesOfLines = lines ? await lineTitles(lines.lines, lines.field, lineRows) : {};
+  const amounts = lineAmounts(lineColumns);
+
   // Children: resources with a belongsTo pointing back here.
   const graph = relationGraph(all);
   const children = (graph.byResource[resource.name]?.hasMany ?? []).flatMap((relation) => {
     const target = byName.get(relation.target);
-    return target ? [{ relation, target }] : [];
+    const isLines = lines !== undefined && relation.target === lines.lines.name && relation.foreignKey === lines.field;
+    return target && !isLines ? [{ relation, target }] : [];
   });
   const related = await Promise.all(
     children.map(async ({ relation, target }) => {
@@ -95,7 +105,7 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
             editHref={resourcePath(resource, id, "edit")}
             canUpdate={permissions.update}
             canDelete={permissions.delete}
-            overlayForms={site.dashboard.forms === "sheet"}
+            overlayForms={site.dashboard.forms === "sheet" && !itemsOf(resource.name)}
             trash={trash}
             actions={(await allowedActions(resource.name)).filter((action) => action.on === "record" && actionApplies(action, record))}
             published={publishFieldOf(resource.name) ? publishState(record[publishFieldOf(resource.name)!]) : undefined}
@@ -189,6 +199,67 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
           ))}
         </div>
       </div>
+
+      {lines && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{lines.lines.pluralLabel}</CardTitle>
+            <CardDescription>
+              {lineRows.length === 0
+                ? `No ${lines.lines.pluralLabel.toLowerCase()} yet.`
+                : `${lineRows.length.toLocaleString()} ${lineRows.length === 1 ? lines.lines.label.toLowerCase() : lines.lines.pluralLabel.toLowerCase()}.`}
+            </CardDescription>
+          </CardHeader>
+          {lineRows.length > 0 && (
+            <CardContent className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead className="text-left text-muted-foreground">
+                  <tr>
+                    {lineColumns.map(([key, def]) => (
+                      <th key={key} scope="col" className="py-2 pr-4 font-medium whitespace-nowrap">
+                        {def.label}
+                      </th>
+                    ))}
+                    {amounts && (
+                      <th scope="col" className="py-2 text-right font-medium whitespace-nowrap">
+                        Amount
+                      </th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {lineRows.map((row, index) => {
+                    const amount = amounts?.amount(row) ?? null;
+                    return (
+                      <tr key={String(row.id ?? index)} className="border-t">
+                        {lineColumns.map(([key, def]) => {
+                          const value = row[key];
+                          return (
+                            <td key={key} className="py-2 pr-4">
+                              {def.kind === "belongsTo" && typeof value === "string" ? (titlesOfLines[key]?.[value] ?? value) : displayValue(def, value)}
+                            </td>
+                          );
+                        })}
+                        {amounts && <td className="py-2 text-right whitespace-nowrap tabular-nums">{amount === null ? "—" : amounts.format(amount)}</td>}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                {amounts && (
+                  <tfoot>
+                    <tr className="border-t font-medium">
+                      <td colSpan={lineColumns.length} className="py-2 pr-4 text-right">
+                        Total
+                      </td>
+                      <td className="py-2 text-right whitespace-nowrap tabular-nums">{amounts.format(lineRows.reduce((sum, row) => sum + (amounts.amount(row) ?? 0), 0))}</td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </CardContent>
+          )}
+        </Card>
+      )}
     </>
   );
 }

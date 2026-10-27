@@ -57,7 +57,7 @@ const batteries = [
   { name: "Dashboard", body: "Tables, charts, forms, detail pages, import and export for every resource, from its descriptor.", href: "/guides/web-app/", icon: "grid" },
   { name: "Roles and permissions", body: "A permission per resource and action, roles to group them, and a Users screen. Laravel decides; the dashboard shows the answer.", href: "/guides/policies/", icon: "users" },
   { name: "Sign-in", body: "Passwords, passkeys, two-factor, emailed links and codes, Google and GitHub. The browser never sees the token.", href: "/guides/authentication/", icon: "key" },
-  { name: "Relationships", body: "belongsTo between resources: a picker in the form, the parent's name in the table, its children on its page.", href: "/guides/relationships/", icon: "link" },
+  { name: "Relationships", body: "belongsTo between resources, and line items: an order's items edited as a table in its form, with their total.", href: "/guides/relationships/", icon: "link" },
   { name: "Files and images", body: "Uploads on any resource. Images are resized and compressed as they arrive; private files stay private.", href: "/guides/images/", icon: "image" },
   { name: "Trash", body: "Deleted records wait 30 days and can be restored, with their files. Closed accounts too.", href: "/guides/trash/", icon: "trash" },
   { name: "Notifications and activity", body: "A bell for what needs you, and a log of who created, changed and deleted what.", href: "/guides/notifications/", icon: "bell" },
@@ -189,11 +189,11 @@ const examples = [
 const faq = [
   {
     q: "Is it production-ready?",
-    a: "Yes, with one thing to know: it is still 0.x. Sign-in (passwords, passkeys, two-factor, Google and GitHub), roles and permissions, relations, uploads, the trash and the activity log are all there, and every change is tested on SQLite and Postgres, and in a newly created app, before it is released. Being 0.x means a minor version can still change something: the changelog says what and how to deal with it, nevela upgrade keeps the dashboard files you changed, and nevela deploy:check tells you what a server is missing.",
+    a: "Yes, with one thing to know: it is still 0.x. Sign-in (passwords, passkeys, two-factor, Google and GitHub), roles and permissions, relations and line items, uploads, the trash and the activity log are all there, and every change is tested on SQLite and Postgres, and in a newly created app, before it is released. Being 0.x means a minor version can still change something: the changelog says what and how to deal with it, nevela upgrade keeps the dashboard files you changed, and nevela deploy:check tells you what a server is missing.",
   },
   {
     q: "What isn't there yet?",
-    a: "Many-to-many relations (make a resource for the link, with a belongsTo to each side), line items edited inside their parent's form, saved table views, and deleting a public file along with its record. The introduction keeps the list.",
+    a: "Many-to-many relations (make a resource for the link, with a belongsTo to each side), saved table views, and deleting a public file along with its record. The introduction keeps the list.",
   },
   {
     q: "Can I use it with an app I already have?",

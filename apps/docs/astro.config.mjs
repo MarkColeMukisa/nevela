@@ -56,6 +56,7 @@ export default defineConfig({
           items: [
             { label: "Build a shop", slug: "guides/shop" },
             { label: "Relationships", slug: "guides/relationships" },
+            { label: "Line items", slug: "guides/line-items" },
             { label: "An app you already have", slug: "guides/existing-app" },
             { label: "Files and images", slug: "guides/images" },
             { label: "Actions on a record", slug: "guides/actions" },

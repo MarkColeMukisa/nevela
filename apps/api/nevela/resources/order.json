@@ -1,0 +1,43 @@
+{
+    "$schema": "https://nevela.dev/schema/resource.v1.json",
+    "name": "Order",
+    "table": "orders",
+    "slug": "orders",
+    "label": "Order",
+    "pluralLabel": "Orders",
+    "icon": "shopping-cart",
+    "group": "Catalogue",
+    "items": "OrderItem",
+    "fields": {
+        "number": {
+            "kind": "string",
+            "unique": true
+        },
+        "customer": {
+            "kind": "string"
+        },
+        "email": {
+            "kind": "string",
+            "format": "email",
+            "required": false
+        },
+        "status": {
+            "kind": "enum",
+            "options": [
+                "pending",
+                "paid",
+                "shipped",
+                "cancelled"
+            ]
+        },
+        "total": {
+            "kind": "float",
+            "format": "money",
+            "required": false
+        },
+        "notes": {
+            "kind": "text",
+            "required": false
+        }
+    }
+}

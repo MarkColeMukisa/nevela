@@ -9,7 +9,7 @@ import { resourceIcon } from "@/components/dashboard/resource-icon";
 import { StatCards, type Stat } from "@/components/dashboard/stat-card";
 import { ActivityList } from "@/components/dashboard/activity-list";
 import { loadActivity } from "@/lib/activity";
-import { adminPermissions, allResources, dashboardSession, resourcePath, resourceStats, trend, visibleResources } from "@/lib/dashboard";
+import { adminPermissions, allResources, dashboardSession, navigableResources, resourcePath, resourceStats, trend } from "@/lib/dashboard";
 import { requireSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +18,7 @@ export const metadata = { title: "Dashboard" };
 /** The first thing you see when you sign in: how much data there is, and what's left to set up. */
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { user } = await requireSession("/dashboard");
-  const resources = await visibleResources();
+  const resources = await navigableResources();
   // Resources exist, and this person's roles show them none: not the same as an empty app.
   const noneForYou = resources.length === 0 && allResources().length > 0;
   const turnedBack = (await searchParams).error === "forbidden";

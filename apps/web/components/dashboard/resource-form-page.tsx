@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { clientResource, formatValue, storedFields, type Resource } from "@flaredev/core";
 import { resourcePath, allResources, dashboardStore, requireAccess } from "@/lib/dashboard";
+import { lineItemsSetup } from "@/lib/line-items";
 import type { RelationMeta } from "./fields/field-widget";
 import { PageHeader } from "./page-header";
 import { ResourceForm } from "./resource-form";
@@ -44,7 +45,11 @@ export async function ResourceFormPage({ resource, id }: { resource: Resource; i
     <div className="flex flex-col gap-6">
       <PageHeader
         title={title}
-        description={record ? `Edit this ${resource.label.toLowerCase()}.` : `Add a ${resource.label.toLowerCase()} to ${resource.pluralLabel.toLowerCase()}.`}
+        description={
+          record
+            ? `Edit this ${resource.label.toLowerCase()}.`
+            : `Add ${/^[aeiou]/i.test(resource.label) ? "an" : "a"} ${resource.label.toLowerCase()} to ${resource.pluralLabel.toLowerCase()}.`
+        }
         crumbs={[
           { label: "Dashboard", href: "/dashboard" },
           { label: resource.pluralLabel, href: resourcePath(resource) },
@@ -58,6 +63,7 @@ export async function ResourceFormPage({ resource, id }: { resource: Resource; i
         record={record}
         relations={relations}
         listHref={resourcePath(resource)}
+        items={await lineItemsSetup(resource, record)}
       />
     </div>
   );

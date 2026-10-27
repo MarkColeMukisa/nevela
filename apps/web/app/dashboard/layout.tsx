@@ -6,7 +6,7 @@ import { DashboardHeader, type Theme } from "@/components/dashboard/dashboard-he
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { SessionWatchdog } from "@/components/dashboard/session-watchdog";
 import { dashboardLinks } from "@/lib/dashboard-nav";
-import { allResources, dashboardSession, mayDo, visibleResources } from "@/lib/dashboard";
+import { allResources, dashboardSession, mayDo, navigableResources } from "@/lib/dashboard";
 import { fileUrl } from "@/lib/files";
 import { loadInbox } from "@/lib/notifications";
 import { noIndex } from "@/lib/seo";
@@ -28,7 +28,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const collapsed = jar.get("sidebar_state")?.value === "false";
 
   const views = await listViews();
-  const resources = (await visibleResources()).map((resource) => ({
+  const resources = (await navigableResources()).map((resource) => ({
     name: resource.name,
     pluralLabel: resource.pluralLabel,
     slug: resource.slug,
