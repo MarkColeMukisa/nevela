@@ -53,16 +53,6 @@ interface ResourceExtras {
   blog?: string;
   /** What its public form checks, and the address it has proved (the descriptor's "protect" and "confirm"). */
   form?: ResourceForm;
-  /** Its lines (the descriptor's "items"). */
-  items?: ResourceItems;
-}
-
-/** The lines a record has, edited in its form and saved with it: an order's items. */
-export interface ResourceItems {
-  /** The resource they are: "OrderItem". */
-  resource: string;
-  /** Their field that points at the record they are lines of: "orderId". */
-  field: string;
 }
 
 /** A resource's public form, as far as the dashboard needs to know of it. */
@@ -88,16 +78,6 @@ export function actionsOf(resourceName: string): ResourceAction[] {
 /** The field a resource's records are published by, if it has one. */
 export function publishFieldOf(resourceName: string): string | undefined {
   return extras[resourceName]?.publish;
-}
-
-/** A resource's lines, if it has some: the resource they are, and their field that points back at it. */
-export function itemsOf(resourceName: string): ResourceItems | undefined {
-  return extras[resourceName]?.items;
-}
-
-/** Whether a resource is another one's lines, reached through it rather than on its own. */
-export function isLines(resourceName: string): boolean {
-  return Object.values(extras).some((entry) => entry.items?.resource === resourceName);
 }
 
 /** What a resource's public form checks and confirms, if its descriptor says either. */

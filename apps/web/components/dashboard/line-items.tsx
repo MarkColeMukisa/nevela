@@ -5,7 +5,7 @@ import { PlusIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lineAmounts } from "@/lib/line-totals";
 import { cn } from "@/lib/utils";
-import { Cell, fitsACell } from "./bulk-create-grid";
+import { Cell, fitsACell } from "./grid-cell";
 import type { RelationMeta } from "./fields/field-widget";
 
 type FieldDef = StoredField & { label: string };

@@ -20,7 +20,8 @@ import {
 } from "@/components/ui/pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { resourcePath, adminPermissions, allowedActions, allResources, dashboardStore, requireAccess } from "@/lib/dashboard";
-import { actionApplies, formOf, itemsOf, PUBLISH_LABELS, publishFieldOf, publishState } from "@/lib/extras";
+import { actionApplies, formOf, PUBLISH_LABELS, publishFieldOf, publishState } from "@/lib/extras";
+import { itemsOf } from "@/lib/lines";
 import { site } from "@/lib/site";
 import { trashFor } from "@/lib/trash";
 import { cn } from "@/lib/utils";

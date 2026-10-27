@@ -97,6 +97,10 @@ POST /api/orders
 2. Add `"items": "InvoiceLine"` to `apps/api/nevela/resources/invoice.json`.
 3. Run `nevela generate`.
 
+## An app that changed its form
+
+The table of lines is part of the dashboard's form, `apps/web/components/dashboard/resource-form.tsx`. If you had changed that file, upgrading keeps your version, and the dashboard still builds, but forms show no lines until you bring in the new version. The upgrade leaves it in `apps/web/.nevela/incoming/<version>/` for you to compare. See [Updating and upgrading](/guides/updating/).
+
 ## Not done yet
 
 - Lines inside lines.

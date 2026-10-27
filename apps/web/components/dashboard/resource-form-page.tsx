@@ -41,6 +41,10 @@ export async function ResourceFormPage({ resource, id }: { resource: Resource; i
   const title =
     record && titleDef && titleDef.kind !== "hasMany" ? formatValue(titleDef, record[resource.titleField]) : `New ${resource.label.toLowerCase()}`;
 
+  // Its lines, for a resource that has some. Handed over as a spread: an app that kept its
+  // own resource-form.tsx through an upgrade has a form without the prop, and still builds.
+  const lines: { items?: Awaited<ReturnType<typeof lineItemsSetup>> } = { items: await lineItemsSetup(resource, record) };
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -63,7 +67,7 @@ export async function ResourceFormPage({ resource, id }: { resource: Resource; i
         record={record}
         relations={relations}
         listHref={resourcePath(resource)}
-        items={await lineItemsSetup(resource, record)}
+        {...lines}
       />
     </div>
   );
