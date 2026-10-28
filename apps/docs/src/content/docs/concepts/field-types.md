@@ -50,6 +50,24 @@ Both can be combined: `code:string?!`.
 
 The dashboard picks the input and the table column from the type.
 
+## Which columns the table shows
+
+A table starts with its first six columns, and the date each record was created. The other columns are in the **Columns** menu above the table, to turn on. Long text, a `string` longer than 255 characters, and a file that isn't a picture start off whatever their place, because a paragraph in a row makes the table too wide to read. A cell never grows past a set width: a value too long for it ends in "…", and the whole of it shows when you point at it.
+
+A field's `list` in the [descriptor](/concepts/descriptor/) decides for it:
+
+| `list` | The column |
+|---|---|
+| `true` | Always on, even past the sixth or for long text. |
+| `"hidden"` | In the Columns menu, and off until someone turns it on. |
+| `false` | Not in the table at all. |
+
+```json
+"notes": { "kind": "text", "required": false, "list": true }
+```
+
+Run `nevela generate` after changing it. What someone turns on or off goes in the page's address (`?columns=name,email`), so a link to it opens with the same columns.
+
 ## What an enum's values are called
 
 A value is what is stored, validated and sent over the API, so it is a short key: `asap`, `quarter`. What people read can be words, given after `=`:

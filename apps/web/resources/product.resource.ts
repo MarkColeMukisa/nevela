@@ -5,7 +5,7 @@
 import { defineResource, field } from "@flaredev/core";
 
 export default defineResource({
-  // nevela:generated:start hash=31c7f6ca6fdb
+  // nevela:generated:start hash=d3291606cd7b
   name: "Product",
   table: "products",
   slug: "products",
@@ -21,7 +21,7 @@ export default defineResource({
     categoryId: field.belongsTo("Category"),
     active: field.boolean(),
     kind: field.enum(["stock","digital"]),
-    notes: field.text({ required: false }),
+    notes: field.text({ required: false, list: true, ...({ column: "hidden" } as {}) }),
     orderItems: field.hasMany("OrderItem", { foreignKey: "productId" }),
   },
   // nevela:generated:end

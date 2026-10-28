@@ -22,8 +22,10 @@ export interface ColumnOption {
 /**
  * Which columns the table shows. The choice goes in the URL (`?columns=name,email`)
  * rather than into storage, so a view someone sends you looks the way it looked to them.
+ * Back to the columns a table starts with (`defaults`, all of them if not given), the
+ * address loses it again.
  */
-export function ColumnMenu({ columns, visible }: { columns: ColumnOption[]; visible: string[] }) {
+export function ColumnMenu({ columns, visible, defaults }: { columns: ColumnOption[]; visible: string[]; defaults?: string[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = new URLSearchParams(useSearchParams().toString());
@@ -34,8 +36,9 @@ export function ColumnMenu({ columns, visible }: { columns: ColumnOption[]; visi
     if (!next.delete(key)) next.add(key);
     // Nothing selected would leave a table of empty rows; keep at least one column.
     if (next.size === 0) return;
-    const all = columns.every((column) => next.has(column.key));
-    router.push(hrefWith(pathname, params, { columns: all ? null : columns.filter((column) => next.has(column.key)).map((column) => column.key).join(",") }));
+    const start = new Set(defaults ?? columns.map((column) => column.key));
+    const asStarted = start.size === next.size && [...next].every((key) => start.has(key));
+    router.push(hrefWith(pathname, params, { columns: asStarted ? null : columns.filter((column) => next.has(column.key)).map((column) => column.key).join(",") }));
   };
 
   return (

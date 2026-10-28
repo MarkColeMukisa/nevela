@@ -3,6 +3,7 @@ import { FileCell } from "@/components/dashboard/fields/file-cell";
 import { ArrowDownIcon, ArrowUpIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsUpDownIcon, PlusIcon } from "lucide-react";
 import { clientResource, optionLabel, statusTone, storedFields, type Resource, type StoredField } from "@flaredev/core";
 import { isSortable } from "@/lib/resource/query";
+import { CELL_TEXT, cellText, defaultColumns } from "@/lib/columns";
 import { privateFileUrl } from "@/lib/files";
 import { displayValue } from "@/lib/format";
 import { isRich, richToText } from "@/lib/rich";
@@ -78,9 +79,13 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
     ...fields.filter(([, def]) => def.list !== false).map(([key, def]) => ({ key, label: def.label, def })),
     { key: "createdAt", label: "Created", def: { kind: "timestamp" as const } },
   ];
-  // ?columns=name,email narrows the table; anything unknown in it is ignored.
+  // ?columns=name,email is the person's choice; anything unknown in it is ignored. Without
+  // it, the first few, and not long text: see lib/columns.ts.
+  const defaults = defaultColumns(allColumns);
   const chosen = (params.get("columns") ?? "").split(",").filter(Boolean);
-  const columns = chosen.length > 0 ? allColumns.filter((column) => chosen.includes(column.key)) : allColumns;
+  const columns = allColumns.filter((column) => (chosen.length > 0 ? chosen : defaults).includes(column.key));
+  // Passed by spread: an app that kept its own column menu doesn't take it, and still builds.
+  const menu: { defaults?: string[] } = { defaults };
 
   // Resolve belongsTo ids to their related record titles, one query per relation.
   const byName = new Map(allResources().map((r) => [r.name, r]));
@@ -130,7 +135,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
       <div className="flex flex-wrap items-center justify-between gap-2">
         <ResourceTableToolbar resource={forClient} publish={publishField ? { field: publishField, label: resource.fields[publishField]?.label ?? "Published" } : undefined} />
         <div className="flex flex-wrap items-center gap-2">
-          <ColumnMenu columns={allColumns.map(({ key, label }) => ({ key, label }))} visible={columns.map((column) => column.key)} />
+          <ColumnMenu columns={allColumns.map(({ key, label }) => ({ key, label }))} visible={columns.map((column) => column.key)} {...menu} />
           <ExportButton resourceName={resource.name} pluralLabel={resource.pluralLabel} />
           <ActionButtons resourceName={resource.name} actions={actions.filter((action) => action.on === "collection")} />
           {permissions.create && <ImportDialog resource={forClient} />}
@@ -223,7 +228,10 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
                     </TableCell>
                     {columns.map((column, index) => {
                       const value = row[column.key];
-                      let content: React.ReactNode = displayValue(column.def, value);
+                      const text = displayValue(column.def, value);
+                      // A long value is cut to its start, and shown whole on hover.
+                      const long = (column.def.kind === "string" || column.def.kind === "text") && typeof value === "string" && !isRich(column.def);
+                      let content: React.ReactNode = long ? cellText(text) : text;
                       // Timestamps are formatted in the browser: the Worker's clock is UTC,
                       // so a date rendered here would be in nobody's timezone.
                       if (column.key === publishField) {
@@ -254,7 +262,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
                         content = <Badge variant={tone === "neutral" ? "secondary" : tone}>{content}</Badge>;
                       } else if (isRich(column.def) && typeof value === "string") {
                         // The start of it, as words: markup is noise in a table.
-                        content = richToText(value, 120);
+                        content = richToText(value, CELL_TEXT);
                       } else if (column.def.kind === "file" && typeof value === "string" && value) {
                         // A thumbnail for an image, a filename for anything else — the raw
                         // object key is noise in a table.
@@ -331,13 +339,15 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
                         <TableCell
                           key={column.key}
                           className={cn(
-                            "max-w-80 truncate",
                             NUMERIC.has(column.def.kind) && "text-right tabular-nums",
                             (column.def.kind === "timestamp" || column.def.kind === "datetime" || column.def.kind === "date") &&
                               "text-muted-foreground tabular-nums",
                           )}
                         >
-                          {content}
+                          {/* The width is on a box inside: a browser lets a table cell grow past its own max-width. */}
+                          <div className="max-w-80 truncate" title={long && text.length > 40 ? text : isRich(column.def) && typeof value === "string" ? richToText(value, 500) : undefined}>
+                            {content}
+                          </div>
                         </TableCell>
                       );
                     })}

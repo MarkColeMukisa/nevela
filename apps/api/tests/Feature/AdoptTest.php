@@ -152,7 +152,7 @@ class AdoptTest extends TestCase
         // No migration creates a table that is there, and the dashboard is told the length.
         $this->assertSame([], glob(self::$dir.'/api/database/migrations/*_create_posts_table.php'));
         $this->assertNotSame([], glob(self::$dir.'/api/database/migrations/*_create_notes_table.php'));
-        $this->assertStringContainsString('excerpt: field.string({ maxLength: 500 }),', (string) file_get_contents(self::$dir.'/web/resources/post.resource.ts'));
+        $this->assertStringContainsString('excerpt: field.string({ maxLength: 500, list: true, ...({ column: "hidden" } as {}) }),', (string) file_get_contents(self::$dir.'/web/resources/post.resource.ts'));
         $this->assertStringNotContainsString('HasUuids', (string) file_get_contents(self::$dir.'/api/app/Models/Post.php'));
     }
 
