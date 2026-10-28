@@ -1,8 +1,12 @@
 "use client";
 
+import { useRef } from "react";
 import { createValidators, formValuesToInput, initialFormValues, issuesByField, storedFields, type ClientResource, type StoredField } from "@flaredev/core";
 import { PlusIcon, XIcon } from "lucide-react";
+import { copiedValue } from "@/app/dashboard/copied-actions";
 import { Button } from "@/components/ui/button";
+import { copiedFrom } from "@/lib/copied";
+import { displayValue } from "@/lib/format";
 import { lineAmounts } from "@/lib/line-totals";
 import { cn } from "@/lib/utils";
 import { Cell, fitsACell } from "./grid-cell";
@@ -120,9 +124,29 @@ export function LineItems({
   const totals = lineAmounts(fields);
   const label = setup.resource.label.toLowerCase();
   const nextKey = Math.max(-1, ...rows.map((row) => row.key)) + 1;
+  // The rows as they are by the time a copied value comes back, not as they were when it was asked for.
+  const latest = useRef(rows);
+  latest.current = rows;
 
   function change(rowKey: number, field: string, value: string | boolean) {
-    onRowsChange(rows.map((row) => (row.key === rowKey ? { ...row, values: { ...row.values, [field]: value } } : row)));
+    // A product picked: its price, for the cells that copy it. Laravel copies it again when the line is saved.
+    const relation = setup.relations[field];
+    const copies = relation ? fields.filter(([, def]) => copiedFrom(def)?.relation === field) : [];
+    const picked = typeof value === "string" && value !== "" ? value : undefined;
+    // Empty until the new one's answer comes: never the last product's price beside this one.
+    const emptied = Object.fromEntries(copies.map(([key]) => [key, ""]));
+    const next = rows.map((row) => (row.key === rowKey ? { ...row, values: { ...row.values, [field]: value, ...emptied } } : row));
+    latest.current = next;
+    onRowsChange(next);
+    for (const [key, def] of picked && relation ? copies : []) {
+      // A failed lookup leaves the cell empty: Laravel copies the price when the line is saved either way.
+      void copiedValue(relation!.name, picked!, copiedFrom(def)!.field).catch(() => null).then((copy) => {
+        // Only if the row still points at what was picked: a second pick's answer may come back first.
+        const now = latest.current.map((row) => (row.key === rowKey && row.values[field] === picked ? { ...row, values: { ...row.values, [key]: copy === null ? "" : String(copy) } } : row));
+        latest.current = now;
+        onRowsChange(now);
+      });
+    }
     if (problems[rowKey]?.[field] || problems[rowKey]?.[""]) {
       const { [rowKey]: row = {}, ...rest } = problems;
       const { [field]: _fixed, "": _general, ...others } = row;
@@ -192,6 +216,12 @@ export function LineItems({
                     const relation = setup.relations[key];
                     return (
                       <td key={key} className={cn("px-1.5 py-1.5", def.kind === "boolean" && "text-center")}>
+                        {copiedFrom(def) ? (
+                          // Not typed: it is what the line's product says, copied when the line is saved.
+                          <p id={`line-${row.key}-${key}`} className="px-2 py-1.5 text-muted-foreground tabular-nums" title={`From the ${setup.relations[copiedFrom(def)!.relation]?.label.toLowerCase() ?? "record it points at"}`}>
+                            {value === "" ? "—" : displayValue(def, Number(value))}
+                          </p>
+                        ) : (
                         <Cell
                           id={`line-${row.key}-${key}`}
                           resourceName={setup.resource.name}
@@ -204,6 +234,7 @@ export function LineItems({
                           relation={relation && { ...relation, initialTitle: typeof value === "string" ? setup.titles[key]?.[value] : undefined }}
                           onChange={(next) => change(row.key, key, next)}
                         />
+                        )}
                         {key === fields[0]?.[0] && messages.length > 0 && (
                           <p role="alert" className="mt-1 w-max max-w-[60vw] text-left text-xs text-destructive">
                             {messages.join(" · ")}

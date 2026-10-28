@@ -35,7 +35,7 @@ nevela resource Category --fields="name:string!, slug:slug(name)!, image:image?"
 nevela resource Product --fields="name:string, slug:slug(name)!, price:money, image:image(product)?, category:belongsTo(Category), description:richtext?, active:boolean=true" --icon=package --seed=40
 
 # 5. Orders and their items
-nevela resource Order --fields="number:string!, customer:string, email:email, status:enum(pending|paid|shipped|cancelled)=pending, total:money?" --items="OrderItem: product:belongsTo(Product), quantity:int, price:money" --icon=shopping-cart --seed=20
+nevela resource Order --fields="number:auto(ORD), customer:string, email:email, status:enum(pending|paid|shipped|cancelled)=pending, total:money?" --items="OrderItem: product:belongsTo(Product), quantity:int, price:money(product.price)" --icon=shopping-cart --seed=20
 
 # 6. The total
 yours apps/api/app/Models/Order.php "$here/files/itemsSaved.php"
@@ -58,10 +58,13 @@ grep -q "Resource: Order .* 20 records" status.log
 grep -q "none pending" status.log
 grep -q 'price: field.float({ format: "money", currency: "USD" })' apps/web/resources/product.resource.ts
 grep -q '"items": "OrderItem"' apps/api/nevela/resources/order.json
-# An order made over the API has the total of its items, and the public list has products on sale only.
+# An order made over the API is numbered and priced by Laravel, and the public list has products on sale only.
 check="$here/check.php"
 command -v cygpath > /dev/null && check="$(cygpath -w "$check")" # a Windows PHP reads Windows paths
 (cd apps/api && "${PHP:-php}" "$check") | tee shop.log
-grep -q "^total 107.5$" shop.log
+grep -q "^seeded prices are the products': yes$" shop.log
+grep -q "^order 201 ORD-0021 pending$" shop.log
+grep -q "^prices from the products: yes$" shop.log
+grep -q "^total is theirs: yes$" shop.log
 grep -q "^public only on sale: yes$" shop.log
 grep -q "^public fields: id,name,slug,price,image,imageFile,description$" shop.log

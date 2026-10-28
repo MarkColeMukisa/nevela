@@ -89,7 +89,8 @@ class LineItemsTest extends TestCase
         $this->assertNotSame($mug['id'], $items[1]['id']);
         // Left out: gone for good, not in the trash.
         $this->assertNull(OrderItem::withTrashed()->find($mug['id']));
-        $this->assertEquals(3 * 49.5 + 7.5, $response->json('total'));
+        // The price sent with the new line is not what it costs: the product's is.
+        $this->assertEquals(3 * 49.5 + 8, $response->json('total'));
     }
 
     public function test_a_save_without_items_leaves_the_lines_alone(): void

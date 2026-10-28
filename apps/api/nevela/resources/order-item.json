@@ -15,7 +15,8 @@
         },
         "price": {
             "kind": "float",
-            "format": "money"
+            "format": "money",
+            "from": "productId.price"
         },
         "orderId": {
             "kind": "belongsTo",

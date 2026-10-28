@@ -22,13 +22,13 @@ class OrderRequest extends ResourceRequest
             : Gate::allows('create', Order::class);
     }
 
-    // nevela:generated:start hash=078781213076
+    // nevela:generated:start hash=eb344f95e578
     public function rules(): array
     {
         $order = $this->route('order');
 
         return [
-            'number' => ['required', 'string', 'max:255', Rule::unique('orders', 'number')->ignore($order)],
+            'number' => ['nullable', 'string', 'max:255', Rule::unique('orders', 'number')->ignore($order)],
             'customer' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'status' => ['required', Rule::in(['pending', 'paid', 'shipped', 'cancelled'])],

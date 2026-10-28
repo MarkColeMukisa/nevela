@@ -81,7 +81,7 @@ The description isn't a column in the table. Long text starts hidden, so the tab
 An order is made of lines: this product, so many, at this price. Lines are a resource of their own, edited inside the order.
 
 ```sh
-nevela resource Order --fields="number:string!, customer:string, email:email, status:enum(pending|paid|shipped|cancelled)=pending, total:money?" --items="OrderItem: product:belongsTo(Product), quantity:int, price:money" --icon=shopping-cart --seed=20
+nevela resource Order --fields="number:auto(ORD), customer:string, email:email, status:enum(pending|paid|shipped|cancelled)=pending, total:money?" --items="OrderItem: product:belongsTo(Product), quantity:int, price:money(product.price)" --icon=shopping-cart --seed=20
 ```
 
 `--items` names the lines and their fields. That made two resources:
@@ -89,9 +89,14 @@ nevela resource Order --fields="number:string!, customer:string, email:email, st
 - **Order**, with the fields after `--fields`. `=pending` is where a new order starts.
 - **OrderItem**, with a product, a quantity and a price, and one more field, `order`, which points each line at its order.
 
+Two of those fields are filled in by Laravel, not typed:
+
+- `number:auto(ORD)` numbers each new order: ORD-0001, ORD-0002, and on. Leave it empty in the form and the order is given the next one when it is saved; type one and it is kept. The prefix is yours: `auto(INV)` makes INV-0001. Grit's way of writing it, `number:string:auto:INV`, works too.
+- `price:money(product.price)` is the item's price, copied from its product. Pick a product and its price is in the row; there is nothing to type. The copy is made when the item is added, and again if it is changed to another product, and kept otherwise: when a product's price goes up, the orders already made keep what they were sold at.
+
 Open an order and press **Edit**. Below its fields is a table with a row for each item. **Add order item** adds a row, and the cross at the end of a row removes it. Each row shows what it comes to, and the table its total, as you type. The order and its items are saved together, or not at all.
 
-![An order's form: its number, customer, email, status and total, and a table of two items with their amounts and the order's total.](../../../assets/tutorials/online-shop-order.png)
+![An order's form: its number ORD-0021, customer, email, status and total, and a table of two items, each with the price of its product, their amounts and the order's total.](../../../assets/tutorials/online-shop-order.png)
 
 Order items aren't in the sidebar: an item is reached through its order. Deleting an order puts its items in the trash with it, and restoring the order brings them back.
 
@@ -113,21 +118,20 @@ An item changed on its own, through `/api/order-items`, doesn't call it, and its
 
 The seeded orders were given made-up totals. Each is set right the next time its order is saved. Anything else that follows from the items goes in `itemsSaved()` too: stock, a discount, tax.
 
-The same happens over the API. An order is sent with its items, and comes back with its total:
+The same happens over the API. An order is sent with its items, each a product and how many, and comes back with its number, each item's price and its total:
 
 ```json
 {
-  "number": "ORD-1001",
   "customer": "Amara Okafor",
   "email": "amara@example.com",
   "items": [
-    { "productId": "019a…", "quantity": 2, "price": 49.5 },
-    { "productId": "019b…", "quantity": 1, "price": 8.5 }
+    { "productId": "019a…", "quantity": 2 },
+    { "productId": "019b…", "quantity": 1 }
   ]
 }
 ```
 
-Sent to `POST /api/orders`, that is an order of `107.5`. [Line items](/guides/line-items/#in-the-api) says how items are changed and removed over the API.
+Sent to `POST /api/orders`, that is the next order, ORD-0021 after the twenty seeded ones, at its products' prices. A price sent with an item is left out: it is the product's. [Line items](/guides/line-items/#in-the-api) says how items are changed and removed over the API.
 
 ## 7. Products anyone may see
 
