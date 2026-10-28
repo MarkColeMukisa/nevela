@@ -70,11 +70,17 @@ Delete a contact and it goes to the **Trash**, where it waits 30 days and can be
 
 ## 5. One more field
 
-You want to know when you last spoke to someone. A new field is added to the resource's descriptor, the JSON file every part was generated from: `apps/api/nevela/resources/contact.json`. Add this inside its `"fields": { … }`:
+You want to know when you last spoke to someone. A new field is added to the resource's descriptor, the JSON file every part was generated from: `apps/api/nevela/resources/contact.json`. Its fields are listed under `"fields"`. Add the new one at the end of them, after `notes`, and put a comma after the brace that closes `notes`:
 
-```json
-{
-    "lastContactedOn": { "kind": "date", "required": false }
+```json ins={7} mark={6}
+    "fields": {
+        …
+        "notes": {
+            "kind": "text",
+            "required": false
+        },
+        "lastContactedOn": { "kind": "date", "required": false }
+    }
 }
 ```
 
@@ -125,19 +131,24 @@ Reload: the form has a date picker for it, and the table a column. [Regeneration
 
 ## 6. A button that does something
 
-Turning a lead into a customer is something you will do often. Make it one click. Add an `actions` section to the same descriptor, beside `"fields"`:
+Turning a lead into a customer is something you will do often. Make it one click. Actions are a section of the descriptor of their own, `"actions"`, beside `"fields"` and not inside it. Add it after the brace that closes `"fields"`, with a comma after that brace. The end of the file is then:
 
-```json
-{
-    "markCustomer": {
-        "label": "Mark as customer",
-        "icon": "check",
-        "confirm": "Mark this contact as a customer?",
-        "when": { "status": "lead" },
-        "many": true
+```json ins={3-11} mark={2}
+        "lastContactedOn": { "kind": "date", "required": false }
+    },
+    "actions": {
+        "markCustomer": {
+            "label": "Mark as customer",
+            "icon": "check",
+            "confirm": "Mark this contact as a customer?",
+            "when": { "status": "lead" },
+            "many": true
+        }
     }
 }
 ```
+
+If `nevela generate` says `Unsupported kind "" on field "actions"`, the section went inside `"fields"`: move it out, after the brace that closes them.
 
 - `when` shows the button only on leads, and Laravel refuses it on anyone else.
 - `many` lets you select several leads in the table and mark them all at once.

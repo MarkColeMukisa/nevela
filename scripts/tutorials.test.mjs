@@ -32,9 +32,18 @@ for (const name of readdirSync(examples, { withFileTypes: true }).filter((entry)
     }
 
     const files = path.join(examples, name, 'files');
+    const pageLines = text.split('\n').map((line) => line.trim());
     for (const file of existsSync(files) ? readdirSync(files) : []) {
       const content = lf(readFileSync(path.join(files, file), 'utf8')).trim();
-      assert.ok(text.includes(content), `examples/${name}/files/${file} isn't on the tutorial's page as it is`);
+      if (!file.endsWith('.json')) {
+        assert.ok(text.includes(content), `examples/${name}/files/${file} isn't on the tutorial's page as it is`);
+        continue;
+      }
+      // JSON is shown where it goes in the descriptor, so at that depth, and without the
+      // braces around it that the file needs: its lines, in order, whatever their indent.
+      const inner = content.split('\n').slice(1, -1).map((line) => line.trim());
+      const at = pageLines.findIndex((_, start) => inner.every((line, offset) => pageLines[start + offset] === line));
+      assert.ok(at >= 0, `examples/${name}/files/${file} isn't on the tutorial's page, line for line`);
     }
   });
 }
