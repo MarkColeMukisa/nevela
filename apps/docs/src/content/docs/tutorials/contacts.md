@@ -179,13 +179,15 @@ class MarkCustomer
 
 What it returns is the message the person sees. Open a lead: the button is beside Edit. Press it, and the contact is a customer, contacted today.
 
+The button is on leads only, because of `when`, so a customer or a lost contact doesn't have it. Someone lost who comes back later is won back by hand: **Edit**, and set Status to Lead or Customer. If that happens often enough to want a button, add a second action beside `markCustomer`, such as `winBack` with `"when": { "status": "lost" }`. `when` compares a field with one value, so each status that should have a button gets an action of its own.
+
 ![A lead's page with the Mark as customer button beside Edit and Delete.](../../../assets/tutorials/contacts-contact.png)
 
 [Actions on a record](/guides/actions/) has the rest: actions that ask for something first, and actions on the list as a whole.
 
 ## 7. Who may do what
 
-Each resource came with permissions: `contacts.view`, `contacts.create`, `contacts.edit` and `contacts.delete`, and the action added `contacts.mark_customer`. The administrator has them all, and so do the two sample editors. The sample users have none, so Contacts isn't in their sidebar.
+Each resource came with permissions: `contacts.view`, `contacts.create`, `contacts.edit` and `contacts.delete`, and the action added `contacts.mark_customer`. The administrator has them all. The two sample editors have the first four but not **Mark as customer**: a resource's own action is given by name, so that "everything to do with contacts" doesn't also hand someone a button that might, say, send an email. Tick it on EDITOR to give it to them. The sample users have none, so Contacts isn't in their sidebar.
 
 Open **Roles** and press **Edit** on USER. Under **Resources**, tick **View** on the Contacts row, and **Save**. The action is there too, under Contacts, as **Mark as customer**.
 
