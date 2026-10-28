@@ -8,13 +8,14 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_A first tutorial, and a dashboard that fits the window_
+## [0.23.0] - 2026-10-28
+
+_A first tutorial, and tables that keep their shape_
 
 ### Added
 
 - **[Tutorials](https://nevela-docs.vercel.app/tutorials/)**, a page of its own beside Projects built in Nevela: a card for each tutorial with a picture of what it builds, its level and time, and what it covers. The first is **[Contacts: your first app](https://nevela-docs.vercel.app/tutorials/contacts/)**: companies and the people at them, built from an empty folder in eight steps, from `nevela new` to a field added later, an action, roles and the API. Every step is in `examples/contacts/`, which CI runs on a new app on every change, so the tutorial can't drift from what Nevela does.
 - More icon names a resource can have, by Lucide's own spelling: `building-2`, `contact`, `tags`, `shopping-cart`, `graduation-cap`, `book-open`, `school` and `newspaper`. The docs now say which ones the dashboard knows, and that an app can add others.
-
 - **A table shows its first six columns, and keeps each to a set width.** A value too long for its cell ends in "…" and shows whole when you point at it. Long text and files that aren't pictures start off, the rest of the columns are in the Columns menu, and a field's `"list"` in the descriptor decides for it: `true` always on, `"hidden"` off until turned on, `false` none. Long text, a description or notes, can now be turned on as a column; before, it never could. See [Which columns the table shows](https://nevela-docs.vercel.app/concepts/field-types/#which-columns-the-table-shows). Run `nevela generate` after updating for it to apply to your resources.
 
 ### Fixed
@@ -636,7 +637,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.22.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.23.0...HEAD
+[0.23.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.19.2...v0.20.0
