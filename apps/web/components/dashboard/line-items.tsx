@@ -133,12 +133,14 @@ export function LineItems({
     const relation = setup.relations[field];
     const copies = relation ? fields.filter(([, def]) => copiedFrom(def)?.relation === field) : [];
     const picked = typeof value === "string" && value !== "" ? value : undefined;
-    const emptied = picked === undefined ? Object.fromEntries(copies.map(([key]) => [key, ""])) : {};
+    // Empty until the new one's answer comes: never the last product's price beside this one.
+    const emptied = Object.fromEntries(copies.map(([key]) => [key, ""]));
     const next = rows.map((row) => (row.key === rowKey ? { ...row, values: { ...row.values, [field]: value, ...emptied } } : row));
     latest.current = next;
     onRowsChange(next);
     for (const [key, def] of picked && relation ? copies : []) {
-      void copiedValue(relation!.name, picked!, copiedFrom(def)!.field).then((copy) => {
+      // A failed lookup leaves the cell empty: Laravel copies the price when the line is saved either way.
+      void copiedValue(relation!.name, picked!, copiedFrom(def)!.field).catch(() => null).then((copy) => {
         // Only if the row still points at what was picked: a second pick's answer may come back first.
         const now = latest.current.map((row) => (row.key === rowKey && row.values[field] === picked ? { ...row, values: { ...row.values, [key]: copy === null ? "" : String(copy) } } : row));
         latest.current = now;

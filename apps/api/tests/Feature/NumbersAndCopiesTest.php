@@ -47,6 +47,14 @@ class NumbersAndCopiesTest extends TestCase
         $this->assertSame('ORD-0042', Order::create(['customer' => 'Linus', 'status' => 'pending'])->number);
     }
 
+    public function test_a_save_that_empties_the_number_leaves_it_as_it_was(): void
+    {
+        $order = $this->postJson('/api/orders', ['customer' => 'Ada', 'status' => 'pending'])->json();
+
+        $this->patchJson("/api/orders/{$order['id']}", ['number' => ''])->assertOk()->assertJsonPath('number', 'ORD-0001');
+        $this->putJson("/api/orders/{$order['id']}", ['customer' => 'Ada', 'status' => 'paid'])->assertOk()->assertJsonPath('number', 'ORD-0001');
+    }
+
     public function test_a_number_in_the_trash_is_not_given_again(): void
     {
         $order = Order::create(['customer' => 'Ada', 'status' => 'pending']);
