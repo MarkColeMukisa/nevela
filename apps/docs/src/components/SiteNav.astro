@@ -1,7 +1,7 @@
 ---
 /**
- * The site's own links, beside the title as on gritframework.dev: the docs, and the
- * projects built in Nevela.
+ * The site's own links, beside the title as on gritframework.dev: the docs, the
+ * projects built in Nevela, and the tutorials.
  *
  * In the header on a wide screen. On a narrow one a docs page has its menu, which
  * carries them instead (MobileMenuFooter.astro); a page with no sidebar (the home page,
@@ -15,8 +15,9 @@ interface Props {
 const { place } = Astro.props;
 const path = Astro.url.pathname.replace(/\/+$/, "") || "/";
 const links = [
-  { label: "Docs", short: "Docs", href: "/start/introduction/", active: path !== "/" && !path.startsWith("/showcase") },
+  { label: "Docs", short: "Docs", href: "/start/introduction/", active: path !== "/" && !path.startsWith("/showcase") && !path.startsWith("/tutorials") },
   { label: "Projects built in Nevela", short: "Projects", href: "/showcase/", active: path.startsWith("/showcase") },
+  { label: "Tutorials", short: "Tutorials", href: "/tutorials/", active: path.startsWith("/tutorials") },
 ];
 ---
 
@@ -96,6 +97,14 @@ const links = [
 
     .fl-short {
       display: inline;
+    }
+  }
+
+  /* The smallest phones: three links and the name only fit closer together. */
+  @media (max-width: 23.99rem) {
+    .fl-nav-header {
+      gap: 0.625rem;
+      margin-inline-start: 0.25rem;
     }
   }
 

@@ -53,5 +53,6 @@ The [roadmap](/concepts/architecture/#roadmap) lists what is planned.
 ## Next
 
 - [Quickstart](/start/quickstart/): create an app and add your first resource
+- [Tutorials](/tutorials/): real apps built from scratch, step by step
 - [Resources](/concepts/resources/): how a resource is described and what is generated
 - [Commands](/reference/commands/): every `nevela` command

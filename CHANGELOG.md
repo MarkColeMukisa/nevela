@@ -12,7 +12,7 @@ _A first tutorial, and a dashboard that fits the window_
 
 ### Added
 
-- **[Contacts: your first app](https://nevela-docs.vercel.app/tutorials/contacts/)**, the first tutorial: companies and the people at them, built from an empty folder in eight steps, from `nevela new` to a field added later, an action, roles and the API. Every step is in `examples/contacts/`, which CI runs on a new app on every change, so the tutorial can't drift from what Nevela does.
+- **[Tutorials](https://nevela-docs.vercel.app/tutorials/)**, a page of its own beside Projects built in Nevela: a card for each tutorial with a picture of what it builds, its level and time, and what it covers. The first is **[Contacts: your first app](https://nevela-docs.vercel.app/tutorials/contacts/)**: companies and the people at them, built from an empty folder in eight steps, from `nevela new` to a field added later, an action, roles and the API. Every step is in `examples/contacts/`, which CI runs on a new app on every change, so the tutorial can't drift from what Nevela does.
 - More icon names a resource can have, by Lucide's own spelling: `building-2`, `contact`, `tags`, `shopping-cart`, `graduation-cap`, `book-open`, `school` and `newspaper`. The docs now say which ones the dashboard knows, and that an app can add others.
 
 ### Fixed

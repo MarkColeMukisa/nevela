@@ -1,6 +1,10 @@
 ---
 title: "Contacts: your first app"
 description: "Build a small contacts app from an empty folder: companies and the people at them, a field added later, a button that does something, who may do what, and the API."
+prev:
+  link: /tutorials/
+  label: All tutorials
+next: false
 ---
 
 You will build a contacts app: companies, the people at them, and where each person stands, from a lead to a customer. It takes about twenty minutes. Along the way you will use most of what you need for any Nevela app.
