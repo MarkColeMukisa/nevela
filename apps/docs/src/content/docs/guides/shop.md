@@ -106,7 +106,7 @@ In a page, use the dimensions so nothing moves when the picture arrives, and let
 
 The image is optional here, so `imageFile` is `null` for a product without one.
 
-Every Nevela route needs a signed-in user, and a policy cannot change that: the request is turned away before the policy is asked. For a storefront, either call the API from the storefront's server with a token, or add read-only routes of your own in `routes/api.php`, which is outside Nevela's signed-in group.
+These routes need a signed-in user. For a storefront anyone can open, give the products a `public` section: it opens a read-only `/api/public/products` with only the fields you list, and the model's `scopePublicQuery()` says which products are in it. See [A public site on your API](/guides/public-site/), and [An online shop with orders](/tutorials/online-shop/) for the whole of it, orders and a shop page included.
 
 ## Next
 

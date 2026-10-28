@@ -4,7 +4,9 @@ description: "Build a small contacts app from an empty folder: companies and the
 prev:
   link: /tutorials/
   label: All tutorials
-next: false
+next:
+  link: /tutorials/online-shop/
+  label: An online shop with orders
 ---
 
 You will build a contacts app: companies, the people at them, and where each person stands, from a lead to a customer. It takes about twenty minutes. Along the way you will use most of what you need for any Nevela app.
@@ -218,4 +220,4 @@ That is the first five leads by name, with how many there are in all. [REST API]
 - An action, with its permission and its button.
 - Roles that decide who sees what.
 
-Next, [Build a shop](/guides/shop/) adds images that are optimised when they are uploaded, and [Line items](/guides/line-items/) gives a record lines edited in its form, like an order's items. Before you put the app online, read [Deploying](/guides/deploying/).
+Next, [An online shop with orders](/tutorials/online-shop/) adds pictures, prices, orders with their items, and a page anyone can open. Before you put the app online, read [Deploying](/guides/deploying/).

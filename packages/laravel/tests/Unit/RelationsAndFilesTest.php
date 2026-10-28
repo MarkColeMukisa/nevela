@@ -191,6 +191,19 @@ final class RelationsAndFilesTest extends TestCase
         $later = Fake::row($this->category(), 18);
         $this->assertSame(['Outdoor', 'outdoor-18'], [$later['name'], $later['slug']]); // only the slug is unique here
 
+        // A slug made from a field follows it, numbered when only the slug is unique.
+        $product = Fake::row(Descriptor::fromSpec('Product', 'name:string, slug:slug(name)!'), 7);
+        $this->assertSame(strtolower(str_replace(' ', '-', $product['name'])).'-7', $product['slug']);
+        $company = Fake::row(Descriptor::fromSpec('Company', 'name:string!, slug:slug(name)!'), 3);
+        $this->assertSame(['Initech Ltd', 'initech-ltd'], [$company['name'], $company['slug']]);
+        // A category's slug made from another field follows that field, not its name.
+        $titled = Fake::row(Descriptor::fromSpec('Category', 'name:string, title:string, slug:slug(title)!'), 4);
+        $this->assertSame(strtolower(str_replace(' ', '-', $titled['title'])).'-4', $titled['slug']);
+        // And one made from long text fits its column, number included.
+        $long = Fake::row(Descriptor::fromSpec('Article', 'body:text, slug:slug(body)!'), 123456);
+        $this->assertLessThanOrEqual(255, strlen($long['slug']));
+        $this->assertStringEndsWith('-123456', $long['slug']);
+
         // And a company like a company, each one different until the names run out.
         $companies = Descriptor::fromSpec('Company', 'name:string!');
         $this->assertSame('Acme Ltd', Fake::row($companies, 1)['name']);

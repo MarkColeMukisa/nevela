@@ -1,5 +1,6 @@
 import type { ImageMetadata } from "astro";
 import contactsCover from "./assets/tutorials/contacts-cover.png";
+import shopCover from "./assets/tutorials/online-shop-cover.png";
 
 /**
  * The tutorials, for the tutorials page (src/content/docs/tutorials/index.mdx). Each one
@@ -42,12 +43,13 @@ export const tutorials: Tutorial[] = [
     slug: "online-shop",
     title: "An online shop with orders",
     summary:
-      "Categories, products with optimised pictures, and orders whose items are edited as a table inside the order, with a total kept up to date. Then a public page for the products.",
+      "Categories, products with optimised pictures and prices in a currency, and orders whose items are edited as a table inside the order, with a total the app keeps. Then a public page of what is on sale.",
     level: "Intermediate",
     minutes: 35,
-    topics: ["Images", "Money", "Line items", "Public site"],
+    topics: ["Images", "Money", "Line items", "Public API", "Site pages"],
+    cover: shopCover,
     icon: "shopping-cart",
-    out: false,
+    out: true,
   },
   {
     slug: "student-app",

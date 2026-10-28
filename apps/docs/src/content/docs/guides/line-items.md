@@ -55,6 +55,8 @@ public function itemsSaved(): void
 
 `orderItems()` is the relation Nevela wrote for the lines. Anything else that follows from the lines goes here too: stock, a tax line, a discount.
 
+It is called when the order is saved with its lines: its form, or `items` sent with the order over the API. A line changed through its own API (`/api/order-items/{id}`) doesn't call it, so the order keeps its total until it is next saved. If something changes lines that way, save the order after it, or call `itemsSaved()` on it.
+
 ## Who may change them
 
 The order's permissions. Whoever may edit an order may add, change and remove its lines, and whoever may create one may give it lines. OrderItem's own permissions (`order_items.view` and the rest) are for its own pages and API, which most people never need.
