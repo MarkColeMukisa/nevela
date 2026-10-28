@@ -76,9 +76,9 @@ class PrivateFilesTest extends TestCase
 
         // The dashboard is told, and a private picture is not a column: there is no thumbnail to put in one.
         $typescript = (string) file_get_contents(self::$dir.'/web/resources/candidate.resource.ts');
-        $this->assertStringContainsString('cv: field.file(["pdf"], { required: false, ...({ private: true } as {}) }),', $typescript);
-        $this->assertStringContainsString('photo: field.file(["image"], { required: false, ...({ private: true } as {}) }),', $typescript);
-        $this->assertStringContainsString('brochure: field.file(["pdf"], { required: false }),', $typescript);
+        $this->assertStringContainsString('cv: field.file(["pdf"], { required: false, list: true, ...({ private: true } as {}), ...({ column: "hidden" } as {}) }),', $typescript);
+        $this->assertStringContainsString('photo: field.file(["image"], { required: false, list: true, ...({ private: true } as {}), ...({ column: "hidden" } as {}) }),', $typescript);
+        $this->assertStringContainsString('brochure: field.file(["pdf"], { required: false, list: true, ...({ column: "hidden" } as {}) }),', $typescript);
     }
 
     public function test_it_is_stored_where_the_web_server_does_not_reach_and_its_key_opens_nothing(): void
