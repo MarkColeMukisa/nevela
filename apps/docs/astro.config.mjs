@@ -18,7 +18,7 @@ export default defineConfig({
       customCss: ["@fontsource-variable/geist", "@fontsource-variable/geist-mono", "/src/styles/nevela-theme.css"],
       favicon: "/favicon.svg",
       components: {
-        // Adds the version pill and the site's links (Docs, Projects built in Nevela) beside the site title.
+        // Adds the version pill and the site's links (Docs, Projects built in Nevela, Tutorials) beside the site title.
         SiteTitle: "./src/components/SiteTitle.astro",
         // The same links at the top of the phone menu.
         MobileMenuFooter: "./src/components/MobileMenuFooter.astro",

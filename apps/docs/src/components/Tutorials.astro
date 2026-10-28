@@ -1,0 +1,446 @@
+---
+import { Image } from "astro:assets";
+import { tutorials } from "../tutorials";
+/**
+ * The tutorials, as cards. The entries are in src/tutorials.ts; this only lays them out.
+ * Same visual language as the showcase (Showcase.astro): the ruled frame, the hero grid
+ * and the buttons.
+ */
+const out = tutorials.filter((tutorial) => tutorial.out).length;
+const coming = tutorials.length - out;
+const count = (n: number) => String(n).padStart(2, "0");
+const ICONS: Record<string, string> = {
+  contact: '<path d="M16 2v2M8 2v2"/><rect x="3" y="4" width="18" height="18" rx="2"/><circle cx="12" cy="11" r="3"/><path d="M7 18.5a5 5 0 0 1 10 0"/>',
+  "shopping-cart": '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>',
+  "graduation-cap": '<path d="M21.42 10.92a1 1 0 0 0-.02-1.84L12.83 5.2a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.83l8.57 3.91a2 2 0 0 0 1.66 0z"/><path d="M22 10v6M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
+};
+---
+
+<div class="tu not-content">
+  <div class="tu-frame">
+    <section class="tu-hero" aria-labelledby="tu-title">
+      <div class="tu-hero-grid" aria-hidden="true"></div>
+      <p class="tu-eyebrow">Learn by building</p>
+      <h1 id="tu-title" class="tu-title">Tutorials</h1>
+      <p class="tu-lead">
+        Real apps, built from an empty folder one command at a time. Every step is run by our CI in a new app, so what you
+        read is what Nevela does today.
+      </p>
+      <div class="tu-actions">
+        <a class="tu-btn tu-btn-primary" href="/tutorials/contacts/">Start with Contacts</a>
+        <a class="tu-btn tu-btn-quiet" href="/start/quickstart/">Quickstart</a>
+      </div>
+    </section>
+
+    <section class="tu-rail tu-section" aria-labelledby="tu-all">
+      <p class="tu-step">
+        <span>{count(out)}</span>out{coming > 0 && <><span class="tu-step-gap">{count(coming)}</span>coming next</>} · simple to hard
+      </p>
+      <h2 id="tu-all" class="tu-h2">Pick one and build it</h2>
+      <div class="tu-grid">
+        {
+          tutorials.map((tutorial) => {
+            const Tag = tutorial.out ? "a" : "article";
+            return (
+              <Tag class:list={["tu-card", { "tu-card-soon": !tutorial.out }]} href={tutorial.out ? `/tutorials/${tutorial.slug}/` : undefined}>
+                <div class="tu-cover">
+                  {tutorial.cover ? (
+                    <Image src={tutorial.cover} alt="" width={640} quality={80} loading="lazy" />
+                  ) : (
+                    <div class="tu-cover-blank" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" set:html={ICONS[tutorial.icon]} />
+                    </div>
+                  )}
+                  {!tutorial.out && <span class="tu-soon">Coming next</span>}
+                </div>
+                <div class="tu-body">
+                  <p class="tu-meta">
+                    <span class:list={["tu-level", `tu-level-${tutorial.level.toLowerCase()}`]}>{tutorial.level}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{tutorial.minutes} min</span>
+                  </p>
+                  <h3>{tutorial.title}</h3>
+                  <p class="tu-summary">{tutorial.summary}</p>
+                  <ul class="tu-topics" aria-label="What it covers">
+                    {tutorial.topics.map((topic) => (
+                      <li>{topic}</li>
+                    ))}
+                  </ul>
+                  {tutorial.out && (
+                    <span class="tu-read">
+                      Read the tutorial
+                      <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M3 8h10M9 4l4 4-4 4" /></svg>
+                    </span>
+                  )}
+                </div>
+              </Tag>
+            );
+          })
+        }
+      </div>
+    </section>
+  </div>
+</div>
+
+<style>
+  /* Like the showcase, it breaks out of Starlight's content column, and its own title is the page's. */
+  :global(:root:has(.tu)) {
+    --fl-page: #fafafa;
+  }
+
+  :global(:root[data-theme="dark"]:has(.tu)),
+  :global(:root:not([data-theme]):has(.tu)) {
+    --fl-page: #121212;
+  }
+
+  :global(body:has(.tu)) {
+    background: var(--fl-page);
+    overflow-x: clip;
+  }
+
+  :global(body:has(.tu) .header) {
+    background: color-mix(in srgb, var(--fl-page) 88%, transparent);
+  }
+
+  :global(.main-frame:has(.tu) .content-panel) {
+    padding: 0;
+    border: 0;
+  }
+
+  :global(.main-frame:has(.tu) .sl-container) {
+    max-width: none;
+    margin: 0;
+  }
+
+  :global(.main-frame:has(.tu) .sl-markdown-content) {
+    margin: 0;
+  }
+
+  :global(.main-frame:has(.tu) h1#_top) {
+    display: none;
+  }
+
+  .tu {
+    overflow-x: clip;
+    --frame: 75rem;
+    --gutter: clamp(1rem, 4vw, 2.5rem);
+    color: var(--fl-body);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .tu-frame {
+    max-width: var(--frame);
+    margin: 0 auto;
+    border-inline: 1px solid var(--fl-rule);
+  }
+
+  .tu-rail {
+    position: relative;
+    border-top: 1px solid var(--fl-rule);
+  }
+
+  .tu-rail::before,
+  .tu-rail::after {
+    content: "+";
+    position: absolute;
+    top: -0.8rem;
+    font-family: var(--sl-font-mono);
+    line-height: 1.5rem;
+    color: var(--fl-ember);
+    pointer-events: none;
+  }
+
+  .tu-rail::before {
+    left: -0.4rem;
+  }
+
+  .tu-rail::after {
+    right: -0.4rem;
+  }
+
+  /* ---- Hero ---- */
+  .tu-hero {
+    position: relative;
+    text-align: center;
+    padding: clamp(3.5rem, 9vw, 6rem) var(--gutter) clamp(3rem, 6vw, 4.5rem);
+    isolation: isolate;
+  }
+
+  .tu-hero-grid {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      linear-gradient(var(--fl-rule) 1px, transparent 1px),
+      linear-gradient(90deg, var(--fl-rule) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: center top;
+    mask-image: radial-gradient(ellipse 60% 70% at 50% 35%, #000 10%, transparent 75%);
+    opacity: 0.55;
+  }
+
+  .tu-eyebrow,
+  .tu-step {
+    margin: 0;
+    font-family: var(--sl-font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fl-muted);
+  }
+
+  .tu-eyebrow {
+    display: inline-block;
+    padding: 0.3125rem 0.875rem;
+    border: 1px solid var(--fl-rule);
+    border-radius: 999px;
+    background: var(--fl-paper);
+  }
+
+  .tu-title {
+    margin: 1.5rem auto 0;
+    font-size: clamp(2.25rem, 1.2rem + 4.5vw, 4.25rem);
+    font-weight: 650;
+    line-height: 1.04;
+    letter-spacing: -0.045em;
+    color: var(--fl-ink);
+  }
+
+  .tu-lead {
+    margin: 1.25rem auto 0;
+    max-width: 38rem;
+    font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
+    color: var(--fl-muted);
+    text-wrap: pretty;
+  }
+
+  .tu-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  .tu-btn {
+    display: inline-flex;
+    align-items: center;
+    height: 2.75rem;
+    padding: 0 1.25rem;
+    border-radius: 0.625rem;
+    font-size: 0.9375rem;
+    font-weight: 560;
+    text-decoration: none;
+    transition: border-color 0.15s ease, filter 0.15s ease;
+  }
+
+  .tu-btn-primary {
+    background: var(--fl-fuse-fill, #6f00ff);
+    color: #fff;
+  }
+
+  .tu-btn-primary:hover {
+    filter: brightness(1.12);
+  }
+
+  .tu-btn-quiet {
+    border: 1px solid var(--fl-rule-strong);
+    background: var(--fl-paper);
+    color: var(--fl-ink);
+  }
+
+  .tu-btn-quiet:hover {
+    border-color: var(--fl-muted);
+  }
+
+  /* ---- The cards ---- */
+  .tu-section {
+    padding: clamp(2.5rem, 6vw, 4rem) var(--gutter);
+  }
+
+  .tu-step span {
+    margin-inline-end: 0.625rem;
+    color: var(--fl-ember);
+  }
+
+  .tu-step .tu-step-gap {
+    margin-inline-start: 1.25rem;
+  }
+
+  .tu-h2 {
+    margin: 0.75rem 0 0;
+    font-size: clamp(1.625rem, 1.2rem + 1.4vw, 2.25rem);
+    font-weight: 650;
+    letter-spacing: -0.035em;
+    color: var(--fl-ink);
+  }
+
+  .tu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    gap: 1.25rem;
+    margin-top: 2rem;
+  }
+
+  .tu-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--fl-rule);
+    border-radius: 1rem;
+    background: var(--fl-paper);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  a.tu-card:hover {
+    border-color: var(--fl-rule-strong);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px -18px color-mix(in srgb, var(--fl-ink) 45%, transparent);
+  }
+
+  a.tu-card:focus-visible {
+    outline: 2px solid var(--fl-ember);
+    outline-offset: 2px;
+  }
+
+  .tu-cover {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    border-bottom: 1px solid var(--fl-rule);
+    background: var(--fl-surface);
+    overflow: hidden;
+  }
+
+  .tu-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: left top;
+  }
+
+  .tu-cover-blank {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    background:
+      radial-gradient(ellipse 70% 60% at 30% 30%, var(--fl-ember-soft), transparent 70%),
+      var(--fl-surface);
+  }
+
+  .tu-cover-blank svg {
+    width: 3.5rem;
+    height: 3.5rem;
+    fill: none;
+    stroke: var(--fl-ember);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .tu-soon {
+    position: absolute;
+    top: 0.875rem;
+    left: 0.875rem;
+    padding: 0.1875rem 0.625rem;
+    border: 1px solid var(--fl-rule-strong);
+    border-radius: 999px;
+    background: var(--fl-paper);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--fl-muted);
+  }
+
+  .tu-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 1.25rem 1.375rem 1.375rem;
+  }
+
+  .tu-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--fl-muted);
+  }
+
+  .tu-level {
+    font-weight: 600;
+  }
+
+  .tu-level-beginner {
+    color: #16a34a;
+  }
+
+  .tu-level-intermediate {
+    color: #d97706;
+  }
+
+  .tu-level-advanced {
+    color: var(--fl-ember);
+  }
+
+  .tu-card h3 {
+    margin: 0.5rem 0 0;
+    font-size: 1.25rem;
+    font-weight: 650;
+    line-height: 1.25;
+    letter-spacing: -0.025em;
+    color: var(--fl-ink);
+  }
+
+  .tu-summary {
+    margin: 0.625rem 0 0;
+    font-size: 0.9375rem;
+    color: var(--fl-muted);
+  }
+
+  .tu-topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tu-topics li {
+    margin: 0;
+    padding: 0.125rem 0.5rem;
+    border: 1px solid var(--fl-rule);
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--fl-body);
+  }
+
+  .tu-read {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: auto;
+    padding-top: 1.25rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--fl-ink);
+  }
+
+  .tu-read svg {
+    width: 0.875rem;
+    height: 0.875rem;
+    color: var(--fl-ember);
+    transition: transform 0.15s ease;
+  }
+
+  a.tu-card:hover .tu-read svg {
+    transform: translateX(3px);
+  }
+
+  .tu-card-soon .tu-cover-blank svg {
+    opacity: 0.7;
+  }
+</style>

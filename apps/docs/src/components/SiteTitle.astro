@@ -34,4 +34,12 @@ import SiteNav from "./SiteNav.astro";
     border-color: var(--fl-ember);
     color: var(--fl-ink);
   }
+
+  /* On a phone, a page with no sidebar has its links in the header: they need the room, and
+     the release banner below says the version. */
+  @media (max-width: 29.99rem) {
+    :global(:root:not([data-has-sidebar])) .fl-version {
+      display: none;
+    }
+  }
 </style>

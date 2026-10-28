@@ -291,13 +291,20 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
                         }
                       } else if (column.def.kind === "belongsTo" && typeof value === "string") {
                         const target = byName.get(column.def.target);
-                        content = target ? (
-                          <Link href={resourcePath(target, value)} className="hover:underline">
-                            {titles[column.key]?.[value] ?? value}
-                          </Link>
-                        ) : (
-                          value
-                        );
+                        const title = titles[column.key]?.[value];
+                        // No title: this person's role doesn't let them see that record. Its id would mean nothing to them.
+                        content =
+                          target && title === undefined ? (
+                            <span className="text-muted-foreground" title={`Your role doesn't include ${target.pluralLabel.toLowerCase()}.`}>
+                              Hidden
+                            </span>
+                          ) : target ? (
+                            <Link href={resourcePath(target, value)} className="hover:underline">
+                              {title}
+                            </Link>
+                          ) : (
+                            value
+                          );
                       } else if (index === 0) {
                         content = (
                           <Link href={resourcePath(resource, id)} className="font-medium hover:underline">

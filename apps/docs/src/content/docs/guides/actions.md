@@ -33,7 +33,7 @@ That writes `app/Nevela/Actions/InternshipApplication/Accept.php`, once, and the
 |---|---|
 | the name (`accept`) | camelCase. It is in the address, and its class is named from it. |
 | `label` | What the button says. Defaults to the name in words. |
-| `icon` | A [Lucide](https://lucide.dev) icon name. Optional. |
+| `icon` | A [Lucide](https://lucide.dev) icon name, one of those in `apps/web/components/dashboard/resource-action.tsx` (`check`, `send`, `archive`, `mail` and others). Add another there. Optional. |
 | `on` | `record`: a button on a record's page and in its row menu. `collection`: a button beside New, for the list as a whole. Defaults to `record`. |
 | `confirm` | A question asked first, in the dialog Delete uses. Optional. |
 | `when` | Field values a record must have for the action to apply. The button is hidden on a record that doesn't match, and Laravel refuses it there too. Optional, and for `record` actions only. |

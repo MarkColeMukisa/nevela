@@ -161,6 +161,7 @@ Through npm's `create`, put options after `--`: `npm create nevela@latest my-app
 
 ## Next
 
+- [Tutorials](/tutorials/): real apps built from scratch, step by step, starting with [Contacts](/tutorials/contacts/)
 - [Build a shop](/guides/shop/): two linked resources, with images that are optimised on upload
 - [The blog](/guides/blog/): the one your app came with, and how it is put together
 - [Resources](/concepts/resources/): the field types and how regeneration works

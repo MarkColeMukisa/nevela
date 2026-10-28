@@ -101,7 +101,7 @@ nevela resource Product --fields="name:string, price:money, kind:enum(stock|digi
 | `name` | The resource name, PascalCase and singular. |
 | `--fields=` | The fields, as `name:type` separated by commas. See [field types](/concepts/field-types/), including `category:belongsTo(Category)` and `image:image`. If left out, the command asks for them. |
 | `--items=` | Its lines, as a second resource: their name, a colon, and their fields. `--items="OrderItem: product:belongsTo(Product), quantity:int, price:money"`. They are given a field pointing back here, and edited in this one's form. See [Line items](/guides/line-items/). |
-| `--icon=` | A Lucide icon name for the dashboard sidebar. |
+| `--icon=` | A Lucide icon name for the dashboard sidebar, one the dashboard knows: see [the descriptor's `icon`](/concepts/descriptor/). |
 | `--group=` | The sidebar heading to put the resource under. |
 | `--id=int` | Give the resource the numbered ids of `$table->id()`. Without it, ids are UUIDs. |
 | `--force` | Replace the descriptor if the resource already exists. |
@@ -154,7 +154,7 @@ nevela adopt posts
 |---|---|
 | `table` | The table to adopt. It needs an `id` (integers or UUIDs), `created_at` and `updated_at`. |
 | `--name=` | The resource's name, when it isn't the table's own (`posts` is `Post`). |
-| `--icon=` | A Lucide icon name for the dashboard sidebar. |
+| `--icon=` | A Lucide icon name for the dashboard sidebar, one the dashboard knows: see [the descriptor's `icon`](/concepts/descriptor/). |
 | `--group=` | The sidebar heading to put the resource under. |
 | `--yes` | Write it without asking. |
 | `--force` | Read the table again and replace the descriptor it already has. |

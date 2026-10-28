@@ -111,6 +111,12 @@ pnpm docs:dev
 
 Pages are Markdown in `apps/docs/src/content/docs`. The sidebar is in `apps/docs/astro.config.mjs`.
 
+### Tutorials
+
+Each tutorial has its steps in `examples/<name>/`: `steps.sh` runs its `nevela` commands in a new app, and `files/` holds what it has you write. CI makes an app for each and runs them, then builds the dashboard. `scripts/tutorials.test.mjs` (in `pnpm test:docs`) checks that every command before the script's `# Checks` line, and every file, is on the tutorial's page as it is. Change a tutorial and its script together.
+
+To run one yourself, from the top of a new app: `bash /path/to/nevela/examples/contacts/steps.sh`. With Laravel Herd in Git Bash, put `PHP=php.bat` in front.
+
 ## Before opening a pull request
 
 - Add a line to `CHANGELOG.md` under "Unreleased" if a user would notice the change.

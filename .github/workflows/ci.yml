@@ -632,3 +632,38 @@ jobs:
           # With the API up, status finds it and says it is this app.
           (cd .. && cd .. && php nevela status | grep -q 'it is this app')
           curl -s -g "http://127.0.0.1:8000/api/products?perPage=1" -H 'Accept: application/json' -H "Authorization: Bearer $token" | tee /dev/stderr | grep -q '"total":100'
+
+  tutorials:
+    # Each tutorial in the docs, done for real: examples/<name>/steps.sh holds its commands
+    # and the files it has you write, run in a new app made as people make one.
+    name: Tutorials (each one, in a new app)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: pdo_sqlite, gd, exif, fileinfo
+          coverage: none
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Pack create-nevela
+        working-directory: packages/create-nevela
+        run: |
+          npm pack
+          mkdir "$RUNNER_TEMP/create-nevela"
+          tar -xzf create-nevela-*.tgz -C "$RUNNER_TEMP/create-nevela"
+      - name: Do each tutorial
+        working-directory: ${{ runner.temp }}
+        run: |
+          for steps in "$GITHUB_WORKSPACE"/examples/*/steps.sh; do
+            name="$(basename "$(dirname "$steps")")"
+            echo "::group::$name"
+            # --bundled-package: the package as it is in this commit, not the last release.
+            node create-nevela/package/index.mjs "$name" --yes --pm pnpm --bundled-package
+            (cd "$name" && bash "$steps")
+            (cd "$name/apps/web" && pnpm exec tsc --noEmit && pnpm run build)
+            echo "::endgroup::"
+          done
