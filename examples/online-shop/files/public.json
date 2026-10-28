@@ -1,0 +1,6 @@
+{
+    "read": {
+        "by": "slug",
+        "fields": ["name", "slug", "price", "image", "description"]
+    }
+}

@@ -8,6 +8,16 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_A second tutorial: an online shop with orders_
+
+### Added
+
+- **A second tutorial, [An online shop with orders](https://nevela-docs.vercel.app/tutorials/online-shop/)**: categories, products with pictures and prices in a currency, orders whose items are edited inside them with a total the app keeps, a public part of the API, and a page of what is on sale. Its steps are in `examples/online-shop/`, which CI runs in a new app like the first.
+
+### Fixed
+
+- **A seeded slug made from a field reads as that field does.** A product called Quiet Backpack gets `quiet-backpack-20`, not a slug made of other words. Before, only categories' slugs followed their names.
+
 ## [0.23.0] - 2026-10-28
 
 _A first tutorial, and tables that keep their shape_
