@@ -237,12 +237,12 @@ jobs:
           ls apps/api/storage/app/public/products/image/*/*/ | grep -q '\.thumb\.'
           # Rich text: an editor in the dashboard, which the build below compiles, and HTML in the table.
           php nevela resource Article --fields="title:string, body:richtext" --icon=newspaper --seed=3
-          grep -q 'body: field.text({ ...({ rich: true } as {}) })' apps/web/resources/article.resource.ts
+          grep -q 'body: field.text({ list: true, ...({ column: "hidden" } as {}), ...({ rich: true } as {}) })' apps/web/resources/article.resource.ts
           grep -q "longText('body')" apps/api/database/migrations/*_create_articles_table.php
           # A private file field: its details name the record it is fetched through, not a public address.
           php nevela resource Candidate --fields="name:string, cv:file(pdf|private)?"
           grep -q "privateFile(\$this->cv, 'candidates', \$this->getKey(), 'cv')" apps/api/app/Http/Resources/Nevela/CandidateResource.php
-          grep -q 'cv: field.file(\["pdf"\], { required: false, ...({ private: true } as {}) })' apps/web/resources/candidate.resource.ts
+          grep -q 'cv: field.file(\["pdf"\], { required: false, list: true, ...({ private: true } as {}), ...({ column: "hidden" } as {}) })' apps/web/resources/candidate.resource.ts
           # A public side: a sign-up form anyone can send, with a default for what the form leaves out.
           node -e '
             const fs = require("fs"), file = "apps/api/nevela/resources/signup.json";
