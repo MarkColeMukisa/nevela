@@ -1,4 +1,5 @@
 import { slugify, type StoredField } from "@flaredev/core";
+import { numberedAs } from "@/lib/copied";
 
 /**
  * Values a form can make up for itself.
@@ -11,6 +12,8 @@ import { slugify, type StoredField } from "@flaredev/core";
  * inventing one would be nonsense.
  */
 export function canSuggest(field: StoredField): boolean {
+  // A numbered field is Laravel's to fill: its placeholder says with what.
+  if (numberedAs(field)) return false;
   return field.kind === "string" && field.unique === true && (field.format === undefined || field.format === "slug");
 }
 

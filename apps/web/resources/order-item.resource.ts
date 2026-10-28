@@ -5,7 +5,7 @@
 import { defineResource, field } from "@flaredev/core";
 
 export default defineResource({
-  // nevela:generated:start hash=ac62cf2907e7
+  // nevela:generated:start hash=58e104795832
   name: "OrderItem",
   table: "order_items",
   slug: "order-items",
@@ -14,7 +14,7 @@ export default defineResource({
   fields: {
     productId: field.belongsTo("Product"),
     quantity: field.int(),
-    price: field.float({ format: "money" }),
+    price: field.float({ required: false, format: "money", ...({ from: "productId.price" } as {}) }),
     orderId: field.belongsTo("Order"),
   },
   // nevela:generated:end

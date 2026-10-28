@@ -5,7 +5,7 @@
 import { defineResource, field } from "@flaredev/core";
 
 export default defineResource({
-  // nevela:generated:start hash=fbfb443a65f0
+  // nevela:generated:start hash=dfef10aec6f4
   name: "Order",
   table: "orders",
   slug: "orders",
@@ -14,7 +14,7 @@ export default defineResource({
   icon: "shopping-cart",
   group: "Catalogue",
   fields: {
-    number: field.string({ unique: true }),
+    number: field.string({ required: false, unique: true, placeholder: "Left empty: the next ORD- number", ...({ auto: "ORD" } as {}) }),
     customer: field.string(),
     email: field.email({ required: false }),
     status: field.enum(["pending","paid","shipped","cancelled"]),

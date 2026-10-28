@@ -68,6 +68,36 @@ A field's `list` in the [descriptor](/concepts/descriptor/) decides for it:
 
 Run `nevela generate` after changing it. What someone turns on or off goes in the page's address (`?columns=name,email`), so a link to it opens with the same columns.
 
+## Numbered by Laravel
+
+An order number, an invoice number or a ticket number is given by the app, one after another:
+
+```sh
+nevela resource Invoice --fields="number:auto(INV), customer:string, total:money"
+```
+
+The first invoice is INV-0001, the next INV-0002, and on past INV-9999 to INV-10000. Grit's way of writing it, `number:string:auto:INV`, means the same, and in the descriptor it is `"auto": "INV"` on a string field. The prefix is letters and digits, up to ten, starting with a letter.
+
+- **Left empty, it is given the next one** when the record is made: in the form, over the API, by an import or by your own code (`Invoice::create([...])`). The form says so in the field. One typed in is kept.
+- **It is unique**, and a number in the trash isn't given again.
+- **The next is one more than the highest** with that prefix. Two records made at the same instant can be given the same number; the column is unique, so the second is refused rather than saved with it, and can be sent again.
+- Seeding gives the rows INV-0001, INV-0002 and so on, from where an empty table starts.
+
+## Copied from a related record
+
+An order item's price is its product's. Rather than type it, copy it:
+
+```sh
+nevela resource OrderItem --fields="product:belongsTo(Product), quantity:int, price:money(product.price)"
+```
+
+`(product.price)` is a relation of the resource and a field of the record it points at, of the same type. In the descriptor it is `"from": "productId.price"`.
+
+- **The copy is made when the record is made, and again when it is pointed at another** (the item is changed to another product). Otherwise it is kept: when a product's price changes, the orders already made keep the price they were sold at.
+- **It isn't typed.** The form shows it and doesn't ask for it, and in an order's [line items](/guides/line-items/) the price is in the row as soon as the product is picked. What a request sends for it is left out.
+- It is copied however the record is saved: the dashboard, the API, an import, or your own code.
+- A copy can't be unique, or a file or a relation.
+
 ## What an enum's values are called
 
 A value is what is stored, validated and sent over the API, so it is a short key: `asap`, `quarter`. What people read can be words, given after `=`:

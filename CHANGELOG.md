@@ -8,11 +8,13 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_A second tutorial: an online shop with orders_
+_A shop tutorial, numbered orders, and prices from the product_
 
 ### Added
 
-- **A second tutorial, [An online shop with orders](https://nevela-docs.vercel.app/tutorials/online-shop/)**: categories, products with pictures and prices in a currency, orders whose items are edited inside them with a total the app keeps, a public part of the API, and a page of what is on sale. Its steps are in `examples/online-shop/`, which CI runs in a new app like the first.
+- **A second tutorial, [An online shop with orders](https://nevela-docs.vercel.app/tutorials/online-shop/)**: categories, products with pictures and prices in a currency, orders whose items are edited inside them with a total the app keeps, a public part of the API, and a page of what is on sale. Its steps are in `examples/online-shop/`, which CI runs in a new app like the first. Its orders are numbered and its items priced from their products.
+- **A field Laravel numbers:** `number:auto(INV)`, or Grit's `number:string:auto:INV`, gives each new record the next number, INV-0001, INV-0002 and on, however it is made. Left empty in the form, it is filled when saved; one typed in is kept. In the descriptor, `"auto": "INV"`. See [Numbered by Laravel](https://nevela-docs.vercel.app/concepts/field-types/#numbered-by-laravel).
+- **A field copied from a related record:** `price:money(product.price)` takes an order item's price from its product when the item is added, or changed to another product, and keeps it after, so an old order keeps its prices. It isn't typed: an order's items show it as soon as the product is picked, and what is sent for it is left out. In the descriptor, `"from": "productId.price"`. See [Copied from a related record](https://nevela-docs.vercel.app/concepts/field-types/#copied-from-a-related-record).
 
 ### Fixed
 

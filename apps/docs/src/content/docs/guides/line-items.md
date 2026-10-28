@@ -8,8 +8,10 @@ Some records are made of lines: an order of the products in it, an invoice of wh
 ## Make one
 
 ```sh
-nevela resource Order --fields="number:string!, customer:string, status:enum(pending|paid|shipped), total:money?" --items="OrderItem: product:belongsTo(Product), quantity:int, price:money"
+nevela resource Order --fields="number:auto(ORD), customer:string, status:enum(pending|paid|shipped), total:money?" --items="OrderItem: product:belongsTo(Product), quantity:int, price:money(product.price)"
 ```
+
+`number:auto(ORD)` [numbers each order](/concepts/field-types/#numbered-by-laravel), ORD-0001 and on, and `price:money(product.price)` [copies each item's price](/concepts/field-types/#copied-from-a-related-record) from its product, so it isn't typed. Both are optional: `number:string!` and `price:money` are typed in instead.
 
 `--items` is the lines' name, a colon, and their fields. That makes two resources:
 

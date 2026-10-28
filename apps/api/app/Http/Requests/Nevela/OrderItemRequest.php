@@ -22,7 +22,7 @@ class OrderItemRequest extends ResourceRequest
             : Gate::allows('create', OrderItem::class);
     }
 
-    // nevela:generated:start hash=94ad12139a4d
+    // nevela:generated:start hash=272b0fcb9a17
     public function rules(): array
     {
         $orderItem = $this->route('order_item');
@@ -30,7 +30,7 @@ class OrderItemRequest extends ResourceRequest
         return [
             'productId' => ['required', 'uuid', Rule::exists('products', 'id')],
             'quantity' => ['required', 'integer'],
-            'price' => ['required', 'numeric'],
+            'price' => ['nullable', 'numeric'],
             'orderId' => ['required', 'uuid', Rule::exists('orders', 'id')],
         ];
     }
@@ -38,6 +38,12 @@ class OrderItemRequest extends ResourceRequest
     protected function columns(): array
     {
         return ['productId' => 'product_id', 'quantity' => 'quantity', 'price' => 'price', 'orderId' => 'order_id'];
+    }
+
+    /** Fields copied from a record it points at, by the model. What is sent for them is left out. */
+    protected function copied(): array
+    {
+        return ['price'];
     }
     // nevela:generated:end
 }

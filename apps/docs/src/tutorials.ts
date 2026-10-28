@@ -1,6 +1,6 @@
 import type { ImageMetadata } from "astro";
 import contactsCover from "./assets/tutorials/contacts-cover.png";
-import shopCover from "./assets/tutorials/online-shop-cover.png";
+import shopCover from "./assets/tutorials/online-shop-cover.webp";
 
 /**
  * The tutorials, for the tutorials page (src/content/docs/tutorials/index.mdx). Each one

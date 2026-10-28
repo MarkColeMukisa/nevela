@@ -57,7 +57,8 @@ Each field has a `kind` (`string`, `text`, `int`, `float`, `boolean`, `date`, `d
 | `maxLength` | For `string` and `text`: the most characters it holds, where that isn't the usual 255 or 65,535. |
 | `required` | `false` makes the field optional. Defaults to `true`. |
 | `unique` | `true` makes values unique. Defaults to `false`. |
-| `from` | For a slug: the field it is made from when a create leaves it empty (`"title"`). It is never remade afterwards. |
+| `from` | For a slug: the field it is made from when a create leaves it empty (`"title"`). It is never remade afterwards. For any other field: the field of a related record it is copied from, `"productId.price"`. See [Copied from a related record](/concepts/field-types/#copied-from-a-related-record). |
+| `auto` | For a string: the prefix of the number Laravel gives each new record, `"INV"` for INV-0001. Makes it unique. See [Numbered by Laravel](/concepts/field-types/#numbered-by-laravel). |
 | `default` | What the field is when a create leaves it out: `"pending"`, `0`, `false`. Also the column's default. For `string`, `text`, `int`, `float`, `boolean` and `enum`. |
 | `label` | The label in the dashboard. Defaults to the field name in words. |
 | `list` | Its column in the dashboard's table: `true` always on, `"hidden"` off until turned on in the Columns menu, `false` none. Left out, the first six columns are on, and long text and files start off. See [Which columns the table shows](/concepts/field-types/#which-columns-the-table-shows). |

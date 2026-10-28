@@ -11,11 +11,18 @@ class Order extends Model
 
     protected $table = 'orders';
 
-    // nevela:generated:start hash=cc2aead0deed
+    // nevela:generated:start hash=2168c89bfa67
     // Deleted records go to the trash, where they can be restored for a while.
     use \Nevela\Laravel\Concerns\Trashable;
     // $record->optionLabel('status'): what its value is called, in the dashboard's words.
     use \Nevela\Laravel\Concerns\OptionLabels;
+    // Numbered by Laravel when made without one: ORD-0001, ORD-0002.
+    use \Nevela\Laravel\Concerns\Numbered;
+
+    protected function numbered(): array
+    {
+        return ['number' => 'ORD'];
+    }
 
     protected $fillable = ['number', 'customer', 'email', 'status', 'total', 'notes'];
 

@@ -11,6 +11,7 @@
     "fields": {
         "number": {
             "kind": "string",
+            "auto": "ORD",
             "unique": true
         },
         "customer": {
