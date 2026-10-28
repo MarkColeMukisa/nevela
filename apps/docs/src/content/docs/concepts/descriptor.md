@@ -32,7 +32,7 @@ description: "The JSON file per resource that everything else is generated from.
 | `adopted` | `true` for a table that was there before Nevela: no migration is written to create it. |
 | `slug` | The URL segment: `/api/products` and `/dashboard/products`. |
 | `label`, `pluralLabel` | What the dashboard calls one record and many. |
-| `icon` | A [Lucide](https://lucide.dev) icon name for the sidebar. Optional. |
+| `icon` | A [Lucide](https://lucide.dev) icon name for the sidebar, such as `users`, `building-2` or `graduation-cap`. The dashboard knows the ones in `apps/web/components/dashboard/resource-icon.tsx`; add another there, and an icon it doesn't know is a plain page. Optional. |
 | `group` | The sidebar heading the resource sits under. Optional. |
 | `titleField` | The field shown as a record's title. Defaults to the first string field. |
 | `fields` | The fields, in the order they appear in forms and tables. |

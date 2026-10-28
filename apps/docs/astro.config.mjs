@@ -42,6 +42,10 @@ export default defineConfig({
           ],
         },
         {
+          label: "Tutorials",
+          items: [{ label: "Contacts: your first app", slug: "tutorials/contacts" }],
+        },
+        {
           label: "Core concepts",
           items: [
             { label: "Resources", slug: "concepts/resources" },

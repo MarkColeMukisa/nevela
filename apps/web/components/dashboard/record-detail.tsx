@@ -146,13 +146,19 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
                 );
               } else if (def.kind === "belongsTo" && typeof value === "string") {
                 const target = byName.get(def.target);
-                content = target ? (
-                  <Link href={resourcePath(target, value)} className="text-primary hover:underline">
-                    {relationTitles[key] ?? value}
-                  </Link>
-                ) : (
-                  value
-                );
+                // No title: this person's role doesn't let them see that record. Its id would mean nothing to them.
+                content =
+                  target && relationTitles[key] === undefined ? (
+                    <span className="text-muted-foreground" title={`Your role doesn't include ${target.pluralLabel.toLowerCase()}.`}>
+                      Hidden
+                    </span>
+                  ) : target ? (
+                    <Link href={resourcePath(target, value)} className="text-primary hover:underline">
+                      {relationTitles[key]}
+                    </Link>
+                  ) : (
+                    value
+                  );
               }
               return (
                 <div key={key} className={def.kind === "text" ? "flex flex-col gap-1 sm:col-span-2" : "flex flex-col gap-1"}>

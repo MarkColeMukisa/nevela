@@ -1,0 +1,9 @@
+{
+    "markCustomer": {
+        "label": "Mark as customer",
+        "icon": "check",
+        "confirm": "Mark this contact as a customer?",
+        "when": { "status": "lead" },
+        "many": true
+    }
+}
