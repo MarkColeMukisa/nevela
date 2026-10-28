@@ -20,7 +20,9 @@ export default async function ShopPage() {
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-6 py-16">
         <h1 className="text-4xl md:text-5xl">Shop</h1>
-        {products.length === 0 ? (
+        {!response.ok ? (
+          <p className="mt-12 text-foreground-muted">The shop is unavailable just now. Try again in a moment.</p>
+        ) : products.length === 0 ? (
           <p className="mt-12 text-foreground-muted">Nothing is on sale yet.</p>
         ) : (
           <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

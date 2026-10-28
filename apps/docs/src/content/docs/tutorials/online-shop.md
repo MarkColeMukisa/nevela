@@ -107,7 +107,9 @@ The form shows the total, but nothing stores it yet, so the Orders table can't s
     }
 ```
 
-`orderItems()` is the relation Nevela wrote for the lines. It runs in the same transaction as the save, so the total can't disagree with the items. Change a quantity in an order and save it: its total in the table follows.
+`orderItems()` is the relation Nevela wrote for the lines. It runs whenever an order is saved with its items, in the dashboard or with `items` over the API, and in the same transaction, so the total and the items are saved together. Change a quantity in an order and save it: its total in the table follows.
+
+An item changed on its own, through `/api/order-items`, doesn't call it, and its order keeps the old total until the order is next saved. Change items through their order and the total stays right.
 
 The seeded orders were given made-up totals. Each is set right the next time its order is saved. Anything else that follows from the items goes in `itemsSaved()` too: stock, a discount, tax.
 
@@ -198,7 +200,9 @@ export default async function ShopPage() {
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-6 py-16">
         <h1 className="text-4xl md:text-5xl">Shop</h1>
-        {products.length === 0 ? (
+        {!response.ok ? (
+          <p className="mt-12 text-foreground-muted">The shop is unavailable just now. Try again in a moment.</p>
+        ) : products.length === 0 ? (
           <p className="mt-12 text-foreground-muted">Nothing is on sale yet.</p>
         ) : (
           <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
