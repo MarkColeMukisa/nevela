@@ -1,4 +1,5 @@
 ---
+import { Image } from "astro:assets";
 import { asked, projects, SUBMIT_URL } from "../showcase";
 /**
  * Projects built in Nevela. The entries are in src/showcase.ts; this only lays them out.
@@ -33,9 +34,19 @@ const STATUS = { live: "Live", building: "Moving to Nevela" } as const;
     {
       featured.map((project) => (
         <section class="sc-rail sc-featured" aria-label={project.name}>
-          <div class="sc-featured-mark" aria-hidden="true">
-            <span>{project.name.slice(0, 1)}</span>
-          </div>
+          {project.image && project.url ? (
+            <a class="sc-featured-shot" href={project.url} aria-label={`${project.name}, ${host(project.url)}`}>
+              <Image src={project.image} alt="" width={960} quality={82} />
+            </a>
+          ) : project.image ? (
+            <div class="sc-featured-shot">
+              <Image src={project.image} alt={`${project.name}'s site`} width={960} quality={82} />
+            </div>
+          ) : (
+            <div class="sc-featured-mark" aria-hidden="true">
+              <span>{project.name.slice(0, 1)}</span>
+            </div>
+          )}
           <div class="sc-featured-body">
             <div class="sc-row">
               <h2>{project.name}</h2>
@@ -77,6 +88,7 @@ const STATUS = { live: "Live", building: "Moving to Nevela" } as const;
         {
           community.map((project) => (
             <article class="sc-card">
+              {project.image && <Image class="sc-card-shot" src={project.image} alt="" width={640} quality={80} loading="lazy" />}
               <div class="sc-row">
                 <h3>{project.name}</h3>
                 <span class:list={["sc-status", `sc-status-${project.status}`]}>{STATUS[project.status]}</span>
@@ -368,6 +380,40 @@ const STATUS = { live: "Live", building: "Moving to Nevela" } as const;
     letter-spacing: -0.04em;
   }
 
+  /* A screenshot in place of the letter, whole, framed on the same soft ground. */
+  .sc-featured-shot {
+    display: grid;
+    place-items: center;
+    min-height: 18rem;
+    padding: clamp(1rem, 3vw, 2rem);
+    border-right: 1px solid var(--fl-rule);
+    background:
+      radial-gradient(ellipse 70% 60% at 30% 30%, var(--fl-ember-soft), transparent 70%),
+      var(--fl-surface);
+  }
+
+  .sc-featured-shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--fl-rule);
+    border-radius: 0.75rem;
+    box-shadow: 0 18px 40px -24px rgb(15 23 42 / 0.45);
+  }
+
+  .sc-card-shot {
+    display: block;
+    width: calc(100% + 3rem);
+    max-width: none;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    margin: -1.5rem -1.5rem 1.25rem;
+    border-bottom: 1px solid var(--fl-rule);
+    border-radius: 0.875rem 0.875rem 0 0;
+    object-fit: cover;
+    object-position: top center;
+  }
+
   .sc-featured-body {
     padding: clamp(2rem, 4vw, 3rem) clamp(1.25rem, 4vw, 3rem);
   }
@@ -605,11 +651,13 @@ const STATUS = { live: "Live", building: "Moving to Nevela" } as const;
       grid-template-columns: minmax(0, 1fr);
     }
 
-    .sc-featured-mark {
+    .sc-featured-mark,
+    .sc-featured-shot {
       min-height: 10rem;
       border-right: 0;
       border-bottom: 1px solid var(--fl-rule);
     }
+
 
     .sc-featured-mark span {
       width: 4.5rem;

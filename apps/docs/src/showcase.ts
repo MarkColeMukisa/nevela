@@ -1,3 +1,5 @@
+import type { ImageMetadata } from "astro";
+import kianRover from "./assets/showcase/kian-rover.webp";
 import { REPO_URL } from "./version";
 
 /**
@@ -20,6 +22,8 @@ export interface ShowcaseProject {
   tags: string[];
   /** The parts of Nevela it is built on. */
   uses: string[];
+  /** A screenshot of the site or the dashboard, in src/assets/showcase/. The first letter of its name stands in without one. */
+  image?: ImageMetadata;
   /** Who made it, with a link to them if they want one. */
   by: { name: string; href?: string };
   /** Shown first, and larger. */
@@ -32,13 +36,14 @@ export const SUBMIT_URL = `${REPO_URL}/issues/new?template=showcase.yml`;
 export const projects: ShowcaseProject[] = [
   {
     name: "Kian Rover",
-    tagline: "Leadership and mentorship programmes",
+    tagline: "An IT and software company in Kampala",
     description:
-      "Internships, programme registration with mobile-money payments, a newsletter, updates and a blog. Its six existing tables were adopted as Nevela resources as they were, and its contact, newsletter and internship forms are moving to Nevela's protected public forms.",
+      "Kian Rover sets up stock, sales and school systems for small businesses and schools in Uganda, and trains young people to run them through a one-month internship. Its site and staff dashboard are one Nevela app: a five-step project brief that staff quote from the dashboard with a PDF quotation, internship applications with private CVs and an acceptance letter, courses, and a blog.",
     url: "https://kianrover.com",
-    status: "building",
-    tags: ["Education", "Payments", "Public site"],
-    uses: ["Adopted tables", "Dashboard", "Public site", "Blog"],
+    status: "live",
+    tags: ["Software company", "Business systems", "Internships"],
+    uses: ["Public forms", "Actions", "Private files", "Dashboard", "Blog"],
+    image: kianRover,
     by: { name: "MarkCole MUKISA", href: "https://x.com/MarkColeMUKISA" },
     featured: true,
   },
