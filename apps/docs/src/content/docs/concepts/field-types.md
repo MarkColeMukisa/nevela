@@ -143,6 +143,35 @@ A field's own wins. It is written with the currency's own decimals, so `UGX 4,50
 
 Run `nevela generate` after changing `NEVELA_CURRENCY`.
 
+## A field that only sometimes applies
+
+A billing cycle belongs to a recurring project and means nothing on a one-off one. `if` after a field says which records it is for:
+
+```sh
+nevela resource Project --fields="name:string, kind:enum(one_off|recurring), cycle:enum(monthly|annually) if kind == recurring, amount:money"
+```
+
+| Where it applies (a recurring project) | Everywhere else (a one-off) |
+|---|---|
+| The form shows it, marked required. | The form doesn't show it. |
+| Left empty, it is refused: "Needed when the kind is Recurring." | It is empty. Sent anyway, it is not kept. |
+
+A project changed from recurring to one-off loses its cycle, and one changed the other way needs one sent with the change. A change that sends neither keeps what the record has. Laravel holds to this however a record arrives (the form, the API, "Add several", a CSV import, a public form), and the seeder gives a cycle only to the recurring projects it makes. The column is nullable, since most rows may have nothing in it.
+
+| | |
+|---|---|
+| Several values | `rate:money if kind == recurring\|retainer` |
+| A yes/no field | `terms:text if billed == true` |
+| Optional where it applies | `discount:percent? if kind == recurring` is never needed, but still empty on a one-off |
+| What it depends on | An enum or a yes/no field of the same resource, which doesn't itself depend on another |
+| Not for | A relation (make it optional instead), a numbered or made field, or one with a default |
+
+In the descriptor:
+
+```json
+"cycle": { "kind": "enum", "options": ["monthly", "annually"], "when": { "kind": "recurring" } }
+```
+
 ## Phone numbers
 
 `phone:tel` takes a phone number of any country. The dashboard's input has a picker for the country's code, starting at the viewer's own, and sends the number with it: `+256772123456`.

@@ -41,6 +41,13 @@
                 "digital"
             ]
         },
+        "downloadUrl": {
+            "kind": "string",
+            "format": "url",
+            "when": {
+                "kind": "digital"
+            }
+        },
         "notes": {
             "kind": "text",
             "required": false
