@@ -85,7 +85,8 @@ class BulkCreateTest extends TestCase
     {
         $category = Category::create(['name' => 'Kitchen', 'slug' => 'kitchen']);
         Product::create(['name' => 'Kettle', 'sku' => 'KET-1', 'price' => 10, 'category_id' => $category->id, 'active' => true, 'kind' => 'stock']);
-        $row = fn (array $over) => $over + ['name' => 'Pan', 'sku' => 'PAN-1', 'price' => 12.5, 'categoryId' => $category->id, 'active' => true, 'kind' => 'stock'];
+        // Named after its code: a category has each name once.
+        $row = fn (array $over) => $over + ['name' => 'Pan '.($over['sku'] ?? 'PAN-1'), 'sku' => 'PAN-1', 'price' => 12.5, 'categoryId' => $category->id, 'active' => true, 'kind' => 'stock'];
 
         $response = $this->postJson('/api/products/_bulk', ['items' => [
             $row(['sku' => 'KET-1']),                                    // already in the table

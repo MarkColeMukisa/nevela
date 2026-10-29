@@ -8,6 +8,13 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_Which records each person sees, and fields unique together_
+
+### Added
+
+- **Which records each person sees:** a `visibleTo` scope in a model says which of its records someone signed in may see. A teacher sees their own courses. Nevela asks it for the list and everything counted from it (the cards, the charts, the export, a relation's picker), for one record (its page, changing and deleting it, its actions and private files, answered 404 when it is kept from them), for the records a relation may point at, for the trash, and for the bell, which tells each person of the records they may see and counts those. See [Which records each person sees](https://nevela-docs.vercel.app/guides/policies/#which-records-each-person-sees).
+- **Fields unique together:** `--unique=student,course` makes one enrolment for each student and course, a resource that links two others: a many-to-many. The table has the index, a create or change that would make a second is refused with a message on the field, the trash's records count, many sent at once are kept apart from each other, and the seeder gives each record its own pair. In the descriptor, `"unique": [["studentId", "courseId"]]`. Added to an existing resource, `nevela generate` writes the migration for the index. See [Many-to-many](https://nevela-docs.vercel.app/guides/relationships/#many-to-many).
+
 ## [0.24.0] - 2026-10-28
 
 _A shop tutorial, numbered orders, and prices from the product_

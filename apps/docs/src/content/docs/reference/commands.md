@@ -101,6 +101,7 @@ nevela resource Product --fields="name:string, price:money, kind:enum(stock|digi
 | `name` | The resource name, PascalCase and singular. |
 | `--fields=` | The fields, as `name:type` separated by commas. See [field types](/concepts/field-types/), including `category:belongsTo(Category)` and `image:image`. If left out, the command asks for them. |
 | `--items=` | Its lines, as a second resource: their name, a colon, and their fields. `--items="OrderItem: product:belongsTo(Product), quantity:int, price:money"`. They are given a field pointing back here, and edited in this one's form. See [Line items](/guides/line-items/). |
+| `--unique=` | Fields whose values go together once only, separated by commas: `--unique=student,course` is one enrolment for each student and course. Give it again for another set. See [Many-to-many](/guides/relationships/#many-to-many). |
 | `--icon=` | A Lucide icon name for the dashboard sidebar, one the dashboard knows: see [the descriptor's `icon`](/concepts/descriptor/). |
 | `--group=` | The sidebar heading to put the resource under. |
 | `--id=int` | Give the resource the numbered ids of `$table->id()`. Without it, ids are UUIDs. |

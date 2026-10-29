@@ -45,5 +45,11 @@
             "kind": "text",
             "required": false
         }
-    }
+    },
+    "unique": [
+        [
+            "categoryId",
+            "name"
+        ]
+    ]
 }

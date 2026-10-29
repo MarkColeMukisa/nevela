@@ -118,7 +118,48 @@ public function update(User $user, Product $product): bool
 }
 ```
 
+A rule like that decides one record at a time. For which records someone sees at all, see the next section.
+
 Anything shaped like a permission works wherever Laravel checks an ability: `$user->can('products.view')`, `Gate::authorize('users.edit')`, `@can('products.delete')`, and `->middleware('can:reports.view')` on a route.
+
+### Which records each person sees
+
+A permission says whether someone may see courses at all. Which courses is the model's to say, in a `visibleTo` scope, outside the generated block:
+
+```php
+// app/Models/Course.php
+public function scopeVisibleTo(Builder $query, User $user): void
+{
+    // A teacher sees their own courses. Anyone else who may see courses sees them all.
+    if (Teacher::where('email', $user->email)->exists()) {
+        $query->whereHas('teacher', fn (Builder $teacher) => $teacher->where('email', $user->email));
+    }
+}
+```
+
+Nevela asks it wherever records reach someone signed in:
+
+| | |
+|---|---|
+| The list | Only what it lets through, and so the cards above it, the charts, the export and the pickers of a relation that points here. |
+| One record | Its page, changing it, deleting it, its actions and its private files. One it keeps from someone answers **404**, as for a record that was never there, not "not allowed", which would say it exists. |
+| A relation | Points only at a record the person saving may see: a teacher can't move an enrolment into another teacher's course by sending its id. It is refused as an id that doesn't exist is. |
+| The trash | What it holds of the resource, and what can be restored or removed from it. |
+| The bell | Tells each person of the records they may see, and counts those: "Ada created 3 enrolments" is the three in your courses. |
+
+A scope can lean on another's. Enrolments are seen through their course, and `whereHas` uses the course's own scope, so this is all it takes:
+
+```php
+// app/Models/Enrolment.php
+public function scopeVisibleTo(Builder $query, User $user): void
+{
+    $query->whereHas('course', fn (Builder $course) => $course->visibleTo($user));
+}
+```
+
+It is for someone signed in. A seeder, the scheduler, your own code with nobody signed in and the [public site](/guides/public-site/#which-records-are-public) are not narrowed by it; the public site has `publicQuery` for that.
+
+Two things it doesn't narrow. The [activity log](/guides/notifications/#the-activity-log) shows every change to a resource to those who have it, so give `activity.view` only to people who may see everything. And a list action (one on the whole list rather than on chosen records) gets no records from Nevela: it reads what it needs, so ask `visibleTo` there yourself.
 
 ### Permissions of your own
 

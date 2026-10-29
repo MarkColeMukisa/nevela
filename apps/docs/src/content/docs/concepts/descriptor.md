@@ -40,6 +40,7 @@ description: "The JSON file per resource that everything else is generated from.
 | `blog` | Where on the site the resource's public records are a blog (`"/blog"`). Written by `nevela blog`. Optional. |
 | `public` | What of the resource anyone may read or create without signing in. Nothing, without it. See [A public site on your API](/guides/public-site/), and [Protecting a public form](/guides/protecting-forms/) for its `protect` and `confirm`. Optional. |
 | `items` | The resource its lines are, such as `"OrderItem"`: edited in its form as a table and saved with it. That resource has a `belongsTo` pointing here. See [Line items](/guides/line-items/). Optional. |
+| `unique` | Fields whose values go together once only, as lists of field names: `[["studentId", "courseId"]]` is one enrolment for each student and course. See [Many-to-many](/guides/relationships/#many-to-many). Optional. |
 | `actions` | What can be done to a record, or to the list, beyond create, edit and delete. See [Actions on a record](/guides/actions/). Optional. |
 
 Each field has a `kind` (`string`, `text`, `int`, `float`, `boolean`, `date`, `datetime`, `enum`, `belongsTo` or `file`) and may have:

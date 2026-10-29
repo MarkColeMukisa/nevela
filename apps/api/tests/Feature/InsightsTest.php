@@ -45,7 +45,7 @@ class InsightsTest extends TestCase
     private function product(string $created, array $over = []): Product
     {
         static $n = 0;
-        $product = Product::create($over + ['name' => 'Kettle', 'sku' => 'SKU-'.(++$n), 'price' => 10, 'category_id' => $this->kitchen->id, 'active' => true, 'kind' => 'stock']);
+        $product = Product::create($over + ['name' => 'Kettle '.(++$n), 'sku' => "SKU-{$n}", 'price' => 10, 'category_id' => $this->kitchen->id, 'active' => true, 'kind' => 'stock']);
         // Dated by hand: create() stamps it with now.
         $product->forceFill(['created_at' => $created])->saveQuietly();
 
