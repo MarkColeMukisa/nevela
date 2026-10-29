@@ -1,0 +1,7 @@
+{
+    "create": {
+        "fields": ["name", "email"],
+        "confirm": "email",
+        "protect": { "honeypot": true, "minSeconds": 3 }
+    }
+}

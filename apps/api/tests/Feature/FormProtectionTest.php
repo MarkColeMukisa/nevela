@@ -516,6 +516,15 @@ class FormProtectionTest extends TestCase
         return ['id' => $query['id'], 'key' => $query['key']];
     }
 
+    public function test_a_seeded_list_is_confirmed_as_it_is_made(): void
+    {
+        $this->artisan('nevela:seed', ['name' => 'Joiner', '--count' => 5])->assertSuccessful();
+
+        // Nobody was there to ask: they count, as someone added in the dashboard does.
+        $this->assertSame(0, DB::table('joiners')->whereNull('confirmed_at')->count());
+        $this->assertSame(5, Joiner::confirmed()->count());
+    }
+
     public function test_someone_joining_a_list_is_unconfirmed_until_they_follow_their_link(): void
     {
         $response = $this->postJson('/api/public/joiners', ['email' => 'Kofi@Example.com'])->assertStatus(201);

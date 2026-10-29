@@ -1,6 +1,7 @@
 import type { ImageMetadata } from "astro";
 import contactsCover from "./assets/tutorials/contacts-cover.png";
 import shopCover from "./assets/tutorials/online-shop-cover.webp";
+import studentCover from "./assets/tutorials/student-app-cover.webp";
 
 /**
  * The tutorials, for the tutorials page (src/content/docs/tutorials/index.mdx). Each one
@@ -55,11 +56,12 @@ export const tutorials: Tutorial[] = [
     slug: "student-app",
     title: "A student app",
     summary:
-      "Students, courses and the enrolments that join them, teachers who see only their own classes, and a public sign-up form that proves the student's email address.",
+      "Teachers, courses, students and the enrolments that join them, teachers who see only their own classes, a public sign-up form that proves the student's email address, and a teacher told when a student drops out.",
     level: "Advanced",
     minutes: 45,
     topics: ["Many-to-many", "Policies", "Public forms", "Notifications"],
+    cover: studentCover,
     icon: "graduation-cap",
-    out: false,
+    out: true,
   },
 ];
