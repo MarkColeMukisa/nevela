@@ -12,6 +12,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { copiedFrom } from "@/lib/copied";
+import { applies, conditionOf } from "@/lib/when";
 import { canSuggest, suggestValue } from "@/lib/suggest";
 import { cn } from "@/lib/utils";
 import { FieldWidget, type RelationMeta } from "./fields/field-widget";
@@ -65,16 +66,22 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
   const router = useRouter();
   const validators = useMemo(() => createValidators(resource), [resource]);
   const fields = useMemo(() => storedFields(resource), [resource]);
-  const steps = useMemo(() => toSteps(fields), [fields]);
   const [step, setStep] = useState(0);
   const [values, setValues] = useState(() => initialFormValues(resource, record));
+  // A field that doesn't apply (a billing cycle, on a one-off project) isn't asked for.
+  const shown = fields.filter(([, def]) => applies(def, values));
+  const shownKeys = shown.map(([key]) => key).join(",");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const steps = useMemo(() => toSteps(shown), [shownKeys]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, startTransition] = useTransition();
   const [lines, setLines] = useState<LineRow[]>(() => (items ? startRows(items) : []));
   const [lineProblems, setLineProblems] = useState<LineProblems>({});
 
-  const last = step === steps.length - 1;
-  const visible = steps[step] ?? [];
+  // A field that stops applying can take a step with it.
+  const at = Math.min(step, steps.length - 1);
+  const last = at === steps.length - 1;
+  const visible = steps[at] ?? [];
 
   /**
    * Fields made from another (a slug from a title) and not yet typed in by hand. On a new
@@ -103,11 +110,26 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
     if (first) document.getElementById(`field-${first[0]}`)?.focus();
   }
 
+  /** What is sent: the form's values, with the fields that don't apply empty. */
+  function toInput(): Record<string, unknown> {
+    const input = formValuesToInput(resource, values, mode) as Record<string, unknown>;
+    for (const [key, def] of fields) {
+      if (!applies(def, values)) input[key] = null;
+    }
+    return input;
+  }
+
   /** Everything the descriptor objects to, whichever step it is on. */
   function validate(): Record<string, string> {
-    const input = formValuesToInput(resource, values, mode);
-    const parsed = (mode === "create" ? validators.create : validators.update).safeParse(input);
-    return parsed.success ? {} : issuesByField(parsed.error.issues);
+    const parsed = (mode === "create" ? validators.create : validators.update).safeParse(toInput());
+    const found = parsed.success ? {} : issuesByField(parsed.error.issues);
+    for (const [key, def] of fields) {
+      const when = conditionOf(def);
+      if (!when) continue;
+      if (!applies(def, values)) delete found[key];
+      else if (when.required && !found[key] && String(values[key] ?? "").trim() === "") found[key] = "Required";
+    }
+    return found;
   }
 
   /**
@@ -128,12 +150,12 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
       return;
     }
     setErrors({});
-    setStep((current) => Math.min(current + 1, steps.length - 1));
+    setStep(Math.min(at + 1, steps.length - 1));
   }
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    const input = formValuesToInput(resource, values, mode) as Record<string, unknown>;
+    const input = toInput();
     const found = validate();
     // Its lines go with it, checked with their own rules first.
     const send = items ? linesToSend(items, lines) : null;
@@ -145,7 +167,7 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
       setErrors(found);
       // Send them to the step that holds the problem, not just to the field.
       const broken = steps.findIndex((entries) => entries.some(([key]) => found[key]));
-      if (broken >= 0 && broken !== step) setStep(broken);
+      if (broken >= 0 && broken !== at) setStep(broken);
       focusFirstError(found, broken >= 0 ? steps[broken]! : fields);
       return;
     }
@@ -178,7 +200,7 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
             : { _form: whole?.message ?? (Object.keys(onRows).length > 0 ? linesNeedFixing(Object.keys(onRows).length, items!) : result.error) };
       setErrors(fieldErrors);
       const broken = steps.findIndex((entries) => entries.some(([key]) => fieldErrors[key]));
-      if (broken >= 0 && broken !== step) setStep(broken);
+      if (broken >= 0 && broken !== at) setStep(broken);
       focusFirstError(fieldErrors, broken >= 0 ? steps[broken]! : fields);
     });
   }
@@ -190,7 +212,7 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
   return (
     <form onSubmit={onSubmit} noValidate className={onDone ? "flex min-h-0 flex-1 flex-col" : undefined}>
       <Frame>
-        {steps.length > 1 && <Steps count={steps.length} current={step} onGo={setStep} />}
+        {steps.length > 1 && <Steps count={steps.length} current={at} onGo={setStep} />}
         <Body>
           {errors._form && (
             <Alert variant="destructive" className="mb-6">
@@ -206,7 +228,7 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
                 <Field key={key} data-invalid={error ? true : undefined} className={WIDE.has(def.kind) ? "md:col-span-2" : undefined}>
                   <FieldLabel htmlFor={widgetId}>
                     {def.label}
-                    {def.required && def.kind !== "boolean" && (
+                    {(def.required || conditionOf(def)?.required) && def.kind !== "boolean" && (
                       <span className="ml-0.5 text-muted-foreground" aria-hidden>
                         *
                       </span>
@@ -237,8 +259,8 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
           </FieldGroup>
         </Body>
         <Footer className="flex items-center justify-end gap-2 border-t pt-4">
-          {step > 0 ? (
-            <Button type="button" variant="outline" onClick={() => setStep((current) => current - 1)} disabled={pending}>
+          {at > 0 ? (
+            <Button type="button" variant="outline" onClick={() => setStep(at - 1)} disabled={pending}>
               Back
             </Button>
           ) : onDone ? (

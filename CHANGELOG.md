@@ -13,6 +13,7 @@ _Kian Rover, live on Nevela, and a picture on each project_
 ### Added
 
 - **Phone numbers of one country:** `phone:tel(UG)` takes Ugandan numbers only. Written any way people write one there (`0772 123456`, `772123456`, `+256 772 123 456`), it is kept the one way, `+256772123456`, and anything else is refused with "Enter a Ugandan number, such as 0772 123456 or +256 772 123456." Laravel checks it in the form, the API, "Add several", a CSV import, a public form and an action; the dashboard keeps the code at +256; the seeder makes Ugandan numbers. Kenya, Tanzania and Rwanda are known too. `tel` alone takes any country's number, as before. In the descriptor, `"country": "UG"`. See [Phone numbers](https://nevela-docs.vercel.app/concepts/field-types/#phone-numbers).
+- **A field that only sometimes applies:** `cycle:enum(monthly|annually) if kind == recurring`, in Grit's words. The form shows it only for a recurring project and marks it required there; Laravel refuses a recurring project without one ("Needed when the kind is Recurring.") and empties it on a one-off, whether a change sends it or not, however the record arrives; the seeder gives a cycle only to recurring projects. It depends on an enum or a yes/no field, for one value or several (`if kind == recurring|retainer`). In the descriptor, `"when": {"kind": "recurring"}`. See [A field that only sometimes applies](https://nevela-docs.vercel.app/concepts/field-types/#a-field-that-only-sometimes-applies).
 
 ### Changed
 

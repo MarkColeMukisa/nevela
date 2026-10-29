@@ -22,7 +22,7 @@ class ProductRequest extends ResourceRequest
             : Gate::allows('create', Product::class);
     }
 
-    // nevela:generated:start hash=a2509c4a9507
+    // nevela:generated:start hash=37ac148d8f57
     public function rules(): array
     {
         $product = $this->route('product');
@@ -35,19 +35,26 @@ class ProductRequest extends ResourceRequest
             'categoryId' => ['required', 'uuid', Rule::exists('categories', 'id')],
             'active' => ['required', 'boolean'],
             'kind' => ['required', Rule::in(['stock', 'digital'])],
+            'downloadUrl' => ['nullable', 'url', 'max:2048'],
             'notes' => ['nullable', 'string', 'max:65535'],
         ];
     }
 
     protected function columns(): array
     {
-        return ['name' => 'name', 'sku' => 'sku', 'price' => 'price', 'image' => 'image', 'categoryId' => 'category_id', 'active' => 'active', 'kind' => 'kind', 'notes' => 'notes'];
+        return ['name' => 'name', 'sku' => 'sku', 'price' => 'price', 'image' => 'image', 'categoryId' => 'category_id', 'active' => 'active', 'kind' => 'kind', 'downloadUrl' => 'download_url', 'notes' => 'notes'];
     }
 
     /** Fields whose values go together once only. Checked against the trash too, as the database's index is. */
     protected function together(): array
     {
         return [['fields' => ['categoryId', 'name'], 'table' => 'products', 'message' => 'There is already a product with this category and name.']];
+    }
+
+    /** Fields that apply for some values of another only. Elsewhere they are emptied; where they apply, a required one is needed. */
+    protected function conditions(): array
+    {
+        return ['downloadUrl' => ['on' => 'kind', 'values' => ['digital'], 'required' => true, 'message' => 'Needed when the kind is Digital.']];
     }
     // nevela:generated:end
 }

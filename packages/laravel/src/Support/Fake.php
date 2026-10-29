@@ -153,6 +153,16 @@ final class Fake
             $row[$field->column()] = rtrim(substr($words === '' ? 'item' : $words, 0, $room), '-').$suffix;
         }
 
+        // A one-off project has no billing cycle: a field is empty where it doesn't apply.
+        // Last, so nothing above (a course's code, a company's name) fills one in again.
+        foreach ($resource->fields as $field) {
+            foreach ($field->when as $on => $values) {
+                if (! Field::holds($row[$resource->fields[$on]->column()] ?? null, $values)) {
+                    $row[$field->column()] = null;
+                }
+            }
+        }
+
         return $row;
     }
 

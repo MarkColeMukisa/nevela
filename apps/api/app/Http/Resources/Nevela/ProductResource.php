@@ -14,7 +14,7 @@ class ProductResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            // nevela:generated:start hash=b4e4e91e89e8
+            // nevela:generated:start hash=1d068c80667f
             'name' => $this->name,
             'sku' => $this->sku,
             'price' => $this->price,
@@ -23,6 +23,7 @@ class ProductResource extends JsonResource
             'categoryId' => $this->category_id,
             'active' => $this->active,
             'kind' => $this->kind,
+            'downloadUrl' => $this->download_url,
             'notes' => $this->notes,
             // nevela:generated:end
             'createdAt' => $this->created_at?->toJSON(),
