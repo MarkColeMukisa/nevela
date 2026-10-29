@@ -4,7 +4,9 @@ description: "Categories, products with pictures and prices, orders whose items 
 prev:
   link: /tutorials/
   label: All tutorials
-next: false
+next:
+  link: /tutorials/student-app/
+  label: A student app
 ---
 
 You will build a small shop: categories, products with a picture and a price, orders made of the products in them, and a page anyone can open to see what is on sale. It takes about thirty-five minutes.

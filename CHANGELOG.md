@@ -8,15 +8,18 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_Which records each person sees, and fields unique together_
+_A student app tutorial, records each person sees, and unique pairs_
 
 ### Added
 
+- **A third tutorial, [A student app](https://nevela-docs.vercel.app/tutorials/student-app/)**: teachers, courses, students and the enrolments that join them, each pair once; a role for teachers and a rule that keeps each to their own classes; a sign-up page whose students count once their address is proved; and a teacher told in the bell when a student drops a course. Its steps are in `examples/student-app/`, which CI runs in a new app like the others.
 - **Which records each person sees:** a `visibleTo` scope in a model says which of its records someone signed in may see. A teacher sees their own courses. Nevela asks it for the list and everything counted from it (the cards, the charts, the export, a relation's picker), for one record (its page, changing and deleting it, its actions and private files, answered 404 when it is kept from them), for the records a relation may point at, for the trash, and for the bell, which tells each person of the records they may see and counts those. See [Which records each person sees](https://nevela-docs.vercel.app/guides/policies/#which-records-each-person-sees).
 - **Fields unique together:** `--unique=student,course` makes one enrolment for each student and course, a resource that links two others: a many-to-many. The table has the index, a create or change that would make a second is refused with a message on the field, the trash's records count, many sent at once are kept apart from each other, and the seeder gives each record its own pair. In the descriptor, `"unique": [["studentId", "courseId"]]`. Added to an existing resource, `nevela generate` writes the migration for the index. See [Many-to-many](https://nevela-docs.vercel.app/guides/relationships/#many-to-many).
 
 ### Fixed
 
+- **Seeded records of a list that proves addresses are confirmed.** Seeded after its form had `"confirm"`, they were saved unconfirmed, so they weren't counted, exported or told of, where the docs say a seeded record is confirmed as it is made.
+- **A seeded school reads like one.** A course is called Biology 101, with the code BIO-101, not Golden Keyboard; a teacher's subject is Mathematics; a date of birth is between 16 and 60 years ago, not last month.
 - **A public form can leave out a field Laravel fills.** A sign-up form for students numbered `number:auto(STU)` was refused, because the number is required and the form doesn't send it. A numbered field, and one copied from a related record, now count as filled.
 
 ## [0.24.0] - 2026-10-28
