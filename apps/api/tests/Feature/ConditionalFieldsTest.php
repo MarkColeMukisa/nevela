@@ -76,6 +76,19 @@ class ConditionalFieldsTest extends TestCase
         $this->patchJson("/api/products/{$book}", ['kind' => 'digital', 'downloadUrl' => 'https://example.com/book.pdf'])->assertOk()->assertJsonPath('downloadUrl', 'https://example.com/book.pdf');
     }
 
+    public function test_a_replace_is_judged_by_what_it_sends_not_by_what_the_record_had(): void
+    {
+        $ebook = $this->postJson('/api/products', $this->product('E-1', 'digital', 'https://example.com/guide.pdf'))->json('id');
+
+        // A replace leaving it out would save it empty, so it is refused, not saved so.
+        $this->putJson("/api/products/{$ebook}", $this->product('E-1', 'digital'))
+            ->assertUnprocessable()
+            ->assertJsonPath('issues.0.message', self::NEEDED);
+        $this->assertSame('https://example.com/guide.pdf', Product::find($ebook)->download_url);
+
+        $this->putJson("/api/products/{$ebook}", $this->product('E-1', 'digital', 'https://example.com/v2.pdf'))->assertOk()->assertJsonPath('downloadUrl', 'https://example.com/v2.pdf');
+    }
+
     public function test_rows_sent_together_are_held_to_it_the_same_way(): void
     {
         $this->postJson('/api/products/_bulk', ['items' => [
