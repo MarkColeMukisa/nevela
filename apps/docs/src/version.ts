@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "An online shop tutorial, numbered orders, and prices from the product";
+export const RELEASE_HEADLINE = "A student app tutorial, records each person sees, and unique pairs";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "A second tutorial: an online shop with orders. Orders number themselves, and an item's price comes from its product.",
-  href: "/tutorials/online-shop/",
-  label: "Online shop",
+  text: "A third tutorial: a student app. Teachers see only their own classes, and a student is enrolled in a course once.",
+  href: "/tutorials/student-app/",
+  label: "Student app",
 };
