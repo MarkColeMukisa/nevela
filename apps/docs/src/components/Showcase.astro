@@ -34,10 +34,14 @@ const STATUS = { live: "Live", building: "Moving to Nevela" } as const;
     {
       featured.map((project) => (
         <section class="sc-rail sc-featured" aria-label={project.name}>
-          {project.image ? (
-            <a class="sc-featured-shot" href={project.url} tabindex="-1" aria-hidden="true">
+          {project.image && project.url ? (
+            <a class="sc-featured-shot" href={project.url} aria-label={`${project.name}, ${host(project.url)}`}>
               <Image src={project.image} alt="" width={960} quality={82} />
             </a>
+          ) : project.image ? (
+            <div class="sc-featured-shot">
+              <Image src={project.image} alt={`${project.name}'s site`} width={960} quality={82} />
+            </div>
           ) : (
             <div class="sc-featured-mark" aria-hidden="true">
               <span>{project.name.slice(0, 1)}</span>
