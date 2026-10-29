@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -40,6 +41,17 @@ class Order extends Model
     // nevela:generated:end
 
     // Your own relationships, scopes and accessors go here — outside the generated block.
+
+    /**
+     * Which orders someone sees: whoever may change orders sees them all, and someone who
+     * may only look sees the ones placed with their email, as a customer sees their own.
+     */
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        if (! $user->can('orders.edit')) {
+            $query->where('email', $user->email);
+        }
+    }
 
     /** Called once its lines are saved: the order's total is what they come to. */
     public function itemsSaved(): void

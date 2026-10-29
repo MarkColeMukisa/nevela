@@ -46,6 +46,22 @@ final class GenerateCommand extends Command
     }
 
     /**
+     * Whether fields made unique together need the migration that adds their index: when
+     * the table was made without it, or was there before Nevela. A new resource's own
+     * migration has it.
+     *
+     * @param  list<string>  $createMigrations  The contents of the table's own migration(s); none for a resource that is new
+     */
+    public static function needsUniqueMigration(array $createMigrations, string $index, bool $adopted = false): bool
+    {
+        if ($createMigrations === []) {
+            return $adopted;
+        }
+
+        return ! str_contains(implode("\n", $createMigrations), $index);
+    }
+
+    /**
      * Whether a resource whose form proves an address needs the migration that adds the
      * column for it: when its table was made without one. A new resource's own migration
      * has it.
@@ -180,6 +196,13 @@ final class GenerateCommand extends Command
 
                 return self::FAILURE;
             }
+            // Saving an order's lines changes several at once, and two swapping their products
+            // would clash halfway through: not yet.
+            if ($lines['resource']->unique !== []) {
+                $command->components->error("{$descriptor->items} is {$descriptor->name}'s items, and lines can't have fields unique together yet. Take \"unique\" out of its descriptor.");
+
+                return self::FAILURE;
+            }
         }
 
         $files = [];
@@ -198,6 +221,12 @@ final class GenerateCommand extends Command
             // The same for "confirm" added to a resource whose table is already made.
             if ($descriptor->public?->confirm !== null && self::needsConfirmMigration($made, $descriptor->adopted)) {
                 $files[] = $generator->confirmMigrationFile($descriptor);
+            }
+            // And for fields made unique together once the table was there.
+            foreach ($descriptor->unique as $set) {
+                if (self::needsUniqueMigration($made, $generator->uniqueIndex($descriptor, $set), $descriptor->adopted)) {
+                    $files[] = $generator->uniqueMigrationFile($descriptor, $set);
+                }
             }
         }
         $files[] = $generator->routes($all);

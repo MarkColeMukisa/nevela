@@ -58,7 +58,10 @@ class ShopTest extends TestCase
     /** @param array<string, mixed> $overrides */
     private function product(Category $category, array $overrides = []): array
     {
-        return $overrides + ['name' => 'Kettle', 'sku' => 'KET-'.fake()->unique()->numerify('####'), 'price' => 49.5, 'categoryId' => $category->id, 'active' => true, 'kind' => 'stock'];
+        // A name of its own: a category has each name once.
+        $number = fake()->unique()->numerify('####');
+
+        return $overrides + ['name' => "Kettle {$number}", 'sku' => "KET-{$number}", 'price' => 49.5, 'categoryId' => $category->id, 'active' => true, 'kind' => 'stock'];
     }
 
     private function photo(int $width = 2000, int $height = 1500): string

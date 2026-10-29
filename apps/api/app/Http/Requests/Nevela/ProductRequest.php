@@ -22,7 +22,7 @@ class ProductRequest extends ResourceRequest
             : Gate::allows('create', Product::class);
     }
 
-    // nevela:generated:start hash=540d0a71d511
+    // nevela:generated:start hash=a2509c4a9507
     public function rules(): array
     {
         $product = $this->route('product');
@@ -42,6 +42,12 @@ class ProductRequest extends ResourceRequest
     protected function columns(): array
     {
         return ['name' => 'name', 'sku' => 'sku', 'price' => 'price', 'image' => 'image', 'categoryId' => 'category_id', 'active' => 'active', 'kind' => 'kind', 'notes' => 'notes'];
+    }
+
+    /** Fields whose values go together once only. Checked against the trash too, as the database's index is. */
+    protected function together(): array
+    {
+        return [['fields' => ['categoryId', 'name'], 'table' => 'products', 'message' => 'There is already a product with this category and name.']];
     }
     // nevela:generated:end
 }
