@@ -8,6 +8,12 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_Kian Rover, live on Nevela, and a picture on each project_
+
+### Changed
+
+- **[Projects built in Nevela](https://nevela-docs.vercel.app/showcase/) shows a picture of each project**, a screenshot of its site, where the first letter of its name stood. A project's entry takes it as `image`. Kian Rover is there as it is now: an IT and software company in Kampala, live on Nevela, with its project briefs, internship applications, courses and blog.
+
 ## [0.25.0] - 2026-10-29
 
 _A student app tutorial, records each person sees, and unique pairs_
