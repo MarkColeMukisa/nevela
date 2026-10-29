@@ -10,6 +10,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 _Kian Rover, live on Nevela, and a picture on each project_
 
+### Added
+
+- **Phone numbers of one country:** `phone:tel(UG)` takes Ugandan numbers only. Written any way people write one there (`0772 123456`, `772123456`, `+256 772 123 456`), it is kept the one way, `+256772123456`, and anything else is refused with "Enter a Ugandan number, such as 0772 123456 or +256 772 123456." Laravel checks it in the form, the API, "Add several", a CSV import, a public form and an action; the dashboard keeps the code at +256; the seeder makes Ugandan numbers. Kenya, Tanzania and Rwanda are known too. `tel` alone takes any country's number, as before. In the descriptor, `"country": "UG"`. See [Phone numbers](https://nevela-docs.vercel.app/concepts/field-types/#phone-numbers).
+
 ### Changed
 
 - **[Projects built in Nevela](https://nevela-docs.vercel.app/showcase/) shows a picture of each project**, a screenshot of its site, where the first letter of its name stood. A project's entry takes it as `image`. Kian Rover is there as it is now: an IT and software company in Kampala, live on Nevela, with its project briefs, internship applications, courses and blog.

@@ -22,7 +22,7 @@ class OrderRequest extends ResourceRequest
             : Gate::allows('create', Order::class);
     }
 
-    // nevela:generated:start hash=eb344f95e578
+    // nevela:generated:start hash=4d263c02f221
     public function rules(): array
     {
         $order = $this->route('order');
@@ -31,6 +31,7 @@ class OrderRequest extends ResourceRequest
             'number' => ['nullable', 'string', 'max:255', Rule::unique('orders', 'number')->ignore($order)],
             'customer' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:32', new \Nevela\Laravel\Rules\Phone('UG')],
             'status' => ['required', Rule::in(['pending', 'paid', 'shipped', 'cancelled'])],
             'total' => ['nullable', 'numeric'],
             'notes' => ['nullable', 'string', 'max:65535'],
@@ -39,7 +40,13 @@ class OrderRequest extends ResourceRequest
 
     protected function columns(): array
     {
-        return ['number' => 'number', 'customer' => 'customer', 'email' => 'email', 'status' => 'status', 'total' => 'total', 'notes' => 'notes'];
+        return ['number' => 'number', 'customer' => 'customer', 'email' => 'email', 'phone' => 'phone', 'status' => 'status', 'total' => 'total', 'notes' => 'notes'];
+    }
+
+    /** Phone fields held to one country. A number is put in the form it is kept in, +256772123456, before it is checked. */
+    protected function phones(): array
+    {
+        return ['phone' => 'UG'];
     }
 
     /** Its lines, sent as "items": order items, checked by their own rules and saved with it. */

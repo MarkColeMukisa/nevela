@@ -30,7 +30,8 @@ Both can be combined: `code:string?!`.
 | `richtext` | `longText` | formatted text, kept as cleaned HTML, up to 65,535 characters |
 | `email` | `string` | a valid email address |
 | `url` | `string` (2,048) | a valid URL |
-| `tel` | `string` | text, up to 32 characters |
+| `tel` | `string` | a phone number of any country, up to 32 characters |
+| `tel(UG)` | `string` | [a number of that country](#phone-numbers), kept as `+256772123456` |
 | `slug` | `string` | letters, numbers, dashes and underscores |
 | `slug(title)` | `string` | the same, made from the title when left empty (`post-title`, then `post-title-2`) |
 | `color` | `string` | a hex colour such as `#1a2b3c` |
@@ -142,6 +143,30 @@ A field's own wins. It is written with the currency's own decimals, so `UGX 4,50
 
 Run `nevela generate` after changing `NEVELA_CURRENCY`.
 
+## Phone numbers
+
+`phone:tel` takes a phone number of any country. The dashboard's input has a picker for the country's code, starting at the viewer's own, and sends the number with it: `+256772123456`.
+
+`phone:tel(UG)` takes Ugandan numbers only. The code is fixed at +256 in the dashboard, and Laravel checks the number whichever way it arrives (the form, the API, "Add several", a CSV import, a public form or an action). It is read the ways people write one there and kept the one way:
+
+| Sent | Kept |
+|---|---|
+| `0772 123456` | `+256772123456` |
+| `772123456` | `+256772123456` |
+| `+256 772 123 456` | `+256772123456` |
+| `(0414) 123-456` | `+256414123456` |
+| `+254 712 345678` | refused: "Enter a Ugandan number, such as 0772 123456 or +256 772 123456." |
+
+So `0772 123456` and `+256772123456` are the same number to a unique field too, and the seeder makes numbers that read as Ugandan ones.
+
+The countries it knows are `UG`, `KE`, `TZ` and `RW`. In the descriptor:
+
+```json
+"phone": { "kind": "string", "format": "tel", "country": "UG" }
+```
+
+`phone:tel[UG]` and Grit's `phone:tel:UG` mean the same. A number in the brackets is a length, as for a `string`: `phone:tel(20)`.
+
 ## Rich text
 
 `body:richtext` is text with formatting. The dashboard gives it an editor with bold, italic, strikethrough, links, two sizes of heading, bullet and numbered lists, quotes, undo and redo, and the value is stored as HTML.
@@ -181,6 +206,7 @@ The spellings those two use are understood, so you can type what you know:
 | `docs:file:[pdf, image]` | `docs:file(pdf\|image)` |
 | `category:belongs_to:Category` | `category:belongsTo(Category)` |
 | `status:enum:draft\|live` | `status:enum(draft\|live)` |
+| `phone:tel[UG]`, `phone:tel:UG` | `phone:tel(UG)` |
 
 `image:image` takes a picture and optimises it as it arrives; `image:image(product)` names the profile it is optimised with. `manual:file(pdf|document)` takes other files and stores them as they are. Neither can be unique, sorted by or filtered on. See [Files and images](/guides/images/).
 

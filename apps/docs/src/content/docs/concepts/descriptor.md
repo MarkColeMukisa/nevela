@@ -48,6 +48,7 @@ Each field has a `kind` (`string`, `text`, `int`, `float`, `boolean`, `date`, `d
 | Key | Meaning |
 |---|---|
 | `format` | For strings: `email`, `url`, `tel`, `slug`, `color`. For numbers: `money`, `percent`, `rating`. For text: `rich`, which is [rich text](/concepts/field-types/#rich-text). |
+| `country` | For `tel`: the country its numbers are of, `"UG"`. See [Phone numbers](/concepts/field-types/#phone-numbers). |
 | `target` | For `belongsTo`: the resource it points at, `"Category"`. The field's name ends in `Id`. See [Relationships](/guides/relationships/). |
 | `accept` | For a file: the kinds it takes, `["image"]` or `["pdf", "document"]`. See [Files and images](/guides/images/). |
 | `profile` | For an image: the [profile](/guides/images/#profiles) it is optimised with, `"product"`. |
