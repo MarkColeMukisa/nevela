@@ -119,4 +119,16 @@ class VisibleRecordsTest extends TestCase
         $titles = DB::table('nevela_notifications')->where('user_id', (string) $this->customer->getKey())->pluck('title')->all();
         $this->assertSame(['Ada created 2 orders'], $titles);
     }
+
+    public function test_a_deletion_is_told_of_to_those_who_could_see_the_record(): void
+    {
+        Sanctum::actingAs($this->ada);
+        $this->deleteJson("/api/orders/{$this->theirs->id}")->assertNoContent();
+        $this->deleteJson("/api/orders/{$this->mine->id}")->assertNoContent();
+
+        // She may delete orders, so hers leads to the trash. Bo's isn't told to her.
+        $bell = DB::table('nevela_notifications')->where('user_id', (string) $this->customer->getKey())->get(['title', 'url'])->all();
+        $this->assertSame(["Ada deleted an order: {$this->mine->number}"], array_column($bell, 'title'));
+        $this->assertSame(['/dashboard/trash?in=orders'], array_column($bell, 'url'));
+    }
 }
