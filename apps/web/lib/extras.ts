@@ -18,6 +18,8 @@ export interface ActionField {
   optionLabels?: Record<string, string>;
   /** money: the ISO 4217 code it is in, "UGX". */
   currency?: string;
+  /** tel: the country its numbers are of, "UG". Any country's when not set. */
+  country?: string;
 }
 
 /**

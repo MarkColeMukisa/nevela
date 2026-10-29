@@ -214,7 +214,20 @@ export function FieldWidget(props: WidgetProps) {
     case "string":
       switch (field.format) {
         case "tel":
-          return <PhoneField id={id} name={name} label={field.label} value={text} onChange={onChange} invalid={invalid} disabled={disabled} placeholder={field.placeholder} />;
+          return (
+            <PhoneField
+              id={id}
+              name={name}
+              label={field.label}
+              value={text}
+              onChange={onChange}
+              invalid={invalid}
+              disabled={disabled}
+              placeholder={field.placeholder}
+              // phone:tel(UG): Flare has no word for it, so the generated descriptor says it in passing.
+              country={(field as { country?: string }).country}
+            />
+          );
         case "country":
           return <CountryField id={id} value={text} onChange={onChange} invalid={invalid} disabled={disabled} required={field.required} placeholder={field.placeholder} />;
         case "color":

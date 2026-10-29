@@ -5,7 +5,7 @@
 import { defineResource, field } from "@flaredev/core";
 
 export default defineResource({
-  // nevela:generated:start hash=dfef10aec6f4
+  // nevela:generated:start hash=11100966f79d
   name: "Order",
   table: "orders",
   slug: "orders",
@@ -17,6 +17,7 @@ export default defineResource({
     number: field.string({ required: false, unique: true, placeholder: "Left empty: the next ORD- number", ...({ auto: "ORD" } as {}) }),
     customer: field.string(),
     email: field.email({ required: false }),
+    phone: field.tel({ required: false, ...({ country: "UG" } as {}) }),
     status: field.enum(["pending","paid","shipped","cancelled"]),
     total: field.float({ required: false, format: "money" }),
     notes: field.text({ required: false, list: true, ...({ column: "hidden" } as {}) }),

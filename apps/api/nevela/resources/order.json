@@ -22,6 +22,12 @@
             "format": "email",
             "required": false
         },
+        "phone": {
+            "kind": "string",
+            "format": "tel",
+            "country": "UG",
+            "required": false
+        },
         "status": {
             "kind": "enum",
             "options": [

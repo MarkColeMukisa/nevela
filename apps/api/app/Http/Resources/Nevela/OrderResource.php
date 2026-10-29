@@ -14,10 +14,11 @@ class OrderResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            // nevela:generated:start hash=757c2439d748
+            // nevela:generated:start hash=6234887b13bd
             'number' => $this->number,
             'customer' => $this->customer,
             'email' => $this->email,
+            'phone' => $this->phone,
             'status' => $this->status,
             'total' => $this->total,
             'notes' => $this->notes,
