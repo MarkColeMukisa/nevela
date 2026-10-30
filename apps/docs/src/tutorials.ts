@@ -2,6 +2,7 @@ import type { ImageMetadata } from "astro";
 import contactsCover from "./assets/tutorials/contacts-cover.webp";
 import shopCover from "./assets/tutorials/online-shop-cover.webp";
 import studentCover from "./assets/tutorials/student-app-cover.webp";
+import billingCover from "./assets/tutorials/billing-app-cover.webp";
 
 /**
  * The tutorials, for the tutorials page (src/content/docs/tutorials/index.mdx). Each one
@@ -22,7 +23,7 @@ export interface Tutorial {
   /** The app it builds, as it looks. Left out until it is written. */
   cover?: ImageMetadata;
   /** The icon a card shows while it has no picture: a Lucide name. */
-  icon: "contact" | "shopping-cart" | "graduation-cap";
+  icon: "contact" | "shopping-cart" | "graduation-cap" | "receipt";
   /** Written, and on the site. One still being written is shown, without a link. */
   out: boolean;
 }
@@ -62,6 +63,18 @@ export const tutorials: Tutorial[] = [
     topics: ["Many-to-many", "Policies", "Public forms", "Notifications"],
     cover: studentCover,
     icon: "graduation-cap",
+    out: true,
+  },
+  {
+    slug: "billing-app",
+    title: "A billing app",
+    summary:
+      "The client billing system JB builds on stage at GopherCon Africa: clients, their projects, invoices and payments, in shillings. A phone number held to Uganda, a billing cycle only a recurring project has, a gallery, and 25,000 invoices to try it on.",
+    level: "Intermediate",
+    minutes: 25,
+    topics: ["Phone numbers", "Conditional fields", "Galleries", "Seeding"],
+    cover: billingCover,
+    icon: "receipt",
     out: true,
   },
 ];
