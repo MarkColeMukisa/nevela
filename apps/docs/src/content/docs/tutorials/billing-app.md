@@ -26,7 +26,7 @@ Every amount in this app is in Uganda shillings. Say so before making anything: 
 NEVELA_CURRENCY=UGX
 ```
 
-An amount then reads `UGX 4,500,000`, takes whole shillings only, and the seeder makes amounts in thousands rather than in cents. Any ISO 4217 code works; see [Money and its currency](/concepts/field-types/#money-and-its-currency).
+An amount then reads `UGX 4,500,000`, the form takes whole shillings, and the seeder makes amounts in thousands rather than in cents. (The API takes what it is sent; a column holds two decimals whatever the currency.) Any ISO 4217 code works; see [Money and its currency](/concepts/field-types/#money-and-its-currency).
 
 ```sh
 nevela dev
