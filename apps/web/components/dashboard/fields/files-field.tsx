@@ -5,9 +5,10 @@ import { FileIcon, PlusIcon, XIcon } from "lucide-react";
 import { fileMaxBytes, mimeTypesFor, type FileField as FileFieldDef } from "@flaredev/core";
 import { createUploadUrlAction } from "@/app/dashboard/actions";
 import { Progress } from "@/components/ui/progress";
-import { fileKeys, fileName, fileUrl, isImageKey } from "@/lib/files";
+import { fileName, fileUrl, isImageKey } from "@/lib/files";
+import { fileKeys } from "@/lib/gallery";
 import { cn } from "@/lib/utils";
-import { checkFile, describeAccept, formatBytes, put } from "./file-field";
+import { checkFile, describeAccept, formatBytes, put } from "./upload";
 
 /** At most this many in one field, as Laravel has it (Field::MAX_FILES). */
 const MOST = 20;

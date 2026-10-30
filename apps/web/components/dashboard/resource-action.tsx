@@ -91,7 +91,7 @@ function widgetField(key: string, def: ActionField): StoredField & { label: stri
         : def.kind === "string" && def.format === "url"
           ? build.url(options)
           : def.kind === "string" && def.format === "tel"
-            ? build.tel({ ...options, ...((def.country ? { country: def.country } : {}) as {}) })
+            ? build.tel({ ...options, ...(((def as { country?: string }).country ? { country: (def as { country?: string }).country } : {}) as {}) })
             : def.kind === "string"
               ? build.string(options)
               : def.kind === "text"

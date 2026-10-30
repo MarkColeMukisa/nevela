@@ -13,7 +13,7 @@ import { currencyDigits, groupDigits, ungroup } from "@/lib/number";
 import { isRich } from "@/lib/rich";
 import { DateField, DateTimeField } from "./date-field";
 import { CountryField } from "./country-field";
-import { filesOf } from "@/lib/files";
+import { filesOf } from "@/lib/gallery";
 import { FileField } from "./file-field";
 import { FilesField } from "./files-field";
 import { MultiSelectField } from "./multi-select-field";
@@ -231,7 +231,8 @@ export function FieldWidget(props: WidgetProps) {
           field={field as FileFieldDef & { label: string }}
           resourceName={resourceName}
           fieldKey={fieldKey}
-          onBusyChange={props.onBusyChange}
+          // By spread: an app keeping its own file-field.tsx from before has no such prop.
+          {...({ onBusyChange: props.onBusyChange } as {})}
         />
       );
 
@@ -248,8 +249,9 @@ export function FieldWidget(props: WidgetProps) {
               invalid={invalid}
               disabled={disabled}
               placeholder={field.placeholder}
-              // phone:tel(UG): Flare has no word for it, so the generated descriptor says it in passing.
-              country={(field as { country?: string }).country}
+              // phone:tel(UG): Flare has no word for it, so the generated descriptor says it in passing. By spread:
+              // an app keeping its own phone-field.tsx from before has no such prop.
+              {...({ country: (field as { country?: string }).country } as {})}
             />
           );
         case "country":
