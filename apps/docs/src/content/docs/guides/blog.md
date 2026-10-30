@@ -63,7 +63,7 @@ The pages were written into your app, once, and are not touched again.
 | `apps/web/app/blog/[slug]/page.tsx` | One post. |
 | `apps/web/app/blog/feed.xml/route.ts` | The feed. |
 | `apps/web/app/sitemap.ts` | The sitemap. Add your own pages to it. |
-| `apps/web/components/marketing/latest-posts.tsx` | The newest three on the home page. `nevela blog` puts it in `app/page.tsx` where the template marks the place, `{/* nevela:latest-posts */}`; on a home page without that line, it says how to add `<LatestPosts />` yourself. |
+| `apps/web/components/marketing/latest-posts.tsx` | The newest three on the home page. The home page imports it through `resources/latest-posts.tsx`, which `nevela generate` keeps: it leads here when the app has a blog, and to nothing when it has none. |
 
 Set `NEXT_PUBLIC_SITE_URL` in the web app's environment to the address visitors use (`https://example.com`). The sitemap, the feed and the links a shared post carries are made from it.
 

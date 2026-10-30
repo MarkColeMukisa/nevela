@@ -198,6 +198,9 @@ jobs:
           test ! -e apps/web/app/blog
           test ! -e apps/web/lib/blog.ts
           if grep -q '"blog"' apps/web/resources/index.ts; then echo "an app created with --no-blog has a blog"; exit 1; fi
+          # The home page imports its newest posts from a file that shows nothing without a blog.
+          grep -q 'return null;' apps/web/resources/latest-posts.tsx
+          test ! -e apps/web/components/marketing/latest-posts.tsx
           test -d apps/web/node_modules
           grep -q '"nevela/laravel"' apps/api/composer.json
           grep -q '"laravel/sanctum"' apps/api/composer.json
@@ -216,10 +219,9 @@ jobs:
           php nevela blog --sample | tee blog.log
           # A welcome, and a post for each tutorial the package ships, with its cover and a link to it.
           grep -q "sample posts: a welcome, and one for each of Nevela's" blog.log
-          # The newest three on the home page, in the place the template keeps for them.
+          # The newest three on the home page: its import now leads to the app's own component, written once.
           test -f apps/web/components/marketing/latest-posts.tsx
-          grep -q '<LatestPosts />' apps/web/app/page.tsx
-          grep -q 'from "@/components/marketing/latest-posts"' apps/web/app/page.tsx
+          grep -q 'export { LatestPosts } from "@/components/marketing/latest-posts";' apps/web/resources/latest-posts.tsx
           test -f apps/api/nevela/resources/post.json
           for file in lib/blog.ts app/blog/page.tsx 'app/blog/[slug]/page.tsx' app/blog/feed.xml/route.ts app/sitemap.ts; do test -f "apps/web/$file"; done
           grep -q '"blog": "/blog"' apps/web/resources/index.ts

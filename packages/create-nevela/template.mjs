@@ -42,7 +42,8 @@ function copyTree(from, to, skip = () => false, relative = '') {
 
 /**
  * What belongs to the framework repository's own example resources, not to a new app:
- * their descriptors, the registry that lists them, and their dashboard pages.
+ * their descriptors, the registry that lists them, the home page's link to a blog it has not got,
+ * and their dashboard pages. A new app's `nevela generate` writes its own.
  */
 export function exampleResourceFilter(webRoot) {
   const resources = path.join(webRoot, 'resources');
@@ -57,6 +58,7 @@ export function exampleResourceFilter(webRoot) {
   return (inside) =>
     /^resources\/[^/]+\.resource\.ts$/.test(inside)
     || inside === 'resources/index.ts'
+    || inside === 'resources/latest-posts.tsx'
     || [...slugs].some((slug) => inside === `app/dashboard/${slug}`);
 }
 
