@@ -1,5 +1,5 @@
 import type { ImageMetadata } from "astro";
-import contactsCover from "./assets/tutorials/contacts-cover.png";
+import contactsCover from "./assets/tutorials/contacts-cover.webp";
 import shopCover from "./assets/tutorials/online-shop-cover.webp";
 import studentCover from "./assets/tutorials/student-app-cover.webp";
 

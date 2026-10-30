@@ -18,6 +18,7 @@ _Kian Rover, live on Nevela, and a picture on each project_
 
 ### Changed
 
+- **[Contacts: your first app](https://nevela-docs.vercel.app/tutorials/contacts/) has a cover of its own,** as the online shop and the student app do: the contacts app on a laptop, with a contact marked as a customer.
 - **[Projects built in Nevela](https://nevela-docs.vercel.app/showcase/) shows a picture of each project**, a screenshot of its site, where the first letter of its name stood. A project's entry takes it as `image`. Kian Rover is there as it is now: an IT and software company in Kampala, live on Nevela, with its project briefs, internship applications, courses and blog.
 
 ## [0.25.0] - 2026-10-29
