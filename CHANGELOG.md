@@ -8,10 +8,11 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_Kian Rover, live on Nevela, and a picture on each project_
+_A billing app tutorial, galleries, fields that only sometimes apply, and phone numbers of one country_
 
 ### Added
 
+- **A fourth tutorial, [A billing app](https://nevela-docs.vercel.app/tutorials/billing-app/)**: the client billing system JB builds on stage at GopherCon Africa, in Nevela's commands. Clients with a Ugandan phone number, projects with a billing cycle only a recurring one has and a gallery, numbered invoices and payments, in shillings, then 500 clients, 2,000 projects, 25,000 invoices and 20,000 payments to see it hold up. A table puts JB's Grit commands beside Nevela's. Its steps are in `examples/billing-app/`, which CI runs in a new app like the others.
 - **Several files in one field:** `gallery:files(image)`, in Grit's words (`gallery:images` says the same). It holds up to 20, in the order they were added, each optimised on upload as an `image` field's is. The dashboard's form shows them as tiles to take out one by one, with a tile to add more, chosen or dropped several at a time; the table shows the first and how many more, and the record's page all of them. The API sends the list of keys and, as `galleryFiles`, the details of each; each key has to have been uploaded to that field, once. The seeder gives one to four placeholder pictures. Not yet private, public, sortable or in a CSV. See [Several files in one field](https://nevela-docs.vercel.app/guides/images/#several-files-in-one-field).
 - **Phone numbers of one country:** `phone:tel(UG)` takes Ugandan numbers only. Written any way people write one there (`0772 123456`, `772123456`, `+256 772 123 456`), it is kept the one way, `+256772123456`, and anything else is refused with "Enter a Ugandan number, such as 0772 123456 or +256 772 123456." Laravel checks it in the form, the API, "Add several", a CSV import, a public form and an action; the dashboard keeps the code at +256; the seeder makes Ugandan numbers. Kenya, Tanzania and Rwanda are known too. `tel` alone takes any country's number, as before. In the descriptor, `"country": "UG"`. See [Phone numbers](https://nevela-docs.vercel.app/concepts/field-types/#phone-numbers).
 - **A field that only sometimes applies:** `cycle:enum(monthly|annually) if kind == recurring`, in Grit's words. The form shows it only for a recurring project and marks it required there; Laravel refuses a recurring project without one ("Needed when the kind is Recurring.") and empties it on a one-off, whether a change sends it or not, however the record arrives; the seeder gives a cycle only to recurring projects. It depends on an enum or a yes/no field, for one value or several (`if kind == recurring|retainer`). In the descriptor, `"when": {"kind": "recurring"}`. See [A field that only sometimes applies](https://nevela-docs.vercel.app/concepts/field-types/#a-field-that-only-sometimes-applies).
@@ -19,6 +20,7 @@ _Kian Rover, live on Nevela, and a picture on each project_
 ### Changed
 
 - **[Contacts: your first app](https://nevela-docs.vercel.app/tutorials/contacts/) has a cover of its own,** as the online shop and the student app do: the contacts app on a laptop, with a contact marked as a customer.
+- **Seeded records read more like a business's.** Money in a currency without cents (UGX, RWF, JPY…) comes in thousands, `UGX 1,250,000` rather than `UGX 349`; a client with a company of its own is a person at that company, not a second company; a project is called what work is called, "Stock system" or "School website"; and an address is a plot on a street in a city, not a sentence.
 - **[Projects built in Nevela](https://nevela-docs.vercel.app/showcase/) shows a picture of each project**, a screenshot of its site, where the first letter of its name stood. A project's entry takes it as `image`. Kian Rover is there as it is now: an IT and software company in Kampala, live on Nevela, with its project briefs, internship applications, courses and blog.
 
 ## [0.25.0] - 2026-10-29
