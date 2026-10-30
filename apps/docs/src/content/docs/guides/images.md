@@ -178,7 +178,7 @@ The API has the list of keys, and beside it the details of each, in the same ord
 ]
 ```
 
-To change it, send the whole list as it should be: `{"gallery": [key, key]}` to keep two, `null` (or `[]` on an optional one) to empty it. Upload each file to the field as above (`PUT /api/_nevela/uploads/Product/gallery?name=front.jpg`) and add its key. Each key has to have been uploaded to that field, once in the list, and 20 at most; a required gallery needs one at least.
+To change it, send the whole list as it should be: `{"gallery": [key, key]}` to keep two, `null` or `[]` to empty an optional one (a required one keeps one at least). Upload each file to the field as above (`PUT /api/_nevela/uploads/Product/gallery?name=front.jpg`) and add its key. Each key has to have been uploaded to that field, once in the list, and 20 at most; a required gallery needs one at least.
 
 | | |
 |---|---|

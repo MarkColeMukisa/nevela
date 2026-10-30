@@ -22,7 +22,7 @@ class ProductRequest extends ResourceRequest
             : Gate::allows('create', Product::class);
     }
 
-    // nevela:generated:start hash=58414702416c
+    // nevela:generated:start hash=48b9a310b4b8
     public function rules(): array
     {
         $product = $this->route('product');
@@ -32,7 +32,7 @@ class ProductRequest extends ResourceRequest
             'sku' => ['required', 'string', 'max:255', Rule::unique('products', 'sku')->ignore($product)],
             'price' => ['required', 'numeric'],
             'image' => ['nullable', 'string', 'max:512', new \Nevela\Laravel\Rules\UploadKey('Product', 'image')],
-            'gallery' => ['nullable', 'array', 'max:20'],
+            'gallery' => ['nullable', 'list', 'max:20'],
             'gallery.*' => ['string', 'distinct', 'max:512', new \Nevela\Laravel\Rules\UploadKey('Product', 'gallery')],
             'categoryId' => ['required', 'uuid', Rule::exists('categories', 'id')],
             'active' => ['required', 'boolean'],

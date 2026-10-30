@@ -48,6 +48,8 @@ export interface WidgetProps {
    * the input so whatever it suggests can still be typed over.
    */
   suggest?: () => string;
+  /** A file or gallery field: told when an upload starts and when the last one ends, so the form isn't saved without it. */
+  onBusyChange?: (busy: boolean) => void;
 }
 
 const NONE = "__none__";
@@ -61,7 +63,20 @@ export function FieldWidget(props: WidgetProps) {
   // Several files (gallery:files(image)): Flare's JSON, drawn as the files it lists.
   const accepts = filesOf(field);
   if (accepts) {
-    return <FilesField id={id} value={text} onChange={onChange} invalid={invalid} disabled={disabled} label={field.label} accept={accepts} resourceName={resourceName} fieldKey={fieldKey} />;
+    return (
+      <FilesField
+        id={id}
+        value={text}
+        onChange={onChange}
+        invalid={invalid}
+        disabled={disabled}
+        label={field.label}
+        accept={accepts}
+        resourceName={resourceName}
+        fieldKey={fieldKey}
+        onBusyChange={props.onBusyChange}
+      />
+    );
   }
 
   switch (field.kind) {
@@ -216,6 +231,7 @@ export function FieldWidget(props: WidgetProps) {
           field={field as FileFieldDef & { label: string }}
           resourceName={resourceName}
           fieldKey={fieldKey}
+          onBusyChange={props.onBusyChange}
         />
       );
 

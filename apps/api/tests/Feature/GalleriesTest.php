@@ -90,6 +90,8 @@ class GalleriesTest extends TestCase
         $this->postJson('/api/products', $this->product('KET-1', [$picture, $picture]))->assertUnprocessable()->assertJsonPath('issues.0.path', 'gallery.0');
         $this->postJson('/api/products', $this->product('KET-1', array_fill(0, 21, $picture)))->assertUnprocessable()->assertJsonPath('issues.0.path', 'gallery');
         $this->postJson('/api/products', array_merge($this->product('KET-1'), ['gallery' => 'not a list']))->assertUnprocessable()->assertJsonPath('issues.0.path', 'gallery');
+        // Keys by name aren't a list either: the order is the list's.
+        $this->postJson('/api/products', array_merge($this->product('KET-1'), ['gallery' => ['front' => $picture]]))->assertUnprocessable()->assertJsonPath('issues.0.path', 'gallery');
         $this->assertSame(0, Product::count());
     }
 

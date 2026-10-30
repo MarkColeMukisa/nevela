@@ -24,6 +24,8 @@ interface Props {
   accept: string[];
   resourceName: string;
   fieldKey: string;
+  /** Told when the uploads start and when the last one ends, so the form waits for them. */
+  onBusyChange?: (busy: boolean) => void;
 }
 
 type Upload = { name: string; loaded: number; total: number; left: number; abort: () => void };
@@ -36,7 +38,7 @@ const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1
  * after another, each checked in the browser first as a single file is (Laravel repeats
  * every check), and each key Laravel answers with joins the list in the order chosen.
  */
-export function FilesField({ id, value, onChange, invalid, disabled, label, accept, resourceName, fieldKey }: Props) {
+export function FilesField({ id, value, onChange, invalid, disabled, label, accept, resourceName, fieldKey, onBusyChange }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const helpId = useId();
   const [upload, setUpload] = useState<Upload | null>(null);
@@ -56,6 +58,7 @@ export function FilesField({ id, value, onChange, invalid, disabled, label, acce
     if (files.length > room) problems.push(room === 0 ? `${label} holds ${MOST} files at most.` : `Only ${room} more fit: ${label} holds ${MOST} at most.`);
     let list = keys;
     const chosen = files.slice(0, Math.max(0, room));
+    onBusyChange?.(true);
     for (const [index, file] of chosen.entries()) {
       const problem = await checkFile(file, label, accept, maxBytes);
       if (problem) {
@@ -83,6 +86,7 @@ export function FilesField({ id, value, onChange, invalid, disabled, label, acce
       }
     }
     setUpload(null);
+    onBusyChange?.(false);
     setErrors(problems);
     if (input.current) input.current.value = "";
   }

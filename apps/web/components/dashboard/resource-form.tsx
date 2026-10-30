@@ -76,6 +76,15 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
   const steps = useMemo(() => toSteps(shown), [shownKeys]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, startTransition] = useTransition();
+  // Fields with a file on its way: saved now, the record would go without it.
+  const [uploading, setUploading] = useState<ReadonlySet<string>>(new Set());
+  const busyChange = (key: string) => (busy: boolean) =>
+    setUploading((current) => {
+      const next = new Set(current);
+      if (busy) next.add(key);
+      else next.delete(key);
+      return next;
+    });
   const [lines, setLines] = useState<LineRow[]>(() => (items ? startRows(items) : []));
   const [lineProblems, setLineProblems] = useState<LineProblems>({});
 
@@ -156,6 +165,8 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
+    // Enter in a field submits too: not while a file is still on its way.
+    if (uploading.size > 0) return;
     const input = toInput();
     const found = validate();
     // Its lines go with it, checked with their own rules first.
@@ -248,6 +259,7 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
                       disabled={pending || copiedFrom(def) !== undefined}
                       relation={relations[key]}
                       suggest={canSuggest(def) ? () => suggestValue(key, def, String(values[resource.titleField] ?? "")) : undefined}
+                      onBusyChange={busyChange(key)}
                     />
                   </div>
                   {def.helpText && <FieldDescription>{def.helpText}</FieldDescription>}
@@ -274,12 +286,12 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
             </Button>
           )}
           {last ? (
-            <Button key="submit" type="submit" disabled={pending}>
+            <Button key="submit" type="submit" disabled={pending || uploading.size > 0}>
               {pending && <Spinner data-icon="inline-start" />}
-              {mode === "create" ? `Create ${resource.label.toLowerCase()}` : "Save changes"}
+              {uploading.size > 0 ? "Uploading…" : mode === "create" ? `Create ${resource.label.toLowerCase()}` : "Save changes"}
             </Button>
           ) : (
-            <Button key="next" type="button" onClick={next} disabled={pending}>
+            <Button key="next" type="button" onClick={next} disabled={pending || uploading.size > 0}>
               Next
             </Button>
           )}

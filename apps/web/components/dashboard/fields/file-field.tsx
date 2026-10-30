@@ -26,6 +26,8 @@ interface Props {
   field: FileFieldDef & { label: string };
   resourceName: string;
   fieldKey: string;
+  /** Told when an upload starts and ends, so the form waits for it. */
+  onBusyChange?: (busy: boolean) => void;
 }
 
 type Upload = { name: string; loaded: number; total: number; abort: () => void };
@@ -102,7 +104,7 @@ export function put(url: string, file: File, onProgress: (loaded: number) => voi
  * answers with in the form. An image is optimised as it arrives: resized to the field's
  * profile, with its smaller renditions made alongside.
  */
-export function FileField({ id, value, onChange, invalid, disabled, field, resourceName, fieldKey }: Props) {
+export function FileField({ id, value, onChange, invalid, disabled, field, resourceName, fieldKey, onBusyChange }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const helpId = useId();
   const instructionId = useId();
@@ -134,6 +136,7 @@ export function FileField({ id, value, onChange, invalid, disabled, field, resou
     const signal: { abort?: () => void } = {};
     const localPreview = IMAGE_TYPES.has(file.type) ? URL.createObjectURL(file) : null;
     setUpload({ name: file.name, loaded: 0, total: file.size, abort: () => signal.abort?.() });
+    onBusyChange?.(true);
     if (localPreview) setPreview(localPreview);
     setStatus(`Uploading ${file.name}…`);
 
@@ -151,6 +154,7 @@ export function FileField({ id, value, onChange, invalid, disabled, field, resou
     } finally {
       if (localPreview) URL.revokeObjectURL(localPreview);
       setUpload(null);
+      onBusyChange?.(false);
       if (input.current) input.current.value = "";
     }
   }
