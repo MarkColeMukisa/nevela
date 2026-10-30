@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { adminPermissions, allowedActions, allResources, dashboardStore, requireAccess, resourcePath } from "@/lib/dashboard";
 import { actionApplies, publishFieldOf, publishState } from "@/lib/extras";
-import { privateFileUrl } from "@/lib/files";
+import { fileKeys, fileName, filesOf, fileUrl, privateFileUrl } from "@/lib/files";
 import { lineTitles, linesOf, linesResource } from "@/lib/line-items";
 import { lineAmounts } from "@/lib/line-totals";
 import { itemsOf } from "@/lib/lines";
@@ -131,6 +131,21 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
               } else if (isRich(def) && typeof value === "string" && value) {
                 // Shown as it was written. Laravel cleaned it when it was saved and again when it was read.
                 content = <div className="rich-text" dangerouslySetInnerHTML={{ __html: value }} />;
+              } else if (filesOf(def)) {
+                // A gallery: every one of them, each opening at full size.
+                const keys = fileKeys(value);
+                content =
+                  keys.length === 0 ? (
+                    "—"
+                  ) : (
+                    <span className="flex flex-wrap gap-2">
+                      {keys.map((key) => (
+                        <a key={key} href={fileUrl(key)} target="_blank" rel="noreferrer" aria-label={`Open ${fileName(key)}`}>
+                          <FileCell value={key} size={96} />
+                        </a>
+                      ))}
+                    </span>
+                  );
               } else if (def.kind === "file" && typeof value === "string" && value) {
                 // Bigger here than in the table: this is the page for looking at one record.
                 content = <FileCell resourceName={resource.name} fieldKey={key} value={value} size={96} download={privateFileUrl(resource.slug, id, key)} />;
@@ -161,7 +176,7 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
                   );
               }
               return (
-                <div key={key} className={def.kind === "text" ? "flex flex-col gap-1 sm:col-span-2" : "flex flex-col gap-1"}>
+                <div key={key} className={def.kind === "text" || filesOf(def) ? "flex flex-col gap-1 sm:col-span-2" : "flex flex-col gap-1"}>
                   <dt className="text-xs text-muted-foreground">{def.label}</dt>
                   <dd className="text-sm break-words">{content}</dd>
                 </div>

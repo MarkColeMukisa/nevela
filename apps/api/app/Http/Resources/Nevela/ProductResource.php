@@ -14,12 +14,14 @@ class ProductResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            // nevela:generated:start hash=1d068c80667f
+            // nevela:generated:start hash=754790e8ddd7
             'name' => $this->name,
             'sku' => $this->sku,
             'price' => $this->price,
             'image' => $this->image,
             'imageFile' => \Nevela\Laravel\Nevela::file($this->image),
+            'gallery' => $this->gallery,
+            'galleryFiles' => array_map(fn (string $key) => \Nevela\Laravel\Nevela::file($key), $this->gallery ?? []),
             'categoryId' => $this->category_id,
             'active' => $this->active,
             'kind' => $this->kind,

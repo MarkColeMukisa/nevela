@@ -14,6 +14,7 @@ import {
   type StoredField,
 } from "@flaredev/core";
 import { importRecordsAction } from "@/app/dashboard/import-actions";
+import { filesOf } from "@/lib/files";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -206,7 +207,7 @@ export function ImportDialog({ resource }: { resource: ClientResource }) {
   const router = useRouter();
   const validators = useMemo(() => createValidators(resource), [resource]);
   // Uploads need a signed URL per file, which a CSV cell can't stand in for.
-  const fields = useMemo(() => storedFields(resource).filter(([, def]) => def.kind !== "file"), [resource]);
+  const fields = useMemo(() => storedFields(resource).filter(([, def]) => def.kind !== "file" && !filesOf(def)), [resource]);
 
   const [open, setOpen] = useState(false);
   const [fileName, setFileName] = useState("");

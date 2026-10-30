@@ -12,6 +12,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { copiedFrom } from "@/lib/copied";
+import { filesOf } from "@/lib/files";
 import { applies, conditionOf } from "@/lib/when";
 import { canSuggest, suggestValue } from "@/lib/suggest";
 import { cn } from "@/lib/utils";
@@ -225,7 +226,7 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
               const widgetId = `field-${key}`;
               const horizontal = def.kind === "boolean";
               return (
-                <Field key={key} data-invalid={error ? true : undefined} className={WIDE.has(def.kind) ? "md:col-span-2" : undefined}>
+                <Field key={key} data-invalid={error ? true : undefined} className={WIDE.has(def.kind) || filesOf(def) ? "md:col-span-2" : undefined}>
                   <FieldLabel htmlFor={widgetId}>
                     {def.label}
                     {(def.required || conditionOf(def)?.required) && def.kind !== "boolean" && (
