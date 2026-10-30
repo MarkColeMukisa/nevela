@@ -48,6 +48,7 @@ Both can be combined: `code:string?!`.
 | `image` | `string` (the file's key) | a picture uploaded to this field |
 | `file(pdf\|image)` | `string` (the file's key) | a file of a listed kind, uploaded to this field |
 | `file(pdf\|private)` | `string` (the file's key) | the same, [kept private](/guides/images/#private-files) |
+| `files(image)` | `json` (the files' keys) | [several files](/guides/images/#several-files-in-one-field) uploaded to this field, up to 20 |
 
 The dashboard picks the input and the table column from the type.
 
@@ -233,6 +234,7 @@ The spellings those two use are understood, so you can type what you know:
 | `image:file:image` (Grit) | `image:image` |
 | `image:file:[image]` (Flare) | `image:image` |
 | `docs:file:[pdf, image]` | `docs:file(pdf\|image)` |
+| `gallery:files[image]` (Grit) | `gallery:files(image)` |
 | `category:belongs_to:Category` | `category:belongsTo(Category)` |
 | `status:enum:draft\|live` | `status:enum(draft\|live)` |
 | `phone:tel[UG]`, `phone:tel:UG` | `phone:tel(UG)` |

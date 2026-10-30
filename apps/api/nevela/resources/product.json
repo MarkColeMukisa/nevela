@@ -27,6 +27,15 @@
             "profile": "product",
             "required": false
         },
+        "gallery": {
+            "kind": "file",
+            "accept": [
+                "image"
+            ],
+            "multiple": true,
+            "profile": "product",
+            "required": false
+        },
         "categoryId": {
             "kind": "belongsTo",
             "target": "Category"

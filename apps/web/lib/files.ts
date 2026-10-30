@@ -31,5 +31,28 @@ export function privateFileUrl(resourceSlug: string, id: string, fieldKey: strin
   return `/api/_nevela/private/${encodeURIComponent(resourceSlug)}/${encodeURIComponent(id)}/${encodeURIComponent(fieldKey)}`;
 }
 
+/**
+ * What a field that holds several files takes (gallery:files(image)), or undefined for any
+ * other field. Flare's file is one key, so such a field is its JSON, a list of keys, and
+ * the generated descriptor says what is in it with `files`.
+ */
+export function filesOf(def: object): string[] | undefined {
+  const files = (def as { files?: unknown }).files;
+  return Array.isArray(files) ? (files as string[]) : undefined;
+}
+
+/** The keys in such a field's value: the list from the API, or the form's JSON of it. */
+export function fileKeys(value: unknown): string[] {
+  let list = value;
+  if (typeof value === "string") {
+    try {
+      list = value.trim() === "" ? [] : JSON.parse(value);
+    } catch {
+      list = [];
+    }
+  }
+  return Array.isArray(list) ? list.filter((key): key is string => typeof key === "string" && key !== "") : [];
+}
+
 /** "products/image/2026/10/<uuid>-kettle.webp" → "kettle.webp" */
 export const fileName = (key: string) => key.slice(key.lastIndexOf("/") + 1).replace(/^[0-9a-f-]{36}-/, "");

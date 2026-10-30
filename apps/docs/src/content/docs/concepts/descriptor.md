@@ -56,6 +56,7 @@ Each field has a `kind` (`string`, `text`, `int`, `float`, `boolean`, `date`, `d
 | `optionLabels` | For an enum: what each value is called where people read it, `{ "asap": "As soon as possible" }`. See [What an enum's values are called](/concepts/field-types/#what-an-enums-values-are-called). |
 | `currency` | For money: the ISO 4217 code it is in, `"UGX"`. The app's `NEVELA_CURRENCY` unless set. See [Money and its currency](/concepts/field-types/#money-and-its-currency). |
 | `private` | For a file: `true` keeps it where only someone who may view the record can fetch it. See [private files](/guides/images/#private-files). |
+| `multiple` | For a file: `true` holds several, up to 20, as a list of keys. See [Several files in one field](/guides/images/#several-files-in-one-field). |
 | `maxLength` | For `string` and `text`: the most characters it holds, where that isn't the usual 255 or 65,535. |
 | `required` | `false` makes the field optional. Defaults to `true`. |
 | `unique` | `true` makes values unique. Defaults to `false`. |

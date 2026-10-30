@@ -26,6 +26,8 @@ interface Props {
   field: FileFieldDef & { label: string };
   resourceName: string;
   fieldKey: string;
+  /** Told when an upload starts and ends, so the form waits for it. */
+  onBusyChange?: (busy: boolean) => void;
 }
 
 type Upload = { name: string; loaded: number; total: number; abort: () => void };
@@ -36,7 +38,7 @@ const oneDecimal = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }
 const whole = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
 
 /** "1.9 MB" — with a non-breaking space so a size never wraps apart. */
-function formatBytes(bytes: number): string {
+export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${whole.format(bytes)} B`;
   if (bytes < 1024 * 1024) return `${whole.format(bytes / 1024)} KB`;
   const megabytes = bytes / 1024 / 1024;
@@ -44,7 +46,7 @@ function formatBytes(bytes: number): string {
 }
 
 /** ["image", "pdf"] → "image or PDF" (acronyms stay upper case). */
-function describeAccept(accept: readonly string[]): string {
+export function describeAccept(accept: readonly string[]): string {
   if (accept.includes("any")) return "any file";
   const names = accept.map((category) => (category === "pdf" || category === "csv" ? category.toUpperCase() : category));
   return names.length > 1 ? `${names.slice(0, -1).join(", ")} or ${names.at(-1)}` : names[0]!;
@@ -55,13 +57,25 @@ const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1
 /** "image/png" → "PNG", used when a file's contents don't match its type. */
 const typeName = (type: string) => (type.split("/")[1] ?? type).replace(/^vnd\..*\./, "").toUpperCase();
 
+/** What is wrong with a file for a field, before it is sent: its type, its size, its contents. Null when nothing is. */
+export async function checkFile(file: File, label: string, accept: readonly string[], maxBytes: number): Promise<string | null> {
+  const type = file.type || "application/octet-stream";
+  if (!matchesContentType(type, mimeTypesFor(accept as Parameters<typeof mimeTypesFor>[0]))) return `${label} accepts ${describeAccept(accept)} files.`;
+  if (file.size > maxBytes) return `${file.name} is ${formatBytes(file.size)}; the limit is ${formatBytes(maxBytes)}.`;
+  const head = new Uint8Array(await file.slice(0, SNIFF_BYTES).arrayBuffer());
+  if (sniffMatches(type, head) === false) {
+    return `${file.name} isn't a valid ${typeName(type)} file. It may have been renamed; choose the original file.`;
+  }
+  return null;
+}
+
 /**
  * PUT with progress events, which fetch() can't report for uploads.
  *
  * Resolves with the key the file was stored under. Laravel chooses it, because an image
  * is optimised on the way in and may come out as a different type from the one sent.
  */
-function put(url: string, file: File, onProgress: (loaded: number) => void, signal: { abort?: () => void }) {
+export function put(url: string, file: File, onProgress: (loaded: number) => void, signal: { abort?: () => void }) {
   return new Promise<string | undefined>((resolve, reject) => {
     const request = new XMLHttpRequest();
     signal.abort = () => request.abort();
@@ -90,7 +104,7 @@ function put(url: string, file: File, onProgress: (loaded: number) => void, sign
  * answers with in the form. An image is optimised as it arrives: resized to the field's
  * profile, with its smaller renditions made alongside.
  */
-export function FileField({ id, value, onChange, invalid, disabled, field, resourceName, fieldKey }: Props) {
+export function FileField({ id, value, onChange, invalid, disabled, field, resourceName, fieldKey, onBusyChange }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const helpId = useId();
   const instructionId = useId();
@@ -111,20 +125,9 @@ export function FileField({ id, value, onChange, invalid, disabled, field, resou
     setPreview(value && isImageKey(value) && !isPrivateKey(value) ? fileUrl(value, "thumb") : null);
   }, [value]);
 
-  async function check(file: File): Promise<string | null> {
-    const type = file.type || "application/octet-stream";
-    if (!matchesContentType(type, accepted)) return `${field.label} accepts ${describeAccept(field.accept)} files.`;
-    if (file.size > maxBytes) return `${file.name} is ${formatBytes(file.size)}; the limit is ${formatBytes(maxBytes)}.`;
-    const head = new Uint8Array(await file.slice(0, SNIFF_BYTES).arrayBuffer());
-    if (sniffMatches(type, head) === false) {
-      return `${file.name} isn't a valid ${typeName(type)} file. It may have been renamed; choose the original file.`;
-    }
-    return null;
-  }
-
   async function start(file: File) {
     setError(null);
-    const problem = await check(file);
+    const problem = await checkFile(file, field.label, field.accept, maxBytes);
     if (problem) return setError(problem);
 
     // A browser leaves `type` empty for an extension it doesn't know, and an upload has
@@ -133,6 +136,7 @@ export function FileField({ id, value, onChange, invalid, disabled, field, resou
     const signal: { abort?: () => void } = {};
     const localPreview = IMAGE_TYPES.has(file.type) ? URL.createObjectURL(file) : null;
     setUpload({ name: file.name, loaded: 0, total: file.size, abort: () => signal.abort?.() });
+    onBusyChange?.(true);
     if (localPreview) setPreview(localPreview);
     setStatus(`Uploading ${file.name}…`);
 
@@ -150,6 +154,7 @@ export function FileField({ id, value, onChange, invalid, disabled, field, resou
     } finally {
       if (localPreview) URL.revokeObjectURL(localPreview);
       setUpload(null);
+      onBusyChange?.(false);
       if (input.current) input.current.value = "";
     }
   }

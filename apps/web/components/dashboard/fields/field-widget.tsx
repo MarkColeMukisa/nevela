@@ -13,7 +13,9 @@ import { currencyDigits, groupDigits, ungroup } from "@/lib/number";
 import { isRich } from "@/lib/rich";
 import { DateField, DateTimeField } from "./date-field";
 import { CountryField } from "./country-field";
+import { filesOf } from "@/lib/files";
 import { FileField } from "./file-field";
+import { FilesField } from "./files-field";
 import { MultiSelectField } from "./multi-select-field";
 import { PhoneField } from "./phone-field";
 import { RelationField } from "./relation-field";
@@ -46,6 +48,8 @@ export interface WidgetProps {
    * the input so whatever it suggests can still be typed over.
    */
   suggest?: () => string;
+  /** A file or gallery field: told when an upload starts and when the last one ends, so the form isn't saved without it. */
+  onBusyChange?: (busy: boolean) => void;
 }
 
 const NONE = "__none__";
@@ -55,6 +59,25 @@ export function FieldWidget(props: WidgetProps) {
   const { id, name, field, value, onChange, invalid, disabled, relation, resourceName, fieldKey, suggest } = props;
   const text = typeof value === "string" ? value : "";
   const common = { id, name, disabled, "aria-invalid": invalid || undefined, placeholder: field.placeholder };
+
+  // Several files (gallery:files(image)): Flare's JSON, drawn as the files it lists.
+  const accepts = filesOf(field);
+  if (accepts) {
+    return (
+      <FilesField
+        id={id}
+        value={text}
+        onChange={onChange}
+        invalid={invalid}
+        disabled={disabled}
+        label={field.label}
+        accept={accepts}
+        resourceName={resourceName}
+        fieldKey={fieldKey}
+        onBusyChange={props.onBusyChange}
+      />
+    );
+  }
 
   switch (field.kind) {
     case "text":
@@ -208,6 +231,7 @@ export function FieldWidget(props: WidgetProps) {
           field={field as FileFieldDef & { label: string }}
           resourceName={resourceName}
           fieldKey={fieldKey}
+          onBusyChange={props.onBusyChange}
         />
       );
 

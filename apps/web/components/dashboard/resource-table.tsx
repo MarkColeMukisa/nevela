@@ -4,7 +4,7 @@ import { ArrowDownIcon, ArrowUpIcon, ChevronLeftIcon, ChevronRightIcon, Chevrons
 import { clientResource, optionLabel, statusTone, storedFields, type Resource, type StoredField } from "@flaredev/core";
 import { isSortable } from "@/lib/resource/query";
 import { CELL_TEXT, cellText, defaultColumns } from "@/lib/columns";
-import { privateFileUrl } from "@/lib/files";
+import { fileKeys, filesOf, privateFileUrl } from "@/lib/files";
 import { displayValue } from "@/lib/format";
 import { isRich, richToText } from "@/lib/rich";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -118,7 +118,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
   const actions = await allowedActions(resource.name);
   const onRecords = actions.filter((action) => action.on === "record");
   const rowIds = rows.map((row) => String(row.id));
-  const exportColumns = [{ key: "id", label: "Id" }, ...fields.filter(([, def]) => def.kind !== "file").map(([key, def]) => ({ key, label: def.label }))];
+  const exportColumns = [{ key: "id", label: "Id" }, ...fields.filter(([, def]) => def.kind !== "file" && !filesOf(def)).map(([key, def]) => ({ key, label: def.label }))];
 
   const sort = params.get("sort") ?? `${resource.defaultSort.direction === "desc" ? "-" : ""}${resource.defaultSort.field}`;
   const sortField = sort.replace(/^-/, "");
@@ -263,6 +263,18 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
                       } else if (isRich(column.def) && typeof value === "string") {
                         // The start of it, as words: markup is noise in a table.
                         content = richToText(value, CELL_TEXT);
+                      } else if (filesOf(column.def)) {
+                        // A gallery: its first, and how many more.
+                        const keys = fileKeys(value);
+                        content =
+                          keys.length === 0 ? (
+                            "—"
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5">
+                              <FileCell value={keys[0]!} />
+                              {keys.length > 1 && <span className="text-xs text-muted-foreground tabular-nums">+{keys.length - 1}</span>}
+                            </span>
+                          );
                       } else if (column.def.kind === "file" && typeof value === "string" && value) {
                         // A thumbnail for an image, a filename for anything else — the raw
                         // object key is noise in a table.

@@ -3,15 +3,16 @@ title: "Files and images"
 description: "Upload fields, and how images are resized, compressed and given smaller renditions as they arrive."
 ---
 
-Two field types store files.
+Three field types store files.
 
 | You write | It takes | Example |
 |---|---|---|
 | `image:image` | pictures, optimised on upload | a product photo, a logo |
 | `manual:file(pdf)` | the kinds you list, stored as they are | a PDF, a spreadsheet |
+| `gallery:files(image)` | several of them, up to 20, in the order they were added | a project's photos, a set of scans |
 
 ```sh
-nevela resource Product --fields="name:string, image:image, manual:file(pdf|document)?"
+nevela resource Product --fields="name:string, image:image, gallery:files(image)?, manual:file(pdf|document)?"
 ```
 
 The kinds a `file` field can list are `image`, `pdf`, `video`, `audio`, `text`, `csv`, `document`, `spreadsheet`, `archive` and `any`. `file` on its own means `any`.
@@ -160,6 +161,30 @@ In the dashboard a private file is shown as its name with a lock, and the name d
 While its record is in [the trash](/guides/trash/) the file stays where it is and nobody can fetch it. Restoring the record brings it back; removing the record for good removes the file. If two records hold the same file, it goes with the last of them.
 
 The record's own JSON gives the address to fetch it from, in `<field>File.url`, and never puts the key in one.
+
+## Several files in one field
+
+`gallery:files(image)` holds a list of files: Grit's `gallery:files[image]` and `gallery:images` say the same, and `docs:files(pdf|document)` takes other kinds. Each picture is optimised as it arrives, like an `image` field's, with the field's profile: `gallery:images(product)`.
+
+In the dashboard, the form shows them as tiles, each with a button to take it out, and a tile to add more: choose several at once, or drop them on it. They are sent one after another, each checked as a single file is. The table shows the first and how many more; the record's page shows them all.
+
+The API has the list of keys, and beside it the details of each, in the same order and the same shape as [`imageFile`](#using-an-image):
+
+```json
+"gallery": ["products/gallery/2026/10/8f9b…-front.webp", "products/gallery/2026/10/feb1…-side.webp"],
+"galleryFiles": [
+  { "key": "products/gallery/2026/10/8f9b…-front.webp", "url": "…-front.webp", "name": "front.jpg", "renditions": { "thumb": { "url": "…-front.thumb.webp" } } },
+  { "key": "products/gallery/2026/10/feb1…-side.webp", "url": "…-side.webp", "name": "side.jpg", "renditions": { "thumb": { "url": "…-side.thumb.webp" } } }
+]
+```
+
+To change it, send the whole list as it should be: `{"gallery": [key, key]}` to keep two, `null` or `[]` to empty an optional one (a required one keeps one at least). Upload each file to the field as above (`PUT /api/_nevela/uploads/Product/gallery?name=front.jpg`) and add its key. Each key has to have been uploaded to that field, once in the list, and 20 at most; a required gallery needs one at least.
+
+| | |
+|---|---|
+| Stored as | A `json` column, cast to an array on the model |
+| Seeded | One to four of the seeder's placeholder pictures |
+| Not offered | Sorting and filtering, "Add several", CSV export and import, a public form or public read, and being private |
 
 ## Requirements
 

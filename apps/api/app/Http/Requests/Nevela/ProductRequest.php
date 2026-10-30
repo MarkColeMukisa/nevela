@@ -22,7 +22,7 @@ class ProductRequest extends ResourceRequest
             : Gate::allows('create', Product::class);
     }
 
-    // nevela:generated:start hash=37ac148d8f57
+    // nevela:generated:start hash=48b9a310b4b8
     public function rules(): array
     {
         $product = $this->route('product');
@@ -32,6 +32,8 @@ class ProductRequest extends ResourceRequest
             'sku' => ['required', 'string', 'max:255', Rule::unique('products', 'sku')->ignore($product)],
             'price' => ['required', 'numeric'],
             'image' => ['nullable', 'string', 'max:512', new \Nevela\Laravel\Rules\UploadKey('Product', 'image')],
+            'gallery' => ['nullable', 'list', 'max:20'],
+            'gallery.*' => ['string', 'distinct', 'max:512', new \Nevela\Laravel\Rules\UploadKey('Product', 'gallery')],
             'categoryId' => ['required', 'uuid', Rule::exists('categories', 'id')],
             'active' => ['required', 'boolean'],
             'kind' => ['required', Rule::in(['stock', 'digital'])],
@@ -42,7 +44,7 @@ class ProductRequest extends ResourceRequest
 
     protected function columns(): array
     {
-        return ['name' => 'name', 'sku' => 'sku', 'price' => 'price', 'image' => 'image', 'categoryId' => 'category_id', 'active' => 'active', 'kind' => 'kind', 'downloadUrl' => 'download_url', 'notes' => 'notes'];
+        return ['name' => 'name', 'sku' => 'sku', 'price' => 'price', 'image' => 'image', 'gallery' => 'gallery', 'categoryId' => 'category_id', 'active' => 'active', 'kind' => 'kind', 'downloadUrl' => 'download_url', 'notes' => 'notes'];
     }
 
     /** Fields whose values go together once only. Checked against the trash too, as the database's index is. */

@@ -5,7 +5,7 @@ import { storedFields, type PolicyAction } from "@flaredev/core";
 import type { FieldIssue } from "@/lib/resource/store";
 import { toCsv } from "@/lib/csv";
 import { revalidateResource } from "@/lib/cache";
-import { fileUrl } from "@/lib/files";
+import { filesOf, fileUrl } from "@/lib/files";
 import { laravel } from "@/lib/laravel";
 import { allResources, resourcePath, dashboardSession, dashboardStore, mayDo } from "@/lib/dashboard";
 import { actionsOf, formOf, publishFieldOf } from "@/lib/extras";
@@ -106,7 +106,8 @@ export async function exportRecordsAction(resourceName: string, query: string): 
   if (denied) return denied;
 
   const store = dashboardStore(resourceName);
-  const fields = storedFields(store.resource).filter(([, def]) => def.kind !== "file");
+  // Files are keys, which mean nothing in a spreadsheet: a gallery's list of them neither.
+  const fields = storedFields(store.resource).filter(([, def]) => def.kind !== "file" && !filesOf(def));
   const columns = [["id", "Id"] as const, ...fields.map(([key, def]) => [key, def.label] as const), ["createdAt", "Created"] as const];
 
   const rows: Record<string, unknown>[] = [];
@@ -258,7 +259,7 @@ export async function createUploadUrlAction(
   if (!inAdmin || !target || !((await mayDo(target, "create")) || (await mayDo(target, "update")))) return forbidden("Your role can't add files to this record.");
 
   const field = dashboardStore(resourceName).resource.fields[fieldKey];
-  if (!field || field.kind !== "file") return { ok: false, status: 404, error: "That isn't a file field." };
+  if (!field || (field.kind !== "file" && !filesOf(field))) return { ok: false, status: 404, error: "That isn't a file field." };
 
   const query = new URLSearchParams({ name: file.name });
   return { ok: true, data: { url: `/api/_nevela/uploads/${encodeURIComponent(resourceName)}/${encodeURIComponent(fieldKey)}?${query}`, key: "" } };
