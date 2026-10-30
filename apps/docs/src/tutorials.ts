@@ -2,6 +2,7 @@ import type { ImageMetadata } from "astro";
 import contactsCover from "./assets/tutorials/contacts-cover.webp";
 import shopCover from "./assets/tutorials/online-shop-cover.webp";
 import studentCover from "./assets/tutorials/student-app-cover.webp";
+import billingCover from "./assets/tutorials/billing-app-cover.webp";
 
 /**
  * The tutorials, for the tutorials page (src/content/docs/tutorials/index.mdx). Each one
@@ -72,6 +73,7 @@ export const tutorials: Tutorial[] = [
     level: "Intermediate",
     minutes: 25,
     topics: ["Phone numbers", "Conditional fields", "Galleries", "Seeding"],
+    cover: billingCover,
     icon: "receipt",
     out: true,
   },
