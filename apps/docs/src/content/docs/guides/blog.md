@@ -3,18 +3,20 @@ title: "The blog"
 description: "Every new app has a blog: posts written in the dashboard, /blog on the site, a sitemap and a feed. How it is put together, and how to give one to an app that has none."
 ---
 
-A new app has a blog. Posts are written under **Posts** in the dashboard, and read at `/blog` on the site. Three sample posts are there to start with.
+A new app has a blog. Posts are written under **Blog → Posts** in the dashboard, a heading of its own below the resources you make, and read at `/blog` on the site. Three sample posts are there to start with.
 
 Nothing about it is special. It is a resource like any other, using what every resource can have: [rich text](/concepts/field-types/#rich-text), an [optimised image](/guides/images/), a slug, a date it is published on and a [public side](/guides/public-site/). The pages that show it were written once into your app and are yours.
 
 `nevela new my-app --no-blog` creates an app without it.
+
+In an app created before 0.27, Posts sits among your own resources. To give it its heading, add `"group": "Blog"` to `apps/api/nevela/resources/post.json` and run `nevela generate`.
 
 ## What you get
 
 | | |
 |---|---|
 | The resource | `Post`: title, slug, excerpt, body, image and the date it is published. |
-| In the dashboard | Posts, with a Published / Draft / Scheduled badge, a filter on it, and Publish and Unpublish. |
+| In the dashboard | Posts, under **Blog** in the sidebar, with a Published / Draft / Scheduled badge, a filter on it, and Publish and Unpublish. |
 | `/blog` | Published posts, newest first, nine to a page. |
 | `/blog/<slug>` | One post, with a title, description and picture for search engines and shared links. |
 | `/blog/feed.xml` | An RSS feed of the latest fifty. |

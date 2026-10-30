@@ -36,16 +36,20 @@ export interface NavResource {
   views?: { id: string; name: string; query: string }[];
 }
 
-/** Resources in the order given, under their headings; ungrouped ones come first. */
+/**
+ * Resources in the order given, under their headings; ungrouped ones come first. The ones
+ * you made with `nevela resource` are ungrouped, so they lead, ahead of the Blog the app
+ * came with, whatever their names.
+ */
 function byGroup(resources: NavResource[]): [string, NavResource[]][] {
-  const groups = new Map<string, NavResource[]>();
+  const groups = new Map<string, NavResource[]>([["Resources", []]]);
   for (const resource of resources) {
     const heading = resource.group?.trim() || "Resources";
     const existing = groups.get(heading);
     if (existing) existing.push(resource);
     else groups.set(heading, [resource]);
   }
-  return [...groups];
+  return [...groups].filter(([, group]) => group.length > 0);
 }
 
 /**

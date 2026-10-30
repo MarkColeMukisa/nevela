@@ -19,7 +19,10 @@ export const metadata = { title: "Dashboard" };
 /** The first thing you see when you sign in: how much data there is, and what's left to set up. */
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { user } = await requireSession("/dashboard");
-  const resources = await navigableResources();
+  // Yours first, as the sidebar has them: the ones with no heading are the ones made with
+  // `nevela resource`, and the Blog the app came with follows them.
+  const all = await navigableResources();
+  const resources = [...all.filter((resource) => !resource.group), ...all.filter((resource) => resource.group)];
   // Resources exist, and this person's roles show them none: not the same as an empty app.
   const noneForYou = resources.length === 0 && allResources().length > 0;
   const turnedBack = (await searchParams).error === "forbidden";

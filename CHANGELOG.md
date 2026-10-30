@@ -14,6 +14,10 @@ _What to install first, and Nevela's own resources kept apart from yours_
 
 - **[Set up your computer](https://nevela-docs.vercel.app/start/setup/)**, a page before the Quickstart: what Nevela needs, how to check whether you have it, and what to install, in order, on macOS (Laravel Herd), Windows (Herd and Node.js) and Linux (php.new and Node.js), with what goes wrong most often and what to do. The Quickstart and every tutorial link to it, and `nevela new` points to its section for your system when PHP, Composer or Node.js is missing or too old, in place of php.net.
 
+### Changed
+
+- **The blog has a heading of its own in the dashboard's sidebar.** A new app's Posts is under **Blog**, and the resources you make with `nevela resource` are under **Resources**, which now always comes first, whatever the names in it. The Overview's cards and its list put yours first the same way. Before, Posts was sorted in among yours, read as if you had made it, and could take a card from one of them. In an app created before this, add `"group": "Blog"` to `apps/api/nevela/resources/post.json` and run `nevela generate`.
+
 ## [0.26.0] - 2026-10-30
 
 _A billing tutorial, galleries, conditional fields, local phone numbers_

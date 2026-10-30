@@ -219,6 +219,9 @@ jobs:
           for file in lib/blog.ts app/blog/page.tsx 'app/blog/[slug]/page.tsx' app/blog/feed.xml/route.ts app/sitemap.ts; do test -f "apps/web/$file"; done
           grep -q '"blog": "/blog"' apps/web/resources/index.ts
           grep -q '"publish": "publishedAt"' apps/web/resources/index.ts
+          # Under a heading of its own in the sidebar, apart from the resources made with `nevela resource`.
+          grep -q '"group": "Blog"' apps/api/nevela/resources/post.json
+          grep -q 'group: "Blog"' apps/web/resources/post.resource.ts
           # Its model lets through the posts whose time has come, not none.
           grep -q "whereNotNull('published_at')" apps/api/app/Models/Post.php
           # Run again, it writes nothing over what is there.
