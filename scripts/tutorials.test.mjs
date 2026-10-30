@@ -47,3 +47,16 @@ for (const name of readdirSync(examples, { withFileTypes: true }).filter((entry)
     }
   });
 }
+
+// A new app's blog starts with a post for each tutorial, from the package's copy of the list.
+test("the package's tutorials are the docs' tutorials", async () => {
+  const { MAX_COVER_BYTES, postsData, readTutorials, target } = await import('./tutorial-posts.mjs');
+  const shipped = JSON.parse(readFileSync(path.join(target, 'tutorials.json'), 'utf8'));
+  assert.deepEqual(shipped, postsData(readTutorials()), 'packages/laravel/resources/tutorials is behind apps/docs/src/tutorials.ts. Run: node scripts/tutorial-posts.mjs');
+  // A tutorial with no cover yet has a placeholder picture on its post.
+  for (const { cover } of shipped.filter((tutorial) => tutorial.cover)) {
+    const file = path.join(target, cover);
+    assert.ok(existsSync(file), `${cover} is missing. Run: node scripts/tutorial-posts.mjs`);
+    assert.ok(readFileSync(file).length <= MAX_COVER_BYTES, `${cover} is over ${MAX_COVER_BYTES / 1024} KB, and it goes in every new app.`);
+  }
+});

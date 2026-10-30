@@ -88,7 +88,7 @@ const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
     --no-install               Don't install the dashboard's dependencies.
     --no-user                  Don't create the starter admin account, or the sample users.
     --no-sample-users          Create the admin only, without the ten sample users.
-    --no-blog                  Leave out the blog: the Post resource, three sample posts and /blog.
+    --no-blog                  Leave out the blog: the Post resource, its sample posts and /blog.
     --fast                     Leave out PHPUnit, Pint and Laravel's other development packages.
                                About a third quicker. Add them later: cd apps/api && composer install
     --no-git                   Don't run git init.

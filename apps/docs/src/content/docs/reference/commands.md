@@ -58,7 +58,7 @@ Leave the name off and it asks for one. The [quickstart](/start/quickstart/) wal
 | `--fast` | Leave out PHPUnit, Pint and Laravel's other development packages. About a third quicker. |
 | `--no-user` | Don't create the starter account, or the sample users. |
 | `--no-sample-users` | Create the administrator only, without the ten sample users. |
-| `--no-blog` | Leave out [the blog](/guides/blog/): the Post resource, its three sample posts and `/blog`. |
+| `--no-blog` | Leave out [the blog](/guides/blog/): the Post resource, its sample posts and `/blog`. |
 | `--no-git` | Don't run `git init`. |
 | `--bundled-package` | Use the copy of `nevela/laravel` inside the installer instead of the release on Packagist. |
 | `-y`, `--yes` | Ask nothing. Only the app name is ever asked for, and only if you leave it off. |

@@ -214,7 +214,12 @@ jobs:
           php nevela version | grep -q "^Nevela [0-9]"
           # The blog, for an app created without one: what `nevela new` runs for itself otherwise.
           php nevela blog --sample | tee blog.log
-          grep -q 'Added three sample posts' blog.log
+          # A welcome, and a post for each tutorial the package ships, with its cover and a link to it.
+          grep -q "sample posts: a welcome, and one for each of Nevela's" blog.log
+          # The newest three on the home page, in the place the template keeps for them.
+          test -f apps/web/components/marketing/latest-posts.tsx
+          grep -q '<LatestPosts />' apps/web/app/page.tsx
+          grep -q 'from "@/components/marketing/latest-posts"' apps/web/app/page.tsx
           test -f apps/api/nevela/resources/post.json
           for file in lib/blog.ts app/blog/page.tsx 'app/blog/[slug]/page.tsx' app/blog/feed.xml/route.ts app/sitemap.ts; do test -f "apps/web/$file"; done
           grep -q '"blog": "/blog"' apps/web/resources/index.ts
@@ -504,9 +509,13 @@ jobs:
           grep -q '"field":"kind"' insights.json
           grep -q '"total":100' insights.json
           test "$(curl -s -g -o /dev/null -w '%{http_code}' "http://127.0.0.1:8000/api/products/_insights?unit=year" -H 'Accept: application/json' -H "Authorization: Bearer $editor")" = 400
-          # The blog as the site reads it, with no token: the three posts it came with,
-          curl -s -g "http://127.0.0.1:8000/api/public/posts?sort=-publishedAt" -H 'Accept: application/json' | tee posts.json | grep -q '"total":3'
+          # The blog as the site reads it, with no token: the posts it came with, a welcome and one per tutorial,
+          came=$((1 + $(node -e "console.log(require(process.argv[1]).length)" "$GITHUB_WORKSPACE/packages/laravel/resources/tutorials/tutorials.json")))
+          curl -s -g "http://127.0.0.1:8000/api/public/posts?sort=-publishedAt" -H 'Accept: application/json' | tee posts.json | grep -q "\"total\":$came"
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/public/posts/welcome-to-your-blog -H 'Accept: application/json')" = 200
+          # JSON writes a slash as backslash-slash, so the link is looked for by its host.
+          curl -s http://127.0.0.1:8000/api/public/posts/billing-app -H 'Accept: application/json' | tee tutorial-post.json | grep -q '"slug":"billing-app"'
+          grep -q 'nevela-docs.vercel.app' tutorial-post.json
           # and a post written now: a slug made from its title, and not on the site until it is published.
           curl -s -X POST http://127.0.0.1:8000/api/posts -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: Bearer $admin" -d '{"title":"Written in CI","body":"<p>Hello.</p>"}' | tee post.json | grep -q '"slug":"written-in-ci"'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/public/posts/written-in-ci -H 'Accept: application/json')" = 404

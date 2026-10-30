@@ -106,6 +106,9 @@ export default function Home() {
           </ul>
         </section>
 
+        {/* The newest blog posts: `nevela blog` puts them here. An app without a blog leaves this as it is. */}
+        {/* nevela:latest-posts */}
+
         {/* Testimonial */}
         <section className="border-t border-border bg-surface-muted/50 px-6 py-24">
           <figure className="mx-auto flex max-w-3xl flex-col items-center gap-8 text-center">
