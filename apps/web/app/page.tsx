@@ -6,6 +6,7 @@ import { TestimonialByline } from "@/components/testimonial-byline";
 import { jsonLd, siteUrl } from "@/lib/seo";
 import { site } from "@/lib/site";
 import { customers, docsUrl } from "@/lib/site-content";
+import { LatestPosts } from "@/resources/latest-posts";
 
 const ICONS = { zap: ZapIcon, "shield-check": ShieldCheckIcon, "layout-dashboard": LayoutDashboardIcon, users: UsersIcon, plug: PlugIcon, "credit-card": CreditCardIcon };
 
@@ -105,6 +106,9 @@ export default function Home() {
             })}
           </ul>
         </section>
+
+        {/* The newest blog posts. Nothing when the app has no blog, or no post is published. */}
+        <LatestPosts />
 
         {/* Testimonial */}
         <section className="border-t border-border bg-surface-muted/50 px-6 py-24">

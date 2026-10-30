@@ -164,6 +164,27 @@ final class BlogTest extends TestCase
         $this->assertStringContainsString('application/rss+xml', $files['app/blog/feed.xml/route.ts']);
     }
 
+    public function test_the_home_page_shows_the_newest_posts_only_where_there_is_a_blog(): void
+    {
+        // No blog: the home page's import is a component that shows nothing, and nothing else is written.
+        [$none] = BlogPages::homePage([Descriptor::fromSpec('Note', 'title:string')]);
+        $this->assertSame('resources/latest-posts.tsx', $none->path);
+        $this->assertSame('block', $none->mode);
+        $this->assertStringContainsString('export function LatestPosts() {', $none->contents);
+        $this->assertStringContainsString('return null;', $none->contents);
+        $this->assertCount(1, BlogPages::homePage([]));
+
+        // A blog: the import is the app's own component, written once, through the blog's library.
+        [$link, $component] = BlogPages::homePage([Descriptor::fromSpec('Note', 'title:string'), $this->post()]);
+        $this->assertSame('resources/latest-posts.tsx', $link->path);
+        $this->assertStringContainsString('export { LatestPosts } from "@/components/marketing/latest-posts";', $link->contents);
+        $this->assertSame('components/marketing/latest-posts.tsx', $component->path);
+        $this->assertSame('once', $component->mode);
+        $this->assertStringContainsString('await listPosts(1, 3)', $component->contents);
+        $this->assertStringContainsString('href={blog.path}', $component->contents);
+        $this->assertDoesNotMatchRegularExpression('/__[A-Z]+__/', $component->contents);
+    }
+
     public function test_the_pages_for_a_table_of_the_apps_own_read_it_by_its_own_names(): void
     {
         // The table the feature was asked for, adopted: integer ids, a body that is plain text

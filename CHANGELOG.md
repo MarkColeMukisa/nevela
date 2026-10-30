@@ -8,15 +8,17 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_What to install first, and Nevela's own resources kept apart from yours_
+_What to install first, and the tutorials in every new app's blog_
 
 ### Added
 
+- **The tutorials in every new app's blog**, as Grit's new apps have posts about Grit. The blog starts with a post for each of [Nevela's tutorials](https://nevela-docs.vercel.app/tutorials/), its cover, what it builds, how long it takes and a link to it, and a welcome post that says how the blog works, in place of the three about the blog. The home page shows the newest three under "From the blog", with a link to the rest. They are made in development only, as the sample posts were, and are the tutorials there were when that version of Nevela came out. An app made before this that has a blog gets the home page's section with `nevela upgrade`, where its home page is the template's; the posts are only for new apps. See [The posts it starts with](https://nevela-docs.vercel.app/guides/blog/#the-posts-it-starts-with).
 - **[Set up your computer](https://nevela-docs.vercel.app/start/setup/)**, a page before the Quickstart: what Nevela needs, how to check whether you have it, and what to install, in order, on macOS (Laravel Herd), Windows (Herd and Node.js) and Linux (php.new and Node.js), with what goes wrong most often and what to do. The Quickstart and every tutorial link to it, and `nevela new` points to its section for your system when PHP, Composer or Node.js is missing or too old, in place of php.net.
 
 ### Changed
 
 - **The blog has a heading of its own in the dashboard's sidebar.** A new app's Posts is under **Blog**, and the resources you make with `nevela resource` are under **Resources**, which now always comes first, whatever the names in it. The Overview's cards and its list put yours first the same way. Before, Posts was sorted in among yours, read as if you had made it, and could take a card from one of them. In an app created before this, add `"group": "Blog"` to `apps/api/nevela/resources/post.json` and run `nevela generate`.
+- **A blog post's picture in the list is 16:9, as the list shows it.** The `cover` profile's `thumb` was 600×300, and the cards cut a strip off each side of it; it is 640×360 now. Pictures uploaded before keep theirs.
 
 ## [0.26.0] - 2026-10-30
 

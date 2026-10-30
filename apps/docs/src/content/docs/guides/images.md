@@ -47,7 +47,7 @@ Name a profile on the field: `image:image(product)`. A field that names none use
 | `default` | fits 1600×1600 | `thumb` 400×400, cropped |
 | `product` | fits 1000×1000 | `thumb` 300×300, cropped · `card` fits 600×600 |
 | `avatar` | 400×400, cropped | `thumb` 80×80, cropped · original not kept |
-| `cover` | fits 2400×1200 | `thumb` 600×300, cropped |
+| `cover` | fits 2400×1200 | `thumb` 640×360, cropped (16:9, as the blog shows it) |
 
 A profile only says what differs from `default`:
 

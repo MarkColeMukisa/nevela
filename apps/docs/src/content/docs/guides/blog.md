@@ -3,7 +3,7 @@ title: "The blog"
 description: "Every new app has a blog: posts written in the dashboard, /blog on the site, a sitemap and a feed. How it is put together, and how to give one to an app that has none."
 ---
 
-A new app has a blog. Posts are written under **Blog → Posts** in the dashboard, a heading of its own below the resources you make, and read at `/blog` on the site. Three sample posts are there to start with.
+A new app has a blog. Posts are written under **Blog → Posts** in the dashboard, a heading of its own below the resources you make, and read at `/blog` on the site. It starts with a post for each of Nevela's tutorials and a welcome, and the newest three are on the home page too.
 
 Nothing about it is special. It is a resource like any other, using what every resource can have: [rich text](/concepts/field-types/#rich-text), an [optimised image](/guides/images/), a slug, a date it is published on and a [public side](/guides/public-site/). The pages that show it were written once into your app and are yours.
 
@@ -22,6 +22,13 @@ In an app created before 0.27, Posts sits among your own resources. To give it i
 | `/blog/feed.xml` | An RSS feed of the latest fifty. |
 | `/sitemap.xml` | The site's pages and every published post. |
 | The site's header | A Blog link. |
+| The home page | The newest three posts, under "From the blog", with a link to the rest. Nothing while none is published. |
+
+## The posts it starts with
+
+A new app's blog has a post for each of [Nevela's tutorials](/tutorials/), as Grit's new apps have posts about Grit: its cover, what it builds, how long it takes, and a link to it on these docs. A welcome post says where posts are written and how publishing works. They are the tutorials there were when your version of Nevela came out, and an app made with a later version has the ones written since.
+
+They are made only in development, never on a live site, and they are yours to delete: open **Posts** in the dashboard, select them and delete them. Your own posts then take their place on the blog and on the home page.
 
 ## Writing a post
 
@@ -56,6 +63,7 @@ The pages were written into your app, once, and are not touched again.
 | `apps/web/app/blog/[slug]/page.tsx` | One post. |
 | `apps/web/app/blog/feed.xml/route.ts` | The feed. |
 | `apps/web/app/sitemap.ts` | The sitemap. Add your own pages to it. |
+| `apps/web/components/marketing/latest-posts.tsx` | The newest three on the home page. The home page imports it through `resources/latest-posts.tsx`, which `nevela generate` keeps: it leads here when the app has a blog, and to nothing when it has none. |
 
 Set `NEXT_PUBLIC_SITE_URL` in the web app's environment to the address visitors use (`https://example.com`). The sitemap, the feed and the links a shared post carries are made from it.
 
@@ -98,7 +106,7 @@ Over the API, a list of a published resource can be narrowed by which of the thr
 nevela blog
 ```
 
-adds the Post resource, its table and the pages to an app created with `--no-blog` or before 0.9. `--sample` adds the three sample posts too; it is for development and is refused in production.
+adds the Post resource, its table and the pages to an app created with `--no-blog` or before 0.9. `--sample` adds the sample posts too, a welcome and one per tutorial; it is for development and is refused in production.
 
 ## An app whose posts are in a table of its own
 

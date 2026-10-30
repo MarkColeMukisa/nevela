@@ -117,6 +117,8 @@ Each tutorial has its steps in `examples/<name>/`: `steps.sh` runs its `nevela` 
 
 To run one yourself, from the top of a new app: `bash /path/to/nevela/examples/contacts/steps.sh`. With Laravel Herd in Git Bash, put `PHP=php.bat` in front.
 
+A new app's blog starts with a post for each tutorial in `apps/docs/src/tutorials.ts` that is out. The package carries a copy, `packages/laravel/resources/tutorials/`: the words, and each cover at 800 pixels wide and 60 KB at most. After adding or changing a tutorial or its cover, run `node scripts/tutorial-posts.mjs` (it needs PHP with GD; `PHP=php.bat` with Herd in Git Bash). `pnpm test:docs` fails while the copy is behind.
+
 ## Before opening a pull request
 
 - Add a line to `CHANGELOG.md` under "Unreleased" if a user would notice the change.
