@@ -11,6 +11,8 @@ This page takes you from an empty folder to a running dashboard with one resourc
 - Node.js 20 or newer
 - Nothing else. The database is SQLite by default, which needs no setup.
 
+On a new computer, or if you aren't sure you have them, start with [Set up your computer](/start/setup/): what to install on macOS, Windows and Linux, in order, and how to check each one.
+
 ## 1. Get the nevela command
 
 ```sh

@@ -98,7 +98,7 @@ const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
     -h, --help                 Show this.
     -v, --version              Show the version. Piped or captured, the number alone.
 
-  ${bold('Needs')}  PHP 8.3+, Composer, Node.js 20+
+  ${bold('Needs')}  PHP 8.3+, Composer, Node.js 20+. How to get them: ${DOCS}/start/setup/
   ${bold('Docs')}   ${DOCS}
 `;
 
@@ -261,18 +261,25 @@ function detectPackageManager(requested) {
   return available('pnpm') ? 'pnpm' : 'npm';
 }
 
+/** Where the docs say what to install on this computer's system, and in what order. */
+function setupGuide(platform = process.platform) {
+  const section = platform === 'darwin' ? 'macos' : platform === 'win32' ? 'windows' : 'linux';
+  return `${DOCS}/start/setup/#${section}`;
+}
+
 function checkRequirements() {
+  const guide = `How to get it on this computer: ${setupGuide()}`;
   const node = process.versions.node.split('.').map(Number);
-  if (node[0] < 20) fail(`Nevela needs Node.js 20 or newer. You have ${process.versions.node}.`);
+  if (node[0] < 20) fail(`Nevela needs Node.js 20 or newer. You have ${process.versions.node}. ${guide}`);
 
   const php = available('php', ['-v']);
-  if (!php) fail('PHP isn\'t installed, or isn\'t on your PATH. Nevela needs PHP 8.3 or newer: https://www.php.net/downloads');
+  if (!php) fail(`PHP isn't installed, or isn't on your PATH. Nevela needs PHP 8.3 or newer. If you have just installed it, open a new terminal. ${guide}`);
   const version = /PHP (\d+)\.(\d+)/.exec(php);
   if (!version || Number(version[1]) < 8 || (Number(version[1]) === 8 && Number(version[2]) < 3)) {
-    fail(`Nevela needs PHP 8.3 or newer. You have ${version ? `${version[1]}.${version[2]}` : 'a version I can\'t read'}.`);
+    fail(`Nevela needs PHP 8.3 or newer. You have ${version ? `${version[1]}.${version[2]}` : 'a version I can\'t read'}. ${guide}`);
   }
 
-  if (!available('composer')) fail('Composer isn\'t installed, or isn\'t on your PATH: https://getcomposer.org/download/');
+  if (!available('composer')) fail(`Composer isn't installed, or isn't on your PATH. If you have just installed it, open a new terminal. ${guide}`);
 }
 
 /** Sanctum's trait on the User model. `install:api` asks for this by hand; do it for them. */

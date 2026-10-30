@@ -11,7 +11,7 @@ next:
 
 You will build a contacts app: companies, the people at them, and where each person stands, from a lead to a customer. It takes about twenty minutes. Along the way you will use most of what you need for any Nevela app.
 
-You need what the [quickstart](/start/quickstart/#what-you-need) needs: PHP 8.3 or newer with Composer, and Node.js 20 or newer.
+You need PHP 8.3 or newer with Composer, and Node.js 20 or newer: [Set up your computer](/start/setup/) says how to get them, if you haven't yet.
 
 ## 1. Create the app
 

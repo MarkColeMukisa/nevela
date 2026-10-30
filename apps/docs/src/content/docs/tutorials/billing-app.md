@@ -11,7 +11,7 @@ In his GopherCon Africa talk, JB builds a client billing system on stage, from a
 
 You will build the same app with Nevela, in shillings, and then fill it with as many records as a real business has. It takes about twenty-five minutes.
 
-It goes faster if you have done [Contacts: your first app](/tutorials/contacts/), which explains `nevela resource` and the dashboard. You need what the [quickstart](/start/quickstart/#what-you-need) needs: PHP 8.3 or newer with Composer, and Node.js 20 or newer.
+It goes faster if you have done [Contacts: your first app](/tutorials/contacts/), which explains `nevela resource` and the dashboard. You need PHP 8.3 or newer with Composer, and Node.js 20 or newer: [Set up your computer](/start/setup/) says how to get them, if you haven't yet.
 
 ## 1. Create the app, in shillings
 

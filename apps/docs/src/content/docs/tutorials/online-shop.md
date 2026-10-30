@@ -11,7 +11,7 @@ next:
 
 You will build a small shop: categories, products with a picture and a price, orders made of the products in them, and a page anyone can open to see what is on sale. It takes about thirty-five minutes.
 
-It goes faster if you have done [Contacts: your first app](/tutorials/contacts/), which explains `nevela resource` and the dashboard. You need what the [quickstart](/start/quickstart/#what-you-need) needs: PHP 8.3 or newer with Composer, and Node.js 20 or newer.
+It goes faster if you have done [Contacts: your first app](/tutorials/contacts/), which explains `nevela resource` and the dashboard. You need PHP 8.3 or newer with Composer, and Node.js 20 or newer: [Set up your computer](/start/setup/) says how to get them, if you haven't yet.
 
 ## 1. Create the app, and its currency
 

@@ -9,7 +9,7 @@ next: false
 
 You will build a school's app: teachers, the courses they teach, students, and the enrolments that put a student in a course. Teachers sign in and see their own classes and nothing else. Students sign themselves up on the site, and their address is proved before they count. When one drops a course, the teacher hears of it. It takes about forty-five minutes.
 
-It builds on [Contacts](/tutorials/contacts/) and [An online shop](/tutorials/online-shop/): `nevela resource`, relations, a descriptor's `public` section and code of your own in a model are used here without being explained again. You need what the [quickstart](/start/quickstart/#what-you-need) needs: PHP 8.3 or newer with Composer, and Node.js 20 or newer.
+It builds on [Contacts](/tutorials/contacts/) and [An online shop](/tutorials/online-shop/): `nevela resource`, relations, a descriptor's `public` section and code of your own in a model are used here without being explained again. You need PHP 8.3 or newer with Composer, and Node.js 20 or newer: [Set up your computer](/start/setup/) says how to get them, if you haven't yet.
 
 ## 1. Create the app
 

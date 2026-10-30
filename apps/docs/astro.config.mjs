@@ -37,6 +37,7 @@ export default defineConfig({
           label: "Start",
           items: [
             { label: "What is Nevela?", slug: "start/introduction" },
+            { label: "Set up your computer", slug: "start/setup" },
             { label: "Quickstart", slug: "start/quickstart" },
             { label: "Project structure", slug: "start/project-structure" },
           ],
