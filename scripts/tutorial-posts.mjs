@@ -11,6 +11,7 @@
 // cover smaller needs PHP with GD: PHP=php.bat where php is a .bat, as with Herd in Git Bash.
 
 import { spawnSync } from 'node:child_process';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -49,9 +50,16 @@ export function readTutorials() {
     }));
 }
 
-/** What goes in tutorials.json: the words, and the name of each cover in the package. */
+/**
+ * What goes in tutorials.json: the words, the name of each cover in the package, and a
+ * fingerprint of the cover it was made from, so a cover changed under the same name shows.
+ */
 export function postsData(tutorials) {
-  return tutorials.map(({ cover, ...words }) => ({ ...words, cover: cover ? `${words.slug}.webp` : null }));
+  return tutorials.map(({ cover, ...words }) => ({
+    ...words,
+    cover: cover ? `${words.slug}.webp` : null,
+    coverFrom: cover ? crypto.createHash('sha1').update(fs.readFileSync(cover)).digest('hex').slice(0, 12) : null,
+  }));
 }
 
 function shrink(from, to) {
