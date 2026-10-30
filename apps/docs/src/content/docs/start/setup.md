@@ -23,7 +23,17 @@ composer -V
 node -v
 ```
 
-Each should print a version: `PHP 8.4.…`, `Composer version 2.…`, `v22.…`. If all three do, and PHP is 8.3 or newer and Node.js 20 or newer, you are ready: go to the [Quickstart](/start/quickstart/).
+Each should print a version: `PHP 8.4.…`, `Composer version 2.…`, `v22.…`. PHP needs to be 8.3 or newer, and Node.js 20 or newer.
+
+Then check that PHP can use SQLite, the database a new app starts with:
+
+```sh
+php -m
+```
+
+The list should have `pdo_sqlite` in it. Herd has it; on Linux, see [below](#linux) if it is missing.
+
+If all of that is there, you are ready: go to the [Quickstart](/start/quickstart/).
 
 If one says `command not found` (or, on Windows, `is not recognized`), install it below.
 
@@ -58,16 +68,11 @@ Two things that surprise people on Windows:
 2. **Install Node.js** 20 or newer, from [nodejs.org](https://nodejs.org), your package manager, or [nvm](https://github.com/nvm-sh/nvm).
 3. **Open a new terminal**, and check: `php -v`, `composer -V`, `node -v`.
 
-Nevela uses these PHP extensions: `pdo_sqlite` for the database, `gd` for optimising pictures, and `fileinfo` and `exif`. `php -m` lists the ones you have. Without `gd`, pictures are kept as they were uploaded.
+Nevela uses these PHP extensions: `pdo_sqlite` for the database, `gd` for optimising pictures, and `fileinfo` and `exif`. `php -m` lists the ones you have. Without `pdo_sqlite` a new app can't make its database: on Ubuntu and Debian, `sudo apt install php-sqlite3` adds it. Without `gd`, pictures are kept as they were uploaded.
 
 ## Then
 
-```sh
-npm install -g create-nevela
-nevela new my-app
-```
-
-The [Quickstart](/start/quickstart/) goes on from there. If you would rather not install the `nevela` command, `npx create-nevela my-app` creates an app without it.
+Go to the [Quickstart](/start/quickstart/). It installs the `nevela` command and creates your first app.
 
 ## If something goes wrong
 
