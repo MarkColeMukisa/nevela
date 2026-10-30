@@ -12,7 +12,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { copiedFrom } from "@/lib/copied";
-import { filesOf } from "@/lib/files";
+import { filesOf } from "@/lib/gallery";
 import { applies, conditionOf } from "@/lib/when";
 import { canSuggest, suggestValue } from "@/lib/suggest";
 import { cn } from "@/lib/utils";
@@ -259,7 +259,8 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
                       disabled={pending || copiedFrom(def) !== undefined}
                       relation={relations[key]}
                       suggest={canSuggest(def) ? () => suggestValue(key, def, String(values[resource.titleField] ?? "")) : undefined}
-                      onBusyChange={busyChange(key)}
+                      // By spread: an app keeping its own field-widget.tsx from before has no such prop.
+                      {...({ onBusyChange: busyChange(key) } as {})}
                     />
                   </div>
                   {def.helpText && <FieldDescription>{def.helpText}</FieldDescription>}

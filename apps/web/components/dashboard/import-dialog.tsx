@@ -14,7 +14,7 @@ import {
   type StoredField,
 } from "@flaredev/core";
 import { importRecordsAction } from "@/app/dashboard/import-actions";
-import { filesOf } from "@/lib/files";
+import { filesOf } from "@/lib/gallery";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {

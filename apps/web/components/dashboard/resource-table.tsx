@@ -4,7 +4,8 @@ import { ArrowDownIcon, ArrowUpIcon, ChevronLeftIcon, ChevronRightIcon, Chevrons
 import { clientResource, optionLabel, statusTone, storedFields, type Resource, type StoredField } from "@flaredev/core";
 import { isSortable } from "@/lib/resource/query";
 import { CELL_TEXT, cellText, defaultColumns } from "@/lib/columns";
-import { fileKeys, filesOf, privateFileUrl } from "@/lib/files";
+import { privateFileUrl } from "@/lib/files";
+import { fileKeys, filesOf } from "@/lib/gallery";
 import { displayValue } from "@/lib/format";
 import { isRich, richToText } from "@/lib/rich";
 import { Alert, AlertDescription } from "@/components/ui/alert";
