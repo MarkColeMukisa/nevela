@@ -18,7 +18,7 @@ nevela resource Customer --fields="name:string, email:email, company:string?" --
 nevela resource Product --fields="name:string, price:money" --icon=package --seed=10
 
 # 3. Invoices and their lines
-nevela resource Invoice --fields="number:auto(INV), customer:belongsTo(Customer), status:enum(draft|sent|paid)=draft, terms:enum(net15=Net 15|net30=Net 30)=net30, reminderSent:boolean=false" --items="InvoiceItem: product:belongsTo(Product), quantity:int, price:money(product.price)" --icon=receipt --seed=20
+nevela resource Invoice --fields="number:auto(INV), customer:belongsTo(Customer), status:enum(draft|sent|paid)=draft, terms:enum(net15=Net 15|net30=Net 30)=net30, reminderSent:boolean" --items="InvoiceItem: product:belongsTo(Product), quantity:int, price:money(product.price)" --icon=receipt --seed=20
 
 # 4. A due date, added afterwards
 nevela field Invoice dueDate:date
