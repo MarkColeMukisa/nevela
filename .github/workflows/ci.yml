@@ -116,6 +116,8 @@ jobs:
           php artisan key:generate
       - run: php artisan migrate --force
       - run: php artisan test
+      # Several processes making orders at once, which a test in one process can't show.
+      - run: php tests/numbers-at-once.php
 
   web:
     name: Web app (typecheck, build)

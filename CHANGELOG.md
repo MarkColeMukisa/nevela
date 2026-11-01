@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Fixed
+
+- **Records made at the same moment each get their own number.** A numbered field (`number:auto(INV)`) took one more than the highest in the table, so two records made together could be given the same one, and the second was refused with an error. With six processes making 150 orders at once, 57 were refused; now none are. The last number given is kept in a new table, `nevela_numbers`, whose row is locked while the next is worked out. A number removed for good isn't given again either. Run `nevela migrate` after upgrading; until then it works as it did. See [Numbered by Laravel](https://nevela-docs.vercel.app/concepts/field-types/#numbered-by-laravel).
+
 ### Added
 
 - **`nevela field`, to add a field to a resource that already exists**, as Grit's `grit g field` does. `nevela field Invoice dueDate:date` adds it to the descriptor, generates the resource again, writes the migration and runs it. It takes every field type, relations and defaults included, and several at once. Records already in the table keep what they have: a required field's column is empty for them, and the form asks for it the next time each is edited. A field that is wrong changes nothing. Before, this took an edit to the JSON, `nevela generate`, a migration written by hand and `nevela migrate`, and the [Contacts tutorial](https://nevela-docs.vercel.app/tutorials/contacts/) now does it in one line. See [`nevela field`](https://nevela-docs.vercel.app/reference/commands/#nevela-field). In an app already made, run `nevela update` for the `nevela` command to know it.
