@@ -53,9 +53,31 @@
     box-shadow: none !important;
   }
 
-  /* A table that scrolls on screen has nowhere to scroll to on paper. */
+  /*
+   * A table that scrolls on screen has nowhere to scroll to on paper. Its cells wrap
+   * instead, when they have to, so its last column stays on the page.
+   */
   #print-area [class*="overflow-"] {
     overflow: visible !important;
+  }
+
+  #print-area th,
+  #print-area td {
+    white-space: normal !important;
+  }
+
+  /* Many columns: smaller and closer together, so that words and amounts stay whole. */
+  #print-area table:has(th:nth-child(7)) {
+    font-size: 0.625rem;
+  }
+
+  #print-area table:has(th:nth-child(7)) :is(th, td) {
+    padding-right: 0.375rem;
+  }
+
+  /* So many that they still wouldn't fit: better a word broken than a column lost. */
+  #print-area table:has(th:nth-child(13)) :is(th, td) {
+    overflow-wrap: anywhere;
   }
 
   /* Headings on every page. The total once, at the end: on every page it reads as that page's. */
