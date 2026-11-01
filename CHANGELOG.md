@@ -16,6 +16,7 @@ The first line under a version, in italics, is the release in a few words. The d
 
 - **`:unique` after a type made nothing unique.** `email:email:unique` was accepted and the field wasn't unique, with no word about it, and `phone:tel:UG:unique` was refused. Both now mean what they say, as `email:email!` and `phone:tel(UG)!` do. A resource already made that way isn't changed: to make the field unique, add `"unique": true` to it in the descriptor and write a migration for the index.
 - **Anything else after a type is refused.** `rating:rating:10` or `email:email(work)` used to lose the part after the type, and now says so. Descriptors already written aren't affected.
+- **A unique `text` is refused, with what to use instead.** `body:text!` wrote a migration that fails on MySQL, which can't index a whole text column. `body:string!` is unique everywhere. A descriptor that already says so is still read.
 
 ## [0.28.1] - 2026-11-01
 
