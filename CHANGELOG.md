@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- **[A fifth tutorial: an invoice app](https://nevela-docs.vercel.app/tutorials/invoice-app/)**, the app of [Grit's invoice tutorial](https://gritframework.dev/blog/build-an-invoice-app-with-grit), in about fifteen minutes: customers, products, invoices made of lines, a status and terms with labels, a switch, a due date added afterwards with `nevela field`, numbers nobody shares, and an invoice ready to print. A table says what each of Grit's commands is here. CI builds it in a new app, as it does the others, and it is a post in each new app's blog.
+
 ### Fixed
 
 - **Records made at the same moment each get their own number.** A numbered field (`number:auto(INV)`) took one more than the highest in the table, so two records made together could be given the same one, and the second was refused with an error. With six processes making 150 orders at once, 57 were refused; now none are. The last number given is kept in a new table, `nevela_numbers`, whose row is locked while the next is worked out. A number removed for good isn't given again either. Run `nevela migrate` after upgrading; until then it works as it did. See [Numbered by Laravel](https://nevela-docs.vercel.app/concepts/field-types/#numbered-by-laravel).
