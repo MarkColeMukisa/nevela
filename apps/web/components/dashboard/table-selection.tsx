@@ -98,7 +98,7 @@ interface BarProps {
   canDelete: boolean;
   /** Rows as they're shown, for exporting what's selected without another round trip. */
   rows: Record<string, unknown>[];
-  columns: { key: string; label: string }[];
+  columns: { key: string; label: string; json?: boolean }[];
   /** The resource's address, and its trash when deleted records go there instead of going for good. */
   slug: string;
   trash?: TrashInfo;

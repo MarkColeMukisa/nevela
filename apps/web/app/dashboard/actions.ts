@@ -109,7 +109,7 @@ export async function exportRecordsAction(resourceName: string, query: string): 
   const store = dashboardStore(resourceName);
   // Files are keys, which mean nothing in a spreadsheet: a gallery's list of them neither.
   const fields = storedFields(store.resource).filter(([, def]) => def.kind !== "file" && !filesOf(def));
-  const columns = [["id", "Id"] as const, ...fields.map(([key, def]) => [key, def.label] as const), ["createdAt", "Created"] as const];
+  const columns = [["id", "Id", false] as const, ...fields.map(([key, def]) => [key, def.label, def.kind === "json"] as const), ["createdAt", "Created", false] as const];
 
   const rows: Record<string, unknown>[] = [];
   let truncated = false;
@@ -130,7 +130,7 @@ export async function exportRecordsAction(resourceName: string, query: string): 
     }
   }
 
-  const csv = toCsv(rows, columns.map(([key, label]) => ({ key, label })));
+  const csv = toCsv(rows, columns.map(([key, label, json]) => ({ key, label, json })));
   return { ok: true, data: { csv, rows: rows.length, truncated } };
 }
 

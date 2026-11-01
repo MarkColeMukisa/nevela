@@ -9,16 +9,18 @@
 export interface CsvColumn {
   key: string;
   label: string;
+  /** Written as JSON whatever it holds, so that it can be imported again. */
+  json?: boolean;
 }
 
 export function csvCell(value: unknown): string {
   if (value === null || value === undefined) return "";
-  const text = Array.isArray(value) && value.every((one) => typeof one !== "object") ? value.join("; ") : value instanceof Date ? value.toISOString() : typeof value === "object" ? JSON.stringify(value) : String(value);
+  const text = Array.isArray(value) ? value.join("; ") : value instanceof Date ? value.toISOString() : String(value);
   return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
 export function toCsv(rows: Record<string, unknown>[], columns: CsvColumn[]): string {
   const header = columns.map((column) => csvCell(column.label)).join(",");
-  const body = rows.map((row) => columns.map((column) => csvCell(row[column.key])).join(","));
+  const body = rows.map((row) => columns.map((column) => csvCell(column.json && row[column.key] != null ? JSON.stringify(row[column.key]) : row[column.key])).join(","));
   return [header, ...body].join("\r\n");
 }

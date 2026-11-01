@@ -13,6 +13,7 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/c
 import { Spinner } from "@/components/ui/spinner";
 import { copiedFrom } from "@/lib/copied";
 import { filesOf } from "@/lib/gallery";
+import { jsonProblem } from "@/lib/json-field";
 import { applies, conditionOf } from "@/lib/when";
 import { canSuggest, suggestValue } from "@/lib/suggest";
 import { cn } from "@/lib/utils";
@@ -134,8 +135,11 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
     const parsed = (mode === "create" ? validators.create : validators.update).safeParse(toInput());
     const found = parsed.success ? {} : issuesByField(parsed.error.issues);
     for (const [key, def] of fields) {
-      // Flare says "Invalid input", which doesn't say what to do about it.
-      if (def.kind === "json" && found[key] && String(values[key] ?? "").trim() !== "") found[key] = "This isn't valid JSON.";
+      if (def.kind === "json" && !filesOf(def)) {
+        const text = String(values[key] ?? "").trim();
+        const problem = text === "" ? null : jsonProblem(text);
+        if (problem) found[key] = problem;
+      }
       const when = conditionOf(def);
       if (!when) continue;
       if (!applies(def, values)) delete found[key];

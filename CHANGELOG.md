@@ -15,7 +15,6 @@ The first line under a version, in italics, is the release in a few words. The d
 ### Fixed
 
 - **An action's input is held to what a resource's is:** a `url` to `http` and `https`, and a `rating` to its range.
-- **A list or an object in a CSV export is written as JSON,** where it read `[object Object]`.
 
 ### Added
 
