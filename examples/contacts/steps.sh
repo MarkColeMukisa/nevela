@@ -24,11 +24,7 @@ nevela resource Company --fields="name:string!, website:url?, industry:enum(soft
 nevela resource Contact --fields="name:string, email:email!, phone:tel?, company:belongsTo(Company)?, status:enum(lead|customer|lost), notes:text?" --icon=contact --seed=200
 
 # 5. One more field
-merge apps/api/nevela/resources/contact.json fields "$here/files/field.json"
-nevela generate Contact
-sleep 1 # its migration has to come after the one that made the table
-cp "$here/files/add_last_contacted_on_to_contacts_table.php" "apps/api/database/migrations/$(date -u +%Y_%m_%d_%H%M%S)_add_last_contacted_on_to_contacts_table.php"
-nevela migrate
+nevela field Contact "lastContactedOn:date?"
 
 # 6. An action
 merge apps/api/nevela/resources/contact.json actions "$here/files/actions.json"

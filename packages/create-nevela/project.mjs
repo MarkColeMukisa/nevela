@@ -11,7 +11,7 @@ import { isNewer, satisfiesCaret } from './packagist.mjs';
 import { spawnCommand } from './shell.mjs';
 
 /** What `nevela <name>` runs: these go to `php artisan nevela:<name>`. */
-const NEVELA = ['upgrade', 'dev', 'status', 'version', 'resource', 'adopt', 'blog', 'generate', 'seed', 'user', 'trash', 'digest', 'disposable', 'publish', 'deploy:check', 'resource:remove'];
+const NEVELA = ['upgrade', 'dev', 'status', 'version', 'resource', 'field', 'adopt', 'blog', 'generate', 'seed', 'user', 'trash', 'digest', 'disposable', 'publish', 'deploy:check', 'resource:remove'];
 /** These go to the artisan command of the same name. */
 const ARTISAN = ['migrate', 'tinker', 'test', 'serve'];
 
@@ -34,9 +34,9 @@ export function findProject(from) {
 export function artisanArguments(name, args) {
   if (name === 'artisan') return args;
   if (ARTISAN.includes(name)) return [name, ...args];
-  // A new resource is no use until its table exists, so make it in the same step.
+  // A new resource or field is no use until its column exists, so make it in the same step.
   const rest = args.filter((arg) => arg !== '--no-migrate');
-  if (name === 'resource' && !args.includes('--no-migrate')) rest.push('--migrate');
+  if ((name === 'resource' || name === 'field') && !args.includes('--no-migrate')) rest.push('--migrate');
   return [`nevela:${name}`, ...rest];
 }
 

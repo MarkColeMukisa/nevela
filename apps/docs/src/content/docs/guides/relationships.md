@@ -120,4 +120,3 @@ The resource can't be another's [lines](/guides/line-items/) yet: saving an orde
 ## Not generated
 
 - A many-to-many as one field on either side (`courses:belongsToMany(Course)`). Make the link a resource, as [above](#many-to-many).
-- A relation added to a resource whose table already exists. The migration is written once, so add the column in a migration of your own: `$table->foreignUuid('category_id')->constrained('categories');`

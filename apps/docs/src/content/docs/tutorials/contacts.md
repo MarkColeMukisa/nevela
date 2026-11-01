@@ -72,71 +72,25 @@ Delete a contact and it goes to the **Trash**, where it waits 30 days and can be
 
 ## 5. One more field
 
-You want to know when you last spoke to someone. A new field is added to the resource's descriptor, the JSON file every part was generated from: `apps/api/nevela/resources/contact.json`. Its fields are listed under `"fields"`. Add the new one at the end of them, after `notes`, and put a comma after the brace that closes `notes`:
-
-```json ins={7} mark={6}
-    "fields": {
-        …
-        "notes": {
-            "kind": "text",
-            "required": false
-        },
-        "lastContactedOn": { "kind": "date", "required": false }
-    }
-}
-```
-
-Then generate again:
+You want to know when you last spoke to someone. Add a field to the resource:
 
 ```sh
-nevela generate Contact
+nevela field Contact "lastContactedOn:date?"
 ```
 
-The model, the validation, the API and the dashboard's description of a contact now have the field. The table doesn't yet: Nevela writes a table's migration once, because after that the table has your data in it. Make a migration for the column:
+The quotes are there because a shell reads `?` as something else. That one command adds the field to the resource's descriptor, the JSON file every part was generated from (`apps/api/nevela/resources/contact.json`), generates the model, the validation, the API and the dashboard's description of a contact again, and adds the column to the table. Your 200 contacts stay as they were, with the new field empty.
 
-```sh
-nevela artisan make:migration add_last_contacted_on_to_contacts_table
-```
-
-Open the file it made, in `apps/api/database/migrations/`, and make it this:
-
-```php
-<?php
-
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-
-return new class extends Migration
-{
-    public function up(): void
-    {
-        Schema::table('contacts', function (Blueprint $table) {
-            $table->date('last_contacted_on')->nullable();
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::table('contacts', function (Blueprint $table) {
-            $table->dropColumn('last_contacted_on');
-        });
-    }
-};
-```
-
-```sh
-nevela migrate
-```
-
-Reload: the form has a date picker for it, and the table a column. [Regeneration and your code](/concepts/regeneration/) says what is rewritten and what is yours.
+Reload: the form has a date picker for it, and the table a column. See [`nevela field`](/reference/commands/#nevela-field) for what else it does, and [Regeneration and your code](/concepts/regeneration/) for what is rewritten and what is yours.
 
 ## 6. A button that does something
 
 Turning a lead into a customer is something you will do often. Make it one click. Actions are a section of the descriptor of their own, `"actions"`, beside `"fields"` and not inside it. Add it after the brace that closes `"fields"`, with a comma after that brace. The end of the file is then:
 
-```json ins={3-11} mark={2}
-        "lastContactedOn": { "kind": "date", "required": false }
+```json ins={6-14} mark={5}
+        "lastContactedOn": {
+            "kind": "date",
+            "required": false
+        }
     },
     "actions": {
         "markCustomer": {
@@ -216,7 +170,7 @@ That is the first five leads by name, with how many there are in all. [REST API]
 ## What you built
 
 - Two resources, linked, each with a table, a form, a page, search, filters, import and export, and an API.
-- A field added after the fact, with its migration.
+- A field added after the fact, with one command.
 - An action, with its permission and its button.
 - Roles that decide who sees what.
 
