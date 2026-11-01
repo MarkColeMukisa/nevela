@@ -71,6 +71,12 @@ A resource gets this without being asked: the choices come from its descriptor. 
 
 Delete is not final. A deleted record goes to the **Trash** page, under Manage, where it can be restored for 30 days; the message that confirms a delete has an **Undo** on it. See [The trash](/guides/trash/).
 
+## Printing a record
+
+Every record's page has a **Print** button, so an invoice or an order can go on paper or into a PDF, with nothing to set up for each resource. It prints the app's name, the record's fields and its [lines](/guides/line-items/) with their total, in black on white whichever theme is on. The sidebar, the header, the buttons and what belongs to the record are left out, and a long table runs on from page to page with its headings on each.
+
+To put something else on paper, or leave something out, give it `print:hidden` or `hidden print:block`, Tailwind's classes for this, in `components/dashboard/record-detail.tsx`. The rest of it is in `components/dashboard/print-record.css`. Whatever is inside an element with the id `print-area` is what a page prints, so a page of your own can use the same stylesheet by importing it.
+
 ## Getting dashboard fixes later
 
 The dashboard's files are yours to change. `nevela upgrade` brings the ones you have not changed up to a newer version, and leaves the ones you changed alone. See [Upgrading an app](/guides/updating/#upgrading-an-app).
