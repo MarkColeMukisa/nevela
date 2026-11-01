@@ -152,6 +152,8 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
                       ))}
                     </span>
                   );
+              } else if (def.kind === "json" && value != null) {
+                content = <pre className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs">{JSON.stringify(value, null, 2)}</pre>;
               } else if (def.kind === "file" && typeof value === "string" && value) {
                 // Bigger here than in the table: this is the page for looking at one record.
                 content = <FileCell resourceName={resource.name} fieldKey={key} value={value} size={96} download={privateFileUrl(resource.slug, id, key)} />;
@@ -182,7 +184,7 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
                   );
               }
               return (
-                <div key={key} className={def.kind === "text" || filesOf(def) ? "flex flex-col gap-1 sm:col-span-2" : "flex flex-col gap-1"}>
+                <div key={key} className={def.kind === "text" || def.kind === "json" ? "flex flex-col gap-1 sm:col-span-2" : "flex flex-col gap-1"}>
                   <dt className="text-xs text-muted-foreground">{def.label}</dt>
                   <dd className="text-sm break-words">{content}</dd>
                 </div>

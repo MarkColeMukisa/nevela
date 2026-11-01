@@ -45,10 +45,13 @@ function exampleFor(key: string, def: StoredField & { label: string }): string {
       if (def.format === "domain") return "example.com";
       if (def.format === "country") return "UG";
       if (def.format === "color") return "#f2541d";
+      if ((def as { time?: boolean }).time) return "09:00";
       if (def.format === "slug") return "my-first-" + key.toLowerCase();
       return def.label;
     case "text":
       return "A longer note about this record.";
+    case "json":
+      return '{"plan":"pro"}';
     case "int":
       return "42";
     case "float":

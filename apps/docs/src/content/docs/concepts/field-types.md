@@ -35,6 +35,11 @@ Both can be combined: `code:string?!`.
 | `slug` | `string` | letters, numbers, dashes and underscores |
 | `slug(title)` | `string` | the same, made from the title when left empty (`post-title`, then `post-title-2`) |
 | `color` | `string` | a hex colour, kept as `#aabbcc`, so `#ABC` and `#aabbcc` are one colour |
+| `domain` | `string` (253) | a bare host in small letters: `https://Example.COM/about` is kept as `example.com`, and `münchen.de` as `xn--mnchen-3ya.de` |
+| `country` | `string` (2) | a two-letter code such as `UG`, picked from a searchable list |
+| `country(UG)` | `string` (2) | the same, and `UG` when a create leaves it out |
+| `time` | `string` (5) | a time of day, kept as `09:05` |
+| `json` | `json` | an object or a list, edited as JSON, and not searched, sorted or filtered by. Give what has a known shape fields of its own |
 | `int` | `integer` | a whole number |
 | `float` | `double` | a number |
 | `money` | `decimal(12, 2)` | a number |
@@ -245,6 +250,7 @@ The spellings those two use are understood, so you can type what you know:
 | `terms:select[net15="Net 15", net30="Net 30"]` | `terms:enum(net15=Net 15\|net30=Net 30)` |
 | `sent:toggle`, `sent:checkbox` | `sent:boolean` |
 | `stars:rating:10` | `stars:rating(10)` |
+| `country:country:UG` | `country:country(UG)` |
 | `notes:textarea` | `notes:text` |
 
 `image:image` takes a picture and optimises it as it arrives; `image:image(product)` names the profile it is optimised with. `manual:file(pdf|document)` takes other files and stores them as they are. Neither can be unique, sorted by or filtered on. See [Files and images](/guides/images/).

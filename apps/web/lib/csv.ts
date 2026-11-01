@@ -13,7 +13,7 @@ export interface CsvColumn {
 
 export function csvCell(value: unknown): string {
   if (value === null || value === undefined) return "";
-  const text = Array.isArray(value) ? value.join("; ") : value instanceof Date ? value.toISOString() : String(value);
+  const text = Array.isArray(value) && value.every((one) => typeof one !== "object") ? value.join("; ") : value instanceof Date ? value.toISOString() : typeof value === "object" ? JSON.stringify(value) : String(value);
   return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 

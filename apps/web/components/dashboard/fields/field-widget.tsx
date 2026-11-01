@@ -236,7 +236,14 @@ export function FieldWidget(props: WidgetProps) {
         />
       );
 
+    case "json":
+      return <Textarea {...common} className="font-mono text-xs" spellCheck={false} placeholder={field.placeholder ?? '{ "plan": "pro" }'} value={text} rows={8} onChange={(event) => onChange(event.target.value)} />;
+
     case "string":
+      // best_time:time. Flare has no word for it, so the generated descriptor says it in passing.
+      if ((field as { time?: boolean }).time) {
+        return <Input {...common} type="time" value={text} onChange={(event) => onChange(event.target.value)} />;
+      }
       switch (field.format) {
         case "tel":
           return (
