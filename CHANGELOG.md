@@ -8,6 +8,11 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Fixed
+
+- **A `boolean` left out is false.** `sent:boolean` was required over the API, in an import and in a bulk create, though the form always sends its switch: leaving it out answered 422, "The sent field is required." It now means no, as `=false` would say, and `null` is still refused. A `PUT` that leaves it out sets it to false, as a `PUT` does with any default, where before it was refused; a `PATCH` leaves it as it was. Run `nevela generate`, which `nevela upgrade` does for you.
+- **A default counts when fields [go together once only](https://nevela-docs.vercel.app/guides/relationships/#many-to-many).** With `--unique=room,tier` and `tier:enum(a|b)=a`, a record that left `tier` out wasn't checked against the set, so the second such record answered 409 without saying which fields clash. It now answers 422 with the usual message, and a bulk create says which row it is the same as.
+
 ## [0.28.0] - 2026-11-01
 
 _An invoice tutorial, nevela field, safe numbering and a Print button_
