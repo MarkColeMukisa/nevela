@@ -537,7 +537,7 @@ jobs:
           # Published, it is there, at the address it was given first.
           curl -s http://127.0.0.1:8000/api/public/posts/written-in-ci -H 'Accept: application/json' | grep -q '"title":"Renamed in CI"'
           # Rich text is cleaned on the way in, whoever sends it.
-          curl -s -X POST http://127.0.0.1:8000/api/articles -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: Bearer $admin" -d '{"title":"CI","body":"<p onclick=\"x()\">Hi<script>alert(1)</script></p>"}' | tee article.json | grep -q '"body":"<p>Hi<\\/p>"'
+          curl -s -X POST http://127.0.0.1:8000/api/articles -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: Bearer $admin" -d '{"title":"CI","reviewedOn":"2026-11-01","body":"<p onclick=\"x()\">Hi<script>alert(1)</script></p>"}' | tee article.json | grep -q '"body":"<p>Hi<\\/p>"'
           # The public side, with no token at all. Nothing is public that no descriptor opens,
           open() { curl -s -o public.json -w '%{http_code}' -X "$1" "http://127.0.0.1:8000/api/public/$2" -H 'Accept: application/json' -H 'Content-Type: application/json' ${3:+-d "$3"}; }
           test "$(open GET products)" = 404
