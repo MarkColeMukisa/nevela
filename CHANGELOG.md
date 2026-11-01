@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Fixed
+
+- **Seeding a table that already has records goes on from the last number given.** A second `nevela seed` gave a numbered field numbers such as `ORD-1180000006`, and every order made after that followed on from it. Now it is `ORD-0021`, and the next order `ORD-0022`. A table that already has such numbers goes on from the highest; `nevela seed --fresh` starts again.
+
 ## [0.28.0] - 2026-11-01
 
 _An invoice tutorial, nevela field, safe numbering and a Print button_

@@ -97,6 +97,29 @@ class NumbersAndCopiesTest extends TestCase
         $this->assertSame('ORD-0003', Order::create(['customer' => 'Linus', 'status' => 'pending'])->number);
     }
 
+    public function test_seeding_again_goes_on_from_the_last_number_given(): void
+    {
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 3])->assertSuccessful();
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 2])->assertSuccessful();
+
+        $this->assertSame(['ORD-0001', 'ORD-0002', 'ORD-0003', 'ORD-0004', 'ORD-0005'], Order::query()->orderBy('number')->pluck('number')->all());
+        $this->assertSame('ORD-0006', Order::create(['customer' => 'Ada', 'status' => 'pending'])->number);
+
+        // A number removed for good isn't given again by the seeder either.
+        Order::query()->where('number', 'ORD-0006')->first()->forceDelete();
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 1])->assertSuccessful();
+        $this->assertSame('ORD-0007', Order::query()->orderByDesc('number')->value('number'));
+    }
+
+    public function test_seeding_goes_on_from_a_number_typed_in(): void
+    {
+        Order::create(['customer' => 'Ada', 'status' => 'pending', 'number' => 'ORD-5000']);
+
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 1])->assertSuccessful();
+
+        $this->assertSame('ORD-5001', Order::query()->orderByDesc('number')->value('number'));
+    }
+
     public function test_an_app_upgraded_and_not_yet_migrated_still_numbers_its_records(): void
     {
         Schema::drop('nevela_numbers');

@@ -36,7 +36,7 @@ How the values are chosen:
 
 What to know before using it:
 
-- **Unique fields stay unique**, including when you run the command several times.
+- **Unique fields stay unique**, including when you run the command several times. A numbered field goes on from the last number given, and the others can start from a large number on a table that already has records.
 - **A unique field with few possible values limits the count.** A unique `enum(a|b|c)` can only fill three rows. The command refuses a larger `--count` and says how much room is left.
 - **It is all or nothing.** The delete from `--fresh` and all the inserts share one transaction. If anything fails, the table is left as it was.
 - **Rows are inserted directly.** That is what makes it fast. It also means the form request, the policy and model events do not run. Use it for development and demo data, not for importing real records.
