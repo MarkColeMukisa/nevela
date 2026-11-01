@@ -22,7 +22,7 @@ class ProductRequest extends ResourceRequest
             : Gate::allows('create', Product::class);
     }
 
-    // nevela:generated:start hash=48b9a310b4b8
+    // nevela:generated:start hash=baa767d410e1
     public function rules(): array
     {
         $product = $this->route('product');
@@ -35,7 +35,7 @@ class ProductRequest extends ResourceRequest
             'gallery' => ['nullable', 'list', 'max:20'],
             'gallery.*' => ['string', 'distinct', 'max:512', new \Nevela\Laravel\Rules\UploadKey('Product', 'gallery')],
             'categoryId' => ['required', 'uuid', Rule::exists('categories', 'id')],
-            'active' => ['required', 'boolean'],
+            'active' => ['sometimes', 'required', 'boolean'],
             'kind' => ['required', Rule::in(['stock', 'digital'])],
             'downloadUrl' => ['nullable', 'url', 'max:2048'],
             'notes' => ['nullable', 'string', 'max:65535'],
@@ -45,6 +45,12 @@ class ProductRequest extends ResourceRequest
     protected function columns(): array
     {
         return ['name' => 'name', 'sku' => 'sku', 'price' => 'price', 'image' => 'image', 'gallery' => 'gallery', 'categoryId' => 'category_id', 'active' => 'active', 'kind' => 'kind', 'downloadUrl' => 'download_url', 'notes' => 'notes'];
+    }
+
+    /** What a field is when a create leaves it out. */
+    protected function defaults(): array
+    {
+        return ['active' => false];
     }
 
     /** Fields whose values go together once only. Checked against the trash too, as the database's index is. */

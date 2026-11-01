@@ -44,7 +44,7 @@ Each command makes the table, the API and the dashboard's pages, and fills the t
 ## 3. Invoices and their lines
 
 ```sh
-nevela resource Invoice --fields="number:auto(INV), customer:belongsTo(Customer), status:enum(draft|sent|paid)=draft, terms:enum(net15=Net 15|net30=Net 30)=net30, reminderSent:boolean=false" --items="InvoiceItem: product:belongsTo(Product), quantity:int, price:money(product.price)" --icon=receipt --seed=20
+nevela resource Invoice --fields="number:auto(INV), customer:belongsTo(Customer), status:enum(draft|sent|paid)=draft, terms:enum(net15=Net 15|net30=Net 30)=net30, reminderSent:boolean" --items="InvoiceItem: product:belongsTo(Product), quantity:int, price:money(product.price)" --icon=receipt --seed=20
 ```
 
 That one command is most of the app. Field by field:
@@ -53,7 +53,7 @@ That one command is most of the app. Field by field:
 - `customer:belongsTo(Customer)` is a picker that searches your customers as you type. A customer's page lists their invoices.
 - `status:enum(draft|sent|paid)=draft` is a dropdown that starts at Draft. Each status gets a count above the table, a badge in it and a filter.
 - `terms:enum(net15=Net 15|net30=Net 30)=net30` is a dropdown too, with labels. `net30` is what is stored and what the API speaks; **Net 30** is what people read, in the form, the table, the filters and the export. A label is optional, and the status above doesn't need one.
-- `reminderSent:boolean=false` is a switch that starts off.
+- `reminderSent:boolean` is a switch that starts off.
 
 `--items` makes the lines: a second resource, InvoiceItem, edited as a table inside the invoice's form and saved with it, or not at all. `price:money(product.price)` copies a line's price from its product, so nobody types it, and a change to the product's price later leaves the invoices already written as they were.
 
@@ -104,7 +104,7 @@ Grit's commands, and Nevela's for the same thing. Most of Grit's spellings for a
 | `number:string:auto:INV` | `number:auto(INV)`, or Grit's |
 | `status:select[draft, sent, paid]` | `status:enum(draft\|sent\|paid)` |
 | `terms:select[net_15="Net 15", net_30="Net 30"]` | `terms:enum(net15=Net 15\|net30=Net 30)` |
-| `sent:toggle` | `reminderSent:boolean=false` |
+| `sent:toggle` | `reminderSent:boolean` |
 | `customer:belongs_to:Customer` | `customer:belongsTo(Customer)`, or Grit's |
 | `--items "InvoiceItem:description:string,qty:int,unit_rate:float"` | `--items="InvoiceItem: product:belongsTo(Product), quantity:int, price:money(product.price)"`. Grit's form works too, with `unit_rate:money`: amounts and a total need a money field |
 | `grit g field Invoice due_date:date` | `nevela field Invoice dueDate:date`; the column is `due_date` either way |
