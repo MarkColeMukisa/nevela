@@ -10,6 +10,14 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ### Added
 
+- **Four more field types.** `domain` keeps a bare host in small letters, so a pasted `https://Example.COM/about` is `example.com`, and an international name as punycode. `country` is a searchable list of 249 countries, with their flags where the system draws them (Windows shows the letters), kept as `UG`, and `country(UG)`, or Grit's `country:country:UG`, makes that its default. `time` is a time of day, kept as `09:05`. `json` is an object or a list, edited as JSON. Each has its input, its checks and its seed data. See [Types](https://nevela-docs.vercel.app/concepts/field-types/#types).
+
+### Fixed
+
+- **An action's input is held to what a resource's is:** a `url` to `http` and `https`, and a `rating` to its range.
+
+### Added
+
 - **A rating can be out of more than five:** `stars:rating(10)`, or Grit's `stars:rating:10`, gives ten stars, and anything from 2 to 10.
 
 ### Changed

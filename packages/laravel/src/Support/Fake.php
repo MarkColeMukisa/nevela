@@ -76,6 +76,8 @@ final class Fake
             $field->kind === 'float' && $field->format === 'rating' => $field->mostStars() * 10 - 9,
             $field->kind === 'date' => self::UNIQUE_DAYS,
             $field->format === 'color' => self::COLORS,
+            $field->format === 'country' => count(Countries::CODES),
+            $field->format === 'time' => 1440,
             default => null,
         };
     }
@@ -196,6 +198,7 @@ final class Fake
             // A unique field walks its range by number instead of drawing at random; capacity() says how far that goes.
             'enum' => $field->unique ? $field->options[$number % count($field->options)] : self::pick($field->options),
             'boolean' => $field->unique ? $number % 2 === 0 : mt_rand(1, 10) > 3,
+            'json' => json_encode(['source' => 'seed', 'number' => $number]),
             'int' => match (true) {
                 $field->format === 'percent' => $field->unique ? $number % 101 : mt_rand(0, 100),
                 $field->format === 'rating' => $field->unique ? 1 + $number % $field->mostStars() : mt_rand(1, $field->mostStars()),
@@ -249,6 +252,10 @@ final class Fake
             return Numbering::format($field->auto, $number);
         }
         $value = match (true) {
+            $field->format === 'domain' => strtolower(self::pick(self::NOUNS)).($field->unique ? "-{$number}" : '').'.example.com',
+            $field->format === 'country' => $field->unique ? Countries::CODES[$number % count(Countries::CODES)] : self::pick(Countries::CODES),
+            // Working hours, on the quarter, as times people set are.
+            $field->format === 'time' => $field->unique ? sprintf('%02d:%02d', intdiv($number % 1440, 60), $number % 60) : sprintf('%02d:%02d', mt_rand(8, 17), mt_rand(0, 3) * 15),
             // Always numbered: two people called Ada Okafor must not share an address.
             $field->format === 'email' || str_contains($name, 'email') => strtolower("{$first}.{$last}{$number}@example.com"),
             $field->format === 'url' || str_contains($name, 'website') || str_ends_with($name, 'url') => 'https://example.com/'.strtolower(self::pick(self::NOUNS)).($field->unique ? "-{$number}" : ''),
@@ -272,7 +279,7 @@ final class Fake
 
         // Emails, URLs, slugs, codes and phone numbers end in the number already, and a colour
         // is derived from it; everything else gets it appended.
-        if ($field->unique && $field->format !== 'color' && ! preg_match('/'.$number.'(@|$)/', $value)) {
+        if ($field->unique && ! in_array($field->format, ['color', 'domain', 'country', 'time'], true) && ! preg_match('/'.$number.'(@|$)/', $value)) {
             $value .= " {$number}";
         }
 

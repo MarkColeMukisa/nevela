@@ -257,6 +257,12 @@ jobs:
           # A rating out of ten: the stars it is given are typechecked and built below.
           php nevela field Article "score:rating(10)?"
           grep -Eq 'score: field\.int\(\{.*max: 10' apps/web/resources/article.resource.ts
+          # A domain, a country, a time and JSON, each with its input in the build below.
+          php nevela resource Place --fields="site:domain!, land:country:UG, opens:time?, extra:json?" --icon=map-pin --seed=5
+          grep -q 'site: field.domain' apps/web/resources/place.resource.ts
+          grep -q 'land: field.country' apps/web/resources/place.resource.ts
+          grep -q 'opens: field.string' apps/web/resources/place.resource.ts
+          grep -q 'extra: field.json' apps/web/resources/place.resource.ts
           # The same again is refused, and a wrong one leaves the resource as it was.
           if php nevela field Article reviewedOn:date; then echo "a field that exists was added again"; exit 1; fi
           before=$(cat apps/api/nevela/resources/article.json)

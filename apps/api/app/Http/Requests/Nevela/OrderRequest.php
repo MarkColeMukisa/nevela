@@ -22,7 +22,7 @@ class OrderRequest extends ResourceRequest
             : Gate::allows('create', Order::class);
     }
 
-    // nevela:generated:start hash=74ec0d94d4e5
+    // nevela:generated:start hash=af26b4b77b3c
     public function rules(): array
     {
         $order = $this->route('order');
@@ -49,7 +49,7 @@ class OrderRequest extends ResourceRequest
         return ['phone' => 'UG'];
     }
 
-    /** Fields kept in one form, by their format: an email in small letters, a colour as #aabbcc. Put in it before they are checked. */
+    /** Fields kept in one form, by their format: an email in small letters, a colour as #aabbcc, a domain without its https://. Put in it before they are checked. */
     protected function kept(): array
     {
         return ['email' => 'email'];

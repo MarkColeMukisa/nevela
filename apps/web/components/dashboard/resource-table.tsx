@@ -119,7 +119,7 @@ export async function ResourceTable({ resource, searchParams }: { resource: Reso
   const actions = await allowedActions(resource.name);
   const onRecords = actions.filter((action) => action.on === "record");
   const rowIds = rows.map((row) => String(row.id));
-  const exportColumns = [{ key: "id", label: "Id" }, ...fields.filter(([, def]) => def.kind !== "file" && !filesOf(def)).map(([key, def]) => ({ key, label: def.label }))];
+  const exportColumns = [{ key: "id", label: "Id" }, ...fields.filter(([, def]) => def.kind !== "file" && !filesOf(def)).map(([key, def]) => ({ key, label: def.label, json: def.kind === "json" }))];
 
   const sort = params.get("sort") ?? `${resource.defaultSort.direction === "desc" ? "-" : ""}${resource.defaultSort.field}`;
   const sortField = sort.replace(/^-/, "");
