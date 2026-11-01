@@ -18,6 +18,7 @@ import { site } from "@/lib/site";
 import { trashFor } from "@/lib/trash";
 import { LocalTime } from "./local-time";
 import { PageHeader } from "./page-header";
+import { PrintButton } from "./print-button";
 import { RecordActions } from "./record-actions";
 import type { RelationMeta } from "./fields/field-widget";
 
@@ -88,7 +89,8 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
   const title = titleDef && titleDef.kind !== "hasMany" ? String(formatValue(titleDef, record[resource.titleField]) || id) : id;
 
   return (
-    <>
+    <div id="print-area" className="contents">
+      <p className="hidden text-sm font-medium print:block">{site.name}</p>
       <PageHeader
         title={title}
         description={<>Created <LocalTime value={record.createdAt as string | number | Date} /></>}
@@ -98,24 +100,27 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
           { label: title },
         ]}
         actions={
-          <RecordActions
-            resource={forClient}
-            id={id}
-            record={record}
-            relations={relations}
-            listHref={resourcePath(resource)}
-            editHref={resourcePath(resource, id, "edit")}
-            canUpdate={permissions.update}
-            canDelete={permissions.delete}
-            overlayForms={site.dashboard.forms === "sheet" && !itemsOf(resource.name)}
-            trash={trash}
-            actions={(await allowedActions(resource.name)).filter((action) => action.on === "record" && actionApplies(action, record))}
-            published={publishFieldOf(resource.name) ? publishState(record[publishFieldOf(resource.name)!]) : undefined}
-          />
+          <div className="contents print:hidden">
+            <PrintButton />
+            <RecordActions
+              resource={forClient}
+              id={id}
+              record={record}
+              relations={relations}
+              listHref={resourcePath(resource)}
+              editHref={resourcePath(resource, id, "edit")}
+              canUpdate={permissions.update}
+              canDelete={permissions.delete}
+              overlayForms={site.dashboard.forms === "sheet" && !itemsOf(resource.name)}
+              trash={trash}
+              actions={(await allowedActions(resource.name)).filter((action) => action.on === "record" && actionApplies(action, record))}
+              published={publishFieldOf(resource.name) ? publishState(record[publishFieldOf(resource.name)!]) : undefined}
+            />
+          </div>
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] print:block">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Details</CardTitle>
@@ -186,7 +191,7 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
           </CardContent>
         </Card>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 print:hidden">
 
           {related.map(({ relation, target, rows, total, filterKey }) => (
             <Card key={relation.key}>
@@ -283,6 +288,6 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
           )}
         </Card>
       )}
-    </>
+    </div>
   );
 }

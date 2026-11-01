@@ -28,7 +28,7 @@ Grit's way of writing it works too: `--items="InvoiceItem:description:string,qty
 
 Each line is checked with OrderItem's own rules before anything is sent. A mistake is shown under its row, and nothing is saved until every line is right. The order and its lines are saved together, or not at all.
 
-**On the order's page**, its lines in a table.
+**On the order's page**, its lines in a table, and a [Print](/guides/web-app/#printing-a-record) button that puts the order and its lines on paper.
 
 **In the sidebar**, Orders and not Order items. Lines are reached through their order, and so are left off the dashboard's home page too. Their pages and their API are still there, for a report or a script.
 

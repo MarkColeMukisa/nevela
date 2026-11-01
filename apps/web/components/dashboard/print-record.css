@@ -1,0 +1,74 @@
+/*
+ * What a page with a #print-area prints: that, and nothing else.
+ *
+ * Whatever is around it is left out without being named, so a sidebar or header an app has
+ * changed goes the same way: each element holding the area becomes a plain block, and its
+ * other children aren't shown. The area then runs from page to page as ordinary text does.
+ * Printed in black on white, whichever theme it is on screen.
+ */
+@media print {
+  @page {
+    margin: 15mm;
+  }
+
+  /* A dark theme's colour scheme would otherwise fill the page's margins. */
+  :root:has(#print-area) {
+    color-scheme: light !important;
+  }
+
+  :has(#print-area) {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  :has(#print-area) > :not(#print-area, :has(#print-area)) {
+    display: none !important;
+  }
+
+  #print-area {
+    display: block !important;
+  }
+
+  #print-area > * + * {
+    margin-top: 1rem;
+  }
+
+  #print-area nav {
+    display: none !important;
+  }
+
+  #print-area,
+  #print-area * {
+    color: #000 !important;
+    background: transparent !important;
+    border-color: #d4d4d8 !important;
+    box-shadow: none !important;
+  }
+
+  /* A table that scrolls on screen has nowhere to scroll to on paper. */
+  #print-area [class*="overflow-"] {
+    overflow: visible !important;
+  }
+
+  /* Headings on every page. The total once, at the end: on every page it reads as that page's. */
+  #print-area thead {
+    display: table-header-group;
+  }
+
+  #print-area tfoot {
+    display: table-row-group;
+  }
+
+  #print-area tr,
+  #print-area img {
+    break-inside: avoid;
+  }
+}
