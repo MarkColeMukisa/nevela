@@ -8,8 +8,12 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
 use Nevela\Laravel\Access\Access;
+use Nevela\Laravel\Support\SchemaFacts;
+use RuntimeException;
 use Tests\TestCase;
 
 /**
@@ -60,6 +64,45 @@ class NumbersAndCopiesTest extends TestCase
         $order = Order::create(['customer' => 'Ada', 'status' => 'pending']);
         $order->delete();
 
+        $this->assertSame('ORD-0002', Order::create(['customer' => 'Grace', 'status' => 'pending'])->number);
+    }
+
+    public function test_a_number_removed_for_good_is_not_given_again(): void
+    {
+        Order::create(['customer' => 'Ada', 'status' => 'pending'])->forceDelete();
+
+        $this->assertSame('ORD-0002', Order::create(['customer' => 'Grace', 'status' => 'pending'])->number);
+    }
+
+    public function test_a_number_is_given_back_when_what_it_was_for_is_undone(): void
+    {
+        try {
+            DB::transaction(function () {
+                Order::create(['customer' => 'Ada', 'status' => 'pending']);
+                throw new RuntimeException('Something after it failed.');
+            });
+        } catch (RuntimeException) {
+        }
+
+        $this->assertSame('ORD-0001', Order::create(['customer' => 'Grace', 'status' => 'pending'])->number);
+    }
+
+    public function test_seeded_numbers_count_and_a_fresh_seed_starts_again(): void
+    {
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 5])->assertSuccessful();
+        $this->assertSame('ORD-0006', Order::create(['customer' => 'Grace', 'status' => 'pending'])->number);
+
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 2, '--fresh' => true])->assertSuccessful();
+
+        $this->assertSame('ORD-0003', Order::create(['customer' => 'Linus', 'status' => 'pending'])->number);
+    }
+
+    public function test_an_app_upgraded_and_not_yet_migrated_still_numbers_its_records(): void
+    {
+        Schema::drop('nevela_numbers');
+        SchemaFacts::forget();
+
+        $this->assertSame('ORD-0001', Order::create(['customer' => 'Ada', 'status' => 'pending'])->number);
         $this->assertSame('ORD-0002', Order::create(['customer' => 'Grace', 'status' => 'pending'])->number);
     }
 

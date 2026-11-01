@@ -81,9 +81,10 @@ nevela resource Invoice --fields="number:auto(INV), customer:string, total:money
 The first invoice is INV-0001, the next INV-0002, and on past INV-9999 to INV-10000. Grit's way of writing it, `number:string:auto:INV`, means the same, and in the descriptor it is `"auto": "INV"` on a string field. The prefix is letters and digits, up to ten, starting with a letter.
 
 - **Left empty, it is given the next one** when the record is made: in the form, over the API, by an import or by your own code (`Invoice::create([...])`). The form says so in the field. One typed in is kept.
-- **It is unique**, and a number in the trash isn't given again.
-- **The next is one more than the highest** with that prefix. Two records made at the same instant can be given the same number; the column is unique, so the second is refused rather than saved with it, and can be sent again.
-- Seeding gives the rows INV-0001, INV-0002 and so on, from where an empty table starts.
+- **It is unique**, and a number isn't given again, not one in the trash and not one removed for good.
+- **Records made at the same moment each get their own.** The last number given is kept in a table of Nevela's, `nevela_numbers`, and its row is locked while the next is worked out, so nothing is refused for having the same number as another. A number typed in counts too: type INV-5000, and the next one given is INV-5001.
+- **A number can be skipped.** A record that fails after it was given one doesn't give it back, unless the failure undoes a transaction it was part of, as saving a record with its [lines](/guides/line-items/) is.
+- Seeding gives the rows INV-0001, INV-0002 and so on, from where an empty table starts. `nevela seed --fresh` starts the numbers again.
 
 ## Copied from a related record
 
