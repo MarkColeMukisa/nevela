@@ -67,7 +67,7 @@ The pages were written into your app, once, and are not touched again.
 
 Set `NEXT_PUBLIC_SITE_URL` in the web app's environment to the address visitors use (`https://example.com`). The sitemap, the feed and the links a shared post carries are made from it.
 
-To add a field to posts, an author for example, add it to `nevela/resources/post.json`, list it under `public.read.fields` if the site should show it, run `nevela generate`, and read it in `lib/blog.ts`.
+To add a field to posts, an author for example, run `nevela field Post "author:string?"`, list it under `public.read.fields` in `nevela/resources/post.json` if the site should show it, run `nevela generate`, and read it in `lib/blog.ts`.
 
 ## How it is described
 

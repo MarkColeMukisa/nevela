@@ -76,6 +76,7 @@ const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
     nevela dev                 Run the API and the dashboard
     nevela status              Check versions, migrations, users and the dashboard
     nevela resource <Name> --fields="…" [--seed]
+    nevela field <Name> <field>  Add a field to a resource, and its column
     nevela adopt <table>       Make a resource of a table you already have
     nevela resource:remove <Name>  Take a resource out again: shows what it would do, --force does it
     nevela blog                Give the site a blog, if it was created without one

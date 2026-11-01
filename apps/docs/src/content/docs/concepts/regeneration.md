@@ -5,9 +5,19 @@ description: "How to change a resource, and how Nevela keeps the code you wrote.
 
 ## Changing a resource
 
-1. Edit the descriptor, for example add `"featured": { "kind": "boolean" }` to `fields`.
+**To add a field**, one command does all of it, the migration too:
+
+```sh
+nevela field Product featured:boolean
+```
+
+See [`nevela field`](/reference/commands/#nevela-field).
+
+**To change a field**, or anything else in a descriptor:
+
+1. Edit the descriptor, for example give a field a `"default"`.
 2. Run `nevela generate`.
-3. Write a migration for the database change. Nevela does not write one for you after the first: `nevela artisan make:migration add_featured_to_products`.
+3. If the database has to change as well, write a migration for it. Nevela writes one for a new table and a new field, and leaves changes to a column that has your data in it to you: `nevela artisan make:migration make_sku_longer_on_products`.
 4. Run `nevela migrate`.
 
 ### Your code is kept

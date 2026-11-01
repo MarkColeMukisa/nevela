@@ -1,6 +1,6 @@
 ---
 title: "Commands"
-description: "Every nevela command and option: new, update, resource, resource:remove, adopt, blog, generate, seed, user, upgrade, trash, disposable, publish, deploy:check, digest, dev, status and --version, the artisan commands it passes on, and what the scheduler runs."
+description: "Every nevela command and option: new, update, resource, field, resource:remove, adopt, blog, generate, seed, user, upgrade, trash, disposable, publish, deploy:check, digest, dev, status and --version, the artisan commands it passes on, and what the scheduler runs."
 ---
 
 Install the `nevela` command once, and everything is this short, in every shell:
@@ -24,6 +24,7 @@ Inside an app, from any folder in it:
 nevela dev                 # run the API and the dashboard
 nevela status              # check the app
 nevela resource Product --fields="name:string, price:money" --seed
+nevela field Product "weight:float?"   # add a field, and its column
 nevela adopt posts         # make a resource of a table you already have
 nevela resource:remove Product   # take a resource out again
 nevela blog                # give the site a blog, if it has none
@@ -112,6 +113,35 @@ nevela resource Product --fields="name:string, price:money, kind:enum(stock|digi
 It writes the descriptor to `nevela/resources/<name>.json`, generates the files listed in [What gets generated](/concepts/resources/#what-gets-generated), and creates the table, because a new resource is no use without it.
 
 If the resource already exists, the command stops and points you at `nevela generate`, so a typo cannot wipe out an existing descriptor.
+
+## nevela field
+
+Add a field to a resource that already exists: to its descriptor, to everything generated from it, and to its table.
+
+```sh
+nevela field Invoice dueDate:date
+```
+
+For several at once, give each its own argument, or use `--fields` as `nevela resource` does. Put quotes around a field with `?`, brackets or `|` in it, which shells read as something else:
+
+```sh
+nevela field Invoice "notes:text?" "terms:enum(net15|net30)=net30"
+nevela field Invoice --fields="notes:text?, terms:enum(net15|net30)=net30"
+```
+
+| Argument or option | Meaning |
+|---|---|
+| `name` | The resource. |
+| `fields`, `--fields=` | The new fields, written as for [`nevela resource`](#nevela-resource): any [field type](/concepts/field-types/), a relation, a default, or `if kind == recurring`. |
+| `--no-migrate` | Don't add the column yet. Run `nevela migrate` when you are ready. |
+
+It adds them to the end of `nevela/resources/<name>.json`, runs [`nevela generate`](#nevela-generate) for the resource, writes a migration such as `add_due_date_to_invoices_table`, and runs it. Rolling the migration back takes the column away again. If something about a field is wrong, the command says so and leaves everything as it was.
+
+**Records already in the table** can't have a value the field has only just asked for, so a required field's column is empty for them, and the form asks for it the next time each is edited. A field with a default gives them that default, and a `boolean` starts as false. A change that leaves the field out, such as a `PATCH` over the API or an [action](/guides/actions/), still works.
+
+**A column the table already has** gets no migration: the field is added to the descriptor, for a column an [adopted table](/guides/existing-app/) already had, or one you made with a migration of your own.
+
+A field that exists already is refused. To change one, edit the descriptor and run `nevela generate`, as [Regeneration and your code](/concepts/regeneration/) says. On a resource that [is public](/guides/public-site/), a new field stays private until you list it there.
 
 ## nevela resource:remove
 
@@ -485,6 +515,7 @@ With npm the first is `npm create nevela@latest my-app`, and the second is `npm 
 | `php nevela status` | `php artisan nevela:status` |
 | `php nevela --version` | `php artisan nevela:version`: the version of Nevela the app is on |
 | `php nevela resource …` | `php artisan nevela:resource … --migrate` |
+| `php nevela field …` | `php artisan nevela:field … --migrate` |
 | `php nevela adopt …` | `php artisan nevela:adopt …` |
 | `php nevela resource:remove …` | `php artisan nevela:resource:remove …` |
 | `php nevela blog` | `php artisan nevela:blog` |
@@ -500,7 +531,7 @@ With npm the first is `npm create nevela@latest my-app`, and the second is `npm 
 | `php nevela artisan <command>` | any other artisan command, for example `php nevela artisan route:list` |
 | `php nevela` | the list of commands |
 
-Run through artisan directly, `nevela:resource` does not create the table unless you add `--migrate`. The other forms add it for you.
+Run through artisan directly, `nevela:resource` does not create the table, and `nevela:field` does not add the column, unless you add `--migrate`. The other forms add it for you.
 
 The file is written by `nevela generate` and kept up to date by it. Add your own shortcuts below its generated block. It is created when the Laravel app sits at `<project>/apps/<name>`, which is how `nevela new` lays a project out. For another layout, set `root_path` in `config/nevela.php`.
 

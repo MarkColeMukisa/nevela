@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- **`nevela field`, to add a field to a resource that already exists**, as Grit's `grit g field` does. `nevela field Invoice dueDate:date` adds it to the descriptor, generates the resource again, writes the migration and runs it. It takes every field type, relations and defaults included, and several at once. Records already in the table keep what they have: a required field's column is empty for them, and the form asks for it the next time each is edited. A field that is wrong changes nothing. Before, this took an edit to the JSON, `nevela generate`, a migration written by hand and `nevela migrate`, and the [Contacts tutorial](https://nevela-docs.vercel.app/tutorials/contacts/) now does it in one line. See [`nevela field`](https://nevela-docs.vercel.app/reference/commands/#nevela-field). In an app already made, run `nevela update` for the `nevela` command to know it.
+
 ## [0.27.0] - 2026-10-30
 
 _What to install first, and the tutorials in every new app's blog_

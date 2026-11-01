@@ -80,9 +80,10 @@ There is no `routes/api.php`. Nevela registers its own routes under `/api`, from
 |---|---|
 | Add a scope, an accessor or a relationship of your own | In the model, outside the generated block |
 | Change who may do what | In the policy |
-| Change the table after the first migration | In a new migration |
+| Change a column after it is made | In a new migration |
 | Add an API endpoint | In `routes/nevela.php`, below the generated block |
 | Change a dashboard page's layout | In the page under `app/dashboard/<slug>/` |
-| Change a field's type or add a field | In the descriptor JSON, then run `nevela:generate` |
+| Add a field | `nevela field Product weight:float` |
+| Change a field's type | In the descriptor JSON, then run `nevela generate` |
 
 [Regeneration and your code](/concepts/regeneration/) explains what is and is not rewritten.
