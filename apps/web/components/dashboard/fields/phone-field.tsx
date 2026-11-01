@@ -16,6 +16,8 @@ interface Props {
   placeholder?: string;
   /** phone:tel(UG): its numbers are that country's, so the code is fixed rather than chosen. */
   country?: string;
+  /** NEVELA_PHONE_COUNTRY: the country a new number starts at, in place of the viewer's own. */
+  startsAt?: string;
 }
 
 /** The viewer's region from their browser language ("en-UG" → "UG"), else US. */
@@ -33,14 +35,14 @@ function localRegion(): string {
  * One held to a country, phone:tel(UG), keeps that code: another country's number is
  * sent as it is, and Laravel says it isn't one of them.
  */
-export function PhoneField({ id, name, label, value, onChange, invalid, disabled, placeholder, country: fixed }: Props) {
+export function PhoneField({ id, name, label, value, onChange, invalid, disabled, placeholder, country: fixed, startsAt }: Props) {
   const initial = splitPhone(value);
-  const [country, setCountry] = useState(fixed ?? initial.country ?? "US");
+  const [country, setCountry] = useState(fixed ?? initial.country ?? startsAt ?? "US");
   const [national, setNational] = useState(initial.national);
 
   // On a new record, start from the viewer's own country (after hydration, so server and client agree).
   useEffect(() => {
-    if (!fixed && !value && !initial.country) setCountry(localRegion());
+    if (!fixed && !startsAt && !value && !initial.country) setCountry(localRegion());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

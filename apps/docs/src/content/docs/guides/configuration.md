@@ -43,6 +43,7 @@ The file is yours, and an upgrade never changes it. A setting it doesn't have ta
 | `permissions` | `[]` | Permissions of your own, beside the ones every resource gets. See [Permissions of your own](/guides/policies/#permissions-of-your-own). |
 | `auth.issuer` | the app's name | The name an authenticator app and a passkey prompt show. |
 | `currency` | none, or `NEVELA_CURRENCY` | The currency money is shown in, as its ISO 4217 code: `UGX`. See [Money and its currency](/concepts/field-types/#money-and-its-currency). |
+| `phone_country` | none, or `NEVELA_PHONE_COUNTRY` | Where a phone number without a `+` is from. |
 | `per_page` | `25` | Records per page when a list request does not say. |
 | `max_per_page` | `100` | The most a list request may ask for. |
 | `bulk_max` | `500` | The most rows `POST /{slug}/_bulk` creates in one request. The dashboard's "Add several" grid stops at 500 rows itself; set this lower and Laravel refuses a larger grid, saying what the limit is. |
@@ -70,6 +71,7 @@ The file is yours, and an upgrade never changes it. A setting it doesn't have ta
 |---|---|
 | `NEVELA_WEB_PATH` | Overrides `web_path`. Use it when the web app is not at `../web`. |
 | `NEVELA_CURRENCY` | The currency money is shown in, as its ISO 4217 code: `UGX`. A money field can name its own. Run `nevela generate` after changing it. See [Money and its currency](/concepts/field-types/#money-and-its-currency). |
+| `NEVELA_PHONE_COUNTRY` | Where a phone number without a `+` is from, as a two-letter code: `UG`. See [Phone numbers](/concepts/field-types/#phone-numbers). Run `nevela generate` after changing it. |
 | `NEVELA_SESSION_ACCESS`, `NEVELA_SESSION_IDLE`, `NEVELA_SESSION_ABSOLUTE` | How long a sign-in lasts, in minutes: 15, 7 days and 30 days unless set. See [How long a sign-in lasts](/guides/authentication/#how-long-a-sign-in-lasts). |
 | `SOCIAL_AUTH_ENABLED` | `true` turns on signing in with [Google and GitHub](/guides/authentication/#google-and-github). Off unless set. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google's keys. Google is offered once both are set. |
