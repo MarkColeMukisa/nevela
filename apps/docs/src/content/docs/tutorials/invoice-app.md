@@ -106,7 +106,7 @@ Grit's commands, and Nevela's for the same thing. Most of Grit's spellings for a
 | `terms:select[net_15="Net 15", net_30="Net 30"]` | `terms:enum(net15=Net 15\|net30=Net 30)` |
 | `sent:toggle` | `reminderSent:boolean=false` |
 | `customer:belongs_to:Customer` | `customer:belongsTo(Customer)`, or Grit's |
-| `--items "InvoiceItem:description:string,qty:int,unit_rate:float"` | `--items="InvoiceItem: product:belongsTo(Product), quantity:int, price:money(product.price)"`, or Grit's form with its own fields |
+| `--items "InvoiceItem:description:string,qty:int,unit_rate:float"` | `--items="InvoiceItem: product:belongsTo(Product), quantity:int, price:money(product.price)"`. Grit's form works too, with `unit_rate:money`: amounts and a total need a money field |
 | `grit g field Invoice due_date:date` | `nevela field Invoice dueDate:date`; the column is `due_date` either way |
 | `grit migrate` | Nothing: `nevela resource` and `nevela field` run the migration |
 
