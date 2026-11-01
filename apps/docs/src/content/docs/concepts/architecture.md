@@ -97,7 +97,7 @@ Before each release an app made with the previous version from npm is upgraded t
 
 ## Roadmap
 
-1. **Tutorials.** Three apps built from scratch, simple to hard: contacts, an online shop with orders, and a student app. Each with its finished code in the repository, built by CI.
+1. **More tutorials.** Five are out, from [contacts](/tutorials/contacts/) to [an invoice app](/tutorials/invoice-app/). Each has its steps in the repo, and CI builds them in a new app, so a tutorial can't rot silently.
 2. **Many-to-many relations**, generated rather than made by hand as a link resource.
 3. **Files.** Deleting a public file along with its record, and uploads sent straight to S3 or R2.
 4. **Saved table views** and search across resources, with Laravel endpoints.

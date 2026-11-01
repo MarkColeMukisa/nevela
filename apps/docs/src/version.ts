@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "What to install first, and the tutorials in every new app's blog";
+export const RELEASE_HEADLINE = "An invoice tutorial, nevela field, safe numbering and a Print button";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "New to Nevela? Set up your computer says what to install first, on macOS, Windows and Linux, and every new app's blog now starts with the tutorials.",
-  href: "/start/setup/",
-  label: "Set up your computer",
+  text: "New tutorial: an invoice app, with lines, numbers nobody shares, a field added afterwards with nevela field, and a Print button on every record's page.",
+  href: "/tutorials/invoice-app/",
+  label: "Build an invoice app",
 };

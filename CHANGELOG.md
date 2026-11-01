@@ -8,21 +8,19 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-11-01
+
+_An invoice tutorial, nevela field, safe numbering and a Print button_
+
 ### Added
 
 - **[A fifth tutorial: an invoice app](https://nevela-docs.vercel.app/tutorials/invoice-app/)**, the app of [Grit's invoice tutorial](https://gritframework.dev/blog/build-an-invoice-app-with-grit), in about fifteen minutes: customers, products, invoices made of lines, a status and terms with labels, a switch, a due date added afterwards with `nevela field`, numbers nobody shares, and an invoice ready to print. A table says what each of Grit's commands is here. CI builds it in a new app, as it does the others, and it is a post in each new app's blog.
+- **`nevela field`, to add a field to a resource that already exists**, as Grit's `grit g field` does. `nevela field Invoice dueDate:date` adds it to the descriptor, generates the resource again, writes the migration and runs it. It takes every field type, relations and defaults included, and several at once. Records already in the table keep what they have: a required field's column is empty for them, and the form asks for it the next time each is edited. A field that is wrong changes nothing. Before, this took an edit to the JSON, `nevela generate`, a migration written by hand and `nevela migrate`, and the [Contacts tutorial](https://nevela-docs.vercel.app/tutorials/contacts/) now does it in one line. See [`nevela field`](https://nevela-docs.vercel.app/reference/commands/#nevela-field). In an app already made, run `nevela update` for the `nevela` command to know it.
+- **A Print button on every record's page**, as Grit's detail pages have, so an invoice or an order can go on paper or into a PDF with nothing to set up. It prints the app's name, the record's fields and its lines with their total, in black on white whichever theme is on, without the sidebar, the header or the buttons, and a long table runs on from page to page with its headings on each. An app that changed `components/dashboard/record-detail.tsx` keeps its version on upgrading, without the button; the new version is left in `apps/web/.nevela/incoming/` to compare. See [Printing a record](https://nevela-docs.vercel.app/guides/web-app/#printing-a-record).
 
 ### Fixed
 
 - **Records made at the same moment each get their own number.** A numbered field (`number:auto(INV)`) took one more than the highest in the table, so two records made together could be given the same one, and the second was refused with an error. With six processes making 150 orders at once, 57 were refused; now none are. The last number given is kept in a new table, `nevela_numbers`, whose row is locked while the next is worked out. A number removed for good isn't given again either. Run `nevela migrate` after upgrading; until then it works as it did. See [Numbered by Laravel](https://nevela-docs.vercel.app/concepts/field-types/#numbered-by-laravel).
-
-### Added
-
-- **A Print button on every record's page**, as Grit's detail pages have, so an invoice or an order can go on paper or into a PDF with nothing to set up. It prints the app's name, the record's fields and its lines with their total, in black on white whichever theme is on, without the sidebar, the header or the buttons, and a long table runs on from page to page with its headings on each. An app that changed `components/dashboard/record-detail.tsx` keeps its version on upgrading, without the button; the new version is left in `apps/web/.nevela/incoming/` to compare. See [Printing a record](https://nevela-docs.vercel.app/guides/web-app/#printing-a-record).
-
-### Added
-
-- **`nevela field`, to add a field to a resource that already exists**, as Grit's `grit g field` does. `nevela field Invoice dueDate:date` adds it to the descriptor, generates the resource again, writes the migration and runs it. It takes every field type, relations and defaults included, and several at once. Records already in the table keep what they have: a required field's column is empty for them, and the form asks for it the next time each is edited. A field that is wrong changes nothing. Before, this took an edit to the JSON, `nevela generate`, a migration written by hand and `nevela migrate`, and the [Contacts tutorial](https://nevela-docs.vercel.app/tutorials/contacts/) now does it in one line. See [`nevela field`](https://nevela-docs.vercel.app/reference/commands/#nevela-field). In an app already made, run `nevela update` for the `nevela` command to know it.
 
 ## [0.27.0] - 2026-10-30
 
@@ -714,7 +712,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.27.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.28.0...HEAD
+[0.28.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.24.0...v0.25.0
