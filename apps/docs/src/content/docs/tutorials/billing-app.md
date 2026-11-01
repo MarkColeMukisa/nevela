@@ -110,9 +110,9 @@ JB's commands, and Nevela's for the same field. Most of Grit's spellings are und
 | Grit | Nevela |
 |---|---|
 | `client:belongs_to[Client]` | `client:belongsTo(Client)`, or Grit's |
-| `kind:select[one_off, recurring]` | `kind:enum(one_off\|recurring)` |
-| `mobile="Mobile money"` | `mobile=Mobile money`, inside the brackets |
-| `cycle:select[…] if kind == recurring` | `cycle:enum(…) if kind == recurring`, the same condition |
+| `kind:select[one_off, recurring]` | `kind:enum(one_off\|recurring)`, or Grit's |
+| `mobile="Mobile money"` | `mobile=Mobile money`, inside the brackets, or Grit's |
+| `cycle:select[…] if kind == recurring` | `cycle:enum(…) if kind == recurring`, or Grit's |
 | `phone:tel[UG]` | `phone:tel(UG)`, or Grit's |
 | `photo:file[image]` | `photo:image`, or Grit's |
 | `gallery:files[image]` | `gallery:files(image)`, or Grit's |
