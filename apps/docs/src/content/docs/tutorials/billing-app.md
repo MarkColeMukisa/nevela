@@ -4,7 +4,9 @@ description: "The client billing system from JB's GopherCon Africa talk, built w
 prev:
   link: /tutorials/
   label: All tutorials
-next: false
+next:
+  link: /tutorials/invoice-app/
+  label: An invoice app
 ---
 
 In his GopherCon Africa talk, JB builds a client billing system on stage, from an empty folder, with [Grit](https://gritframework.dev): clients, the projects done for them, the invoices sent and the payments that settle them. Four tables and three relationships, small enough to build in front of a room and real enough to show what every app runs into.
@@ -125,4 +127,4 @@ JB's commands, and Nevela's for the same field. Most of Grit's spellings are und
 - Numbered invoices, and payments with a method that reads as people say it, all in shillings.
 - A dashboard, an API and a database with 47,500 records in them, to see how the app holds up before a real business fills it.
 
-What a client owes is the sum of their invoices less their payments: an [action](/guides/actions/) that sends a client their statement is a good next thing to build. [Seeding](/guides/seeding/) has more on filling an app with records. Before the app goes online, read [Deploying](/guides/deploying/).
+What a client owes is the sum of their invoices less their payments: an [action](/guides/actions/) that sends a client their statement is a good next thing to build. To make an invoice of lines, numbered and ready to print, go on to [An invoice app](/tutorials/invoice-app/). [Seeding](/guides/seeding/) has more on filling an app with records. Before the app goes online, read [Deploying](/guides/deploying/).

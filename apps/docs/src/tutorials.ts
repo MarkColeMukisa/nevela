@@ -77,4 +77,15 @@ export const tutorials: Tutorial[] = [
     icon: "receipt",
     out: true,
   },
+  {
+    slug: "invoice-app",
+    title: "An invoice app",
+    summary:
+      "Customers, products and invoices made of lines: numbered invoices that are safe when several people are working, a status and terms that read as people say them, a due date added afterwards with one command, and an invoice ready to print.",
+    level: "Intermediate",
+    minutes: 15,
+    topics: ["Line items", "Numbering", "Adding a field", "Printing"],
+    icon: "receipt",
+    out: true,
+  },
 ];
