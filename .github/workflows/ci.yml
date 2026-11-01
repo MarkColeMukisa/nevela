@@ -254,6 +254,9 @@ jobs:
           grep -q 'reviewedOn: field.date()' apps/web/resources/article.resource.ts
           ls apps/api/database/migrations | grep -q 'add_reviewed_on_and_section_to_articles_table'
           php nevela status | grep -q 'none pending'
+          # A rating out of ten: the stars it is given are typechecked and built below.
+          php nevela field Article "score:rating(10)?"
+          grep -Eq 'score: field\.int\(\{.*max: 10' apps/web/resources/article.resource.ts
           # The same again is refused, and a wrong one leaves the resource as it was.
           if php nevela field Article reviewedOn:date; then echo "a field that exists was added again"; exit 1; fi
           before=$(cat apps/api/nevela/resources/article.json)

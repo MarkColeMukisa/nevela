@@ -22,7 +22,7 @@ class ProductRequest extends ResourceRequest
             : Gate::allows('create', Product::class);
     }
 
-    // nevela:generated:start hash=baa767d410e1
+    // nevela:generated:start hash=bc4537344d3c
     public function rules(): array
     {
         $product = $this->route('product');
@@ -37,7 +37,7 @@ class ProductRequest extends ResourceRequest
             'categoryId' => ['required', 'uuid', Rule::exists('categories', 'id')],
             'active' => ['sometimes', 'required', 'boolean'],
             'kind' => ['required', Rule::in(['stock', 'digital'])],
-            'downloadUrl' => ['nullable', 'url', 'max:2048'],
+            'downloadUrl' => ['nullable', 'url:http,https', 'max:2048'],
             'notes' => ['nullable', 'string', 'max:65535'],
         ];
     }
