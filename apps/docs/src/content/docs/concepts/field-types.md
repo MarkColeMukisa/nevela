@@ -28,18 +28,19 @@ Both can be combined: `code:string?!`.
 | `string` | `string` | text, up to 255 characters |
 | `text` | `text` | text, up to 65,535 characters |
 | `richtext` | `longText` | formatted text, kept as cleaned HTML, up to 65,535 characters |
-| `email` | `string` | a valid email address |
-| `url` | `string` (2,048) | a valid URL |
+| `email` | `string` | a valid email address, kept in small letters, so `Ada@Example.COM` and `ada@example.com` are one address |
+| `url` | `string` (2,048) | a valid `http` or `https` address |
 | `tel` | `string` | a phone number of any country, up to 32 characters |
 | `tel(UG)` | `string` | [a number of that country](#phone-numbers), kept as `+256772123456` |
 | `slug` | `string` | letters, numbers, dashes and underscores |
 | `slug(title)` | `string` | the same, made from the title when left empty (`post-title`, then `post-title-2`) |
-| `color` | `string` | a hex colour such as `#1a2b3c` |
+| `color` | `string` | a hex colour, kept as `#aabbcc`, so `#ABC` and `#aabbcc` are one colour |
 | `int` | `integer` | a whole number |
 | `float` | `double` | a number |
 | `money` | `decimal(12, 2)` | a number |
 | `percent` | `double` | a number from 0 to 100 |
-| `rating` | `integer` | a whole number |
+| `rating` | `integer` | a whole number from 1 to 5, as stars |
+| `rating(10)` | `integer` | the same, from 1 to the number you give, up to 10 |
 | `boolean` | `boolean` | true or false |
 | `date` | `date` | a date as `YYYY-MM-DD` |
 | `datetime` | `dateTime` | a date and time |
@@ -243,6 +244,7 @@ The spellings those two use are understood, so you can type what you know:
 | `status:select[draft, sent]`, `size:radio[s, m]` | `status:enum(draft\|sent)`, `size:enum(s\|m)` |
 | `terms:select[net15="Net 15", net30="Net 30"]` | `terms:enum(net15=Net 15\|net30=Net 30)` |
 | `sent:toggle`, `sent:checkbox` | `sent:boolean` |
+| `stars:rating:10` | `stars:rating(10)` |
 | `notes:textarea` | `notes:text` |
 
 `image:image` takes a picture and optimises it as it arrives; `image:image(product)` names the profile it is optimised with. `manual:file(pdf|document)` takes other files and stores them as they are. Neither can be unique, sorted by or filtered on. See [Files and images](/guides/images/).

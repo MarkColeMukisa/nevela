@@ -10,6 +10,18 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ### Added
 
+- **A rating can be out of more than five:** `stars:rating(10)`, or Grit's `stars:rating:10`, gives ten stars, and anything from 2 to 10.
+
+### Changed
+
+- **Emails and colours are kept in one form.** `Ada@Example.COM` is saved as `ada@example.com`, so a unique email can't be taken twice by writing it differently. `#ABC` and `#ABCDEF` are saved as `#aabbcc` and `#abcdef`. Records already saved keep what they have until they are next saved, so a table can still hold an address in capitals beside the same one in small letters.
+- **A `url` field takes `http` and `https` only.** `ftp://` and the like were accepted, and shown as a link. **Breaking** for a field that holds other kinds on purpose: use a `string`.
+- **A `rating` is from 1 to its most.** 0 and 99 were accepted, and shown as no stars and too many. An optional one can still be empty. **Breaking** for a rating that holds 0 on purpose: a record that has one is refused the next time a change sends it.
+
+Run `nevela generate`, which `nevela upgrade` does for you.
+
+### Added
+
 - **More of Grit's spellings in `--fields`:** `select[…]` and `radio[…]` for an enum, quoted labels such as `net15="Net 15"`, `toggle` and `checkbox` for a boolean, and `textarea` for text. See [Coming from Grit or Flare](https://nevela-docs.vercel.app/concepts/field-types/#coming-from-grit-or-flare).
 
 ### Fixed
