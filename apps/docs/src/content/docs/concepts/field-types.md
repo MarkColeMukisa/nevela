@@ -184,7 +184,7 @@ In the descriptor:
 
 `phone:tel` takes a real phone number of any country. `phone:tel(UG)` takes Ugandan numbers only, and any country's code works there: `tel(GB)`, `tel(US)`. Each is checked against [libphonenumber](https://github.com/google/libphonenumber), Google's record of how numbers look in each country, by the dashboard and by Laravel, whichever way the number arrives: the form, the API, "Add several", a CSV import or a public form.
 
-In the dashboard, `tel` has a picker for the country's code, starting at the viewer's own, and `tel(UG)` keeps it fixed at +256.
+In the dashboard, `tel` has a picker for the country's code, starting at `NEVELA_PHONE_COUNTRY` if the app sets it and at the viewer's own otherwise, and `tel(UG)` keeps it fixed at +256.
 
 Every number is kept one way, whichever way it was written. So `0772 123456` and `+256772123456` are the same number to a unique field, and the seeder makes real numbers.
 
