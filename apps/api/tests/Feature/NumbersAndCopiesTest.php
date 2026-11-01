@@ -97,6 +97,51 @@ class NumbersAndCopiesTest extends TestCase
         $this->assertSame('ORD-0003', Order::create(['customer' => 'Linus', 'status' => 'pending'])->number);
     }
 
+    public function test_seeding_again_goes_on_from_the_last_number_given(): void
+    {
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 3])->assertSuccessful();
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 2])->assertSuccessful();
+
+        $this->assertSame(['ORD-0001', 'ORD-0002', 'ORD-0003', 'ORD-0004', 'ORD-0005'], Order::query()->orderBy('number')->pluck('number')->all());
+        $this->assertSame('ORD-0006', Order::create(['customer' => 'Ada', 'status' => 'pending'])->number);
+
+        // A number removed for good isn't given again by the seeder either.
+        Order::query()->where('number', 'ORD-0006')->first()->forceDelete();
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 1])->assertSuccessful();
+        $this->assertSame('ORD-0007', Order::query()->orderByDesc('number')->value('number'));
+    }
+
+    public function test_a_seeded_number_removed_for_good_is_not_given_again(): void
+    {
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 3])->assertSuccessful();
+        Order::query()->where('number', 'ORD-0003')->first()->forceDelete();
+
+        $this->assertSame('ORD-0004', Order::create(['customer' => 'Ada', 'status' => 'pending'])->number);
+
+        Order::query()->where('number', 'ORD-0004')->first()->forceDelete();
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 1])->assertSuccessful();
+        $this->assertSame('ORD-0005', Order::query()->orderByDesc('number')->value('number'));
+    }
+
+    public function test_something_typed_in_that_is_longer_and_not_a_number_does_not_hide_the_highest(): void
+    {
+        Order::create(['customer' => 'Ada', 'status' => 'pending', 'number' => 'ORD-5000']);
+        foreach (range(1, 120) as $n) {
+            Order::create(['customer' => 'Ada', 'status' => 'pending', 'number' => 'ORD-2026-'.str_pad((string) $n, 4, '0', STR_PAD_LEFT)]);
+        }
+
+        $this->assertSame('ORD-5001', Order::create(['customer' => 'Grace', 'status' => 'pending'])->number);
+    }
+
+    public function test_seeding_goes_on_from_a_number_typed_in(): void
+    {
+        Order::create(['customer' => 'Ada', 'status' => 'pending', 'number' => 'ORD-5000']);
+
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 1])->assertSuccessful();
+
+        $this->assertSame('ORD-5001', Order::query()->orderByDesc('number')->value('number'));
+    }
+
     public function test_an_app_upgraded_and_not_yet_migrated_still_numbers_its_records(): void
     {
         Schema::drop('nevela_numbers');

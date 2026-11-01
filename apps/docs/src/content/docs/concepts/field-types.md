@@ -84,7 +84,7 @@ The first invoice is INV-0001, the next INV-0002, and on past INV-9999 to INV-10
 - **It is unique**, and a number isn't given again, not one in the trash and not one removed for good.
 - **Records made at the same moment each get their own.** The last number given is kept in a table of Nevela's, `nevela_numbers`, and its row is locked while the next is worked out, so nothing is refused for having the same number as another. A number typed in counts too: type INV-5000, and the next one given is INV-5001.
 - **A number can be skipped.** A record that fails after it was given one doesn't give it back, unless the failure undoes a transaction it was part of, as saving a record with its [lines](/guides/line-items/) is.
-- Seeding gives the rows INV-0001, INV-0002 and so on, from where an empty table starts. `nevela seed --fresh` starts the numbers again.
+- Seeding goes on from the last number given, however many times you run it: INV-0001 to INV-0020, then INV-0021. `nevela seed --fresh` starts the numbers again.
 
 ## Copied from a related record
 

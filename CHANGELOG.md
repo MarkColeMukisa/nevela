@@ -10,6 +10,8 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ### Fixed
 
+- **Seeding a table that already has records goes on from the last number given.** A second `nevela seed` gave a numbered field numbers such as `ORD-1180000006`, and every order made after that followed on from it. Now it is `ORD-0021`, and the next order `ORD-0022`. A table that already has such numbers goes on from the highest; `nevela seed --fresh` starts again. The numbers a seed uses are spoken for as it starts, so none is given again after being removed for good, and a slug made from a number is made from that one.
+- **Something typed in that starts like a number no longer hides the highest.** Fifty or more records with a longer value such as `ORD-2026-0001` made the next number start again from `ORD-0001`.
 - **A `boolean` left out is false.** `sent:boolean` was required over the API, in an import and in a bulk create, though the form always sends its switch: leaving it out answered 422, "The sent field is required." It now means no, as `=false` would say, and `null` is still refused. A `PUT` that leaves it out sets it to false, as a `PUT` does with any default, where before it was refused; a `PATCH` leaves it as it was. Run `nevela generate`, which `nevela upgrade` does for you.
 - **A default counts when fields [go together once only](https://nevela-docs.vercel.app/guides/relationships/#many-to-many).** With `--unique=room,tier` and `tier:enum(a|b)=a`, a record that left `tier` out wasn't checked against the set, so the second such record answered 409 without saying which fields clash. It now answers 422 with the usual message, and a bulk create says which row it is the same as.
 

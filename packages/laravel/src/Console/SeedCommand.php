@@ -142,7 +142,6 @@ final class SeedCommand extends Command
             return self::FAILURE;
         }
         if ($fresh) {
-            Numbering::forget($resource->table);
             $this->components->info('Removed '.number_format($removed)." existing {$resource->pluralLabel}.");
         }
 
@@ -205,6 +204,18 @@ final class SeedCommand extends Command
     private function fill(Descriptor $resource, int $count, int $chunk, int $offset, bool $fresh, ProgressBar $bar, array $pools = []): int
     {
         $removed = $fresh ? DB::table($resource->table)->delete() : 0;
+        if ($fresh) {
+            Numbering::forget($resource->table);
+        }
+        // Numbered fields go on from the last number given, and take no part in the blocks
+        // the other unique fields are drawn from: INV-0021, not INV-1180000001. All of them
+        // are spoken for now, in this transaction, so none is given to anyone else or again.
+        $before = [];
+        foreach ($resource->fields as $field) {
+            if ($field->auto !== null) {
+                $before[$field->name] = Numbering::reserve($resource->table, $field->column(), $field->auto, $count);
+            }
+        }
         $now = time();
         // A list whose form proves addresses: a seeded record is confirmed as it is made, as one
         // added in the dashboard is. Nobody is there to ask.
@@ -224,9 +235,10 @@ final class SeedCommand extends Command
                 $created = date('Y-m-d H:i:s', $now - mt_rand(0, 60 * 86400));
                 // An integer id is the database's to give.
                 $id = $resource->idType === 'int' ? [] : ['id' => (string) Str::uuid7()];
-                $row = Fake::row($resource, $offset + $i + 1, $pools, config('nevela.currency'));
+                $numbers = array_map(fn (int $last) => $last + $i + 1, $before);
+                $row = Fake::row($resource, $offset + $i + 1, $pools, config('nevela.currency'), $numbers);
                 foreach ($resource->unique as $index => $set) {
-                    $row = $this->apart($resource, $set, $row, $taken[$index], $offset + $i + 1, $pools);
+                    $row = $this->apart($resource, $set, $row, $taken[$index], $offset + $i + 1, $pools, $numbers);
                 }
                 foreach ($resource->fields as $copy) {
                     $copies = $pools["{$copy->name}@"] ?? null;
@@ -254,7 +266,7 @@ final class SeedCommand extends Command
      * @param  array<string, list<string>>  $pools
      * @return array<string, mixed>
      */
-    private function apart(Descriptor $resource, array $set, array $row, ?array &$taken, int $number, array $pools): array
+    private function apart(Descriptor $resource, array $set, array $row, ?array &$taken, int $number, array $pools, array $numbers = []): array
     {
         $taken ??= [];
         $columns = array_map(fn (string $name) => $resource->fields[$name]->column(), $set);
@@ -269,7 +281,7 @@ final class SeedCommand extends Command
 
                 return $row;
             }
-            $again = Fake::row($resource, $number, $pools, config('nevela.currency'));
+            $again = Fake::row($resource, $number, $pools, config('nevela.currency'), $numbers);
             foreach ($set as $name) {
                 $column = $resource->fields[$name]->column();
                 $row[$column] = $again[$column];
