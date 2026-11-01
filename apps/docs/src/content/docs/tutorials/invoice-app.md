@@ -102,9 +102,9 @@ Grit's commands, and Nevela's for the same thing. Most of Grit's spellings for a
 | `grit new invoicer --triple --next` | `nevela new invoicer` |
 | `grit g resource Customer --fields "…"` | `nevela resource Customer --fields="…"` |
 | `number:string:auto:INV` | `number:auto(INV)`, or Grit's |
-| `status:select[draft, sent, paid]` | `status:enum(draft\|sent\|paid)` |
-| `terms:select[net_15="Net 15", net_30="Net 30"]` | `terms:enum(net15=Net 15\|net30=Net 30)` |
-| `sent:toggle` | `reminderSent:boolean` |
+| `status:select[draft, sent, paid]` | `status:enum(draft\|sent\|paid)`, or Grit's |
+| `terms:select[net_15="Net 15", net_30="Net 30"]` | `terms:enum(net15=Net 15\|net30=Net 30)`, or Grit's |
+| `sent:toggle` | `reminderSent:boolean`, or Grit's |
 | `customer:belongs_to:Customer` | `customer:belongsTo(Customer)`, or Grit's |
 | `--items "InvoiceItem:description:string,qty:int,unit_rate:float"` | `--items="InvoiceItem: product:belongsTo(Product), quantity:int, price:money(product.price)"`. Grit's form works too, with `unit_rate:money`: amounts and a total need a money field |
 | `grit g field Invoice due_date:date` | `nevela field Invoice dueDate:date`; the column is `due_date` either way |

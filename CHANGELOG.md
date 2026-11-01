@@ -8,6 +8,15 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- **More of Grit's spellings in `--fields`:** `select[…]` and `radio[…]` for an enum, quoted labels such as `net15="Net 15"`, `toggle` and `checkbox` for a boolean, and `textarea` for text. See [Coming from Grit or Flare](https://nevela-docs.vercel.app/concepts/field-types/#coming-from-grit-or-flare).
+
+### Fixed
+
+- **`:unique` after a type made nothing unique.** `email:email:unique` was accepted and the field wasn't unique, with no word about it, and `phone:tel:UG:unique` was refused. Both now mean what they say, as `email:email!` and `phone:tel(UG)!` do. A resource already made that way isn't changed: to make the field unique, add `"unique": true` to it in the descriptor and write a migration for the index.
+- **Anything else after a type is refused.** `rating:rating:10` or `email:email(work)` used to lose the part after the type, and now says so. Descriptors already written aren't affected.
+
 ## [0.28.1] - 2026-11-01
 
 _A boolean left out is false, and seeded numbers that follow on_

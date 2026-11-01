@@ -239,10 +239,17 @@ The spellings those two use are understood, so you can type what you know:
 | `category:belongs_to:Category` | `category:belongsTo(Category)` |
 | `status:enum:draft\|live` | `status:enum(draft\|live)` |
 | `phone:tel[UG]`, `phone:tel:UG` | `phone:tel(UG)` |
+| `email:email:unique`, `phone:tel:UG:unique` | `email:email!`, `phone:tel(UG)!` |
+| `status:select[draft, sent]`, `size:radio[s, m]` | `status:enum(draft\|sent)`, `size:enum(s\|m)` |
+| `terms:select[net15="Net 15", net30="Net 30"]` | `terms:enum(net15=Net 15\|net30=Net 30)` |
+| `sent:toggle`, `sent:checkbox` | `sent:boolean` |
+| `notes:textarea` | `notes:text` |
 
 `image:image` takes a picture and optimises it as it arrives; `image:image(product)` names the profile it is optimised with. `manual:file(pdf|document)` takes other files and stores them as they are. Neither can be unique, sorted by or filtered on. See [Files and images](/guides/images/).
 
 `integer`, `bool` and `decimal` are accepted as other spellings of `int`, `boolean` and `money`.
+
+Anything else after a type is refused and says so, rather than being left out: `email:email(work)` is a mistake, and a field that quietly isn't what you wrote is a worse one.
 
 A `string` or `text` can have a length of its own: `excerpt:string(500)`, `body:text(100000)`. The column, the validation and the dashboard's form all use it. A `text` longer than 65,535 is stored as `longText`.
 
