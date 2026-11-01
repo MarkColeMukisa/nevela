@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.28.1] - 2026-11-01
+
+_A boolean left out is false, and seeded numbers that follow on_
+
 ### Fixed
 
 - **Seeding a table that already has records goes on from the last number given.** A second `nevela seed` gave a numbered field numbers such as `ORD-1180000006`, and every order made after that followed on from it. Now it is `ORD-0021`, and the next order `ORD-0022`. A table that already has such numbers goes on from the highest; `nevela seed --fresh` starts again. The numbers a seed uses are spoken for as it starts, so none is given again after being removed for good, and a slug made from a number is made from that one.
@@ -719,7 +723,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.28.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.28.1...HEAD
+[0.28.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.28.0...v0.28.1
 [0.28.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.25.0...v0.26.0

@@ -13,7 +13,7 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "An invoice tutorial, nevela field, safe numbering and a Print button";
+export const RELEASE_HEADLINE = "A boolean left out is false, and seeded numbers that follow on";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
