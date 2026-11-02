@@ -90,4 +90,15 @@ export const tutorials: Tutorial[] = [
     icon: "receipt",
     out: true,
   },
+  {
+    slug: "crm",
+    title: "A CRM",
+    summary:
+      "Companies and a million contacts, with values checked and kept one way: phone numbers from any country, emails, domains, colours, times and ratings. A seeder that tops a table up, and carries on where it stopped.",
+    level: "Intermediate",
+    minutes: 20,
+    topics: ["Phone numbers", "Field types", "A million rows", "The API"],
+    icon: "contact",
+    out: true,
+  },
 ];

@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- **[A sixth tutorial: a CRM](https://nevela-docs.vercel.app/tutorials/crm/)**, the app of [Grit's CRM tutorial](https://gritframework.dev/blog/build-a-crm-with-grit): companies and a million contacts, with phone numbers from any country, emails, domains, colours, times, percentages and ratings kept one way, and a seed you can stop and run again. A table says what each of Grit's commands is here. CI builds it in a new app, with fewer contacts, and it is a post in each new app's blog.
+
 ### Changed
 
 - **`nevela seed --count` is how many the table should hold**, as in Grit, and not how many to add. It seeds what is missing, and run again it says so and does nothing. **Breaking**: a script that runs `nevela seed Product --count=100` twice to get 200 now gets 100.
