@@ -10,6 +10,15 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ### Added
 
+- **`NEVELA_PHONE_COUNTRY`** says where a phone number without a `+` is from: with `UG`, `0772 123456` in a `tel` field is `+256772123456`, and the dashboard's picker starts at Uganda. See [Phone numbers](https://nevela-docs.vercel.app/concepts/field-types/#phone-numbers).
+- **`tel(GB)`, `tel(US)` and every other country's code.** `tel(XX)` knew Uganda, Kenya, Tanzania and Rwanda; it now knows 245 countries.
+
+### Changed
+
+- **A `tel` field holds a real phone number.** It took anything up to 32 characters: `blue`, or `+256 12`. It is now checked against [libphonenumber](https://github.com/google/libphonenumber), as the dashboard's input already was, and kept as `+256772123456`, so two ways of writing a number are one number to a unique field. **Breaking**: a number without a `+` is refused unless `NEVELA_PHONE_COUNTRY` is set, and a record whose saved number isn't real is refused the next time a change sends it. Records keep what they have until then. Run `nevela generate`, which `nevela upgrade` does for you. This adds [`giggsey/libphonenumber-for-php-lite`](https://github.com/giggsey/libphonenumber-for-php-lite) to `nevela/laravel`, about 3 MB.
+
+### Added
+
 - **Four more field types.** `domain` keeps a bare host in small letters, so a pasted `https://Example.COM/about` is `example.com`, and an international name as punycode. `country` is a searchable list of 249 countries, with their flags where the system draws them (Windows shows the letters), kept as `UG`, and `country(UG)`, or Grit's `country:country:UG`, makes that its default. `time` is a time of day, kept as `09:05`. `json` is an object or a list, edited as JSON. Each has its input, its checks and its seed data. See [Types](https://nevela-docs.vercel.app/concepts/field-types/#types).
 
 ### Fixed

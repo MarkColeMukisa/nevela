@@ -259,6 +259,7 @@ export function FieldWidget(props: WidgetProps) {
               // phone:tel(UG): Flare has no word for it, so the generated descriptor says it in passing. By spread:
               // an app keeping its own phone-field.tsx from before has no such prop.
               {...({ country: (field as { country?: string }).country } as {})}
+              {...({ startsAt: (field as { startsAt?: string }).startsAt } as {})}
             />
           );
         case "country":

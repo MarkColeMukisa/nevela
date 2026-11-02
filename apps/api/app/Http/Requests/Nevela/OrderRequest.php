@@ -22,7 +22,7 @@ class OrderRequest extends ResourceRequest
             : Gate::allows('create', Order::class);
     }
 
-    // nevela:generated:start hash=af26b4b77b3c
+    // nevela:generated:start hash=9c7b75325c47
     public function rules(): array
     {
         $order = $this->route('order');
@@ -43,7 +43,7 @@ class OrderRequest extends ResourceRequest
         return ['number' => 'number', 'customer' => 'customer', 'email' => 'email', 'phone' => 'phone', 'status' => 'status', 'total' => 'total', 'notes' => 'notes'];
     }
 
-    /** Phone fields held to one country. A number is put in the form it is kept in, +256772123456, before it is checked. */
+    /** Phone fields, and the country each is held to, if any. A number is put in the form it is kept in, +256772123456, before it is checked. */
     protected function phones(): array
     {
         return ['phone' => 'UG'];

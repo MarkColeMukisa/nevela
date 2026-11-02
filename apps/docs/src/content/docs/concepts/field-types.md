@@ -30,7 +30,7 @@ Both can be combined: `code:string?!`.
 | `richtext` | `longText` | formatted text, kept as cleaned HTML, up to 65,535 characters |
 | `email` | `string` | a valid email address, kept in small letters, so `Ada@Example.COM` and `ada@example.com` are one address |
 | `url` | `string` (2,048) | a valid `http` or `https` address |
-| `tel` | `string` | a phone number of any country, up to 32 characters |
+| `tel` | `string` | [a real number of any country](#phone-numbers), kept as `+256772123456` |
 | `tel(UG)` | `string` | [a number of that country](#phone-numbers), kept as `+256772123456` |
 | `slug` | `string` | letters, numbers, dashes and underscores |
 | `slug(title)` | `string` | the same, made from the title when left empty (`post-title`, then `post-title-2`) |
@@ -182,9 +182,11 @@ In the descriptor:
 
 ## Phone numbers
 
-`phone:tel` takes a phone number of any country. The dashboard's input has a picker for the country's code, starting at the viewer's own, and sends the number with it: `+256772123456`.
+`phone:tel` takes a real phone number of any country. `phone:tel(UG)` takes Ugandan numbers only, and any country's code works there: `tel(GB)`, `tel(US)`. Each is checked against [libphonenumber](https://github.com/google/libphonenumber), Google's record of how numbers look in each country, by the dashboard and by Laravel, whichever way the number arrives: the form, the API, "Add several", a CSV import or a public form.
 
-`phone:tel(UG)` takes Ugandan numbers only. The code is fixed at +256 in the dashboard, and Laravel checks the number whichever way it arrives (the form, the API, "Add several", a CSV import, a public form or an action). It is read the ways people write one there and kept the one way:
+In the dashboard, `tel` has a picker for the country's code, starting at `NEVELA_PHONE_COUNTRY` if the app sets it and at the viewer's own otherwise, and `tel(UG)` keeps it fixed at +256.
+
+Every number is kept one way, whichever way it was written. So `0772 123456` and `+256772123456` are the same number to a unique field, and the seeder makes real numbers.
 
 | Sent | Kept |
 |---|---|
@@ -193,10 +195,17 @@ In the descriptor:
 | `+256 772 123 456` | `+256772123456` |
 | `(0414) 123-456` | `+256414123456` |
 | `+254 712 345678` | refused: "Enter a Ugandan number, such as 0772 123456 or +256 772 123456." |
+| `0772 123456 ext 2` | refused: an extension has nowhere to go in `+256772123456` |
 
-So `0772 123456` and `+256772123456` are the same number to a unique field too, and the seeder makes numbers that read as Ugandan ones.
+A `tel` field without a country needs to know where a number with no `+` is from. Say so once for the app, in `apps/api/.env`:
 
-The countries it knows are `UG`, `KE`, `TZ` and `RW`. In the descriptor:
+```ini
+NEVELA_PHONE_COUNTRY=UG
+```
+
+Then `0772 123456` is read as Ugandan, `+44 7400 123456` is still read as what it says, and the dashboard's picker starts at Uganda. Without it, a number needs its `+`. Run `nevela generate` after changing it.
+
+In the descriptor:
 
 ```json
 "phone": { "kind": "string", "format": "tel", "country": "UG" }
