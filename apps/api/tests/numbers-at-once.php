@@ -14,6 +14,12 @@ require getcwd().'/vendor/autoload.php';
 $app = require getcwd().'/bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 
+// Whatever goes wrong is a failure. Left uncaught, Laravel's handler shows it and CI sees success.
+set_exception_handler(function (Throwable $e): void {
+    fwrite(STDERR, get_class($e).': '.$e->getMessage().PHP_EOL);
+    exit(1);
+});
+
 // One of them: wait for the moment they all start at, make the orders, say how it went.
 if (($argv[1] ?? '') === 'make') {
     time_sleep_until((float) $argv[2]);

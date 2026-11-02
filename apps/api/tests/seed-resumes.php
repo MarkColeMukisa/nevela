@@ -13,7 +13,14 @@ require getcwd().'/vendor/autoload.php';
 $app = require getcwd().'/bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 
+// Whatever goes wrong is a failure. Left uncaught, Laravel's handler shows it and CI sees success.
+set_exception_handler(function (Throwable $e): void {
+    fwrite(STDERR, get_class($e).': '.$e->getMessage().PHP_EOL);
+    exit(1);
+});
+
 $before = Order::query()->withTrashed()->pluck('id')->all();
+$new = fn () => DB::table('orders')->when($before !== [], fn ($query) => $query->whereNotIn('id', $before));
 $listed = fn () => Order::query()->count();
 $target = $listed() + 40000;
 $command = [PHP_BINARY, 'artisan', 'nevela:seed', 'Order', "--count={$target}"];
@@ -36,7 +43,7 @@ echo 'killed at ', number_format($killedAt - $there), ' of 40,000', $stillRunnin
 
 passthru(implode(' ', array_map('escapeshellarg', $command)).' > '.(PHP_OS_FAMILY === 'Windows' ? 'NUL' : '/dev/null').' 2>&1', $status);
 $after = $listed();
-$numbers = DB::table('orders')->whereNotIn('id', $before ?: [''])->pluck('number');
+$numbers = $new()->pluck('number');
 $unique = $numbers->unique()->count();
 echo 'run again: exit ', $status, ', ', number_format($after - $there), ' of 40,000, ', number_format($unique), ' different numbers', PHP_EOL;
 
@@ -46,6 +53,6 @@ $still = $listed();
 echo 'run a third time: exit ', $again, ', ', number_format($still - $there), ' of 40,000', PHP_EOL;
 
 $kept = $killedAt - $there;
-DB::table('orders')->whereNotIn('id', $before ?: [''])->delete();
+$new()->delete();
 
 exit($stillRunning && $kept >= 5000 && $kept < 40000 && $status === 0 && $after === $target && $unique === $numbers->count() && $again === 0 && $still === $target ? 0 : 1);

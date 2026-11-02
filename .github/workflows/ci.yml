@@ -365,7 +365,7 @@ jobs:
           # Adopting changes nothing in the database. Migrating afterwards gives the table its trash.
           ls apps/api/database/migrations/*_add_trash_to_legacy_notes_table.php
           php nevela migrate
-          php nevela seed LegacyNote --count=5
+          php nevela seed LegacyNote --count=6
           php nevela status | tee status.log
           grep -q "none pending" status.log
           grep -q "Resource: Product" status.log
