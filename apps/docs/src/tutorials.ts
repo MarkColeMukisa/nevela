@@ -4,6 +4,7 @@ import shopCover from "./assets/tutorials/online-shop-cover.webp";
 import studentCover from "./assets/tutorials/student-app-cover.webp";
 import billingCover from "./assets/tutorials/billing-app-cover.webp";
 import invoiceCover from "./assets/tutorials/invoice-app-cover.webp";
+import crmCover from "./assets/tutorials/crm-cover.webp";
 
 /**
  * The tutorials, for the tutorials page (src/content/docs/tutorials/index.mdx). Each one
@@ -98,6 +99,7 @@ export const tutorials: Tutorial[] = [
     level: "Intermediate",
     minutes: 20,
     topics: ["Phone numbers", "Field types", "A million rows", "The API"],
+    cover: crmCover,
     icon: "contact",
     out: true,
   },
