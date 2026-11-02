@@ -11,7 +11,7 @@ A CRM is mostly ordinary data done right. A contact's phone number has to be rea
 
 You will build that CRM: companies, and a million contacts at them. [Grit's CRM tutorial](https://gritframework.dev/blog/build-a-crm-with-grit) builds the same app; this is the Nevela way, and [Coming from Grit](#coming-from-grit) maps one to the other. It takes about twenty minutes, and a quarter of an hour of that is the million contacts, which you can stop and start again.
 
-It goes faster if you have done [Contacts: your first app](/tutorials/contacts/), which explains `nevela resource` and the dashboard. You need PHP 8.3 or newer with Composer, and Node.js 20 or newer: [Set up your computer](/start/setup/) says how to get them.
+It goes faster if you have done [Contacts: your first app](/tutorials/contacts/), which explains `nevela resource` and the dashboard. You need PHP 8.3 or newer with Composer, and Node.js 20 or newer: [Set up your computer](/start/setup/) says how to get them. Then the `nevela` command, once: `npm install -g create-nevela`.
 
 ## 1. Create the app, in Uganda
 
@@ -32,7 +32,7 @@ A number that starts with its code, `+44 7400 123456`, is still read as what it 
 nevela dev
 ```
 
-Sign in at http://localhost:3000/sign-in as `admin@example.com` with the password `password`. Run the commands below in a second terminal, in the same folder.
+Sign in at the address it prints, http://localhost:3000/sign-in unless that port is taken, as `admin@example.com` with the password `password`. Run the commands below in a second terminal, in the same folder.
 
 ## 2. Companies
 
@@ -113,7 +113,7 @@ Open **Contacts**. The list fetches one page at a time, so the first page of a m
 
 ## 5. What Laravel keeps of what is sent
 
-The form isn't the only way in. Send a contact over the API the way a person would type one ([The API](/tutorials/contacts/#8-the-api) in Contacts shows how to get a token):
+The form isn't the only way in. Send a contact over the API the way a person would type one. [The API](/tutorials/contacts/#8-the-api) in Contacts shows how to get a token, and `GET /api/companies` lists the companies, for the `companyId` of one of them:
 
 ```http
 POST /api/contacts
@@ -145,7 +145,7 @@ A number too short to be one is refused, and the answer says what one is:
 }
 ```
 
-So is the same email in capitals, the same number written another way, and a rating of six. The checks are Laravel's, so they hold for every way in: the form, "Add several", a CSV import, an [action](/guides/actions/), or a client of your own.
+So is the same email in capitals, the same number written another way, and a rating of six. The checks are Laravel's, so they hold for every way a record is sent in: the form, "Add several", a CSV import, what an [action](/guides/actions/) asks for, or a client of your own. Code of your own that saves a record itself, such as what an action does with it, saves what it is given: put a number in its form there with `Phone::normalise()`.
 
 ## 6. Import, export and print
 
