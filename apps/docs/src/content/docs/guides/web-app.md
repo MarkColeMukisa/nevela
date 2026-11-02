@@ -71,6 +71,18 @@ A resource gets this without being asked: the choices come from its descriptor. 
 
 Delete is not final. A deleted record goes to the **Trash** page, under Manage, where it can be restored for 30 days; the message that confirms a delete has an **Undo** on it. See [The trash](/guides/trash/).
 
+## Two people editing the same record
+
+When someone saves a record you have open in the edit form, your save doesn't put back what they changed. The form sends the record's `updatedAt` with your changes, and Laravel [refuses them](/reference/api/#when-someone-else-saved-first) if anyone has saved since. The form then fits your changes and theirs together, field by field:
+
+- A field only they changed takes their value.
+- A field only you changed keeps yours.
+- If none of your fields clash with theirs, the form saves again by itself. The message that says it saved names their changes.
+- If you both changed a field, yours stays, with their value under it and a **Use theirs** link. Nothing is saved until you press Save again.
+- A record with [lines](/guides/line-items/) always waits for you, because the form can't merge lines. Saving keeps your lines.
+
+The check happens as Laravel receives the change. Two saves that arrive within a few milliseconds of each other can still both go through, as before.
+
 ## Printing a record
 
 Every record's page has a **Print** button, so an invoice or an order can go on paper or into a PDF, with nothing to set up for each resource. It prints the app's name, the record's fields and its [lines](/guides/line-items/) with their total, in black on white whichever theme is on. The sidebar, the header, the buttons and what belongs to the record are left out, and a long table runs on from page to page with its headings on each.

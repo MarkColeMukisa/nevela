@@ -8,6 +8,14 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- **Two people editing the same record no longer undo each other.** The edit form sends back the `updatedAt` it read. If someone else has saved since, Laravel refuses the change and sends the record as it is now. The form then fits the two together field by field. When none of your fields clash with theirs, it saves again by itself and says what they changed. When you both changed a field, yours stays with theirs beneath it and a **Use theirs** link, and nothing is saved until you save again. See [Two people editing the same record](https://nevela-docs.vercel.app/guides/web-app/#two-people-editing-the-same-record).
+
+### Changed
+
+- **A `PATCH` or `PUT` that sends `updatedAt` is now held to it.** Before, `updatedAt` was ignored. Now, if someone saved the record after that time, the answer is a 409 with `code: "CHANGED_SINCE_READ"` and the record as it is now, and nothing is changed. Leave `updatedAt` out to save regardless. A client that echoes back a whole record it read earlier will now see this 409 instead of overwriting newer changes. **Breaking** for such a client. See [When someone else saved first](https://nevela-docs.vercel.app/reference/api/#when-someone-else-saved-first).
+
 ## [0.29.0] - 2026-11-02
 
 _A CRM tutorial, four field types, real phone numbers, resumable seeds_

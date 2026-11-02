@@ -13,7 +13,7 @@ import { actionsOf, formOf, publishFieldOf } from "@/lib/extras";
 
 export type ActionResult<T = unknown> =
   | { ok: true; data: T }
-  | { ok: false; status: number; error: string; issues?: FieldIssue[]; field?: string };
+  | { ok: false; status: number; error: string; issues?: FieldIssue[]; field?: string; code?: string; current?: Record<string, unknown> };
 
 const forbidden = (message = "You don't have access to this."): ActionResult<never> => ({ ok: false, status: 403, error: message });
 

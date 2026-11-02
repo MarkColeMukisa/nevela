@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition, type FormEvent, type MouseEvent } from "react";
-import { createValidators, formValuesToInput, initialFormValues, issuesByField, slugify, storedFields, type ClientResource, type StoredField } from "@flaredev/core";
+import { createValidators, formValuesToInput, initialFormValues, issuesByField, slugify, storedFields, type ClientResource, type FormValues, type StoredField } from "@flaredev/core";
 import { toast } from "sonner";
 import { createRecordAction, updateRecordAction } from "@/app/dashboard/actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
+import { andList, mergeEdits, readable, savedSince } from "@/lib/conflict";
 import { copiedFrom } from "@/lib/copied";
 import { filesOf } from "@/lib/gallery";
 import { jsonProblem } from "@/lib/json-field";
@@ -70,6 +71,11 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
   const fields = useMemo(() => storedFields(resource), [resource]);
   const [step, setStep] = useState(0);
   const [values, setValues] = useState(() => initialFormValues(resource, record));
+  // The record as it was read, and its values: what is sent back as updatedAt, so a save
+  // can't put back what someone else changed meanwhile, and what a merge starts from.
+  const [base, setBase] = useState(() => ({ readAt: record?.updatedAt, values: initialFormValues(resource, record) }));
+  // Someone else saved first: what of theirs came into the form, and where you both changed a field.
+  const [conflict, setConflict] = useState<{ theirs: string[]; clashes: Record<string, string | boolean> } | null>(null);
   // A field that doesn't apply (a billing cycle, on a one-off project) isn't asked for.
   const shown = fields.filter(([, def]) => applies(def, values));
   const shownKeys = shown.map(([key]) => key).join(",");
@@ -116,16 +122,24 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
     if (errors[key]) setErrors(({ [key]: _removed, ...rest }) => rest);
   };
 
+  /** Their value for a field you both changed, taken instead of yours. */
+  const takeTheirs = (key: string) => {
+    const theirs = conflict?.clashes[key];
+    if (theirs === undefined) return;
+    setValue(key, theirs);
+    setConflict((current) => current && { ...current, clashes: Object.fromEntries(Object.entries(current.clashes).filter(([field]) => field !== key)) });
+  };
+
   function focusFirstError(fieldErrors: Record<string, string>, within: Entry[] = fields) {
     const first = within.find(([key]) => fieldErrors[key]);
     if (first) document.getElementById(`field-${first[0]}`)?.focus();
   }
 
   /** What is sent: the form's values, with the fields that don't apply empty. */
-  function toInput(): Record<string, unknown> {
-    const input = formValuesToInput(resource, values, mode) as Record<string, unknown>;
+  function toInput(from: FormValues = values): Record<string, unknown> {
+    const input = formValuesToInput(resource, from, mode) as Record<string, unknown>;
     for (const [key, def] of fields) {
-      if (!applies(def, values)) input[key] = null;
+      if (!applies(def, from)) input[key] = null;
     }
     return input;
   }
@@ -195,9 +209,36 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
     }
 
     startTransition(async () => {
-      const result = mode === "create" ? await createRecordAction(resource.name, input) : await updateRecordAction(resource.name, id!, input);
+      let result = mode === "create" ? await createRecordAction(resource.name, input) : await updateRecordAction(resource.name, id!, withReadAt(input, base.readAt));
+      // Someone else saved it first. Their changes come into the form beside yours; when
+      // none of them meets one of yours, that is the save you meant, and it is sent again.
+      // Once: saved again in between, it waits for you rather than going round.
+      let from = base.values;
+      let mine = values;
+      let kept: string[] = [];
+      for (let tries = 0; mode === "edit" && tries < 2; tries++) {
+        const current = savedSince(result);
+        if (!current) break;
+        const theirs = initialFormValues(resource, current);
+        const merged = mergeEdits(fields, from, mine, theirs);
+        from = theirs;
+        mine = merged.values;
+        kept = [...new Set([...kept, ...merged.theirs])];
+        setBase({ readAt: current.updatedAt, values: theirs });
+        setValues(mine);
+        if (Object.keys(merged.clashes).length > 0 || items || tries > 0) {
+          setConflict({ theirs: kept, clashes: merged.clashes });
+          setErrors({});
+          const clashing = steps.findIndex((entries) => entries.some(([key]) => key in merged.clashes));
+          if (clashing >= 0 && clashing !== at) setStep(clashing);
+          return;
+        }
+        result = await updateRecordAction(resource.name, id!, withReadAt(toInput(mine), current.updatedAt));
+      }
       if (result.ok) {
-        toast.success(`${resource.label} ${mode === "create" ? "created" : "saved"}.`);
+        const labels = kept.map((key) => fields.find(([field]) => field === key)?.[1].label ?? key);
+        toast.success(`${resource.label} ${mode === "create" ? "created" : "saved"}.`, labels.length > 0 ? { description: `Someone else changed ${andList(labels)} meanwhile. That change is kept.` } : undefined);
+        setConflict(null);
         if (onDone) onDone();
         else router.push(listHref);
         router.refresh();
@@ -237,6 +278,7 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
               <AlertDescription>{errors._form}</AlertDescription>
             </Alert>
           )}
+          {conflict && <ConflictNotice resource={resource} fields={fields} conflict={conflict} lines={Boolean(items)} />}
           <FieldGroup className="grid gap-6 md:grid-cols-2">
             {visible.map(([key, def]) => {
               const error = errors[key];
@@ -271,6 +313,14 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
                   </div>
                   {def.helpText && <FieldDescription>{def.helpText}</FieldDescription>}
                   {copiedFrom(def) && <FieldDescription>Copied from the {relations[copiedFrom(def)!.relation]?.label.toLowerCase() ?? "record it points at"} when saved.</FieldDescription>}
+                  {conflict && key in conflict.clashes && (
+                    <FieldDescription className="text-warning">
+                      {readable(def, conflict.clashes[key]!) === null ? "Someone else saved a different value." : `Someone else saved “${readable(def, conflict.clashes[key]!)}”.`}{" "}
+                      <button type="button" className="font-medium underline underline-offset-4" onClick={() => takeTheirs(key)} disabled={pending}>
+                        Use theirs
+                      </button>
+                    </FieldDescription>
+                  )}
                   {error && <FieldError>{error}</FieldError>}
                 </Field>
               );
@@ -308,9 +358,43 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
   );
 }
 
+/** A change, sent with when its record was read: Laravel refuses it if someone else saved since. */
+function withReadAt(input: Record<string, unknown>, readAt: unknown): Record<string, unknown> {
+  return typeof readAt === "string" && readAt !== "" ? { ...input, updatedAt: readAt } : input;
+}
+
 /** "2 items need fixing.", in the lines' own words. */
 function linesNeedFixing(count: number, items: LineItemsSetup): string {
   return count === 1 ? `1 ${items.resource.label.toLowerCase()} needs fixing.` : `${count} ${items.resource.pluralLabel.toLowerCase()} need fixing.`;
+}
+
+/** Someone else saved the record while it was open here: what came of it, and what is left to decide. */
+function ConflictNotice({
+  resource,
+  fields,
+  conflict,
+  lines,
+}: {
+  resource: ClientResource;
+  fields: Entry[];
+  conflict: { theirs: string[]; clashes: Record<string, string | boolean> };
+  lines: boolean;
+}) {
+  const label = (key: string) => fields.find(([field]) => field === key)?.[1].label ?? key;
+  const clashes = Object.keys(conflict.clashes).map(label);
+  return (
+    <Alert className="mb-6 border-warning/50 bg-warning/10">
+      <AlertDescription className="text-foreground">
+        <p>
+          Someone else saved this {resource.label.toLowerCase()} while you had it open.
+          {conflict.theirs.length > 0 && ` Their change to ${andList(conflict.theirs.map(label))} is in the form now.`}
+          {clashes.length > 0 && ` You both changed ${andList(clashes)}: yours is kept, with theirs beneath it.`}
+          {lines && " The lines are as you left them, and saving keeps them that way."}
+        </p>
+        <p className="mt-1">Nothing of yours is saved yet. Save again when it looks right.</p>
+      </AlertDescription>
+    </Alert>
+  );
 }
 
 /** Where you are in a multi-step form, and a way back to a step already passed. */
