@@ -8,6 +8,11 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Changed
+
+- **`nevela seed --count` is how many the table should hold**, as in Grit, and not how many to add. It seeds what is missing, and run again it says so and does nothing. **Breaking**: a script that runs `nevela seed Product --count=100` twice to get 200 now gets 100.
+- **A seed can be stopped and run again.** Rows are saved 5,000 at a time, so stopping loses at most that many, and the same command carries on to exactly the number asked for. Only `--fresh` is still all or nothing. Seeded unique values now go on from what the table holds, in place of a large random number.
+
 ### Added
 
 - **`NEVELA_PHONE_COUNTRY`** says where a phone number without a `+` is from: with `UG`, `0772 123456` in a `tel` field is `+256772123456`, and the dashboard's picker starts at Uganda. See [Phone numbers](https://nevela-docs.vercel.app/concepts/field-types/#phone-numbers).

@@ -253,7 +253,7 @@ nevela seed Product --count=1000
 | Argument or option | Meaning |
 |---|---|
 | `name` | The resource to fill. |
-| `--count=` | How many records to create. Default 1,000, at most 5,000,000. |
+| `--count=` | How many records the table should hold, so it seeds what is missing and can be stopped and run again. Default 1,000, at most 5,000,000. |
 | `--chunk=` | Rows per insert statement. Default 500. Lowered automatically for wide tables. |
 | `--fresh` | Delete the resource's existing records first. |
 
@@ -268,7 +268,7 @@ What to know before using it:
 
 - **Unique fields stay unique**, including when you run the command several times.
 - **A unique field with few possible values limits the count.** A unique `enum(a|b|c)` can only fill three rows. The command refuses a larger `--count` and says how much room is left.
-- **It is all or nothing.** The delete from `--fresh` and all the inserts share one transaction. If anything fails, the table is left as it was.
+- **It saves as it goes.** Rows are saved 5,000 at a time, so stopping loses at most that many, and running it again fills them in. With `--fresh` it is all or nothing.
 - **Rows are inserted directly.** That is what makes it fast. It also means the form request, the policy and model events do not run. Use it for development and demo data, not for importing real records.
 
 ## nevela user

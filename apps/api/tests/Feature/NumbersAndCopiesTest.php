@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
 use Nevela\Laravel\Access\Access;
+use Nevela\Laravel\Support\Numbering;
 use Nevela\Laravel\Support\SchemaFacts;
 use RuntimeException;
 use Tests\TestCase;
@@ -100,14 +101,14 @@ class NumbersAndCopiesTest extends TestCase
     public function test_seeding_again_goes_on_from_the_last_number_given(): void
     {
         $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 3])->assertSuccessful();
-        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 2])->assertSuccessful();
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 5])->assertSuccessful();
 
         $this->assertSame(['ORD-0001', 'ORD-0002', 'ORD-0003', 'ORD-0004', 'ORD-0005'], Order::query()->orderBy('number')->pluck('number')->all());
         $this->assertSame('ORD-0006', Order::create(['customer' => 'Ada', 'status' => 'pending'])->number);
 
         // A number removed for good isn't given again by the seeder either.
         Order::query()->where('number', 'ORD-0006')->first()->forceDelete();
-        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 1])->assertSuccessful();
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 6])->assertSuccessful();
         $this->assertSame('ORD-0007', Order::query()->orderByDesc('number')->value('number'));
     }
 
@@ -119,7 +120,7 @@ class NumbersAndCopiesTest extends TestCase
         $this->assertSame('ORD-0004', Order::create(['customer' => 'Ada', 'status' => 'pending'])->number);
 
         Order::query()->where('number', 'ORD-0004')->first()->forceDelete();
-        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 1])->assertSuccessful();
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 3])->assertSuccessful();
         $this->assertSame('ORD-0005', Order::query()->orderByDesc('number')->value('number'));
     }
 
@@ -133,11 +134,21 @@ class NumbersAndCopiesTest extends TestCase
         $this->assertSame('ORD-5001', Order::create(['customer' => 'Grace', 'status' => 'pending'])->number);
     }
 
+    public function test_asking_for_more_without_looking_goes_on_from_the_last_one_kept(): void
+    {
+        $this->assertSame(0, Numbering::reserve('orders', 'number', 'ORD', 10));
+        // A number typed in since isn't seen, by someone who has said not to look, and is the next time anyone does.
+        Order::create(['customer' => 'Ada', 'status' => 'pending', 'number' => 'ORD-5000']);
+
+        $this->assertSame(10, Numbering::reserve('orders', 'number', 'ORD', 10, false));
+        $this->assertSame(5000, Numbering::reserve('orders', 'number', 'ORD', 1));
+    }
+
     public function test_seeding_goes_on_from_a_number_typed_in(): void
     {
         Order::create(['customer' => 'Ada', 'status' => 'pending', 'number' => 'ORD-5000']);
 
-        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 1])->assertSuccessful();
+        $this->artisan('nevela:seed', ['name' => 'Order', '--count' => 2])->assertSuccessful();
 
         $this->assertSame('ORD-5001', Order::query()->orderByDesc('number')->value('number'));
     }
