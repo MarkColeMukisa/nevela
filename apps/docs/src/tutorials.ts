@@ -4,6 +4,7 @@ import shopCover from "./assets/tutorials/online-shop-cover.webp";
 import studentCover from "./assets/tutorials/student-app-cover.webp";
 import billingCover from "./assets/tutorials/billing-app-cover.webp";
 import invoiceCover from "./assets/tutorials/invoice-app-cover.webp";
+import crmCover from "./assets/tutorials/crm-cover.webp";
 
 /**
  * The tutorials, for the tutorials page (src/content/docs/tutorials/index.mdx). Each one
@@ -88,6 +89,18 @@ export const tutorials: Tutorial[] = [
     topics: ["Line items", "Numbering", "Adding a field", "Printing"],
     cover: invoiceCover,
     icon: "receipt",
+    out: true,
+  },
+  {
+    slug: "crm",
+    title: "A CRM",
+    summary:
+      "Companies and a million contacts, with values checked and kept one way: phone numbers from any country, emails, domains, colours, times and ratings. A seeder that tops a table up, and carries on where it stopped.",
+    level: "Intermediate",
+    minutes: 20,
+    topics: ["Phone numbers", "Field types", "A million rows", "The API"],
+    cover: crmCover,
+    icon: "contact",
     out: true,
   },
 ];

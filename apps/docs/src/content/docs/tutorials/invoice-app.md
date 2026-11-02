@@ -4,7 +4,9 @@ description: "Customers, products and invoices made of lines: numbered invoices 
 prev:
   link: /tutorials/billing-app/
   label: A billing app
-next: false
+next:
+  link: /tutorials/crm/
+  label: A CRM
 ---
 
 You will build what a small business needs to bill its customers: customers, the products it sells, and invoices made of lines, each one numbered and ready to print. It takes about fifteen minutes. [Grit's invoice tutorial](https://gritframework.dev/blog/build-an-invoice-app-with-grit) builds the same app; this is the Nevela way, and [Coming from Grit](#coming-from-grit) maps one to the other.
