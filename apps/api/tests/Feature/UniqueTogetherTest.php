@@ -108,7 +108,7 @@ class UniqueTogetherTest extends TestCase
     {
         Product::create(['name' => 'Kettle', 'sku' => 'KET-1', 'price' => 10, 'category_id' => $this->kitchen->id, 'active' => true, 'kind' => 'stock']);
 
-        $this->artisan('nevela:seed', ['name' => 'Product', '--count' => 60])->assertSuccessful();
+        $this->artisan('nevela:seed', ['name' => 'Product', '--count' => 61])->assertSuccessful();
 
         $this->assertSame(61, Product::count());
         $this->assertSame(0, DB::table('products')->select('category_id', 'name')->groupBy('category_id', 'name')->havingRaw('count(*) > 1')->get()->count());

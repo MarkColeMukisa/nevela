@@ -118,6 +118,8 @@ jobs:
       - run: php artisan test
       # Several processes making orders at once, which a test in one process can't show.
       - run: php tests/numbers-at-once.php
+      # A seed killed partway, and run again.
+      - run: php tests/seed-resumes.php
 
   web:
     name: Web app (typecheck, build)

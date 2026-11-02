@@ -286,13 +286,13 @@ class AdoptTest extends TestCase
 
     public function test_an_integer_resource_can_be_seeded(): void
     {
-        $this->artisan('nevela:seed', ['name' => 'Post', '--count' => 25])->assertSuccessful();
+        $this->artisan('nevela:seed', ['name' => 'Post', '--count' => 27])->assertSuccessful();
         $this->assertSame(27, DB::table('posts')->count());
         // Numbered on by the database from where the table was.
         $this->assertSame(27, (int) DB::table('posts')->max('id'));
 
         // A relation is drawn from the records that exist, whose ids are numbers too.
-        $this->artisan('nevela:seed', ['name' => 'Comment', '--count' => 10])->assertSuccessful();
+        $this->artisan('nevela:seed', ['name' => 'Comment', '--count' => 11])->assertSuccessful();
         $this->assertSame(11, DB::table('comments')->count());
         $this->assertSame(0, DB::table('comments')->whereNotIn('post_id', DB::table('posts')->select('id'))->count());
         $this->getJson('/api/comments?perPage=100')->assertOk()->assertJsonPath('meta.total', 11);
@@ -376,8 +376,8 @@ class AdoptTest extends TestCase
         DB::table('comments')->delete();
         $this->deleteJson('/api/posts/1')->assertStatus(409)->assertJsonPath('error', '1 reply belongs to this post. Move or delete it first.');
 
-        $this->artisan('nevela:seed', ['name' => 'Note', '--count' => 5])->assertSuccessful();
-        $this->artisan('nevela:seed', ['name' => 'Reply', '--count' => 5])->assertSuccessful();
+        $this->artisan('nevela:seed', ['name' => 'Note', '--count' => 6])->assertSuccessful();
+        $this->artisan('nevela:seed', ['name' => 'Reply', '--count' => 6])->assertSuccessful();
         $this->assertSame(6, DB::table('notes')->count());
         $this->assertSame(6, DB::table('replies')->count());
     }
