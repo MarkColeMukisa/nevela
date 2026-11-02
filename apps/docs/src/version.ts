@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "A boolean left out is false, and seeded numbers that follow on";
+export const RELEASE_HEADLINE = "A CRM tutorial, four field types, real phone numbers, resumable seeds";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "New tutorial: an invoice app, with lines, numbers nobody shares, a field added afterwards with nevela field, and a Print button on every record's page.",
-  href: "/tutorials/invoice-app/",
-  label: "Build an invoice app",
+  text: "New tutorial: a CRM with a million contacts, phone numbers from any country kept one way, and a seed you can stop and run again.",
+  href: "/tutorials/crm/",
+  label: "Build a CRM",
 };

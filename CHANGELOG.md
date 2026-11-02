@@ -8,50 +8,33 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-11-02
+
+_A CRM tutorial, four field types, real phone numbers, resumable seeds_
+
 ### Added
 
 - **[A sixth tutorial: a CRM](https://nevela-docs.vercel.app/tutorials/crm/)**, the app of [Grit's CRM tutorial](https://gritframework.dev/blog/build-a-crm-with-grit): companies and a million contacts, with phone numbers from any country, emails, domains, colours, times, percentages and ratings kept one way, and a seed you can stop and run again. A table says what each of Grit's commands is here. CI builds it in a new app, with fewer contacts, and it is a post in each new app's blog.
+- **`NEVELA_PHONE_COUNTRY`** says where a phone number without a `+` is from: with `UG`, `0772 123456` in a `tel` field is `+256772123456`, and the dashboard's picker starts at Uganda. See [Phone numbers](https://nevela-docs.vercel.app/concepts/field-types/#phone-numbers).
+- **`tel(GB)`, `tel(US)` and every other country's code.** `tel(XX)` knew Uganda, Kenya, Tanzania and Rwanda; it now knows 245 countries.
+- **Four more field types.** `domain` keeps a bare host in small letters, so a pasted `https://Example.COM/about` is `example.com`, and an international name as punycode. `country` is a searchable list of 249 countries, with their flags where the system draws them (Windows shows the letters), kept as `UG`, and `country(UG)`, or Grit's `country:country:UG`, makes that its default. `time` is a time of day, kept as `09:05`. `json` is an object or a list, edited as JSON. Each has its input, its checks and its seed data. See [Types](https://nevela-docs.vercel.app/concepts/field-types/#types).
+- **A rating can be out of more than five:** `stars:rating(10)`, or Grit's `stars:rating:10`, gives ten stars, and anything from 2 to 10.
+- **More of Grit's spellings in `--fields`:** `select[…]` and `radio[…]` for an enum, quoted labels such as `net15="Net 15"`, `toggle` and `checkbox` for a boolean, and `textarea` for text. See [Coming from Grit or Flare](https://nevela-docs.vercel.app/concepts/field-types/#coming-from-grit-or-flare).
 
 ### Changed
 
 - **`nevela seed --count` is how many the table should hold**, as in Grit, and not how many to add. It seeds what is missing, and run again it says so and does nothing. **Breaking**: a script that runs `nevela seed Product --count=100` twice to get 200 now gets 100.
 - **A seed can be stopped and run again.** Rows are saved 5,000 at a time, so stopping loses at most that many, and the same command carries on to exactly the number asked for. Only `--fresh` is still all or nothing. Seeded unique values now go on from what the table holds, in place of a large random number.
-
-### Added
-
-- **`NEVELA_PHONE_COUNTRY`** says where a phone number without a `+` is from: with `UG`, `0772 123456` in a `tel` field is `+256772123456`, and the dashboard's picker starts at Uganda. See [Phone numbers](https://nevela-docs.vercel.app/concepts/field-types/#phone-numbers).
-- **`tel(GB)`, `tel(US)` and every other country's code.** `tel(XX)` knew Uganda, Kenya, Tanzania and Rwanda; it now knows 245 countries.
-
-### Changed
-
 - **A `tel` field holds a real phone number.** It took anything up to 32 characters: `blue`, or `+256 12`. It is now checked against [libphonenumber](https://github.com/google/libphonenumber), as the dashboard's input already was, and kept as `+256772123456`, so two ways of writing a number are one number to a unique field. **Breaking**: a number without a `+` is refused unless `NEVELA_PHONE_COUNTRY` is set, and a record whose saved number isn't real is refused the next time a change sends it. Records keep what they have until then. Run `nevela generate`, which `nevela upgrade` does for you. This adds [`giggsey/libphonenumber-for-php-lite`](https://github.com/giggsey/libphonenumber-for-php-lite) to `nevela/laravel`, about 3 MB.
-
-### Added
-
-- **Four more field types.** `domain` keeps a bare host in small letters, so a pasted `https://Example.COM/about` is `example.com`, and an international name as punycode. `country` is a searchable list of 249 countries, with their flags where the system draws them (Windows shows the letters), kept as `UG`, and `country(UG)`, or Grit's `country:country:UG`, makes that its default. `time` is a time of day, kept as `09:05`. `json` is an object or a list, edited as JSON. Each has its input, its checks and its seed data. See [Types](https://nevela-docs.vercel.app/concepts/field-types/#types).
-
-### Fixed
-
-- **An action's input is held to what a resource's is:** a `url` to `http` and `https`, and a `rating` to its range.
-
-### Added
-
-- **A rating can be out of more than five:** `stars:rating(10)`, or Grit's `stars:rating:10`, gives ten stars, and anything from 2 to 10.
-
-### Changed
-
 - **Emails and colours are kept in one form.** `Ada@Example.COM` is saved as `ada@example.com`, so a unique email can't be taken twice by writing it differently. `#ABC` and `#ABCDEF` are saved as `#aabbcc` and `#abcdef`. Records already saved keep what they have until they are next saved, so a table can still hold an address in capitals beside the same one in small letters.
 - **A `url` field takes `http` and `https` only.** `ftp://` and the like were accepted, and shown as a link. **Breaking** for a field that holds other kinds on purpose: use a `string`.
 - **A `rating` is from 1 to its most.** 0 and 99 were accepted, and shown as no stars and too many. An optional one can still be empty. **Breaking** for a rating that holds 0 on purpose: a record that has one is refused the next time a change sends it.
 
 Run `nevela generate`, which `nevela upgrade` does for you.
 
-### Added
-
-- **More of Grit's spellings in `--fields`:** `select[…]` and `radio[…]` for an enum, quoted labels such as `net15="Net 15"`, `toggle` and `checkbox` for a boolean, and `textarea` for text. See [Coming from Grit or Flare](https://nevela-docs.vercel.app/concepts/field-types/#coming-from-grit-or-flare).
-
 ### Fixed
 
+- **An action's input is held to what a resource's is:** a `url` to `http` and `https`, and a `rating` to its range.
 - **`:unique` after a type made nothing unique.** `email:email:unique` was accepted and the field wasn't unique, with no word about it, and `phone:tel:UG:unique` was refused. Both now mean what they say, as `email:email!` and `phone:tel(UG)!` do. A resource already made that way isn't changed: to make the field unique, add `"unique": true` to it in the descriptor and write a migration for the index.
 - **Anything else after a type is refused.** `rating:rating:10` or `email:email(work)` used to lose the part after the type, and now says so. Descriptors already written aren't affected.
 - **A unique `text` is refused, with what to use instead.** `body:text!` wrote a migration that fails on MySQL, which can't index a whole text column. `body:string!` is unique everywhere. A descriptor that already says so is still read.
@@ -771,7 +754,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.28.1...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.29.0...HEAD
+[0.29.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.28.1...v0.29.0
 [0.28.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.28.0...v0.28.1
 [0.28.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.26.0...v0.27.0
