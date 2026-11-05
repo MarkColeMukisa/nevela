@@ -20,6 +20,10 @@ export type Failure = {
   queryIssues?: QueryIssue[];
   /** Field that caused a conflict (e.g. a unique violation). */
   field?: string;
+  /** What kind of refusal, when Laravel says: "CHANGED_SINCE_READ" for a record someone else saved first. */
+  code?: string;
+  /** With CHANGED_SINCE_READ: the record as it is now. */
+  current?: Record<string, unknown>;
 };
 
 export type Result<T> = { ok: true; data: T } | Failure;
@@ -66,11 +70,13 @@ export function laravelStore(options: ResourceStoreOptions) {
   const base = resource.slug;
 
   function failure(response: { status: number; body: unknown }): Failure {
-    const body = (response.body ?? {}) as { error?: string; issues?: unknown[]; field?: string };
+    const body = (response.body ?? {}) as { error?: string; issues?: unknown[]; field?: string; code?: string; current?: Row };
     const result: Failure = { ok: false, status: response.status, error: body.error ?? "Request failed." };
     if (response.status === 400 && body.issues) result.queryIssues = body.issues as QueryIssue[];
     else if (body.issues) result.issues = body.issues as FieldIssue[];
     if (body.field) result.field = body.field;
+    if (body.code) result.code = body.code;
+    if (body.current) result.current = body.current;
     return result;
   }
 

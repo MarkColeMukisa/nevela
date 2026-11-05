@@ -195,7 +195,23 @@ The difference between the two ways to update:
 | `PATCH` | Stay as they are. Only the fields you send are checked and changed. |
 | `PUT` | Optional fields are cleared. Required fields must be sent. |
 
-A key that is not a field of the resource is rejected with 422 rather than ignored, so a misspelt field name does not pass unnoticed. `id`, `createdAt` and `updatedAt` may be included and are ignored.
+A key that is not a field of the resource is rejected with 422 rather than ignored, so a misspelt field name does not pass unnoticed. `id` and `createdAt` may be included and are ignored.
+
+### When someone else saved first
+
+Send back the `updatedAt` you read with a `PATCH` or `PUT`, and the change is made only if nobody has saved the record since. Otherwise nothing is changed, and the answer is a 409 with the record as it is now:
+
+```json
+{
+  "error": "Someone else saved this product after you read it, so nothing was changed. Send your change again with the updatedAt it has now.",
+  "code": "CHANGED_SINCE_READ",
+  "current": { "id": "…", "name": "Lamp", "price": 45, "updatedAt": "2026-10-02T15:20:41.000000Z" }
+}
+```
+
+Compare `current` with what you read, put your change on top of it, and send it again with its `updatedAt`. The dashboard's edit form does this for you. Leave `updatedAt` out and the change is made whatever happened in between, as it always was.
+
+A change to a record's [lines](/guides/line-items/) is a change to the record: it moves the record's `updatedAt` too.
 
 ### Creating several
 
@@ -380,6 +396,7 @@ Every error is JSON with an `error` message.
 | 403 | The policy says no: the person's [roles](/guides/policies/) don't include the permission | `{ error }` |
 | 404 | No record with that id | `{ error }` |
 | 409 | A unique value was taken between validation and saving | `{ error, field }` |
+| 409 | Someone else saved the record after the `updatedAt` you sent | `{ error, code: "CHANGED_SINCE_READ", current }` |
 | 422 | Validation failed | `{ error, issues: [{ path, message }] }` |
 | 429 | Too many requests | `{ error }` |
 
