@@ -37,19 +37,40 @@ export interface NavResource {
 }
 
 /**
- * Resources in the order given, under their headings; ungrouped ones come first. The ones
- * you made with `nevela resource` are ungrouped, so they lead, ahead of the Blog the app
- * came with, whatever their names.
+ * Resources grouped by their heading. User-created resources (those without a `group`)
+ * appear first under "Resources", followed by system-provided groups like "Blog". This
+ * visual separation helps users distinguish what they created from what came with the app.
  */
-function byGroup(resources: NavResource[]): [string, NavResource[]][] {
-  const groups = new Map<string, NavResource[]>([["Resources", []]]);
+function byGroup(resources: NavResource[]): [string, NavResource[], boolean][] {
+  const userCreated: NavResource[] = [];
+  const systemGroups = new Map<string, NavResource[]>();
+  
   for (const resource of resources) {
-    const heading = resource.group?.trim() || "Resources";
-    const existing = groups.get(heading);
-    if (existing) existing.push(resource);
-    else groups.set(heading, [resource]);
+    if (!resource.group?.trim()) {
+      // No group = user created with `nevela resource`
+      userCreated.push(resource);
+    } else {
+      // Has a group = system-provided (like Blog) or explicitly grouped
+      const heading = resource.group.trim();
+      const existing = systemGroups.get(heading);
+      if (existing) existing.push(resource);
+      else systemGroups.set(heading, [resource]);
+    }
   }
-  return [...groups].filter(([, group]) => group.length > 0);
+  
+  const result: [string, NavResource[], boolean][] = [];
+  
+  // User-created resources first, marked as user-created
+  if (userCreated.length > 0) {
+    result.push(["Resources", userCreated, false]);
+  }
+  
+  // System groups after, marked as system-provided
+  for (const [heading, group] of systemGroups) {
+    result.push([heading, group, true]);
+  }
+  
+  return result;
 }
 
 /**
@@ -129,9 +150,9 @@ export function DashboardSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {byGroup(resources).map(([heading, group]) => (
-          <SidebarGroup key={heading}>
-            <SidebarGroupLabel>{heading}</SidebarGroupLabel>
+        {byGroup(resources).map(([heading, group, isSystem]) => (
+          <SidebarGroup key={heading} className={isSystem ? "mt-2 pt-2 border-t" : ""}>
+            <SidebarGroupLabel className={isSystem ? "text-muted-foreground/70" : ""}>{heading}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.map((resource) => {
