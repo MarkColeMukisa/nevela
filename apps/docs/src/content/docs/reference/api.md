@@ -211,7 +211,7 @@ Send back the `updatedAt` you read with a `PATCH` or `PUT`, and the change is ma
 
 Compare `current` with what you read, put your change on top of it, and send it again with its `updatedAt`. The dashboard's edit form does this for you. Leave `updatedAt` out and the change is made whatever happened in between, as it always was.
 
-A change to a record's [lines](/guides/line-items/) is a change to the record: it moves the record's `updatedAt` too.
+A change to a record's [lines](/guides/line-items/) is a change to the record: it moves the record's `updatedAt` too. For a record with lines, `current` has them as `items`, because the `items` you send replace the whole list.
 
 ### Creating several
 

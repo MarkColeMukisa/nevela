@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Fixed
+
+- **Two people editing the same order: a save could replace the other person's lines without showing them.** When someone else saved a record with lines while you had it open, the form kept the lines you had loaded, and your next save put them in place of theirs. The 409 now carries the record's lines (`current.items`). If only they changed the lines, theirs come into the form. If you both did, yours stay, nothing is saved, and the notice has a **Use their lines** button. See [Two people editing the same record](https://nevela-docs.vercel.app/guides/web-app/#two-people-editing-the-same-record).
+
 ## [0.29.1] - 2026-11-05
 
 _Clearer sidebar separation, and two people editing at once_
