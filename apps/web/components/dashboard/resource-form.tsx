@@ -250,6 +250,10 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
         if (linesMerged.kind === "theirs") {
           mineLines = linesMerged.rows;
           kept = [...kept, LINES];
+        } else if (theirLines) {
+          // A line of yours that they removed is no longer a line to change: kept, it is added again.
+          const there = new Set(theirLines.map((row) => row.id));
+          mineLines = mineLines.map((row) => (row.id && !there.has(row.id) ? { ...row, id: undefined } : row));
         }
         from = { readAt: current.updatedAt, values: theirs, lines: theirLines ?? from.lines };
         mine = merged.values;
