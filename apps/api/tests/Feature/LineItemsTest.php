@@ -171,4 +171,23 @@ class LineItemsTest extends TestCase
         $this->assertFalse(Nevela::isLines('Order'));
         $this->assertSame(['model' => OrderItem::class, 'column' => 'order_id'], Nevela::linesOf('Order'));
     }
+
+    public function test_a_save_read_before_someone_else_changed_the_lines_is_refused_with_their_lines(): void
+    {
+        $created = $this->postJson('/api/orders', $this->order([['productId' => $this->kettle->id, 'quantity' => 1, 'price' => 49.5]]))->json();
+        $this->travel(5)->seconds();
+        // Someone else adds a line, and nothing else.
+        $this->patchJson("/api/orders/{$created['id']}", ['items' => [
+            ['id' => $created['items'][0]['id'], 'productId' => $this->kettle->id, 'quantity' => 1, 'price' => 49.5],
+            ['productId' => $this->mug->id, 'quantity' => 2, 'price' => 8],
+        ]])->assertOk();
+
+        // Sent whole, the list read before would remove their line. It is refused, with the lines as they are.
+        $this->patchJson("/api/orders/{$created['id']}", ['customer' => 'Grace', 'items' => [$created['items'][0]], 'updatedAt' => $created['updatedAt']])
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'CHANGED_SINCE_READ')
+            ->assertJsonCount(2, 'current.items')
+            ->assertJsonPath('current.items.1.productId', $this->mug->id);
+        $this->assertSame(2, OrderItem::query()->where('order_id', $created['id'])->count());
+    }
 }

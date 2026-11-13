@@ -79,7 +79,8 @@ When someone saves a record you have open in the edit form, your save doesn't pu
 - A field only you changed keeps yours.
 - If none of your fields clash with theirs, the form saves again by itself. The message that says it saved names their changes.
 - If you both changed a field, yours stays, with their value under it and a **Use theirs** link. Nothing is saved until you press Save again.
-- A record with [lines](/guides/line-items/) always waits for you, because the form can't merge lines. Saving keeps your lines.
+- A record's [lines](/guides/line-items/) are merged as one list, not line by line, because a save replaces the whole list. If only they changed the lines, theirs come into the form. If only you did, yours stay.
+- If you both changed the lines, yours stay and nothing is saved. The notice has a **Use their lines** button. Saving without it puts your lines in place of theirs.
 
 The check happens as Laravel receives the change. Two saves that arrive within a few milliseconds of each other can still both go through, as before.
 

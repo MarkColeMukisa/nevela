@@ -1,4 +1,4 @@
-import { optionLabel, type FormValues, type StoredField } from "@flaredev/core";
+import { initialFormValues, optionLabel, storedFields, type FormValues, type Resource, type StoredField } from "@flaredev/core";
 
 /** What Laravel answers a change to a record someone else saved after it was read. */
 export const CHANGED_SINCE_READ = "CHANGED_SINCE_READ";
@@ -58,6 +58,48 @@ export function readable(def: StoredField, value: string | boolean): string | nu
   if (def.kind === "enum") return optionLabel(def, value);
   const text = value.replace(/<[^>]*>/g, "").trim();
   return text.length > 80 || text !== value.trim() ? null : text;
+}
+
+/** A record's lines as rows of the form: what line-items' rows are made of. */
+interface Row {
+  id?: string;
+  values: Record<string, unknown>;
+}
+
+/**
+ * Lines as a save would send them, for comparing two sets: each one's id and values, less
+ * the rows nobody has filled in. The line's field that points back at the record is
+ * left out, as it is from the form.
+ */
+function linesKey(resource: Pick<Resource, "fields">, field: string, rows: Row[]): string {
+  const blank = initialFormValues(resource, null);
+  const keys = storedFields(resource)
+    .map(([key]) => key)
+    .filter((key) => key !== field);
+  const filled = rows.filter((row) => row.id || keys.some((key) => String(row.values[key] ?? "") !== String(blank[key] ?? "")));
+  return JSON.stringify(filled.map((row) => [row.id ?? "", ...keys.map((key) => String(row.values[key] ?? ""))]));
+}
+
+export type LinesMerge<T extends Row> =
+  /** Unchanged by them, or changed by both of you the same way: yours stand. */
+  | { kind: "yours" }
+  /** Changed by them only: theirs come in. */
+  | { kind: "theirs"; rows: T[] }
+  /** Changed by both of you, differently: yours stay until you choose. */
+  | { kind: "clash"; rows: T[] | null };
+
+/**
+ * The lines, merged as a whole. A save replaces a record's lines with the list it sends,
+ * so they can't be put together line by line the way fields are: whoever's list is sent
+ * is the list. `theirs` is null when the record came back without its lines.
+ */
+export function mergeLines<T extends Row>(resource: Pick<Resource, "fields">, field: string, base: T[], mine: T[], theirs: T[] | null): LinesMerge<T> {
+  if (theirs === null) return { kind: "clash", rows: null };
+  const from = linesKey(resource, field, base);
+  const yours = linesKey(resource, field, mine);
+  const now = linesKey(resource, field, theirs);
+  if (now === from || now === yours) return { kind: "yours" };
+  return yours === from ? { kind: "theirs", rows: theirs } : { kind: "clash", rows: theirs };
 }
 
 /** "Phone", "Phone and Stage", "Phone, Stage and Owner". */

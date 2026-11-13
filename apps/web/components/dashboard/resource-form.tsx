@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
-import { andList, mergeEdits, readable, savedSince } from "@/lib/conflict";
+import { andList, mergeEdits, mergeLines, readable, savedSince } from "@/lib/conflict";
 import { copiedFrom } from "@/lib/copied";
 import { filesOf } from "@/lib/gallery";
 import { jsonProblem } from "@/lib/json-field";
@@ -50,6 +50,19 @@ const FIELDS_PER_STEP = 5;
 
 type Entry = [string, StoredField & { label: string }];
 
+/** Someone else saved the record while it was open here. */
+interface Conflict {
+  /** Fields only they changed, now in the form; LINES when it was the lines. */
+  theirs: string[];
+  /** Fields you both changed: their value, beside yours. */
+  clashes: Record<string, string | boolean>;
+  /** You both changed the lines: theirs, when Laravel sent them. */
+  lines: { theirs: LineRow[] | null } | null;
+}
+
+/** Stands for the lines among the things someone else changed. */
+const LINES = "\u0000lines";
+
 /** Fields in declaration order, cut into steps of at most {@link FIELDS_PER_STEP}. */
 function toSteps(fields: Entry[]): Entry[][] {
   if (fields.length <= FIELDS_PER_STEP) return [fields];
@@ -73,9 +86,9 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
   const [values, setValues] = useState(() => initialFormValues(resource, record));
   // The record as it was read, and its values: what is sent back as updatedAt, so a save
   // can't put back what someone else changed meanwhile, and what a merge starts from.
-  const [base, setBase] = useState(() => ({ readAt: record?.updatedAt, values: initialFormValues(resource, record) }));
-  // Someone else saved first: what of theirs came into the form, and where you both changed a field.
-  const [conflict, setConflict] = useState<{ theirs: string[]; clashes: Record<string, string | boolean> } | null>(null);
+  const [base, setBase] = useState(() => ({ readAt: record?.updatedAt, values: initialFormValues(resource, record), lines: items ? startRows(items) : [] }));
+  // Someone else saved first: what of theirs came into the form, and where you both changed something.
+  const [conflict, setConflict] = useState<Conflict | null>(null);
   // A field that doesn't apply (a billing cycle, on a one-off project) isn't asked for.
   const shown = fields.filter(([, def]) => applies(def, values));
   const shownKeys = shown.map(([key]) => key).join(",");
@@ -128,6 +141,15 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
     if (theirs === undefined) return;
     setValue(key, theirs);
     setConflict((current) => current && { ...current, clashes: Object.fromEntries(Object.entries(current.clashes).filter(([field]) => field !== key)) });
+  };
+
+  /** Their lines, taken instead of yours. */
+  const takeTheirLines = () => {
+    const theirs = conflict?.lines?.theirs;
+    if (!theirs) return;
+    setLines(theirs);
+    setLineProblems({});
+    setConflict((current) => current && { ...current, lines: null });
   };
 
   function focusFirstError(fieldErrors: Record<string, string>, within: Entry[] = fields) {
@@ -190,7 +212,7 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
     const input = toInput();
     const found = validate();
     // Its lines go with it, checked with their own rules first.
-    const send = items ? linesToSend(items, lines) : null;
+    let send = items ? linesToSend(items, lines) : null;
     if (send) {
       input.items = send.items;
       setLineProblems(send.problems);
@@ -213,30 +235,47 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
       // Someone else saved it first. Their changes come into the form beside yours; when
       // none of them meets one of yours, that is the save you meant, and it is sent again.
       // Once: saved again in between, it waits for you rather than going round.
-      let from = base.values;
+      let from = base;
       let mine = values;
+      let mineLines = lines;
       let kept: string[] = [];
       for (let tries = 0; mode === "edit" && tries < 2; tries++) {
         const current = savedSince(result);
         if (!current) break;
         const theirs = initialFormValues(resource, current);
-        const merged = mergeEdits(fields, from, mine, theirs);
-        from = theirs;
+        const merged = mergeEdits(fields, from.values, mine, theirs);
+        // The lines go as a whole: theirs come in when only they changed them, and wait for you when you both did.
+        const theirLines = items && Array.isArray(current.items) ? startRows({ ...items, rows: current.items as Record<string, unknown>[] }) : null;
+        const linesMerged = items ? mergeLines(items.resource, items.field, from.lines, mineLines, theirLines) : ({ kind: "yours" } as const);
+        if (linesMerged.kind === "theirs") {
+          mineLines = linesMerged.rows;
+          kept = [...kept, LINES];
+        } else if (theirLines) {
+          // A line of yours that they removed is no longer a line to change: kept, it is added again.
+          const there = new Set(theirLines.map((row) => row.id));
+          mineLines = mineLines.map((row) => (row.id && !there.has(row.id) ? { ...row, id: undefined } : row));
+        }
+        from = { readAt: current.updatedAt, values: theirs, lines: theirLines ?? from.lines };
         mine = merged.values;
         kept = [...new Set([...kept, ...merged.theirs])];
-        setBase({ readAt: current.updatedAt, values: theirs });
+        setBase(from);
         setValues(mine);
-        if (Object.keys(merged.clashes).length > 0 || items || tries > 0) {
-          setConflict({ theirs: kept, clashes: merged.clashes });
+        setLines(mineLines);
+        setLineProblems({});
+        const linesToo = items ? linesToSend(items, mineLines) : null;
+        if (Object.keys(merged.clashes).length > 0 || linesMerged.kind === "clash" || (linesToo && Object.keys(linesToo.problems).length > 0) || tries > 0) {
+          setConflict({ theirs: kept, clashes: merged.clashes, lines: linesMerged.kind === "clash" ? { theirs: linesMerged.rows } : null });
           setErrors({});
           const clashing = steps.findIndex((entries) => entries.some(([key]) => key in merged.clashes));
           if (clashing >= 0 && clashing !== at) setStep(clashing);
+          else if (linesMerged.kind === "clash") setStep(steps.length - 1);
           return;
         }
-        result = await updateRecordAction(resource.name, id!, withReadAt(toInput(mine), current.updatedAt));
+        send = linesToo;
+        result = await updateRecordAction(resource.name, id!, withReadAt({ ...toInput(mine), ...(linesToo ? { items: linesToo.items } : {}) }, current.updatedAt));
       }
       if (result.ok) {
-        const labels = kept.map((key) => fields.find(([field]) => field === key)?.[1].label ?? key);
+        const labels = kept.map((key) => (key === LINES ? "the lines" : (fields.find(([field]) => field === key)?.[1].label ?? key)));
         toast.success(`${resource.label} ${mode === "create" ? "created" : "saved"}.`, labels.length > 0 ? { description: `Someone else changed ${andList(labels)} meanwhile. That change is kept.` } : undefined);
         setConflict(null);
         if (onDone) onDone();
@@ -278,7 +317,7 @@ export function ResourceForm({ resource, mode, id, record, relations = {}, listH
               <AlertDescription>{errors._form}</AlertDescription>
             </Alert>
           )}
-          {conflict && <ConflictNotice resource={resource} fields={fields} conflict={conflict} lines={Boolean(items)} />}
+          {conflict && <ConflictNotice resource={resource} fields={fields} conflict={conflict} onTheirLines={takeTheirLines} disabled={pending} />}
           <FieldGroup className="grid gap-6 md:grid-cols-2">
             {visible.map(([key, def]) => {
               const error = errors[key];
@@ -373,14 +412,16 @@ function ConflictNotice({
   resource,
   fields,
   conflict,
-  lines,
+  onTheirLines,
+  disabled,
 }: {
   resource: ClientResource;
   fields: Entry[];
-  conflict: { theirs: string[]; clashes: Record<string, string | boolean> };
-  lines: boolean;
+  conflict: Conflict;
+  onTheirLines: () => void;
+  disabled: boolean;
 }) {
-  const label = (key: string) => fields.find(([field]) => field === key)?.[1].label ?? key;
+  const label = (key: string) => (key === LINES ? "the lines" : (fields.find(([field]) => field === key)?.[1].label ?? key));
   const clashes = Object.keys(conflict.clashes).map(label);
   return (
     <Alert className="mb-6 border-warning/50 bg-warning/10">
@@ -389,9 +430,14 @@ function ConflictNotice({
           Someone else saved this {resource.label.toLowerCase()} while you had it open.
           {conflict.theirs.length > 0 && ` Their change to ${andList(conflict.theirs.map(label))} is in the form now.`}
           {clashes.length > 0 && ` You both changed ${andList(clashes)}: yours is kept, with theirs beneath it.`}
-          {lines && " The lines are as you left them, and saving keeps them that way."}
+          {conflict.lines && " You both changed the lines: yours are below, and saving puts them in place of theirs."}
         </p>
-        <p className="mt-1">Nothing of yours is saved yet. Save again when it looks right.</p>
+        {conflict.lines?.theirs && (
+          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={onTheirLines} disabled={disabled}>
+            Use their lines
+          </Button>
+        )}
+        <p className="mt-2">Nothing of yours is saved yet. Save again when it looks right.</p>
       </AlertDescription>
     </Alert>
   );
