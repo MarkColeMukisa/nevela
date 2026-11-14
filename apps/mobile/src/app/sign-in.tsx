@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 
 import { Body, Button, Field, Notice, Screen, Title } from "@/components/ui";
@@ -95,21 +95,33 @@ function SecondStep({ challenge, onCancel }: { challenge: Challenge; onCancel: (
   const [method, setMethod] = useState<SecondStepMethod>(challenge.methods[0] ?? "totp");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
-  const choose = async (next: SecondStepMethod) => {
+  const choose = (next: SecondStepMethod) => {
     setError(null);
     setCode("");
     setMethod(next);
   };
 
+  const { sendSecondStepCode } = auth;
+  const sendCode = useCallback(async () => {
+    setSending(true);
+    setError(null);
+    try {
+      await sendSecondStepCode(challenge.challenge);
+    } catch (caught) {
+      setError(caught);
+    } finally {
+      setSending(false);
+    }
+  }, [challenge.challenge, sendSecondStepCode]);
+
   // An emailed code has to be asked for: on choosing it, and at the start for an
   // account whose only second step it is.
-  const { sendSecondStepCode } = auth;
   useEffect(() => {
-    if (method !== "email") return;
-    sendSecondStepCode(challenge.challenge).catch(setError);
-  }, [method, challenge.challenge, sendSecondStepCode]);
+    if (method === "email") sendCode();
+  }, [method, sendCode]);
 
   const verify = async () => {
     setBusy(true);
@@ -139,10 +151,12 @@ function SecondStep({ challenge, onCancel }: { challenge: Challenge; onCancel: (
       <Field label={step.label} value={code} onChangeText={setCode} autoCapitalize="none" autoCorrect={false} keyboardType={method === "backup" ? "default" : "number-pad"} autoComplete="one-time-code" textContentType="oneTimeCode" autoFocus returnKeyType="go" onSubmitEditing={verify} />
       <Button label="Verify" busy={busy} disabled={code.trim() === ""} onPress={verify} />
 
+      {method === "email" ? <Button variant="link" label="Send the code again" busy={sending} disabled={busy} onPress={sendCode} /> : null}
       {challenge.methods.filter((other) => other !== method).map((other) => (
-        <Button key={other} variant="link" label={SECOND_STEPS[other].choose} onPress={() => choose(other)} />
+        <Button key={other} variant="link" label={SECOND_STEPS[other].choose} disabled={busy} onPress={() => choose(other)} />
       ))}
-      <Button variant="link" label="Back to sign in" onPress={onCancel} />
+      {/* Not while a code is being checked: the answer would sign in someone who had just backed out. */}
+      <Button variant="link" label="Back to sign in" disabled={busy} onPress={onCancel} />
     </Screen>
   );
 }

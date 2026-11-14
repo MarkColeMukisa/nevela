@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Something fetched for a screen: the data, whether it is on its way, what went wrong,
@@ -12,12 +12,19 @@ export function useLoaded<T>(load: () => Promise<T>) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Requests can overlap (a pull to refresh during a reload after a change) and finish
+  // out of order. Only the one that set out last may say what the screen shows.
+  const latest = useRef(0);
+
   const run = useCallback(async () => {
+    const mine = ++latest.current;
     try {
-      setData(await load());
+      const loaded = await load();
+      if (mine !== latest.current) return;
+      setData(loaded);
       setError(null);
     } catch (caught) {
-      setError(caught);
+      if (mine === latest.current) setError(caught);
     }
   }, [load]);
 

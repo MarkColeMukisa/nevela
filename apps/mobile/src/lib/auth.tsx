@@ -1,5 +1,5 @@
 import * as Device from "expo-device";
-import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Platform } from "react-native";
 
 import { api, type TokenPair } from "./api";
@@ -69,13 +69,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Counts every sign-in and sign-out. An answer about "who am I" that set out before
+  // the latest one is about a sign-in that is no longer this one, and is dropped.
+  const era = useRef(0);
+
   const reload = useCallback(async () => {
+    const asked = era.current;
     const { user: me } = await api.get<{ user: User }>("/auth/me");
-    setUser(me);
+    if (asked === era.current) setUser(me);
+  }, []);
+
+  const forget = useCallback(() => {
+    era.current += 1;
+    setUser(null);
   }, []);
 
   useEffect(() => {
-    api.onSignedOut(() => setUser(null));
+    api.onSignedOut(forget);
     (async () => {
       try {
         // Nothing stored: don't ask the network, so a first launch opens straight away.
@@ -83,17 +93,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         // Offline, or the sign-in has ended. Either way the sign-in screen is the place
         // to be; a sign-in that is still good is picked up again from there.
-        setUser(null);
+        forget();
       } finally {
         setLoading(false);
       }
     })();
     return () => api.onSignedOut(null);
-  }, [reload]);
+  }, [reload, forget]);
 
   const finish = useCallback(async (answer: Answer): Promise<Challenge | null> => {
     if ("twoFactor" in answer) return { challenge: answer.challenge, methods: answer.methods };
+    // Nothing of an earlier sign-in is carried over: setTokens keeps a refresh token it
+    // already holds when the answer has none, which is right for a renewal and wrong here.
+    await api.clearTokens();
     await api.setTokens(answer);
+    era.current += 1;
     setUser(answer.user);
     return null;
   }, []);
@@ -120,12 +134,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch {
           // Offline or already ended: the device forgets the sign-in either way.
         }
-        await api.clearTokens();
-        setUser(null);
+        try {
+          await api.clearTokens();
+        } finally {
+          forget(); // even if the keychain refused, the app is signed out
+        }
       },
       can: (permission) => Boolean(user && (user.isAdmin || user.permissions.includes(permission))),
     }),
-    [user, loading, reload, finish],
+    [user, loading, reload, finish, forget],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

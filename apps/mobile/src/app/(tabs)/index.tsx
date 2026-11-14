@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { RefreshControl, View } from "react-native";
 
 import { Body, Button, Card, Heading, Loading, Notice, Row, Screen, Title } from "@/components/ui";
@@ -21,11 +22,17 @@ const loadInbox = () => api.get<Inbox>("/_nevela/notifications");
 export default function Home() {
   const { user } = useAuth();
   const inbox = useLoaded(loadInbox);
+  const [failed, setFailed] = useState<unknown>(null);
 
   if (inbox.loading) return <Loading />;
 
   const markAllRead = async () => {
-    await api.post("/_nevela/notifications/read").catch(() => null);
+    setFailed(null);
+    try {
+      await api.post("/_nevela/notifications/read");
+    } catch (caught) {
+      setFailed(caught);
+    }
     await inbox.reload();
   };
 
@@ -38,7 +45,7 @@ export default function Home() {
         <Body muted>{inbox.data && inbox.data.unread > 0 ? `${inbox.data.unread} new since you last looked.` : "You're up to date."}</Body>
       </View>
 
-      {inbox.error ? <Notice>{messageOf(inbox.error)}</Notice> : null}
+      {inbox.error ?? failed ? <Notice>{messageOf(inbox.error ?? failed)}</Notice> : null}
 
       {inbox.data && inbox.data.conditions.length > 0 ? (
         <View style={{ gap: spacing.sm }}>

@@ -137,7 +137,7 @@ Add `<Stack.Screen name="products" options={{ title: "Products" }} />` beside th
 
 Expo Go is for developing. To give the app to other people, build it:
 
-1. Set where the deployed API is, in `apps/mobile/.env.local` or your build's environment: `EXPO_PUBLIC_API_URL=https://api.example.com/api`. It has to be `https`.
+1. Tell the build where the deployed API is: `EXPO_PUBLIC_API_URL=https://api.example.com/api`, and it has to be `https`. Set it in the build's own environment, such as `env` under the build profile in `eas.json`. `.env.local` won't do: it is left out of git, so a build in the cloud never sees it, and the app would look for the API on your computer.
 2. Set your own `ios.bundleIdentifier` and `android.package` in `app.json`, such as `com.example.myapp`.
 3. Build with [EAS](https://docs.expo.dev/build/introduction/): `npx eas-cli@latest build --platform android` (or `ios`).
 

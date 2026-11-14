@@ -33,7 +33,7 @@ export default function Settings() {
         <Body muted small>The app follows your phone's light or dark appearance.</Body>
       </View>
 
-      <Button variant="danger" label="Sign out" icon="log-out-outline" busy={leaving} onPress={async () => { setLeaving(true); await signOut(); }} />
+      <Button variant="danger" label="Sign out" icon="log-out-outline" busy={leaving} onPress={async () => { setLeaving(true); try { await signOut(); } finally { setLeaving(false); } }} />
     </Screen>
   );
 }

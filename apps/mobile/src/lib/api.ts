@@ -78,8 +78,15 @@ export class UnreachableError extends Error {
   }
 }
 
+/**
+ * How a swap of the refresh token went. "ended" is Laravel saying the sign-in is over.
+ * "failed" is anything else (no network, a 500): nothing was learnt about the sign-in,
+ * so it is kept and the swap can be tried again.
+ */
+type Renewal = "renewed" | "ended" | "failed";
+
 let cached: { access: string | null; expires: number | null; refresh: string | null } | null = null;
-let refreshing: Promise<boolean> | null = null;
+let refreshing: Promise<Renewal> | null = null;
 let onSignedOut: (() => void) | null = null;
 
 async function tokens() {
@@ -126,26 +133,24 @@ function refusal(response: Response, body: unknown): ApiError {
  * Swap the refresh token for a new pair. One swap at a time: a refresh token works once,
  * so two screens asking together must share the answer.
  */
-function refresh(): Promise<boolean> {
-  refreshing ??= (async () => {
+function refresh(): Promise<Renewal> {
+  refreshing ??= (async (): Promise<Renewal> => {
     try {
       const held = await tokens();
-      if (!held.refresh) return false;
+      if (!held.refresh) return "ended";
       const response = await send("/auth/refresh", {
         method: "POST",
         headers: { Accept: "application/json", "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken: held.refresh }),
       });
-      if (!response.ok) {
-        // The sign-in has ended (idle, expired, signed out elsewhere). Anything else,
-        // such as a 500, is the server's trouble and says nothing about the sign-in.
-        if (response.status === 401) await api.clearTokens();
-        return false;
-      }
+      // 401 is the sign-in having ended (idle, expired, signed out elsewhere). Anything
+      // else, such as a 500, is the server's trouble and says nothing about the sign-in.
+      if (response.status === 401) return "ended";
+      if (!response.ok) return "failed";
       await api.setTokens((await parse(response)) as TokenPair);
-      return true;
+      return "renewed";
     } catch {
-      return false; // offline: keep what we have and let the caller's request say so
+      return "failed"; // offline, or the answer couldn't be kept
     } finally {
       refreshing = null;
     }
@@ -185,8 +190,12 @@ async function request<T>(path: string, { method = "GET", body, query, auth = tr
   }
 
   let response = await attempt();
-  if (response.status === 401 && auth && (await tokens()).refresh && (await refresh())) {
-    response = await attempt();
+  if (response.status === 401 && auth) {
+    // The token was refused. Only Laravel refusing the refresh token too ends the sign-in:
+    // a swap that failed for another reason leaves it as it is, to be tried again.
+    const renewal = await refresh();
+    if (renewal === "renewed") response = await attempt();
+    else if (renewal === "failed") throw new ApiError("Couldn't confirm your sign-in with the server just now. Try again in a moment.", 503, "RENEWAL_FAILED");
   }
 
   const data = await parse(response);
