@@ -155,6 +155,7 @@ It lists the Nevela version, which migrations have run and which are pending, ho
 | `--no-user` | Don't create the starter account, or the sample users. |
 | `--no-sample-users` | Create the administrator only, without the ten sample users. |
 | `--no-blog` | Leave out [the blog](/guides/blog/): the Post resource, its sample posts and `/blog`. |
+| `--mobile` | Add [a mobile app](/guides/mobile-app/) in `apps/mobile`: Expo, for iOS and Android, signing in to the same API. |
 | `--no-git` | Don't run `git init`. |
 | `--bundled-package` | Use the copy of `nevela/laravel` inside the installer instead of the release on Packagist. |
 | `-y`, `--yes` | Ask nothing. Only the app name is ever asked for, and only if you leave it off. |

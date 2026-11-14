@@ -178,6 +178,9 @@ jobs:
           mkdir "$RUNNER_TEMP/create-nevela"
           tar -xzf create-nevela-*.tgz -C "$RUNNER_TEMP/create-nevela"
           test -f "$RUNNER_TEMP/create-nevela/package/template/web/_gitignore"
+          test -f "$RUNNER_TEMP/create-nevela/package/template/mobile/app.json"
+          test -f "$RUNNER_TEMP/create-nevela/package/template/mobile/_gitignore"
+          test ! -e "$RUNNER_TEMP/create-nevela/package/template/mobile/node_modules"
           test -f "$RUNNER_TEMP/create-nevela/package/packagist.mjs"
           for file in selfupdate shell project tool; do test -f "$RUNNER_TEMP/create-nevela/package/$file.mjs"; done
           test -f "$RUNNER_TEMP/create-nevela/package/LICENSE"
@@ -186,7 +189,8 @@ jobs:
         # --bundled-package: test the package as it is in this commit, not the last release on Packagist.
         # --no-blog: an app with nothing in it first, so the steps below can see that an empty one builds.
         # The blog is added further down with the command a new app runs for itself.
-        run: node create-nevela/package/index.mjs demo-app --yes --pm pnpm --bundled-package --no-blog
+        # --mobile: the Expo app as well, installed and type-checked below.
+        run: node create-nevela/package/index.mjs demo-app --yes --pm pnpm --bundled-package --no-blog --mobile
       - name: The new app has what it should, and none of the examples
         working-directory: ${{ runner.temp }}/demo-app
         run: |
@@ -212,6 +216,22 @@ jobs:
       - name: Build the dashboard before any resource exists
         working-directory: ${{ runner.temp }}/demo-app/apps/web
         run: pnpm exec tsc --noEmit
+      - name: The mobile app is named for the new app, type-checks and bundles
+        working-directory: ${{ runner.temp }}/demo-app/apps/mobile
+        env:
+          EXPO_NO_TELEMETRY: 1
+        run: |
+          test -f .gitignore
+          test -d node_modules
+          grep -q '"name": "Demo App"' app.json
+          grep -q '"scheme": "demo-app"' app.json
+          grep -q '"name": "demo-app-mobile"' package.json
+          grep -q 'name: "Demo App"' src/lib/site.ts
+          grep -q '"dev:mobile"' ../../package.json
+          pnpm exec tsc --noEmit
+          # Metro resolving every import is what a type-check can't promise.
+          pnpm exec expo export --platform web --output-dir "$RUNNER_TEMP/mobile-web"
+          test -f "$RUNNER_TEMP/mobile-web/index.html"
       # From the top of the project, the way the docs say: no cd, and resource migrates.
       - name: Add a resource, a user and data with php nevela
         working-directory: ${{ runner.temp }}/demo-app

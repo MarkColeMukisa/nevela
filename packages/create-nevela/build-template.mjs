@@ -13,4 +13,4 @@ const { buildTemplate } = await import('./template.mjs');
 buildTemplate(target);
 
 const count = (dir) => fs.readdirSync(dir, { withFileTypes: true }).reduce((total, entry) => total + (entry.isDirectory() ? count(path.join(dir, entry.name)) : 1), 0);
-console.log(`template/ built: ${count(path.join(target, 'web'))} dashboard files, ${count(path.join(target, 'laravel'))} package files`);
+console.log(`template/ built: ${count(path.join(target, 'web'))} dashboard files, ${count(path.join(target, 'laravel'))} package files, ${count(path.join(target, 'mobile'))} mobile app files`);

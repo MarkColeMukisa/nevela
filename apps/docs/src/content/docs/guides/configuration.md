@@ -19,6 +19,7 @@ The file is yours, and an upgrade never changes it. A setting it doesn't have ta
 |---|---|---|
 | `descriptors_path` | `base_path('nevela/resources')` | Where the resource descriptors are kept. |
 | `web_path` | `base_path('../web')`, or `NEVELA_WEB_PATH` | The web app's folder. Generated web files are written here. If the folder does not exist, web files are skipped. Set to `null` to never write them. |
+| `mobile_path` | `base_path('../mobile')`, or `NEVELA_MOBILE_PATH` | [The mobile app](/guides/mobile-app/)'s folder. While it exists, `nevela dev` serves the API to your network so a phone can reach it. Set to `null` to keep the API on this computer. |
 | `root_path` | worked out, or `NEVELA_ROOT_PATH` | The top of the project, where the `php nevela` launcher is written. By default two folders up, when the app is at `<project>/apps/<name>`. Set to `false` for no launcher. |
 | `prefix` | `api` | The URL prefix for every Nevela route. |
 | `middleware` | `['api', 'auth:sanctum']` | Middleware on the resource routes. |
@@ -70,6 +71,7 @@ The file is yours, and an upgrade never changes it. A setting it doesn't have ta
 | Variable | Meaning |
 |---|---|
 | `NEVELA_WEB_PATH` | Overrides `web_path`. Use it when the web app is not at `../web`. |
+| `NEVELA_MOBILE_PATH` | Overrides `mobile_path`. Empty keeps `nevela dev` from opening the API to your network. |
 | `NEVELA_CURRENCY` | The currency money is shown in, as its ISO 4217 code: `UGX`. A money field can name its own. Run `nevela generate` after changing it. See [Money and its currency](/concepts/field-types/#money-and-its-currency). |
 | `NEVELA_PHONE_COUNTRY` | Where a phone number without a `+` is from, as a two-letter code: `UG`. See [Phone numbers](/concepts/field-types/#phone-numbers). Run `nevela generate` after changing it. |
 | `NEVELA_SESSION_ACCESS`, `NEVELA_SESSION_IDLE`, `NEVELA_SESSION_ABSOLUTE` | How long a sign-in lasts, in minutes: 15, 7 days and 30 days unless set. See [How long a sign-in lasts](/guides/authentication/#how-long-a-sign-in-lasts). |

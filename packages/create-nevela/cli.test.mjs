@@ -291,3 +291,25 @@ test('a composer install that failed on a download is tried again, and a real pr
   assert.equal(worthRetrying('The "https://repo.packagist.org/packages.json" file could not be downloaded: SSL operation failed with code 1. OpenSSL Error messages: error:0A000086:SSL routines::certificate verify failed'), false);
   assert.ok(ATTEMPTS >= 2);
 });
+
+test('the mobile app is copied without what was installed or built, and named for the new app', async () => {
+  const { copyMobileTemplate, mobileScheme } = await import('./template.mjs');
+  assert.equal(mobileScheme('my-store'), 'my-store');
+  assert.equal(mobileScheme('My Store 2'), 'my-store-2');
+  assert.equal(mobileScheme('2fast'), 'fast');
+  assert.equal(mobileScheme('!!!'), 'app');
+
+  const to = path.join(scratch(), 'mobile');
+  copyMobileTemplate(to, { name: 'my-store', title: 'My Store' });
+
+  for (const left of ['node_modules', '.expo', 'dist', 'package-lock.json', 'expo-env.d.ts']) {
+    assert.equal(fs.existsSync(path.join(to, left)), false, `${left} is not part of a new app`);
+  }
+  for (const file of ['app.json', 'package.json', 'tsconfig.json', '.gitignore', 'src/app/_layout.tsx', 'src/app/sign-in.tsx', 'src/lib/api.ts', 'assets/images/icon.png']) {
+    assert.ok(fs.existsSync(path.join(to, file)), `${file} is copied`);
+  }
+  const app = JSON.parse(fs.readFileSync(path.join(to, 'app.json'), 'utf8')).expo;
+  assert.deepEqual([app.name, app.slug, app.scheme], ['My Store', 'my-store', 'my-store']);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(to, 'package.json'), 'utf8')).name, 'my-store-mobile');
+  assert.match(fs.readFileSync(path.join(to, 'src/lib/site.ts'), 'utf8'), /name: "My Store"/);
+});

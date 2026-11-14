@@ -19,3 +19,10 @@ packages/*/composer.lock
 # Built by packages/create-nevela/build-template.mjs when packing for npm
 packages/create-nevela/template/
 *.tgz
+
+# The mobile app: what Expo writes, and the lock file of whoever installed it here
+.expo/
+expo-env.d.ts
+apps/mobile/dist/
+apps/mobile/package-lock.json
+apps/mobile/pnpm-lock.yaml

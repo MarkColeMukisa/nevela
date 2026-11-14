@@ -65,6 +65,7 @@ export default defineConfig({
             { label: "Protecting a public form", slug: "guides/protecting-forms" },
             { label: "The blog", slug: "guides/blog" },
             { label: "The web app", slug: "guides/web-app" },
+            { label: "The mobile app", slug: "guides/mobile-app" },
             { label: "Authentication", slug: "guides/authentication" },
             { label: "Users, roles and permissions", slug: "guides/policies" },
             { label: "Deleted accounts", slug: "guides/deleted-accounts" },

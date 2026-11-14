@@ -1,0 +1,34 @@
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native folders, made by `npx expo prebuild` or `expo run`. Configure the app in app.json instead.
+/ios
+/android
+
+# Signing keys and certificates
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# Metro
+.metro-health-check*
+
+# Where the API is on this machine, written by `nevela dev`
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+.DS_Store
+npm-debug.*
+yarn-debug.*
+yarn-error.*
