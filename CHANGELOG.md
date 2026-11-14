@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.29.2] - 2026-11-14
+
+_Two people editing the same order no longer lose each other's lines_
+
 ### Fixed
 
 - **Two people editing the same order: a save could replace the other person's lines without showing them.** When someone else saved a record with lines while you had it open, the form kept the lines you had loaded, and your next save put them in place of theirs. The 409 now carries the record's lines (`current.items`). If only they changed the lines, theirs come into the form. If you both did, yours stay, nothing is saved, and the notice has a **Use their lines** button. See [Two people editing the same record](https://nevela-docs.vercel.app/guides/web-app/#two-people-editing-the-same-record).
@@ -771,7 +775,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.29.1...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.29.2...HEAD
+[0.29.2]: https://github.com/MarkColeMukisa/nevela/compare/v0.29.1...v0.29.2
 [0.29.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.29.0...v0.29.1
 [0.29.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.28.1...v0.29.0
 [0.28.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.28.0...v0.28.1
