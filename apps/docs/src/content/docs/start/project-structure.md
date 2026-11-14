@@ -14,6 +14,8 @@ my-app/
 └─ package.json
 ```
 
+`nevela new my-app --mobile` adds a third, `apps/mobile`: [the mobile app](/guides/mobile-app/).
+
 ## apps/api, the Laravel app
 
 An ordinary Laravel app. These are the parts Nevela adds to it:

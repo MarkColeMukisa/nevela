@@ -20,7 +20,7 @@ import { COMMANDS, findProject, forward, upgrade } from './project.mjs';
 import { shellLine, spawnCommand, windows } from './shell.mjs';
 import { latestVersion, newerVersion, runVersion } from './selfupdate.mjs';
 import { copiesOnPath, globalInstall, INSTALL_COMMAND, removeCommand } from './tool.mjs';
-import { copyLaravelPackage, copyWebTemplate, fromRepository, templateRecord } from './template.mjs';
+import { copyLaravelPackage, copyMobileTemplate, copyWebTemplate, fromRepository, templateRecord } from './template.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const VERSION = JSON.parse(fs.readFileSync(path.join(here, 'package.json'), 'utf8')).version;
@@ -67,6 +67,7 @@ const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
 
   ${bold('Anywhere')}
     nevela new [name] [options]   Create an app. It asks for the name if you leave it off.
+    nevela new [name] --mobile    The same, with a mobile app (Expo) beside the dashboard.
                                   Without the command: pnpm create nevela <name>
     nevela update                 Update the nevela command itself to the latest version
     nevela --version              Which version the nevela command is, and this app when in one
@@ -90,6 +91,8 @@ const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
     --no-user                  Don't create the starter admin account, or the sample users.
     --no-sample-users          Create the admin only, without the ten sample users.
     --no-blog                  Leave out the blog: the Post resource, its sample posts and /blog.
+    --mobile                   Add a mobile app in apps/mobile: Expo, for iOS and Android. It signs
+                               in to the same API with the same accounts.
     --fast                     Leave out PHPUnit, Pint and Laravel's other development packages.
                                About a third quicker. Add them later: cd apps/api && composer install
     --no-git                   Don't run git init.
@@ -199,7 +202,7 @@ async function step(label, work) {
 }
 
 function parseArgs(argv) {
-  const options = { name: undefined, pm: undefined, install: true, user: true, samples: true, blog: true, git: true, yes: false, bundledPackage: false, devTools: true };
+  const options = { name: undefined, pm: undefined, install: true, user: true, samples: true, blog: true, git: true, yes: false, bundledPackage: false, devTools: true, mobile: false };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '-h' || arg === '--help') {
@@ -214,6 +217,7 @@ function parseArgs(argv) {
     else if (arg === '--no-user') options.user = false;
     else if (arg === '--no-sample-users') options.samples = false;
     else if (arg === '--no-blog') options.blog = false;
+    else if (arg === '--mobile' || arg === '--expo') options.mobile = true;
     else if (arg === '--no-git') options.git = false;
     else if (arg === '--no-dev-tools' || arg === '--fast') options.devTools = false;
     else if (arg === '--bundled-package') options.bundledPackage = true;
@@ -299,7 +303,7 @@ function write(file, contents) {
   fs.writeFileSync(file, contents);
 }
 
-function writeRootFiles(root, { name, title, pm, admin, samples, blog }) {
+function writeRootFiles(root, { name, title, pm, admin, samples, blog, mobile }) {
   write(path.join(root, 'package.json'), `${JSON.stringify({
     name,
     version: '0.1.0',
@@ -310,10 +314,11 @@ function writeRootFiles(root, { name, title, pm, admin, samples, blog }) {
       nevela: 'php nevela',
       'dev:api': 'cd apps/api && php artisan serve',
       'dev:web': `cd apps/web && ${pm} run dev`,
+      ...(mobile ? { 'dev:mobile': 'cd apps/mobile && npx expo start' } : {}),
     },
   }, null, 2)}\n`);
 
-  write(path.join(root, '.gitignore'), 'node_modules/\nvendor/\n.env\n.env.*\n!.env.example\n.next/\n*.tsbuildinfo\nnext-env.d.ts\n');
+  write(path.join(root, '.gitignore'), `node_modules/\nvendor/\n.env\n.env.*\n!.env.example\n.next/\n*.tsbuildinfo\nnext-env.d.ts\n${mobile ? '.expo/\nexpo-env.d.ts\n' : ''}`);
 
   write(path.join(root, 'README.md'), `# ${title}
 
@@ -351,7 +356,18 @@ php nevela upgrade     # bring this app to the latest Nevela
 php nevela             # everything it can do
 \`\`\`
 
-${blog ? `## The blog
+${mobile ? `## The mobile app
+
+\`apps/mobile\` is an [Expo](https://expo.dev) app for iOS and Android. It signs in to the same API with the same accounts.
+
+\`\`\`sh
+php nevela dev                        # the API, open to your network while a mobile app is in the project
+cd apps/mobile && npx expo start      # in another terminal
+\`\`\`
+
+Scan the QR code with the Expo Go app on a phone that is on the same Wi-Fi, or press \`a\` or \`i\` for an emulator. More: ${DOCS}/guides/mobile-app/
+
+` : ''}${blog ? `## The blog
 
 The site has a blog at http://localhost:3000/blog. Posts are written under **Posts** in the dashboard, and a post is on the site once it is published. Its pages are in \`apps/web/app/blog\` and its settings in \`apps/web/lib/blog.ts\`: both are yours to change.
 
@@ -699,8 +715,19 @@ async function main() {
   // `nevela upgrade` compares against these to tell the files you changed from the ones
   // you didn't, so an update never overwrites your work.
   write(path.join(web, '.nevela.json'), `${JSON.stringify(templateRecord(VERSION), null, 4)}\n`);
-  writeRootFiles(root, { name, title, pm, admin: options.user ? ADMIN : null, samples: options.user && options.samples, blog: options.blog });
+  const mobile = path.join(root, 'apps', 'mobile');
+  if (options.mobile) {
+    copyMobileTemplate(mobile, { name, title });
+    if (pm === 'pnpm') {
+      // React Native's tooling expects one flat node_modules. Its own workspace file also
+      // keeps pnpm from adopting a workspace further up.
+      write(path.join(mobile, 'pnpm-workspace.yaml'), 'nodeLinker: hoisted\n');
+    }
+  }
+  writeRootFiles(root, { name, title, pm, admin: options.user ? ADMIN : null, samples: options.user && options.samples, blog: options.blog, mobile: options.mobile });
   const packages = options.install ? start(pm, ['install'], { cwd: web }) : null;
+  // After the dashboard's, not beside them: two installs at once is what runs a small machine out of memory.
+  const mobilePackages = options.install && options.mobile && packages ? packages.done.then(() => start(pm, ['install'], { cwd: mobile }).done) : null;
 
   const tokens = await step('Creating the Laravel app', async (progress) => {
     // The skeleton only. Its packages are installed below, once, together with Nevela's.
@@ -819,6 +846,11 @@ async function main() {
     installed = (await step(`Installing dashboard packages (${pm})`, () => packages.done)).ok;
   }
 
+  let mobileInstalled = false;
+  if (mobilePackages) {
+    mobileInstalled = (await step(`Installing mobile app packages (${pm})`, () => mobilePackages)).ok;
+  }
+
   if (options.git && available('git') && !run('git', ['rev-parse', '--is-inside-work-tree'], { cwd: root, allowFailure: true }).ok) {
     run('git', ['init', '--quiet'], { cwd: root, allowFailure: true });
   }
@@ -833,6 +865,9 @@ async function main() {
   }
   if (packages && !installed) {
     console.log(`  ${red('!')} The dashboard's packages didn't install. Run it yourself to see why: cd ${name}/apps/web && ${pm} install\n`);
+  }
+  if (mobilePackages && !mobileInstalled) {
+    console.log(`  ${red('!')} The mobile app's packages didn't install. Run it yourself to see why: cd ${name}/apps/mobile && ${pm} install\n`);
   }
   console.log('  Next:\n');
   console.log(`    cd ${name}`);
@@ -853,6 +888,11 @@ async function main() {
     console.log(`\n  The site has a blog at ${indigo('http://localhost:3000/blog')}, with three posts to start. Write more under Posts in the dashboard.`);
   } else if (blogMissing) {
     console.log(`\n  The blog couldn't be set up, so this app has none yet. Everything else is in place. Add it later: ${dim(`${nevela} blog`)}`);
+  }
+  if (options.mobile) {
+    console.log(`\n  The mobile app is in ${bold('apps/mobile')}. With ${nevela} dev running, in another terminal:`);
+    console.log(`\n    cd apps/mobile${options.install ? '' : ` && ${pm} install`} && npx expo start\n`);
+    console.log(`  ${dim('Scan the QR code with Expo Go on a phone on the same Wi-Fi, and sign in with the same account.')}`);
   }
   console.log(`\n  Add ${blog ? 'a' : 'your first'} resource: ${dim(`${nevela} resource Product --fields="name:string, price:money"`)}`);
   console.log(`  Check the app: ${dim(`${nevela} status`)}   Upgrade it later: ${dim(`${nevela} upgrade`)}   Everything: ${dim(nevela)}`);

@@ -1,5 +1,8 @@
 packages:
   - "apps/*"
+  # The mobile app installs on its own, as it does in a new app: React Native wants a
+  # flat node_modules, and its packages have no place in the lock file CI installs from.
+  - "!apps/mobile"
   - "packages/*"
 allowBuilds:
   esbuild: true

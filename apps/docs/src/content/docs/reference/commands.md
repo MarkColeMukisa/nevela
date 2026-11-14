@@ -60,6 +60,7 @@ Leave the name off and it asks for one. The [quickstart](/start/quickstart/) wal
 | `--no-user` | Don't create the starter account, or the sample users. |
 | `--no-sample-users` | Create the administrator only, without the ten sample users. |
 | `--no-blog` | Leave out [the blog](/guides/blog/): the Post resource, its sample posts and `/blog`. |
+| `--mobile` | Add [a mobile app](/guides/mobile-app/) in `apps/mobile`: Expo, for iOS and Android, signing in to the same API. |
 | `--no-git` | Don't run `git init`. |
 | `--bundled-package` | Use the copy of `nevela/laravel` inside the installer instead of the release on Packagist. |
 | `-y`, `--yes` | Ask nothing. Only the app name is ever asked for, and only if you leave it off. |
@@ -367,6 +368,8 @@ It checks the API's port before using it. If another program already has port 80
 |---|---|
 | `--port=` | The first port to try for the API. Default 8000. |
 | `--api-only` | Start the API without the dashboard. |
+
+In a project with [a mobile app](/guides/mobile-app/), the API is served to your network and not only to this computer, so a phone on the same Wi-Fi can reach it. It says so when it starts, and writes the API's port to `apps/mobile/.env.local` for the app to read. Start the app itself in another terminal: `cd apps/mobile && npx expo start`.
 
 Where the app's queue isn't `sync`, it works the queue too, so the mail a [public form](/guides/protecting-forms/#the-mail-a-form-causes) causes is sent while you develop.
 

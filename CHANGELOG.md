@@ -8,6 +8,13 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_A mobile app for iOS and Android, from one flag_
+
+### Added
+
+- **A mobile app: `nevela new my-app --mobile`.** It adds `apps/mobile` beside the API and the dashboard: an Expo app for iOS and Android, named for your app. It signs in to the same API with the same accounts, by password or an emailed code, with the second step for an account that has one. Home is the dashboard's bell, Account changes your name and password, and Settings lists the devices you are signed in on and signs them out. The tokens are kept in the phone's keychain and renewed by themselves. This first version has no screens for your resources yet, and `nevela upgrade` leaves `apps/mobile` alone. See [The mobile app](https://nevela-docs.vercel.app/guides/mobile-app/).
+- **`nevela dev` serves the API to your network when the project has a mobile app**, so a phone on the same Wi-Fi can reach it, and says so when it starts. It also writes the API's port to `apps/mobile/.env.local`, so the app still finds the API when port 8000 was taken. A project without `apps/mobile` is served on `127.0.0.1` as before. The new `mobile_path` setting (`NEVELA_MOBILE_PATH`) says where the app is; empty turns this off.
+
 ## [0.29.2] - 2026-11-14
 
 _Two people editing the same order no longer lose each other's lines_

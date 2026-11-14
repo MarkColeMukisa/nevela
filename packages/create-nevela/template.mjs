@@ -21,6 +21,7 @@ export const fromRepository = fromRepo;
 export const sources = {
   web: fromRepo ? path.resolve(here, '..', '..', 'apps', 'web') : path.join(bundled, 'web'),
   laravel: fromRepo ? path.resolve(here, '..', 'laravel') : path.join(bundled, 'laravel'),
+  mobile: fromRepo ? path.resolve(here, '..', '..', 'apps', 'mobile') : path.join(bundled, 'mobile'),
 };
 
 /** Never part of a new app: build output, installs and local settings. */
@@ -108,6 +109,40 @@ export function templateRecord(version) {
   return { template: version, files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => a.localeCompare(b))), dependencies };
 }
 
+/** Never part of a new mobile app: what Expo builds, and the lock file of whoever installed it here. */
+const MOBILE_NEVER = new Set(['.expo', 'dist', 'expo-env.d.ts', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'bun.lock', 'ios', 'android']);
+const skipMobile = (inside) => MOBILE_NEVER.has(inside.split('/')[0]);
+
+/**
+ * What a phone may call the app in a link (nevela://…): lowercase letters, digits and
+ * hyphens, starting with a letter. An app name is nearly that already.
+ */
+export function mobileScheme(name) {
+  const scheme = name.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^[^a-z]+|-+$/g, '');
+  return scheme || 'app';
+}
+
+/** The Expo app, named for the new app. */
+export function copyMobileTemplate(to, { name, title }) {
+  copyTree(sources.mobile, to, skipMobile);
+
+  const packageFile = path.join(to, 'package.json');
+  const manifest = JSON.parse(fs.readFileSync(packageFile, 'utf8'));
+  manifest.name = `${name}-mobile`;
+  fs.writeFileSync(packageFile, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  // What the phone shows under the icon, and the name Expo knows the project by.
+  const appFile = path.join(to, 'app.json');
+  const app = JSON.parse(fs.readFileSync(appFile, 'utf8'));
+  app.expo.name = title;
+  app.expo.slug = mobileScheme(name);
+  app.expo.scheme = mobileScheme(name);
+  fs.writeFileSync(appFile, `${JSON.stringify(app, null, 2)}\n`);
+
+  const siteFile = path.join(to, 'src', 'lib', 'site.ts');
+  fs.writeFileSync(siteFile, fs.readFileSync(siteFile, 'utf8').replace('name: "Nevela"', `name: ${JSON.stringify(title)}`));
+}
+
 /** The Laravel package, for installing by path until it is on Packagist. */
 export function copyLaravelPackage(to) {
   copyTree(sources.laravel, to, (inside) => inside === 'tests' || inside === 'phpunit.xml');
@@ -117,6 +152,7 @@ export function copyLaravelPackage(to) {
 export function buildTemplate(to) {
   copyTree(sources.web, path.join(to, 'web'), exampleResourceFilter(sources.web));
   copyLaravelPackage(path.join(to, 'laravel'));
+  copyTree(sources.mobile, path.join(to, 'mobile'), skipMobile);
   hideGitignores(to);
 }
 
