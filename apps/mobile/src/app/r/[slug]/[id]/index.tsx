@@ -51,7 +51,8 @@ export default function RecordDetail() {
         const value = data[name];
         if (!target || !value) continue;
         const found = await relatedTitles(target, [String(value)]);
-        if (live && found[String(value)]) setRelated((current) => ({ ...current, [name]: found[String(value)] }));
+        // Kept by the id as well as the field: a relation that is changed or cleared must not show the old title.
+        if (live && found[String(value)]) setRelated((current) => ({ ...current, [`${name}:${String(value)}`]: found[String(value)] }));
       }
     })();
     return () => {
@@ -61,8 +62,9 @@ export default function RecordDetail() {
 
   if (!resource) return describing ? <Loading /> : <Screen edges={["bottom"]}><Body muted>There is no such resource in this app.</Body></Screen>;
   if (record.loading) return <Loading />;
-  if (!data) {
-    const gone = record.error instanceof ApiError && record.error.status === 404;
+  // Deleted since it was read, perhaps by someone else: what is on screen is no longer a record.
+  const gone = record.error instanceof ApiError && record.error.status === 404;
+  if (!data || gone) {
     return (
       <Screen edges={["bottom"]}>
         <Stack.Screen options={{ title: resource.label }} />
@@ -90,7 +92,7 @@ export default function RecordDetail() {
 
   const fields = Object.entries(resource.fields).filter(([, field]) => applies(field, data));
   const facts = fields.filter(([, field]) => field.kind !== "file" && field.kind !== "text" && field.kind !== "json");
-  const long = fields.filter(([name, field]) => field.kind === "text" && display(field, data[name]) !== "");
+  const long = fields.filter(([name, field]) => (field.kind === "text" || field.kind === "json") && display(field, data[name]) !== "");
   const pictures = fields.flatMap(([name, field]) => (field.kind === "file" ? filesOf(name, field, data).map((file) => ({ name, file })) : []));
   const lines = resource.items ? byName(resource.items) : undefined;
 
@@ -104,6 +106,7 @@ export default function RecordDetail() {
       </View>
 
       {failed ? <Notice>{messageOf(failed)}</Notice> : null}
+      {record.error ? <Notice>Couldn't refresh this {resource.label.toLowerCase()}, so it may have changed since. {messageOf(record.error)}</Notice> : null}
 
       {pictures.some(({ file }) => thumb(file)) ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
@@ -118,7 +121,7 @@ export default function RecordDetail() {
         {facts.map(([name, field], index) => {
           const target = field.kind === "belongsTo" && field.target ? byName(field.target) : undefined;
           const value = data[name];
-          const shown = field.kind === "belongsTo" ? related[name] ?? "" : display(field, value);
+          const shown = field.kind === "belongsTo" ? related[`${name}:${String(value ?? "")}`] ?? "" : display(field, value);
           return (
             <Row
               key={name}

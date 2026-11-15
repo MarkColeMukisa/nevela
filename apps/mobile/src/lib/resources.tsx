@@ -125,6 +125,7 @@ export function ResourcesProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const signedIn = user !== null;
+  const account = user?.id ?? null;
 
   const reload = useCallback(async () => {
     try {
@@ -137,13 +138,15 @@ export function ResourcesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // What one account was shown is not carried over to the next.
+    titles.clear();
     if (!signedIn) {
       setAll([]);
       return;
     }
     setLoading(true);
     reload().finally(() => setLoading(false));
-  }, [signedIn, reload]);
+  }, [signedIn, account, reload]);
 
   const value = useMemo<ResourcesValue>(() => {
     // An order's items are edited with the order, not on their own.

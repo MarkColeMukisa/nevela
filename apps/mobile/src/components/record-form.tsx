@@ -45,7 +45,7 @@ function fromControl(field: FieldSpec, held: unknown): { value?: unknown; proble
     if (Number.isNaN(amount) || (field.kind === "int" && !Number.isInteger(amount))) return { problem: field.kind === "int" ? "Enter a whole number." : "Enter a number." };
     return { value: amount };
   }
-  if (field.kind === "date") return /^\d{4}-\d{2}-\d{2}$/.test(typed) ? { value: typed } : { problem: "Write the date as 2026-11-15." };
+  if (field.kind === "date") return fromLocalInput(`${typed} 00:00`) ? { value: typed } : { problem: "Write the date as 2026-11-15." };
   if (field.kind === "datetime") {
     const iso = fromLocalInput(typed);
     return iso ? { value: iso } : { problem: "Write the date and time as 2026-11-15 14:30." };
@@ -143,9 +143,12 @@ function Control({ name, field, value, problem, creating, onChange }: { name: st
 
   if (field.kind === "boolean") {
     return (
-      <View style={styles.switchRow}>
-        <Text style={{ flex: 1, color: colors.text, fontSize: text.body }}>{fieldLabel(name, field)}</Text>
-        <Switch accessibilityLabel={fieldLabel(name, field)} value={Boolean(value)} onValueChange={onChange} />
+      <View style={{ gap: spacing.xs }}>
+        <View style={styles.switchRow}>
+          <Text style={{ flex: 1, color: colors.text, fontSize: text.body }}>{fieldLabel(name, field)}</Text>
+          <Switch accessibilityLabel={fieldLabel(name, field)} value={Boolean(value)} onValueChange={onChange} />
+        </View>
+        {problem ? <Text style={{ color: colors.danger, fontSize: text.small }}>{problem}</Text> : null}
       </View>
     );
   }

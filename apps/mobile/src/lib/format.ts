@@ -83,5 +83,8 @@ export function fromLocalInput(text: string): string | null {
   if (!match) return null;
   const [year, month, day, hour, minute] = match.slice(1).map(Number);
   const date = new Date(year, month - 1, day, hour, minute);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  // JavaScript rolls the 31st of February over into March. What was typed has to be
+  // the date that comes out.
+  const same = date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day && date.getHours() === hour && date.getMinutes() === minute;
+  return same ? date.toISOString() : null;
 }

@@ -73,6 +73,10 @@ export default function RecordList() {
         }
       } catch (caught) {
         if (mine === latest.current) setError(caught);
+      } finally {
+        // Only the newest request says the list has arrived. An older search finishing
+        // late must not: more pages would then be added to rows that are about to go.
+        if (mine === latest.current) setLoading(false);
       }
     },
     [resource, byName],
@@ -80,12 +84,16 @@ export default function RecordList() {
 
   // A new search starts a moment after the typing stops.
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(true);
-      load(1, search).finally(() => setLoading(false));
-    }, search ? 300 : 0);
+    setLoading(true);
+    const timer = setTimeout(() => load(1, search), search ? 300 : 0);
     return () => clearTimeout(timer);
   }, [load, search]);
+
+  // What is in the search box now, for a callback that outlives the render it was made in.
+  const searching = useRef(search);
+  useEffect(() => {
+    searching.current = search;
+  }, [search]);
 
   // Back from a record that was created, changed or deleted: the list is read again.
   const first = useRef(true);
@@ -95,9 +103,7 @@ export default function RecordList() {
         first.current = false;
         return;
       }
-      load(1, search);
-      // Only on coming back into focus, not on every keystroke.
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      load(1, searching.current);
     }, [load]),
   );
 
