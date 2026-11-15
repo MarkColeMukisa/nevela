@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useColorScheme } from "react-native";
 
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { ResourcesProvider } from "@/lib/resources";
 import { useColors } from "@/lib/theme";
 
 // The splash screen stays up until the stored sign-in has been checked, so the app opens
@@ -14,7 +15,9 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <Screens />
+      <ResourcesProvider>
+        <Screens />
+      </ResourcesProvider>
     </AuthProvider>
   );
 }
@@ -42,6 +45,11 @@ function Screens() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="devices" options={{ title: "Devices" }} />
           <Stack.Screen name="change-password" options={{ title: "Change password" }} />
+          {/* One set of screens for every resource. Each sets its own title once it knows which. */}
+          <Stack.Screen name="r/[slug]/index" options={{ title: "" }} />
+          <Stack.Screen name="r/[slug]/new" options={{ title: "" }} />
+          <Stack.Screen name="r/[slug]/[id]/index" options={{ title: "" }} />
+          <Stack.Screen name="r/[slug]/[id]/edit" options={{ title: "" }} />
         </Stack.Protected>
         <Stack.Protected guard={user === null}>
           <Stack.Screen name="sign-in" options={{ headerShown: false }} />

@@ -79,7 +79,7 @@ export function Button({ label, onPress, variant = "primary", busy = false, disa
 }
 
 /** A labelled text box, with the server's complaint about it underneath when there is one. */
-export function Field({ label, error, ...input }: { label: string; error?: string } & TextInputProps) {
+export function Field({ label, error, style, ...input }: { label: string; error?: string } & TextInputProps) {
   const colors = useColors();
   return (
     <View style={styles.field}>
@@ -88,7 +88,7 @@ export function Field({ label, error, ...input }: { label: string; error?: strin
         accessibilityLabel={label}
         placeholderTextColor={colors.muted}
         {...input}
-        style={[styles.input, { color: colors.text, borderColor: error ? colors.danger : colors.border, backgroundColor: colors.background }]}
+        style={[styles.input, { color: colors.text, borderColor: error ? colors.danger : colors.border, backgroundColor: colors.background }, style]}
       />
       {error ? <Text style={{ color: colors.danger, fontSize: text.small }}>{error}</Text> : null}
     </View>

@@ -14,7 +14,7 @@ nevela new my-app --mobile
 That is `nevela new` with one more folder: the API in `apps/api`, the dashboard in `apps/web`, and the mobile app in `apps/mobile`, named for your app and with its packages installed.
 
 :::note
-The mobile app is new in 0.30. This first version signs you in and looks after your account. Screens for your resources are next. `nevela upgrade` does not update `apps/mobile` yet; it leaves the folder alone.
+The mobile app is new in 0.30. `nevela upgrade` does not update `apps/mobile` yet; it leaves the folder alone.
 :::
 
 ## Run it
@@ -70,10 +70,40 @@ If the sign-in screen says it couldn't reach the server, it names the address it
 |---|---|
 | Sign in | Email and password. An emailed code as well, when the API has [that switched on](/guides/authentication/). Then the second step for an account that has one: an authenticator app, an emailed code or a backup code. |
 | Home | The dashboard's [bell](/guides/notifications/): what has happened since you last looked, and for an administrator, what needs attention in the app. |
+| Records | Every resource your role may view: search it, open a record, and create, change or delete one where your role allows. See [Your resources](#your-resources). |
 | Account | Your name, roles, and changing your password. |
 | Settings → Devices | Everywhere the account is signed in, browsers and phones alike. Sign one out, or all the others. |
 
 Signing in with Google, GitHub, a passkey or an emailed link stays in the dashboard for now. Each of those ends at a web address, which a phone app has to be taught to open.
+
+## Your resources
+
+There is nothing to generate for the mobile app. It asks Laravel what the resources are (`GET /_nevela/resources`, the same descriptions the generator works from) and draws its screens from the answer:
+
+```sh
+nevela resource Product --fields="name:string, price:money, category:belongsTo(Category), active:boolean"
+```
+
+Pull down on **Records**, or open the app again, and Products is there. That holds for an app already on people's phones too: a new resource or field needs no new build.
+
+| Screen | What it does |
+|---|---|
+| The list | Search, pull to refresh, and more as you scroll. Each row is the record's title, its picture when it has one, and the two fields that say most about it: a status, an amount, what it belongs to, a date. |
+| A record | Every field as a person reads it: money and dates formatted, an enum by its label, a `belongsTo` by the other record's title and a tap away from it. Pictures, and [line items](/guides/line-items/) where the resource has them. |
+| New and edit | A control per field: a keyboard to suit the format, a switch for a yes or no, a list for an enum, a search of the other resource for a `belongsTo`. A field with [a condition](/concepts/field-types/#a-field-that-only-sometimes-applies) appears when the condition holds. |
+
+What Laravel says about a save is shown where it belongs: a refused field under that field, and "someone else saved this first" when [two people edit the same record](/guides/web-app/#two-people-editing-the-same-record). An edit sends only the fields that changed. Deleting moves a record to [the trash](/guides/trash/), to be restored from the dashboard.
+
+The buttons follow the person's [permissions](/guides/policies/): no `products.create`, no **+**. Laravel checks every request whatever the app shows.
+
+Not from the phone yet:
+
+- **Files and JSON.** Pictures are shown, but uploading one, or editing a JSON field, is the dashboard's. A resource with a required file can't be created from the app, and the form says so.
+- **Line items.** An order's lines are read on the phone and edited in the dashboard. Editing the order itself leaves its lines as they are.
+- **Dates** are typed, as `2026-11-15` or `2026-11-15 14:30`, not picked from a calendar.
+- **Actions, bulk changes, import and export.**
+
+The screens are four files under `src/app/r/[slug]/`, shared by every resource, with the form in `src/components/record-form.tsx`. To give one resource a screen of its own, add it as below and link to it from wherever you like.
 
 ## How it talks to Laravel
 
@@ -91,6 +121,8 @@ Laravel decides every request exactly as it does for the dashboard: the same val
 | `src/lib/api.ts` | The only `fetch` to Laravel. Finds the API, adds the token, renews it. |
 | `src/lib/auth.tsx` | Who is signed in, and signing in and out. `useAuth()` in any screen. |
 | `src/lib/storage.ts` | Where the tokens are kept. |
+| `src/lib/resources.tsx` | The resources as Laravel describes them, and what the person may do with each. `useResources()` in any screen. |
+| `src/lib/format.ts` | A field's value as a person reads it. |
 | `src/lib/theme.ts` | Colours, spacing and type sizes. Light and dark follow the phone. |
 | `src/lib/site.ts` | The app's name and tagline. |
 | `src/components/ui.tsx` | The pieces screens are built from: `Screen`, `Field`, `Button`, `Card`, `Row`. |

@@ -13,6 +13,7 @@ export default function TabsLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.brand, tabBarInactiveTintColor: colors.muted, tabBarStyle: { backgroundColor: colors.background, borderTopColor: colors.border } }}>
       <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: icon("home-outline") }} />
+      <Tabs.Screen name="records" options={{ title: "Records", tabBarIcon: icon("albums-outline") }} />
       <Tabs.Screen name="account" options={{ title: "Account", tabBarIcon: icon("person-outline") }} />
       <Tabs.Screen name="settings" options={{ title: "Settings", tabBarIcon: icon("settings-outline") }} />
     </Tabs>
