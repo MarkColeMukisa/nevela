@@ -131,6 +131,188 @@ class SocialLoginTest extends TestCase
         $this->assertSame('github.com', $github['host']);
     }
 
+    // --- from a mobile app
+
+    private const APP = 'juice-me://oauth';
+
+    /** The secret an app keeps while its browser is away, and which proves it is the app that started the sign-in. */
+    private const VERIFIER = 'Zr3pLm9Qx1vTkYw7bN2cHdEfGaJuIoSt5RhVn8MqXe0';
+
+    /** An app starts a sign-in with Google, as the one called juice-me. @return array{url: string, state: string} */
+    private function appStarts(array $app = [], string $verifier = self::VERIFIER): array
+    {
+        config(['nevela.auth.social.app_redirects' => ['juice-me://'], 'app.url' => 'https://api.example.com']);
+
+        return $this->postJson('/api/auth/oauth/google/start', ['app' => $app + ['redirect' => self::APP, 'challenge' => Social::appChallenge($verifier)]])->assertOk()->json();
+    }
+
+    /** The provider sends the browser back to the API, which asks it who this is and hands the browser to the app. */
+    private function providerReturns(string $state, string $code)
+    {
+        return $this->get('/api/auth/oauth/google/app?state='.$state.'&code='.$code);
+    }
+
+    private function appFinishes(string $state, ?string $verifier = self::VERIFIER)
+    {
+        $this->app['auth']->forgetGuards();
+
+        return $this->postJson('/api/auth/oauth/google/callback', array_filter(['state' => $state, 'appVerifier' => $verifier], fn ($value) => $value !== null));
+    }
+
+    public function test_an_app_has_the_provider_send_the_browser_back_to_the_apis_own_address(): void
+    {
+        $started = $this->appStarts();
+
+        parse_str((string) parse_url($started['url'], PHP_URL_QUERY), $query);
+        // Not the dashboard's: the API hands the browser on to the app. This is the address to register with Google.
+        $this->assertSame('https://api.example.com/api/auth/oauth/google/app', $query['redirect_uri']);
+        $this->assertSame($started['state'], $query['state']);
+    }
+
+    public function test_an_app_is_only_sent_back_to_an_address_its_owner_listed(): void
+    {
+        config(['nevela.auth.social.app_redirects' => ['juice-me://', 'https://shop.example.com']]);
+
+        foreach (['juice-me://oauth', 'juice-me://', 'https://shop.example.com', 'https://shop.example.com/open', 'https://shop.example.com?x=1'] as $allowed) {
+            $this->assertSame($allowed, Social::appRedirect($allowed), $allowed);
+        }
+        foreach ([
+            'https://evil.example/steal',
+            'https://shop.example.com.evil.test/x',   // starts with an entry, and isn't it
+            'https://shop.example.com@evil.test/x',
+            'juice-me.evil://x',
+            'javascript://juice-me://x',
+            'juice-me://oauth#fragment',
+            "juice-me://oauth\n",
+            'juice-me://oauth path',
+            'juice-me:oauth',
+            '',
+            str_repeat('a', 600),
+            ['juice-me://oauth'],
+            null,
+        ] as $refused) {
+            $this->assertNull(Social::appRedirect($refused), print_r($refused, true));
+        }
+
+        // Asked for on the way in, nothing is started.
+        $this->postJson('/api/auth/oauth/google/start', ['app' => ['redirect' => 'https://evil.example/steal', 'challenge' => Social::appChallenge(self::VERIFIER)]])
+            ->assertStatus(422)->assertJsonPath('code', 'APP_REDIRECT');
+        $this->postJson('/api/auth/oauth/google/start', ['app' => ['redirect' => self::APP, 'challenge' => 'short']])->assertStatus(422);
+    }
+
+    public function test_expo_gos_own_address_is_allowed_only_while_developing(): void
+    {
+        $expo = 'exp://192.168.1.10:8081/--/oauth';
+        config(['nevela.auth.social.app_redirects' => []]);
+
+        $this->assertNull(Social::appRedirect($expo));
+        $this->app['env'] = 'local';
+        $this->assertSame($expo, Social::appRedirect($expo));
+        $this->assertNull(Social::appRedirect('https://evil.example/x'));
+    }
+
+    public function test_the_provider_returns_to_the_api_which_asks_who_it_is_and_hands_only_the_state_to_the_app(): void
+    {
+        $this->atGoogle('the-code', 'google-grace', 'grace@gmail.com');
+        $started = $this->appStarts();
+
+        $response = $this->providerReturns($started['state'], 'the-code');
+
+        // Only the app's own address, from when it started, and only the state: the code was used up here.
+        $response->assertStatus(302);
+        $this->assertSame('juice-me://oauth?state='.$started['state'], $response->headers->get('Location'));
+        $this->assertSame('grace@gmail.com', \Nevela\Laravel\Auth\Challenges::get('oauth', $started['state'])['profile']['email']);
+
+        // Coming back again with another code doesn't put somebody else's account in its place.
+        $this->atGoogle('mallory-code', 'google-mallory', 'mallory@gmail.com');
+        $this->providerReturns($started['state'], 'mallory-code')->assertStatus(302);
+        $this->assertSame('grace@gmail.com', \Nevela\Laravel\Auth\Challenges::get('oauth', $started['state'])['profile']['email']);
+
+        // Said no at Google: the app is told, and says so.
+        $no = $this->appStarts();
+        $denied = $this->get('/api/auth/oauth/google/app?state='.$no['state'].'&error=access_denied&redirect=https://evil.example');
+        $this->assertSame('juice-me://oauth?state='.$no['state'].'&error=access_denied', $denied->headers->get('Location'));
+
+        // A code Google doesn't accept, or none at all.
+        $refused = $this->appStarts();
+        $this->assertSame('juice-me://oauth?state='.$refused['state'].'&error=failed', $this->providerReturns($refused['state'], 'a-code-nobody-issued')->headers->get('Location'));
+        $none = $this->appStarts();
+        $this->assertSame('juice-me://oauth?state='.$none['state'].'&error=failed', $this->get('/api/auth/oauth/google/app?state='.$none['state'])->headers->get('Location'));
+    }
+
+    public function test_the_apis_address_sends_nobody_anywhere_for_a_sign_in_an_app_did_not_start(): void
+    {
+        // Not started at all, and started by the dashboard: neither has an address to go to.
+        $this->get('/api/auth/oauth/google/app?state=nonsense&code=x')->assertStatus(400);
+        $this->get('/api/auth/oauth/google/app?state='.$this->start()['state'].'&code=x')->assertStatus(400);
+
+        config(['nevela.auth.social.enabled' => false]);
+        $this->get('/api/auth/oauth/google/app?state=nonsense&code=x')->assertNotFound();
+    }
+
+    public function test_the_app_finishes_the_sign_in_with_the_secret_it_started_with(): void
+    {
+        config(['nevela.auth.registration' => true]);
+        $this->atGoogle('newcomer', 'google-grace', 'grace@gmail.com', name: 'Grace Hopper');
+        $started = $this->appStarts();
+
+        // Before Google has come back there is nothing to finish.
+        $this->appFinishes($started['state'])->assertUnauthorized()->assertJsonPath('code', 'OAUTH_STATE');
+        $this->providerReturns($started['state'], 'newcomer');
+
+        // Someone who got hold of the state, but not the secret.
+        $this->appFinishes($started['state'], null)->assertUnauthorized()->assertJsonPath('code', 'OAUTH_STATE');
+        $this->appFinishes($started['state'], 'not the secret')->assertUnauthorized()->assertJsonPath('code', 'OAUTH_STATE');
+        $this->assertSame(0, User::query()->count());
+
+        // Their guesses didn't use the sign-in up.
+        $this->appFinishes($started['state'])->assertCreated()
+            ->assertJsonPath('user.email', 'grace@gmail.com')->assertJsonPath('user.roles', ['USER'])->assertJsonStructure(['token', 'refreshToken']);
+
+        // And once is once.
+        $this->appFinishes($started['state'])->assertUnauthorized()->assertJsonPath('code', 'OAUTH_STATE');
+    }
+
+    public function test_a_code_taken_off_the_phone_signs_nobody_in(): void
+    {
+        config(['nevela.auth.registration' => true]);
+        $attackersSecret = 'an-attackers-own-secret-an-attackers-own-secret';
+        $this->atGoogle('victim', 'google-victim', 'victim@gmail.com');
+        $victim = $this->appStarts();
+        $this->providerReturns($victim['state'], 'victim');
+
+        // Whoever took the redirect off the phone has the state, and the code Google sent. They start a
+        // sign-in of their own, with a secret of their own, and try each of what they took with it.
+        $attacker = $this->appStarts(verifier: $attackersSecret);
+        $this->appFinishes($victim['state'], $attackersSecret)->assertUnauthorized()->assertJsonPath('code', 'OAUTH_STATE');
+        $this->app['auth']->forgetGuards();
+        $this->postJson('/api/auth/oauth/google/callback', ['state' => $attacker['state'], 'code' => 'victim', 'appVerifier' => $attackersSecret])
+            ->assertUnauthorized()->assertJsonPath('code', 'OAUTH_STATE');
+        $this->assertSame(0, User::query()->count());
+
+        // The app it was for still finishes it.
+        $this->appFinishes($victim['state'])->assertCreated()->assertJsonPath('user.email', 'victim@gmail.com');
+    }
+
+    public function test_an_account_with_a_second_step_still_owes_it_to_an_app(): void
+    {
+        $user = User::factory()->create(['email' => 'ada@gmail.com', 'email_verified_at' => now()]);
+        TwoFactor::query()->create(['user_id' => (string) $user->getKey(), 'secret' => Totp::secret(), 'enabled_at' => now(), 'totp_confirmed_at' => now()]);
+        $this->atGoogle('ada', 'google-ada', 'ada@gmail.com');
+        $started = $this->appStarts();
+        $this->providerReturns($started['state'], 'ada');
+
+        $this->appFinishes($started['state'])->assertOk()->assertJsonPath('twoFactor', true)->assertJsonMissingPath('token');
+    }
+
+    public function test_a_sign_in_the_dashboard_started_needs_no_secret(): void
+    {
+        $this->atGoogle('ada', 'google-ada', 'ada@gmail.com');
+        User::factory()->create(['email' => 'ada@gmail.com', 'email_verified_at' => now()]);
+
+        $this->back($this->start()['state'], 'ada')->assertCreated();
+    }
+
     // --- signing in
 
     public function test_someone_with_an_account_signs_in_by_a_verified_address_and_is_known_by_the_provider_after(): void

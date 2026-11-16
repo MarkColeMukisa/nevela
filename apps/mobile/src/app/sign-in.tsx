@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
 
+import { SecondStep } from "@/components/second-step";
+import { SocialButtons } from "@/components/social-buttons";
 import { Body, Button, Field, Notice, Screen, Title } from "@/components/ui";
 import { ApiError, messageOf } from "@/lib/api";
-import { signInMethods, useAuth, type Challenge, type SecondStepMethod } from "@/lib/auth";
+import { signInMethods, useAuth, type Challenge } from "@/lib/auth";
 import { site } from "@/lib/site";
 import { spacing } from "@/lib/theme";
 
@@ -11,14 +14,22 @@ import { spacing } from "@/lib/theme";
  * Sign in: a password, or a code sent by email when the API has that switched on, and
  * then the second step for an account that has one.
  *
- * Signing in with Google, GitHub, a passkey or an emailed link is the dashboard's for
- * now: each ends at a web address, which a phone app has to be taught to open.
+ * Where the API has Google (or GitHub) switched on, there is a button for it. Where it lets
+ * people create their own account, there is a way to from here.
+ *
+ * Signing in with a passkey or an emailed link is the dashboard's for now: each ends at a
+ * web address, which a phone app has to be taught to open.
  */
 export default function SignIn() {
   const auth = useAuth();
+  // Sent here from sign-up with an address that already has an account: it is filled in.
+  const params = useLocalSearchParams<{ email?: string }>();
   const [way, setWay] = useState<"password" | "code">("password");
   const [emailCode, setEmailCode] = useState(false);
-  const [email, setEmail] = useState("");
+  const [registration, setRegistration] = useState(false);
+  const [social, setSocial] = useState<string[]>([]);
+  const [provider, setProvider] = useState<string | null>(null);
+  const [email, setEmail] = useState(typeof params.email === "string" ? params.email : "");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
@@ -27,7 +38,11 @@ export default function SignIn() {
   const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
-    signInMethods().then((methods) => setEmailCode(methods.emailCode));
+    signInMethods().then((methods) => {
+      setEmailCode(methods.emailCode);
+      setRegistration(methods.registration);
+      setSocial(methods.social);
+    });
   }, []);
 
   /** Run one step, showing what went wrong if it did. */
@@ -40,6 +55,18 @@ export default function SignIn() {
       setError(caught);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const withProvider = async (name: string) => {
+    setProvider(name);
+    setError(null);
+    try {
+      setChallenge(await auth.signInWithProvider(name));
+    } catch (caught) {
+      setError(caught);
+    } finally {
+      setProvider(null);
     }
   };
 
@@ -64,99 +91,25 @@ export default function SignIn() {
       {way === "password" ? (
         <>
           <Field label="Password" value={password} onChangeText={setPassword} error={issue("password")} secureTextEntry autoComplete="current-password" textContentType="password" returnKeyType="go" onSubmitEditing={() => run(async () => setChallenge(await auth.signIn(address, password)))} />
-          <Button label="Sign in" busy={busy} disabled={address === "" || password === ""} onPress={() => run(async () => setChallenge(await auth.signIn(address, password)))} />
+          <Button label="Sign in" busy={busy} disabled={address === "" || password === "" || provider !== null} onPress={() => run(async () => setChallenge(await auth.signIn(address, password)))} />
         </>
       ) : codeSent ? (
         <>
           <Field label="Code" value={code} onChangeText={setCode} error={issue("code")} keyboardType="number-pad" autoComplete="one-time-code" textContentType="oneTimeCode" autoFocus />
-          <Button label="Sign in" busy={busy} disabled={code.trim() === ""} onPress={() => run(async () => setChallenge(await auth.signInWithCode(address, code)))} />
+          <Button label="Sign in" busy={busy} disabled={code.trim() === "" || provider !== null} onPress={() => run(async () => setChallenge(await auth.signInWithCode(address, code)))} />
           <Button variant="link" label="Use a different email" onPress={() => { setCodeSent(false); setCode(""); setError(null); }} />
         </>
       ) : (
-        <Button label="Email me a code" busy={busy} disabled={address === ""} onPress={() => run(async () => { await auth.sendEmailCode(address); setCodeSent(true); })} />
+        <Button label="Email me a code" busy={busy} disabled={address === "" || provider !== null} onPress={() => run(async () => { await auth.sendEmailCode(address); setCodeSent(true); })} />
       )}
+
+      <SocialButtons providers={social} busy={provider} disabled={busy} onPick={withProvider} />
 
       {emailCode ? (
         <Button variant="link" label={way === "password" ? "Sign in with an emailed code instead" : "Sign in with a password instead"} onPress={() => { setWay(way === "password" ? "code" : "password"); setCodeSent(false); setCode(""); setError(null); }} />
       ) : null}
-    </Screen>
-  );
-}
 
-const SECOND_STEPS: Record<SecondStepMethod, { label: string; prompt: string; choose: string }> = {
-  totp: { label: "Code", prompt: "Enter the code from your authenticator app.", choose: "Use my authenticator app" },
-  email: { label: "Code", prompt: "Enter the code we emailed you.", choose: "Email me a code" },
-  backup: { label: "Backup code", prompt: "Enter one of your backup codes. Each works once.", choose: "Use a backup code" },
-};
-
-/** The second step of a sign-in: a code from an app, from an email, or a backup code. */
-function SecondStep({ challenge, onCancel }: { challenge: Challenge; onCancel: () => void }) {
-  const auth = useAuth();
-  const [method, setMethod] = useState<SecondStepMethod>(challenge.methods[0] ?? "totp");
-  const [code, setCode] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-
-  const choose = (next: SecondStepMethod) => {
-    setError(null);
-    setCode("");
-    setMethod(next);
-  };
-
-  const { sendSecondStepCode } = auth;
-  const sendCode = useCallback(async () => {
-    setSending(true);
-    setError(null);
-    try {
-      await sendSecondStepCode(challenge.challenge);
-    } catch (caught) {
-      setError(caught);
-    } finally {
-      setSending(false);
-    }
-  }, [challenge.challenge, sendSecondStepCode]);
-
-  // An emailed code has to be asked for: on choosing it, and at the start for an
-  // account whose only second step it is.
-  useEffect(() => {
-    if (method === "email") sendCode();
-  }, [method, sendCode]);
-
-  const verify = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await auth.verifySecondStep(challenge.challenge, method, code);
-    } catch (caught) {
-      setError(caught);
-      // The sign-in has run out of time or of attempts: nothing more can be done with it.
-      if (caught instanceof ApiError && (caught.code === "SESSION_EXPIRED" || caught.code === "TOO_MANY_ATTEMPTS")) setCode("");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const step = SECOND_STEPS[method];
-
-  return (
-    <Screen edges={["top", "bottom"]} centered>
-      <View style={{ gap: spacing.xs }}>
-        <Title>One more step</Title>
-        <Body muted>{step.prompt}</Body>
-      </View>
-
-      {error ? <Notice>{messageOf(error)}</Notice> : null}
-
-      <Field label={step.label} value={code} onChangeText={setCode} autoCapitalize="none" autoCorrect={false} keyboardType={method === "backup" ? "default" : "number-pad"} autoComplete="one-time-code" textContentType="oneTimeCode" autoFocus returnKeyType="go" onSubmitEditing={verify} />
-      <Button label="Verify" busy={busy} disabled={code.trim() === ""} onPress={verify} />
-
-      {method === "email" ? <Button variant="link" label="Send the code again" busy={sending} disabled={busy} onPress={sendCode} /> : null}
-      {challenge.methods.filter((other) => other !== method).map((other) => (
-        <Button key={other} variant="link" label={SECOND_STEPS[other].choose} disabled={busy} onPress={() => choose(other)} />
-      ))}
-      {/* Not while a code is being checked: the answer would sign in someone who had just backed out. */}
-      <Button variant="link" label="Back to sign in" disabled={busy} onPress={onCancel} />
+      {registration ? <Button variant="link" label="New here? Create an account" disabled={busy} onPress={() => router.push("/sign-up")} /> : null}
     </Screen>
   );
 }

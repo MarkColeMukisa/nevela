@@ -3,6 +3,8 @@ import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, 
 import { Platform } from "react-native";
 
 import { api, type TokenPair } from "./api";
+import { shellFor, type Shell } from "./shell";
+import { authorize } from "./social";
 
 /** The signed-in user, as `GET auth/me` describes them. */
 export interface User {
@@ -30,16 +32,28 @@ export interface Challenge {
 /** Which ways of signing in the API has switched on (`GET auth/config`). */
 export interface SignInMethods {
   emailCode: boolean;
+  /** Whether people may create their own account. */
   registration: boolean;
+  /** Whether a new account must prove its email before it can sign in. */
+  requireEmailVerification: boolean;
+  /** The social providers that are switched on and have their keys, such as "google". */
+  social: string[];
+  /** The role someone who signs up starts with: what tells a customer from staff. */
+  defaultRole: string | null;
 }
 
 type SignedIn = TokenPair & { user: User };
 type Answer = SignedIn | { twoFactor: true; challenge: string; methods: SecondStepMethod[] };
 
+/** What creating an account came to: signed in (null), a code to enter first ("verify"), or a second step owed. */
+export type Registered = "verify" | Challenge | null;
+
 interface AuthContextValue {
   user: User | null;
   /** True until the stored sign-in has been checked on launch. */
   loading: boolean;
+  /** Which app this person is given, by their roles: see lib/shell.ts. */
+  shell: Shell;
   /** Sign in with a password. Answers a challenge when the account has a second step. */
   signIn: (email: string, password: string) => Promise<Challenge | null>;
   /** Finish a sign-in that is waiting for its second step. */
@@ -50,6 +64,17 @@ interface AuthContextValue {
   sendEmailCode: (email: string) => Promise<void>;
   /** Sign in with an emailed code. Answers a challenge when the account has an authenticator app. */
   signInWithCode: (email: string, code: string) => Promise<Challenge | null>;
+  /**
+   * Sign in with Google or another provider, in the phone's browser. Answers a challenge when
+   * the account has a second step. Where the API allows sign-up, a new address gets an account.
+   */
+  signInWithProvider: (provider: string) => Promise<Challenge | null>;
+  /** Create an account. Answers "verify" when the email has to be proved before signing in. */
+  register: (name: string, email: string, password: string) => Promise<Registered>;
+  /** Prove an email with the code that was sent to it, which signs the new account in. */
+  verifyEmail: (email: string, code: string) => Promise<Challenge | null>;
+  /** Send the verification code again. */
+  resendVerification: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   /** Read the user again, after a change to the profile. */
   reload: () => Promise<void>;
@@ -68,6 +93,22 @@ function deviceName(): string {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [defaultRole, setDefaultRole] = useState<string | null>(null);
+  const shell = useMemo(() => shellFor(user, defaultRole), [user, defaultRole]);
+  const userId = user?.id ?? null;
+
+  // The role was asked for as the app opened. If that didn't get an answer (no signal, a slow
+  // first request), ask again once someone is signed in, so a customer isn't left in the staff app.
+  useEffect(() => {
+    if (userId === null || defaultRole !== null) return;
+    let live = true;
+    signInMethods().then((methods) => {
+      if (live) setDefaultRole(methods.defaultRole);
+    });
+    return () => {
+      live = false;
+    };
+  }, [userId, defaultRole]);
 
   // Counts every sign-in and sign-out. An answer about "who am I" that set out before
   // the latest one is about a sign-in that is no longer this one, and is dropped.
@@ -86,6 +127,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     api.onSignedOut(forget);
+    // Which role customers start with decides the first screen, so it is known before one is shown.
+    const config = signInMethods().then((methods) => setDefaultRole(methods.defaultRole));
     (async () => {
       try {
         // Nothing stored: don't ask the network, so a first launch opens straight away.
@@ -95,6 +138,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // to be; a sign-in that is still good is picked up again from there.
         forget();
       } finally {
+        // But not for long: a slow server must not keep the splash screen up.
+        await Promise.race([config, new Promise((resolve) => setTimeout(resolve, 3000))]);
         setLoading(false);
       }
     })();
@@ -116,6 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       loading,
+      shell,
       reload,
       signIn: async (email, password) => finish(await api.post<Answer>("/auth/token", { email, password, deviceName: deviceName() }, { auth: false })),
       verifySecondStep: async (challenge, method, code) => {
@@ -128,6 +174,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await api.post("/auth/email-code", { email }, { auth: false });
       },
       signInWithCode: async (email, code) => finish(await api.post<Answer>("/auth/email-code/verify", { email, code: code.trim(), deviceName: deviceName() }, { auth: false })),
+      signInWithProvider: async (provider) => {
+        const answer = await authorize<Answer>(provider, deviceName());
+        // Closing the window, or saying no at the provider, is not an error: nothing has changed.
+        return answer === null ? null : finish(answer);
+      },
+      register: async (name, email, password) => {
+        const answer = await api.post<Answer | { verify: true }>("/auth/register", { name: name.trim(), email, password, deviceName: deviceName() }, { auth: false });
+        return "verify" in answer ? "verify" : finish(answer);
+      },
+      verifyEmail: async (email, code) => finish(await api.post<Answer>("/auth/email/verify", { email, code: code.trim(), deviceName: deviceName() }, { auth: false })),
+      resendVerification: async (email) => {
+        await api.post("/auth/email/send", { email }, { auth: false });
+      },
       signOut: async () => {
         try {
           await api.delete("/auth/token");
@@ -142,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       can: (permission) => Boolean(user && (user.isAdmin || user.permissions.includes(permission))),
     }),
-    [user, loading, reload, finish, forget],
+    [user, loading, shell, reload, finish, forget],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;
@@ -157,5 +216,11 @@ export function useAuth(): AuthContextValue {
 /** Which sign-in methods to offer. Password always works; the rest are the API's to say. */
 export async function signInMethods(): Promise<SignInMethods> {
   const config = await api.get<Partial<SignInMethods>>("/auth/config").catch(() => ({}) as Partial<SignInMethods>);
-  return { emailCode: config.emailCode ?? false, registration: config.registration ?? false };
+  return {
+    emailCode: config.emailCode ?? false,
+    registration: config.registration ?? false,
+    requireEmailVerification: config.requireEmailVerification ?? false,
+    social: Array.isArray(config.social) ? config.social : [],
+    defaultRole: typeof config.defaultRole === "string" ? config.defaultRole : null,
+  };
 }

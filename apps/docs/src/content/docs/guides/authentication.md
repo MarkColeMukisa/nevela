@@ -62,6 +62,8 @@ Sign-up is off by default: most dashboards are for a team, not for the public.
 
 Someone who signs up gets the `USER` [role](/guides/policies/), which allows nothing beyond their own account, so opening sign-up doesn't open your data. An administrator gives them more from the Users screen.
 
+To start sign-ups on a role of your own instead, such as `CUSTOMER` for a shop that lets people order, make the role on the Roles screen and set `NEVELA_DEFAULT_ROLE=CUSTOMER` in `apps/api/.env`. An app that published `config/nevela.php` sets `auth.default_role` there. The [mobile app](/guides/mobile-app/#customers-and-staff) gives an account that holds only this role the customers' app.
+
 To open it:
 
 1. Add `NEVELA_REGISTRATION=true` to `apps/api/.env`.
@@ -189,6 +191,19 @@ The browser never talks to Laravel, and never holds a token:
 1. The button opens `/api/auth/oauth/google` on the dashboard. Its server asks Laravel where Google's page is, and sends the browser there.
 2. Laravel makes the state that goes with it, good once for ten minutes. The dashboard keeps it in an httpOnly cookie, so Google's answer is taken only in the browser that asked. Nobody can sign you in to their own account by sending you a link.
 3. Google sends the browser back to `/api/auth/oauth/google/callback` on the dashboard. Its server hands the code to Laravel, which asks Google who it is and signs the person in. The token goes into the cookie, as after a password.
+
+### From the mobile app
+
+The [mobile app](/guides/mobile-app/#sign-in-with-google) has the same buttons. A phone has no dashboard to come back to, so the API has a way back of its own:
+
+1. The app asks the API where Google's page is, and says where to return to (its own address, such as `juice-me://oauth`) and gives a challenge: the SHA-256 of a secret it keeps.
+2. Google sends the browser to `{APP_URL}/api/auth/oauth/google/app` on the API. The API uses Google's code there, to ask Google who the person is, so the code goes no further, and hands the browser on to the app's address with only the state.
+3. The app sends the state and its secret to `/api/auth/oauth/google/callback`. The API checks the secret against the challenge and signs the person in. Anyone who takes the state off the phone, or is another app that has claimed the same address, still has no secret, and the code is already used up.
+
+Two things to set up:
+
+- **Register that second address with Google**, beside the dashboard's: `{APP_URL}/api/auth/oauth/google/app`. `APP_URL` in `apps/api/.env` has to be the API's public address. Google only returns to `https` addresses (and to `localhost`), so this works against a deployed API. It can't work against `http://192.168.…` while you develop on a phone: use a tunnel with an `https` address, or an emulator.
+- **List the apps the API may send people to**, in `apps/api/.env`: `NEVELA_APP_REDIRECTS=juice-me://`. Comma separated, and the app's own address has to start with one. `nevela new my-app --mobile` sets it for the new app's address. Nothing else is ever sent a code. While `APP_ENV` is `local`, Expo Go's own address is allowed as well.
 
 ## The profile picture
 

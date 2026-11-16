@@ -47,17 +47,34 @@ final class SocialController
         if (($refused = $this->unavailable($provider)) !== null) {
             return $refused;
         }
-        $input = $request->validate(['next' => ['nullable', 'string', 'max:2000'], 'link' => ['nullable', 'boolean']]);
-        $linking = (bool) ($input['link'] ?? false);
+        $input = $request->validate([
+            'next' => ['nullable', 'string', 'max:2000'],
+            'link' => ['nullable', 'boolean'],
+            // A mobile app: where to send it back to, and the challenge for the secret it keeps.
+            'app' => ['nullable', 'array'],
+            'app.redirect' => ['required_with:app', 'string', 'max:500'],
+            'app.challenge' => ['required_with:app', 'string', 'regex:/^[A-Za-z0-9_-]{43}$/'],
+        ]);
+        $app = null;
+        if (isset($input['app'])) {
+            $redirect = Social::appRedirect($input['app']['redirect']);
+            if ($redirect === null) {
+                return $this->refuse('APP_REDIRECT', "That app isn't one this API sends people back to. List its address in NEVELA_APP_REDIRECTS.", 422);
+            }
+            $app = ['redirect' => $redirect, 'challenge' => $input['app']['challenge']];
+        }
+        // An app signs people in. Connecting an account to one is done from the dashboard.
+        $linking = $app === null && (bool) ($input['link'] ?? false);
         $user = $linking ? $request->user('sanctum') : null;
         if ($linking && $user === null) {
             return $this->refuse('UNAUTHENTICATED', 'Sign in first, then connect it from your account.', 401);
         }
 
-        $callback = Social::callback($provider, $request);
+        $callback = $app === null ? Social::callback($provider, $request) : Social::appCallback($provider);
         $state = Challenges::start('oauth', [
             'provider' => $provider,
             'callback' => $callback,
+            'app' => $app,
             'next' => Web::path($input['next'] ?? null, $linking ? '/dashboard/account/security' : '/dashboard'),
             'user' => $user === null ? null : (string) $user->getAuthIdentifier(),
             'device' => $request->input('deviceName'),
@@ -66,10 +83,70 @@ final class SocialController
         return response()->json(['url' => Social::authorizationUrl($provider, $callback, $state), 'state' => $state]);
     }
 
+    /**
+     * GET auth/oauth/{provider}/app: where the provider sends the browser back to when an app
+     * started the sign-in.
+     *
+     * The provider's code is used here, on the API, to ask who the person is, and goes no
+     * further: the app is handed only the state, and finishes the sign-in with POST …/callback,
+     * proving with its secret that it is the app that began it. So a code taken off the phone,
+     * or by another app that claimed the same address, is already used up and signs nobody in.
+     * The first answer is the one that counts: coming back again with another code can't put
+     * somebody else's account in its place.
+     *
+     * The address the browser goes to is the one the app gave, and was checked, when it
+     * started: never one from this request.
+     */
+    public function app(Request $request, string $provider): JsonResponse|Response|\Illuminate\Http\RedirectResponse
+    {
+        if (($refused = $this->unavailable($provider)) !== null) {
+            return $refused;
+        }
+        $pending = Challenges::get('oauth', (string) $request->query('state'));
+        $to = is_array($pending) && ($pending['provider'] ?? null) === $provider ? ($pending['app']['redirect'] ?? null) : null;
+        if (! is_string($to)) {
+            return response("That sign-in took too long, or wasn't started by an app. Go back to the app and try again.", 400, ['Content-Type' => 'text/plain; charset=UTF-8']);
+        }
+        $state = (string) $request->query('state');
+        $back = ['state' => $state];
+        if (! is_array($pending['profile'] ?? null)) {
+            $code = (string) $request->query('code');
+            if ($request->filled('error')) {
+                // Said no at the provider, say.
+                $back['error'] = substr((string) preg_replace('/[^A-Za-z0-9_.-]/', '', (string) $request->query('error')), 0, 60) ?: 'failed';
+            } elseif ($code === '') {
+                $back['error'] = 'failed';
+            } else {
+                try {
+                    Challenges::update('oauth', $state, ['profile' => Social::profile($provider, (string) $pending['callback'], $code)]);
+                } catch (Throwable $e) {
+                    report($e);
+                    $back['error'] = 'failed';
+                }
+            }
+        }
+
+        return redirect()->away($to.(str_contains($to, '?') ? '&' : '?').http_build_query($back));
+    }
+
     public function callback(Request $request, string $provider): JsonResponse
     {
         if (($refused = $this->unavailable($provider)) !== null) {
             return $refused;
+        }
+        // A sign-in an app started is finished only by that app, which proves it with the
+        // secret it kept. A wrong guess doesn't use the sign-in up: the real app can still finish it.
+        $started = Challenges::get('oauth', (string) $request->input('state'));
+        $fromApp = is_array($started) && is_array($started['app'] ?? null);
+        if ($fromApp) {
+            $verifier = (string) $request->input('appVerifier');
+            if ($verifier === '' || strlen($verifier) > 200 || ! hash_equals((string) ($started['app']['challenge'] ?? ''), Social::appChallenge($verifier))) {
+                return $this->refuse('OAUTH_STATE', "That sign-in wasn't started by this app. Start again.", 401);
+            }
+            // Who it is was asked of the provider when it came back to this API. Not yet: nothing to finish.
+            if (! is_array($started['profile'] ?? null)) {
+                return $this->refuse('OAUTH_STATE', "That sign-in hasn't come back from the provider yet. Start again.", 401);
+            }
         }
         // Good once, and only for the provider it was made for: a callback can't be replayed,
         // and can't be one that this app didn't start.
@@ -79,20 +156,24 @@ final class SocialController
         }
         $next = (string) ($pending['next'] ?? '/dashboard');
         $label = Social::LABELS[$provider];
-        if ($request->filled('error')) {
-            return $this->refuse('OAUTH_DENIED', "{$label} sign-in was cancelled.", 401, ['next' => $next]);
-        }
-        $code = (string) $request->input('code');
-        if ($code === '') {
-            return $this->refuse('OAUTH_FAILED', "{$label} didn't say who you are. Try again.", 401, ['next' => $next]);
-        }
+        if ($fromApp) {
+            $profile = (array) $pending['profile'];
+        } else {
+            if ($request->filled('error')) {
+                return $this->refuse('OAUTH_DENIED', "{$label} sign-in was cancelled.", 401, ['next' => $next]);
+            }
+            $code = (string) $request->input('code');
+            if ($code === '') {
+                return $this->refuse('OAUTH_FAILED', "{$label} didn't say who you are. Try again.", 401, ['next' => $next]);
+            }
 
-        try {
-            $profile = Social::profile($provider, (string) $pending['callback'], $code);
-        } catch (Throwable $e) {
-            report($e);
+            try {
+                $profile = Social::profile($provider, (string) $pending['callback'], $code);
+            } catch (Throwable $e) {
+                report($e);
 
-            return $this->refuse('OAUTH_FAILED', "{$label} sign-in didn't finish. Try again.", 401, ['next' => $next]);
+                return $this->refuse('OAUTH_FAILED', "{$label} sign-in didn't finish. Try again.", 401, ['next' => $next]);
+            }
         }
         if ($profile['email'] === null) {
             return $this->refuse('NO_EMAIL', "Your {$label} account didn't share an email address, so it can't be matched to an account.", 422, ['next' => $next]);

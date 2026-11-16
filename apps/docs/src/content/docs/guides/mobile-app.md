@@ -3,7 +3,7 @@ title: "The mobile app"
 description: "An Expo app for iOS and Android that signs in to the same API with the same accounts."
 ---
 
-`apps/mobile` is an [Expo](https://expo.dev) app: one codebase for iOS and Android. It is a companion to the dashboard for the people who run the app, not a shop front for customers. It signs in to the same Laravel API with the same accounts, roles and permissions.
+`apps/mobile` is an [Expo](https://expo.dev) app: one codebase for iOS and Android. It signs in to the same Laravel API with the same accounts, roles and permissions. People who run the app get a companion to the dashboard; people who sign up as customers get an app of their own: see [Customers and staff](#customers-and-staff).
 
 ## Create an app with one
 
@@ -68,14 +68,40 @@ If the sign-in screen says it couldn't reach the server, it names the address it
 
 | Screen | What it does |
 |---|---|
-| Sign in | Email and password. An emailed code as well, when the API has [that switched on](/guides/authentication/). Then the second step for an account that has one: an authenticator app, an emailed code or a backup code. |
+| Sign in | Email and password, with an eye to check what you typed. An emailed code as well, when the API has [that switched on](/guides/authentication/). **Continue with Google** where the API has it. Then the second step for an account that has one: an authenticator app, an emailed code or a backup code. |
+| Create an account | Name, email and password, where the API lets people [sign up](/guides/authentication/#letting-people-sign-up). Where it asks for the email to be proved first, the code it sent. |
 | Home | How the app is doing, from what it holds. A card per resource with how many there are, how many were added this week against last, and a chart of the last 30 days. A button to add each kind of record, the latest changes from [the activity log](/guides/notifications/), and the bell. Every number is the API's, asked for with the person's own permissions. |
 | Records | Every resource your role may view: search it, open a record, and create, change or delete one where your role allows. See [Your resources](#your-resources). |
 | Account | Your profile picture (choose one or take one), your name, your roles, and changing your password. |
 | Two-step sign-in and passkeys | Turn on two-step sign-in with an authenticator app (a button that opens the one on the phone, a QR code for one on another device, and the setup key to copy) or with codes by email. Backup codes are shown once, to copy. Make new ones, or turn it off. List your passkeys and remove one. |
 | Settings | Light, dark or the phone's appearance. **Devices**: everywhere the account is signed in, browsers and phones alike; sign one out, or all the others. |
 
-Signing in with Google, GitHub or an emailed link stays in the dashboard for now. Each of those ends at a web address, which a phone app has to be taught to open.
+Signing in with an emailed link stays in the dashboard for now: it ends at a web address, which a phone app has to be taught to open.
+
+## Customers and staff
+
+One app, two shapes, chosen by role with nothing to set in the app. The API says which role someone who signs up starts with (`NEVELA_DEFAULT_ROLE`, `USER` unless you set it). An account that holds only that role is a **customer**. Anyone who holds another role as well, such as an editor or a role of your own for staff, and every administrator, is **staff**.
+
+| | Customer | Staff |
+|---|---|---|
+| Tabs | Home, Account, Settings | Home, Records, Account, Settings |
+| Home | A greeting, the bell, and a list of what the account may browse | The overview: a card per resource with its numbers, the latest activity and quick add |
+
+What a customer may see and do is still the [role's permissions](/guides/policies/), checked by Laravel on every request. A new account on a role with no permissions sees "Your account is ready" until someone gives it access.
+
+For a shop that takes orders:
+
+1. Make a `CUSTOMER` role on the dashboard's Roles screen, with the permissions customers need.
+2. Set `NEVELA_DEFAULT_ROLE=CUSTOMER` and `NEVELA_REGISTRATION=true` in `apps/api/.env`.
+3. Everyone who signs up in the app is now a customer. Staff are made on the Users screen, with their own role.
+
+## Sign in with Google
+
+Where the API has Google (or GitHub) [switched on](/guides/authentication/#google-and-github), the sign-in and sign-up screens show **Continue with Google**. Where sign-up is open, a new address gets an account, as it would from the sign-up screen.
+
+It works through the API, not the phone: the app opens Google's page in the phone's browser, Google returns to the API, which asks Google who the person is and hands the browser back to the app with only a reference to the sign-in. The app proves it is the one that began with a secret it kept, so nothing taken off the phone is any use to anyone else. [How it works, and what to register with Google](/guides/authentication/#from-the-mobile-app).
+
+Google only returns to `https` addresses. So the button works against an API that is online with a certificate. While you develop on a phone against `http://192.168.…`, it can't complete: use an `https` tunnel to your computer, or an emulator.
 
 Passkeys are managed from the app, but added and used in the dashboard. A passkey belongs to a website, and an app may only use one that its own domain vouches for: that takes a build of the app signed for your domain, which Expo Go is not.
 

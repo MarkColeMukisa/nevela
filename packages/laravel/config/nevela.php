@@ -96,6 +96,11 @@ return [
         | Give the provider this address to send people back to:
         |     {NEVELA_WEB_URL}/api/auth/oauth/{provider}/callback
         |
+        | A mobile app has its own way back, through the API, so a second address goes to the
+        | provider as well (APP_URL is this app's public address, https):
+        |     {APP_URL}/api/auth/oauth/{provider}/app
+        | and `app_redirects` lists the apps it may send people on to.
+        |
         | Who may come in follows `registration`. Off: only someone with an account, found by
         | the provider account connected to it or by an address the provider says is
         | verified. On: anyone, and a new account is made for a new address.
@@ -110,6 +115,9 @@ return [
                 'client_id' => env('GITHUB_CLIENT_ID'),
                 'client_secret' => env('GITHUB_CLIENT_SECRET'),
             ],
+            // The addresses a mobile app may be sent back to, as they start: "juice-me://". Comma
+            // separated in NEVELA_APP_REDIRECTS. While APP_ENV is local, Expo Go's own is allowed too.
+            'app_redirects' => array_values(array_filter(array_map('trim', explode(',', (string) env('NEVELA_APP_REDIRECTS', ''))))),
         ],
 
         /* A sign-in link by email. */
@@ -155,7 +163,7 @@ return [
         | The role a self-registered account starts with. USER allows nothing beyond the
         | person's own account, which is what makes open sign-up safe. Null gives no role.
         */
-        'default_role' => 'USER',
+        'default_role' => env('NEVELA_DEFAULT_ROLE', 'USER'),
 
         /*
         | Where the dashboard is, for the links in emails and for passkeys, which are tied

@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { CustomerHome } from "@/components/customer-home";
+import { HomeHeader, NothingShared } from "@/components/home-header";
 import { Spark } from "@/components/spark";
 import { Body, Heading, Notice, Screen, type IconName } from "@/components/ui";
 import { api, messageOf } from "@/lib/api";
@@ -48,12 +49,6 @@ interface Home {
   inbox: Inbox | null;
 }
 
-/** "Good evening": the greeting a person would give at this hour. */
-function greeting(now = new Date()): string {
-  const hour = now.getHours();
-  return hour < 5 ? "Good evening" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-}
-
 const ACTIONS: Record<Activity["action"], { icon: IconName; verb: string }> = {
   created: { icon: "add-circle-outline", verb: "added" },
   updated: { icon: "create-outline", verb: "changed" },
@@ -63,12 +58,12 @@ const ACTIONS: Record<Activity["action"], { icon: IconName; verb: string }> = {
 };
 
 /**
- * Home: how the app is doing, from what it holds. A card per resource with how many
+ * The staff home: how the app is doing, from what it holds. A card per resource with how many
  * there are, how many were made this week against last, and the last thirty days; what
  * people changed lately; and a way straight to adding something. Every number is the
  * API's, asked for with the person's own permissions: nothing here is made up.
  */
-export default function HomeScreen() {
+function StaffHome() {
   const { user, can } = useAuth();
   const { resources, error: describing } = useResources();
   const colors = useColors();
@@ -100,41 +95,15 @@ export default function HomeScreen() {
   }, [key, can]);
 
   const home = useLoaded(load);
-  const [now] = useState(() => new Date());
   if (!user) return null;
 
-  const first = user.name?.trim().split(/\s+/)[0];
   const creatable = resources.filter((resource) => may(user, resource, "create"));
   const unread = home.data?.inbox?.unread ?? 0;
   const conditions = home.data?.inbox?.conditions ?? [];
 
   return (
     <Screen inTabs refreshControl={<RefreshControl refreshing={home.refreshing} onRefresh={home.refresh} />}>
-      <View style={styles.header}>
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ color: colors.muted, fontSize: text.small }}>{now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</Text>
-          <Text accessibilityRole="header" style={{ color: colors.text, fontSize: 24, fontWeight: "700", letterSpacing: -0.5 }} numberOfLines={1} adjustsFontSizeToFit>
-            {greeting(now)}{first ? `, ${first}` : ""}
-          </Text>
-        </View>
-        <Pressable accessibilityRole="button" accessibilityLabel={unread > 0 ? `Notifications, ${unread} new` : "Notifications"} hitSlop={8} onPress={() => router.push("/notifications")} style={[styles.round, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-          <Ionicons name="notifications-outline" size={20} color={colors.text} />
-          {unread > 0 ? (
-            <View style={[styles.badge, { backgroundColor: colors.danger, borderColor: colors.background }]}>
-              <Text style={styles.badgeText}>{unread > 9 ? "9+" : unread}</Text>
-            </View>
-          ) : null}
-        </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Your account" hitSlop={8} onPress={() => router.navigate("/account")}>
-          {user.image ? (
-            <Image source={{ uri: user.image }} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" />
-          ) : (
-            <View style={[styles.avatar, styles.initials, { backgroundColor: colors.brand }]}>
-              <Text style={{ color: colors.onBrand, fontWeight: "700" }}>{(user.name ?? user.email ?? "?").trim().charAt(0).toUpperCase()}</Text>
-            </View>
-          )}
-        </Pressable>
-      </View>
+      <HomeHeader unread={unread} />
 
       {conditions.length > 0 ? (
         <Pressable accessibilityRole="button" onPress={() => router.push("/notifications")}>
@@ -179,12 +148,17 @@ export default function HomeScreen() {
           </View>
         </View>
       ) : !home.loading ? (
-        <View style={[styles.empty, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Ionicons name="sparkles-outline" size={22} color={colors.accent} />
-          <Text style={{ color: colors.text, fontSize: text.body, fontWeight: "600" }}>{site.name} is ready</Text>
-          <Body muted small>Add a resource on your computer and it appears here, with its numbers, the next time you pull down. No new build of the app needed:</Body>
-          <Text selectable style={[styles.command, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}>nevela resource Product --fields="name:string, price:money, image:image"</Text>
-        </View>
+        // The command line is for whoever builds the app. Anyone else has simply been given nothing yet.
+        user.isAdmin ? (
+          <View style={[styles.empty, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Ionicons name="sparkles-outline" size={22} color={colors.accent} />
+            <Text style={{ color: colors.text, fontSize: text.body, fontWeight: "600" }}>{site.name} is ready</Text>
+            <Body muted small>Add a resource on your computer and it appears here, with its numbers, the next time you pull down. No new build of the app needed:</Body>
+            <Text selectable style={[styles.command, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}>nevela resource Product --fields="name:string, price:money, image:image"</Text>
+          </View>
+        ) : (
+          <NothingShared />
+        )
       ) : null}
 
       {home.data?.activity ? (
@@ -268,12 +242,6 @@ function ActivityRow({ entry, you, last }: { entry: Activity; you: string; last:
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  round: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  badge: { position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, borderWidth: 2, alignItems: "center", justifyContent: "center" },
-  badgeText: { color: "#ffffff", fontSize: 10, fontWeight: "700" },
-  avatar: { width: 40, height: 40, borderRadius: 20 },
-  initials: { alignItems: "center", justifyContent: "center" },
   chip: { minHeight: 40, paddingHorizontal: spacing.lg, borderRadius: 20, flexDirection: "row", alignItems: "center", gap: spacing.xs },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
   card: { flexGrow: 1, flexBasis: "45%", minWidth: 150, borderWidth: 1, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.xs },
@@ -287,3 +255,9 @@ const styles = StyleSheet.create({
   activity: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   activityIcon: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
 });
+
+/** Staff and customers are given different homes: see lib/shell.ts. */
+export default function HomeScreen() {
+  const { shell } = useAuth();
+  return shell === "customer" ? <CustomerHome /> : <StaffHome />;
+}
