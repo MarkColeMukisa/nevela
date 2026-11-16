@@ -69,12 +69,15 @@ If the sign-in screen says it couldn't reach the server, it names the address it
 | Screen | What it does |
 |---|---|
 | Sign in | Email and password. An emailed code as well, when the API has [that switched on](/guides/authentication/). Then the second step for an account that has one: an authenticator app, an emailed code or a backup code. |
-| Home | The dashboard's [bell](/guides/notifications/): what has happened since you last looked, and for an administrator, what needs attention in the app. |
+| Home | How the app is doing, from what it holds. A card per resource with how many there are, how many were added this week against last, and a chart of the last 30 days. A button to add each kind of record, the latest changes from [the activity log](/guides/notifications/), and the bell. Every number is the API's, asked for with the person's own permissions. |
 | Records | Every resource your role may view: search it, open a record, and create, change or delete one where your role allows. See [Your resources](#your-resources). |
-| Account | Your name, roles, and changing your password. |
-| Settings → Devices | Everywhere the account is signed in, browsers and phones alike. Sign one out, or all the others. |
+| Account | Your profile picture (choose one or take one), your name, your roles, and changing your password. |
+| Two-step sign-in and passkeys | Turn on two-step sign-in with an authenticator app (a button that opens the one on the phone, a QR code for one on another device, and the setup key to copy) or with codes by email. Backup codes are shown once, to copy. Make new ones, or turn it off. List your passkeys and remove one. |
+| Settings | Light, dark or the phone's appearance. **Devices**: everywhere the account is signed in, browsers and phones alike; sign one out, or all the others. |
 
-Signing in with Google, GitHub, a passkey or an emailed link stays in the dashboard for now. Each of those ends at a web address, which a phone app has to be taught to open.
+Signing in with Google, GitHub or an emailed link stays in the dashboard for now. Each of those ends at a web address, which a phone app has to be taught to open.
+
+Passkeys are managed from the app, but added and used in the dashboard. A passkey belongs to a website, and an app may only use one that its own domain vouches for: that takes a build of the app signed for your domain, which Expo Go is not.
 
 ## Your resources
 
@@ -98,7 +101,8 @@ The buttons follow the person's [permissions](/guides/policies/): no `products.c
 
 Not from the phone yet:
 
-- **Files and JSON.** Pictures are shown, but uploading one, or editing a JSON field, is the dashboard's. A resource with a required file can't be created from the app, and the form says so.
+- **Pictures** are added from the camera or the library, one or several where the field takes several, and sent as they are chosen. Laravel turns them the right way up, removes where they were taken and shrinks them to the field's image profile; lists show the small rendition and a record's page the middle one, kept on the phone once seen.
+- **Other files and JSON.** A PDF or a JSON field is the dashboard's to edit. A resource with a required file that isn't a picture can't be created from the app, and the form says so.
 - **Line items.** An order's lines are read on the phone and edited in the dashboard. Editing the order itself leaves its lines as they are.
 - **Dates** are typed, as `2026-11-15` or `2026-11-15 14:30`, not picked from a calendar.
 - **Actions, bulk changes, import and export.**

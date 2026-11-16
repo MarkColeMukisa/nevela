@@ -3,9 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 import { FlatList, Modal, Pressable, StyleSheet, Switch, Text, TextInput, View, type TextInputProps } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { PictureField } from "@/components/pictures";
 import { Body, Button, Field, Notice } from "@/components/ui";
 import { api, ApiError, messageOf } from "@/lib/api";
-import { fromLocalInput, toLocalInput } from "@/lib/format";
+import { filesOf, fromLocalInput, toLocalInput, type StoredFile } from "@/lib/format";
 import { applies, fieldLabel, optionLabel, relatedTitles, titleOf, useResources, type FieldSpec, type Resource, type ResourceRecord } from "@/lib/resources";
 import { radius, spacing, text, useColors } from "@/lib/theme";
 
@@ -14,19 +15,28 @@ import { radius, spacing, text, useColors } from "@/lib/theme";
  * switch, a list to choose from or a search of another resource, by each field's kind.
  *
  * Laravel checks everything again when it is saved, and its complaint about a field is
- * shown under that field. Files and JSON are the dashboard's to edit for now: they are
- * left exactly as they are when a record is saved from here.
+ * shown under that field. Pictures are chosen or taken on the phone and sent as they are
+ * picked. Other files and JSON are the dashboard's to edit for now: they are left exactly
+ * as they are when a record is saved from here.
  */
 
 type Values = Record<string, unknown>;
 
+/** A file field that takes pictures and nothing else: the kind a phone can fill from its camera or library. */
+export function takesPictures(field: FieldSpec): boolean {
+  return field.kind === "file" && (field.accept?.length ?? 0) > 0 && (field.accept ?? []).every((kind) => kind === "image");
+}
+
 /** Whether the form has a control for a field. */
 function editable(field: FieldSpec): boolean {
-  return field.kind !== "file" && field.kind !== "json" && !field.auto;
+  if (field.kind === "file") return takesPictures(field);
+  return field.kind !== "json" && !field.auto;
 }
 
 /** A record's value as its control holds it: text for anything typed. */
 function toControl(field: FieldSpec, value: unknown): unknown {
+  // A picture field holds the key of its file, or the keys of its files.
+  if (field.kind === "file") return field.multiple ? (Array.isArray(value) ? value : []) : value || null;
   if (field.kind === "boolean") return Boolean(value);
   if (field.kind === "enum" || field.kind === "belongsTo") return value === null || value === undefined || value === "" ? null : String(value);
   if (field.kind === "datetime") return toLocalInput(value);
@@ -36,6 +46,7 @@ function toControl(field: FieldSpec, value: unknown): unknown {
 
 /** What a control holds, as the API takes it. `problem` when it can't be: letters in a number. */
 function fromControl(field: FieldSpec, held: unknown): { value?: unknown; problem?: string } {
+  if (field.kind === "file") return { value: field.multiple ? (Array.isArray(held) ? held : []) : held || null };
   if (field.kind === "boolean") return { value: Boolean(held) };
   if (field.kind === "enum" || field.kind === "belongsTo") return { value: held ?? null };
   const typed = String(held ?? "").trim();
@@ -91,7 +102,7 @@ export function RecordForm({ resource, record, onSaved }: { resource: Resource; 
       else if (record) {
         // A change sends only what changed, so what this form doesn't show stays as it is.
         if (JSON.stringify(value) !== JSON.stringify(fromControl(field, toControl(field, record[name])).value)) payload[name] = value;
-      } else if (value !== null) payload[name] = value;
+      } else if (value !== null && !(Array.isArray(value) && value.length === 0)) payload[name] = value;
     }
     setProblems(found);
     if (Object.keys(found).length > 0) return;
@@ -127,7 +138,7 @@ export function RecordForm({ resource, record, onSaved }: { resource: Resource; 
       {left.length > 0 ? <Notice>{left.map(([name, field]) => fieldLabel(name, field)).join(", ")} can't be set from the app yet. Create this {resource.label.toLowerCase()} in the dashboard.</Notice> : null}
 
       {shown.map(([name, field]) => (
-        <Control key={name} name={name} field={field} value={values[name]} problem={problems[name] || undefined} creating={!record} onChange={(value) => set(name, value)} />
+        <Control key={name} name={name} field={field} resource={resource} record={record} value={values[name]} problem={problems[name] || undefined} creating={!record} onChange={(value) => set(name, value)} />
       ))}
 
       <Button label={record ? "Save changes" : `Create ${resource.label.toLowerCase()}`} busy={busy} onPress={save} />
@@ -135,12 +146,18 @@ export function RecordForm({ resource, record, onSaved }: { resource: Resource; 
   );
 }
 
-function Control({ name, field, value, problem, creating, onChange }: { name: string; field: FieldSpec; value: unknown; problem?: string; creating: boolean; onChange: (value: unknown) => void }) {
+function Control({ name, field, resource, record, value, problem, creating, onChange }: { name: string; field: FieldSpec; resource: Resource; record?: ResourceRecord; value: unknown; problem?: string; creating: boolean; onChange: (value: unknown) => void }) {
   const colors = useColors();
   // A slug made from another field may be left empty on a new record: Laravel writes it.
   const optional = field.required === false || (creating && field.format === "slug" && Boolean(field.from));
   const label = `${fieldLabel(name, field)}${optional ? " (optional)" : ""}`;
 
+  if (field.kind === "file") {
+    // The pictures the record already has, by key, so each can be shown before anything is sent.
+    const known: Record<string, StoredFile> = {};
+    if (record) for (const file of filesOf(name, field, record) as (StoredFile & { key?: string })[]) if (file.key) known[file.key] = file;
+    return <PictureField label={label} resource={resource.name} name={name} many={Boolean(field.multiple)} value={value as string | string[] | null} known={known} problem={problem} onChange={onChange} />;
+  }
   if (field.kind === "boolean") {
     return (
       <View style={{ gap: spacing.xs }}>

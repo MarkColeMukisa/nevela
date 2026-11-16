@@ -1,14 +1,14 @@
-import { Image } from "expo-image";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { RefreshControl, ScrollView, Text, View } from "react-native";
 
+import { Picture } from "@/components/pictures";
 import { Body, Button, Card, Heading, Loading, Notice, Row, Screen } from "@/components/ui";
 import { api, ApiError, messageOf } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { display, filesOf, thumb } from "@/lib/format";
 import { applies, fieldLabel, forgetTitle, may, relatedTitles, titleOf, useResources, type Resource, type ResourceRecord } from "@/lib/resources";
-import { radius, spacing, text, useColors } from "@/lib/theme";
+import { spacing, text, useColors } from "@/lib/theme";
 import { useLoaded } from "@/lib/use-loaded";
 import { ago } from "@/lib/when";
 
@@ -110,10 +110,7 @@ export default function RecordDetail() {
 
       {pictures.some(({ file }) => thumb(file)) ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
-          {pictures.map(({ name, file }, index) => {
-            const uri = thumb(file);
-            return uri ? <Image key={`${name}-${index}`} source={{ uri }} style={[styles.picture, { backgroundColor: colors.surface }]} contentFit="cover" accessibilityLabel={file.name} /> : null;
-          })}
+          {pictures.map(({ name, file }, index) => (thumb(file) ? <Picture key={`${name}-${index}`} file={file} size={pictures.length === 1 ? 220 : 160} rendition="card" /> : null))}
         </ScrollView>
       ) : null}
 
@@ -223,7 +220,3 @@ function Lines({ resource, parent, items }: { resource: Resource; parent: Resour
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  picture: { width: 120, height: 120, borderRadius: radius.md },
-});

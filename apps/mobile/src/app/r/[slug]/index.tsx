@@ -1,13 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
+import { Picture } from "@/components/pictures";
 import { Body, Loading, Notice } from "@/components/ui";
 import { api, messageOf } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { display, filesOf, thumb } from "@/lib/format";
+import { display, filesOf } from "@/lib/format";
 import { may, relatedTitles, titleField, titleOf, useResources, type Resource, type ResourceRecord } from "@/lib/resources";
 import { radius, spacing, text, useColors } from "@/lib/theme";
 
@@ -155,7 +155,6 @@ export default function RecordList() {
           ListFooterComponent={more ? <ActivityIndicator style={{ padding: spacing.lg }} color={colors.muted} /> : undefined}
           contentContainerStyle={{ paddingBottom: spacing.xxl }}
           renderItem={({ item }) => {
-            const picture = image ? thumb(filesOf(image, resource.fields[image], item)[0]) : null;
             const line = summary
               .map((name) => {
                 const field = resource.fields[name];
@@ -165,9 +164,7 @@ export default function RecordList() {
               .join(" · ");
             return (
               <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/r/[slug]/[id]", params: { slug: resource.slug, id: item.id } })} style={({ pressed }) => [styles.item, { borderBottomColor: colors.border }, pressed && { opacity: 0.6 }]}>
-                {image ? (
-                  picture ? <Image source={{ uri: picture }} style={[styles.picture, { backgroundColor: colors.surface }]} contentFit="cover" /> : <View style={[styles.picture, { backgroundColor: colors.surface }]} />
-                ) : null}
+                {image ? <Picture file={filesOf(image, resource.fields[image], item)[0]} size={44} /> : null}
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text numberOfLines={1} style={{ color: colors.text, fontSize: text.body, fontWeight: "500" }}>{titleOf(resource, item)}</Text>
                   {line ? <Text numberOfLines={1} style={{ color: colors.muted, fontSize: text.small }}>{line}</Text> : null}
@@ -187,6 +184,5 @@ const styles = StyleSheet.create({
   search: { minHeight: 44, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: spacing.md, fontSize: text.body },
   count: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm, fontSize: text.small },
   item: { minHeight: 64, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth },
-  picture: { width: 44, height: 44, borderRadius: radius.sm },
   message: { padding: spacing.lg },
 });

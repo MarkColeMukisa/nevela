@@ -6,11 +6,16 @@ import { useColorScheme } from "react-native";
 
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ResourcesProvider } from "@/lib/resources";
-import { useColors } from "@/lib/theme";
+import { loadAppearance, setAppearance, useColors } from "@/lib/theme";
 
 // The splash screen stays up until the stored sign-in has been checked, so the app opens
 // on the right screen rather than flashing the sign-in form at someone who is signed in.
 SplashScreen.preventAutoHideAsync();
+
+// The appearance chosen in Settings, applied before the first screen is drawn.
+loadAppearance().then((choice) => {
+  if (choice !== "system") setAppearance(choice);
+});
 
 export default function RootLayout() {
   return (
@@ -45,6 +50,8 @@ function Screens() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="devices" options={{ title: "Devices" }} />
           <Stack.Screen name="change-password" options={{ title: "Change password" }} />
+          <Stack.Screen name="security" options={{ title: "Sign-in security" }} />
+          <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
           {/* One set of screens for every resource. Each sets its own title once it knows which. */}
           <Stack.Screen name="r/[slug]/index" options={{ title: "" }} />
           <Stack.Screen name="r/[slug]/new" options={{ title: "" }} />

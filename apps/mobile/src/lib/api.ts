@@ -40,6 +40,8 @@ export const API_URL = resolveApiUrl();
 
 /** A request that takes longer than this is given up on, so a screen is never left waiting on a server that isn't there. */
 const TIMEOUT_MS = 30_000;
+/** A photo over a phone's connection is given longer. */
+const UPLOAD_TIMEOUT_MS = 120_000;
 /** A token this close to its end is swapped before it is used, not after it fails. */
 const RENEW_BEFORE_MS = 30_000;
 
@@ -79,6 +81,17 @@ export class UnreachableError extends Error {
 }
 
 /**
+ * The server was reached and didn't answer in time. Unlike a server that can't be
+ * reached, it may have done what was asked: a change may well have been made.
+ */
+export class SlowAnswerError extends Error {
+  constructor(readonly change: boolean) {
+    super("The server took too long to answer.");
+    this.name = "SlowAnswerError";
+  }
+}
+
+/**
  * How a swap of the refresh token went. "ended" is Laravel saying the sign-in is over.
  * "failed" is anything else (no network, a 500): nothing was learnt about the sign-in,
  * so it is kept and the swap can be tried again.
@@ -98,13 +111,14 @@ async function tokens() {
   return cached;
 }
 
-async function send(path: string, init: RequestInit): Promise<Response> {
+async function send(path: string, init: RequestInit, timeout = TIMEOUT_MS): Promise<Response> {
   const url = `${API_URL}${path}`;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeout);
   try {
     return await fetch(url, { ...init, signal: controller.signal });
   } catch {
+    if (controller.signal.aborted) throw new SlowAnswerError((init.method ?? "GET") !== "GET");
     throw new UnreachableError(API_URL);
   } finally {
     clearTimeout(timer);
@@ -162,12 +176,16 @@ interface Options {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   /** Sent as JSON. */
   body?: unknown;
+  /** A file, sent as it is: the body of the request is the file, and `type` what it is. */
+  file?: { body: Blob; type: string };
+  /** Longer than the usual wait, for a photo going up over a phone's connection. */
+  timeout?: number;
   query?: Record<string, string | number | boolean | null | undefined>;
   /** False for the endpoints that sign a person in: there is no token to send yet. */
   auth?: boolean;
 }
 
-async function request<T>(path: string, { method = "GET", body, query, auth = true }: Options = {}): Promise<T> {
+async function request<T>(path: string, { method = "GET", body, file, query, auth = true, timeout }: Options = {}): Promise<T> {
   const search = Object.entries(query ?? {})
     .filter(([, value]) => value !== undefined && value !== null && value !== "")
     .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
@@ -176,12 +194,13 @@ async function request<T>(path: string, { method = "GET", body, query, auth = tr
 
   const attempt = async (): Promise<Response> => {
     const headers: Record<string, string> = { Accept: "application/json" };
-    if (body !== undefined) headers["Content-Type"] = "application/json";
+    if (file) headers["Content-Type"] = file.type;
+    else if (body !== undefined) headers["Content-Type"] = "application/json";
     if (auth) {
       const held = await tokens();
       if (held.access) headers.Authorization = `Bearer ${held.access}`;
     }
-    return send(target, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    return send(target, { method, headers, body: file ? file.body : body === undefined ? undefined : JSON.stringify(body) }, timeout);
   };
 
   if (auth) {
@@ -215,6 +234,8 @@ export const api = {
   patch: <T>(path: string, body: unknown) => request<T>(path, { method: "PATCH", body }),
   put: <T>(path: string, body: unknown) => request<T>(path, { method: "PUT", body }),
   delete: <T = null>(path: string) => request<T>(path, { method: "DELETE" }),
+  /** PUT a file: the request's body is the file itself, which is how Laravel takes an upload. */
+  upload: <T>(path: string, file: { body: Blob; type: string }, query?: Options["query"]) => request<T>(path, { method: "PUT", file, query, timeout: UPLOAD_TIMEOUT_MS }),
 
   async hasToken(): Promise<boolean> {
     const held = await tokens();
@@ -247,6 +268,7 @@ export const api = {
 /** What to show a person when a request failed. */
 export function messageOf(error: unknown): string {
   if (error instanceof UnreachableError) return `Couldn't reach the server at ${error.url}. Check that the API is running and this device is on the same network.`;
+  if (error instanceof SlowAnswerError) return error.change ? "The server took too long to answer, so this may or may not have been saved. Go back and look before trying again." : "The server took too long to answer. Pull down to try again.";
   if (error instanceof Error) return error.message;
   return "Something went wrong. Try again.";
 }

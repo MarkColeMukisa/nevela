@@ -1,12 +1,14 @@
-import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { AddPicture } from "@/components/pictures";
 import { Body, Button, Card, Field, Heading, Notice, Row, Screen, Title } from "@/components/ui";
 import { api, ApiError, messageOf } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { spacing, text, useColors } from "@/lib/theme";
+import { uploadAvatar, type Picked } from "@/lib/upload";
+import { Image } from "expo-image";
 
 /** Your account: who you are here, your name, and how you sign in. */
 export default function Account() {
@@ -16,8 +18,23 @@ export default function Account() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [saved, setSaved] = useState(false);
+  const [sending, setSending] = useState(false);
 
   if (!user) return null;
+
+  const changePicture = async (picked: Picked[]) => {
+    setSending(true);
+    setError(null);
+    setSaved(false);
+    try {
+      await uploadAvatar(picked[0]);
+      await reload();
+    } catch (caught) {
+      setError(caught);
+    } finally {
+      setSending(false);
+    }
+  };
 
   const save = async () => {
     setBusy(true);
@@ -38,12 +55,12 @@ export default function Account() {
   const changed = name.trim() !== (user.name ?? "") && name.trim() !== "";
 
   return (
-    <Screen>
+    <Screen inTabs>
       <Title>Account</Title>
 
       <View style={styles.who}>
         {user.image ? (
-          <Image source={{ uri: user.image }} style={styles.avatar} accessibilityLabel="Your profile picture" />
+          <Image source={{ uri: user.image }} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" transition={150} accessibilityLabel="Your profile picture" />
         ) : (
           <View style={[styles.avatar, styles.initials, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={{ color: colors.text, fontSize: text.heading, fontWeight: "600" }}>{initials}</Text>
@@ -54,6 +71,8 @@ export default function Account() {
           <Body muted small>{user.email}</Body>
         </View>
       </View>
+
+      <AddPicture label="Library" square busy={sending} onPicked={changePicture} onError={setError} />
 
       {error && !(error instanceof ApiError && error.issue("name")) ? <Notice>{messageOf(error)}</Notice> : null}
       {saved ? <Notice tone="success">Saved.</Notice> : null}
@@ -66,15 +85,16 @@ export default function Account() {
         <Card>
           <Row icon="shield-outline" label="Roles" value={user.roles.length > 0 ? user.roles.join(", ") : "None"} />
           <Row icon="mail-outline" label="Email" value={user.emailVerified ? "Verified" : "Not verified"} />
-          <Row icon="key-outline" label="Two-step sign-in" value={user.twoFactorEnabled ? "On" : "Off"} last />
+          <Row icon="key-outline" label="Two-step sign-in" value={user.twoFactorEnabled ? "On" : "Off"} onPress={() => router.push("/security")} last />
         </Card>
-        <Body muted small>Roles, two-step sign-in and your profile picture are changed in the dashboard.</Body>
+        <Body muted small>Roles are given in the dashboard, by someone who may manage users.</Body>
       </View>
 
       <View style={{ gap: spacing.sm }}>
         <Heading>Sign-in</Heading>
         <Card>
-          <Row icon="lock-closed-outline" label="Change password" onPress={() => router.push("/change-password")} last />
+          <Row icon="lock-closed-outline" label="Change password" onPress={() => router.push("/change-password")} />
+          <Row icon="key-outline" label="Two-step sign-in and passkeys" detail={user.twoFactorEnabled ? "Two-step sign-in is on" : "Two-step sign-in is off"} onPress={() => router.push("/security")} last />
         </Card>
       </View>
     </Screen>

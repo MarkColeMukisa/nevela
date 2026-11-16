@@ -1,22 +1,27 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps, ReactNode } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type RefreshControlProps, type TextInputProps } from "react-native";
-import { SafeAreaView, type Edge } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets, type Edge } from "react-native-safe-area-context";
 
 import { radius, spacing, text, useColors } from "@/lib/theme";
 
 /** The small set of pieces every screen is built from. */
 
+/** How tall the floating tab bar is, for screens that scroll beneath it. */
+export const TAB_BAR_HEIGHT = 68;
+
 export type IconName = ComponentProps<typeof Ionicons>["name"];
 
 /** A screen's frame: safe areas, scrolling, and room for the keyboard. */
-export function Screen({ children, edges = ["top"], refreshControl, centered = false }: { children: ReactNode; edges?: Edge[]; refreshControl?: React.ReactElement<RefreshControlProps>; centered?: boolean }) {
+export function Screen({ children, edges = ["top"], refreshControl, centered = false, inTabs = false }: { children: ReactNode; edges?: Edge[]; refreshControl?: React.ReactElement<RefreshControlProps>; centered?: boolean; inTabs?: boolean }) {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   return (
     <SafeAreaView edges={edges} style={[styles.fill, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
-          contentContainerStyle={[styles.content, centered && styles.centered]}
+          // On a tab, the last of the content must clear the floating tab bar.
+          contentContainerStyle={[styles.content, centered && styles.centered, inTabs && { paddingBottom: TAB_BAR_HEIGHT + Math.max(insets.bottom, 10) + spacing.xxl }]}
           keyboardShouldPersistTaps="handled"
           refreshControl={refreshControl}>
           <View style={styles.column}>{children}</View>
