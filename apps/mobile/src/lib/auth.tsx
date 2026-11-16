@@ -3,6 +3,7 @@ import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, 
 import { Platform } from "react-native";
 
 import { api, type TokenPair } from "./api";
+import { shellFor, type Shell } from "./shell";
 
 /** The signed-in user, as `GET auth/me` describes them. */
 export interface User {
@@ -36,6 +37,8 @@ export interface SignInMethods {
   requireEmailVerification: boolean;
   /** The social providers that are switched on and have their keys, such as "google". */
   social: string[];
+  /** The role someone who signs up starts with: what tells a customer from staff. */
+  defaultRole: string | null;
 }
 
 type SignedIn = TokenPair & { user: User };
@@ -48,6 +51,8 @@ interface AuthContextValue {
   user: User | null;
   /** True until the stored sign-in has been checked on launch. */
   loading: boolean;
+  /** Which app this person is given, by their roles: see lib/shell.ts. */
+  shell: Shell;
   /** Sign in with a password. Answers a challenge when the account has a second step. */
   signIn: (email: string, password: string) => Promise<Challenge | null>;
   /** Finish a sign-in that is waiting for its second step. */
@@ -82,6 +87,8 @@ function deviceName(): string {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [defaultRole, setDefaultRole] = useState<string | null>(null);
+  const shell = useMemo(() => shellFor(user, defaultRole), [user, defaultRole]);
 
   // Counts every sign-in and sign-out. An answer about "who am I" that set out before
   // the latest one is about a sign-in that is no longer this one, and is dropped.
@@ -100,6 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     api.onSignedOut(forget);
+    // Which role customers start with decides the first screen, so it is known before one is shown.
+    const config = signInMethods().then((methods) => setDefaultRole(methods.defaultRole));
     (async () => {
       try {
         // Nothing stored: don't ask the network, so a first launch opens straight away.
@@ -109,6 +118,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // to be; a sign-in that is still good is picked up again from there.
         forget();
       } finally {
+        // But not for long: a slow server must not keep the splash screen up.
+        await Promise.race([config, new Promise((resolve) => setTimeout(resolve, 3000))]);
         setLoading(false);
       }
     })();
@@ -130,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       loading,
+      shell,
       reload,
       signIn: async (email, password) => finish(await api.post<Answer>("/auth/token", { email, password, deviceName: deviceName() }, { auth: false })),
       verifySecondStep: async (challenge, method, code) => {
@@ -164,7 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       can: (permission) => Boolean(user && (user.isAdmin || user.permissions.includes(permission))),
     }),
-    [user, loading, reload, finish, forget],
+    [user, loading, shell, reload, finish, forget],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;
@@ -184,5 +196,6 @@ export async function signInMethods(): Promise<SignInMethods> {
     registration: config.registration ?? false,
     requireEmailVerification: config.requireEmailVerification ?? false,
     social: Array.isArray(config.social) ? config.social : [],
+    defaultRole: typeof config.defaultRole === "string" ? config.defaultRole : null,
   };
 }

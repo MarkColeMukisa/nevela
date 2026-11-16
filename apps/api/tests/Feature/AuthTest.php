@@ -81,6 +81,18 @@ class AuthTest extends TestCase
         $this->assertSame(0, User::count());
     }
 
+    public function test_the_config_says_which_role_someone_who_signs_up_starts_with(): void
+    {
+        $this->getJson('/api/auth/config')->assertJsonPath('defaultRole', 'USER');
+
+        config(['nevela.auth.default_role' => 'CUSTOMER']);
+        $this->getJson('/api/auth/config')->assertJsonPath('defaultRole', 'CUSTOMER');
+
+        // None given: the field is there, and empty.
+        config(['nevela.auth.default_role' => null]);
+        $this->getJson('/api/auth/config')->assertOk()->assertJsonPath('defaultRole', null);
+    }
+
     public function test_someone_can_register_and_is_sent_a_code_that_verifies_their_address(): void
     {
         config(['nevela.auth.registration' => true]);
