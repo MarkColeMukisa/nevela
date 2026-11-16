@@ -99,7 +99,7 @@ For a shop that takes orders:
 
 Where the API has Google (or GitHub) [switched on](/guides/authentication/#google-and-github), the sign-in and sign-up screens show **Continue with Google**. Where sign-up is open, a new address gets an account, as it would from the sign-up screen.
 
-It works through the API, not the phone: the app opens Google's page in the phone's browser, Google returns to the API, and the API hands the browser back to the app with a one-time code. The app proves it is the one that began with a secret it kept, so a code taken off the phone is no use to anyone else. [How it works, and what to register with Google](/guides/authentication/#from-the-mobile-app).
+It works through the API, not the phone: the app opens Google's page in the phone's browser, Google returns to the API, which asks Google who the person is and hands the browser back to the app with only a reference to the sign-in. The app proves it is the one that began with a secret it kept, so nothing taken off the phone is any use to anyone else. [How it works, and what to register with Google](/guides/authentication/#from-the-mobile-app).
 
 Google only returns to `https` addresses. So the button works against an API that is online with a certificate. While you develop on a phone against `http://192.168.…`, it can't complete: use an `https` tunnel to your computer, or an emulator.
 

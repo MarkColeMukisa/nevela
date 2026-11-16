@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { useState } from "react";
 import { RefreshControl, View } from "react-native";
 
 import { HomeHeader, NothingShared } from "@/components/home-header";
@@ -15,11 +16,19 @@ import { loadInbox } from "@/app/notifications";
  * staff view's counts and activity, which are about running the business.
  */
 export function CustomerHome() {
-  const { resources, loading, error } = useResources();
+  const { resources, loading, error, reload } = useResources();
   const inbox = useLoaded(loadInbox);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // What there is to browse is asked for again as well: after a failed first try it would otherwise stay empty.
+  const refresh = async () => {
+    setRefreshing(true);
+    await Promise.all([inbox.refresh(), reload()]);
+    setRefreshing(false);
+  };
 
   return (
-    <Screen inTabs refreshControl={<RefreshControl refreshing={inbox.refreshing} onRefresh={inbox.refresh} />}>
+    <Screen inTabs refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <HomeHeader unread={inbox.data?.unread ?? 0} />
 
       {error ? <Notice>{messageOf(error)}</Notice> : null}

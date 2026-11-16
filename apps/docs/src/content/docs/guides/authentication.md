@@ -197,8 +197,8 @@ The browser never talks to Laravel, and never holds a token:
 The [mobile app](/guides/mobile-app/#sign-in-with-google) has the same buttons. A phone has no dashboard to come back to, so the API has a way back of its own:
 
 1. The app asks the API where Google's page is, and says where to return to (its own address, such as `juice-me://oauth`) and gives a challenge: the SHA-256 of a secret it keeps.
-2. Google sends the browser to `{APP_URL}/api/auth/oauth/google/app` on the API, which hands it on to the app's address with the code and the state.
-3. The app sends the code, the state and its secret to `/api/auth/oauth/google/callback`. The API checks the secret against the challenge, so a code taken off the phone, or by another app that has claimed the same address, signs nobody in.
+2. Google sends the browser to `{APP_URL}/api/auth/oauth/google/app` on the API. The API uses Google's code there, to ask Google who the person is, so the code goes no further, and hands the browser on to the app's address with only the state.
+3. The app sends the state and its secret to `/api/auth/oauth/google/callback`. The API checks the secret against the challenge and signs the person in. Anyone who takes the state off the phone, or is another app that has claimed the same address, still has no secret, and the code is already used up.
 
 Two things to set up:
 

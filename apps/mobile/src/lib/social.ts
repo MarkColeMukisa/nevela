@@ -22,9 +22,10 @@ const hex = (bytes: Uint8Array) => Array.from(bytes, (byte) => byte.toString(16)
  *
  * The phone never sees the provider's keys. It asks the API where to send the browser, the
  * provider returns to the API, and the API hands the browser back to the app by its own
- * address (`shop://oauth`), which carries only a one-time code and a state. The app proves
- * it is the one that began with a secret it kept the whole time and sent only as a hash, so
- * a code taken off the phone's screen or by another app is no use to anyone else.
+ * address (`shop://oauth`), which carries only the state. Google's code is used up on the API
+ * and never reaches the phone. The app proves it is the one that began with a secret it kept
+ * the whole time and sent only as a hash, so what is taken off the phone's screen, or by
+ * another app that claimed the same address, signs nobody in.
  */
 export async function authorize<T>(provider: string, deviceName: string): Promise<T | null> {
   const label = PROVIDERS[provider]?.label ?? provider;
@@ -46,8 +47,7 @@ export async function authorize<T>(provider: string, deviceName: string): Promis
     if (one(returned.error) === "access_denied") return null;
     throw new Error(`${label} sign-in didn't finish. Try again.`);
   }
-  const code = one(returned.code);
-  if (!code || one(returned.state) !== started.state) throw new Error(`${label} sign-in didn't finish. Try again.`);
+  if (one(returned.state) !== started.state) throw new Error(`${label} sign-in didn't finish. Try again.`);
 
-  return api.post<T>(`/auth/oauth/${provider}/callback`, { state: started.state, code, appVerifier: verifier, deviceName }, { auth: false });
+  return api.post<T>(`/auth/oauth/${provider}/callback`, { state: started.state, appVerifier: verifier, deviceName }, { auth: false });
 }

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Body } from "@/components/ui";
@@ -19,7 +19,12 @@ function greeting(now: Date): string {
 export function HomeHeader({ unread }: { unread: number }) {
   const { user } = useAuth();
   const colors = useColors();
-  const [now] = useState(() => new Date());
+  const [now, setNow] = useState(() => new Date());
+  // Kept up to date, so a home left open past midnight, or into the afternoon, doesn't greet with yesterday's.
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
   if (!user) return null;
 
   const first = user.name?.trim().split(/\s+/)[0];

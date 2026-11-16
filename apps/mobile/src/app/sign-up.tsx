@@ -2,10 +2,11 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 
+import { SecondStep } from "@/components/second-step";
 import { SocialButtons } from "@/components/social-buttons";
 import { Body, Button, Field, Notice, Screen, Title } from "@/components/ui";
 import { ApiError, messageOf, SlowAnswerError } from "@/lib/api";
-import { signInMethods, useAuth } from "@/lib/auth";
+import { signInMethods, useAuth, type Challenge } from "@/lib/auth";
 import { site } from "@/lib/site";
 import { spacing } from "@/lib/theme";
 
@@ -22,6 +23,9 @@ const MIN_LENGTH = 8;
 export default function SignUp() {
   const auth = useAuth();
   const [stage, setStage] = useState<"form" | "verify">("form");
+  // The address the code was sent to: what is typed in the box may be changed after that.
+  const [submitted, setSubmitted] = useState("");
+  const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,11 +63,11 @@ export default function SignUp() {
     run(async () => {
       const result = await auth.register(name, address, password);
       if (result === "verify") {
+        setSubmitted(address);
         setStage("verify");
         setSent(true);
       } else if (result !== null) {
-        // A second step on a brand-new account isn't something that happens; the sign-in screen knows what to do.
-        toSignIn();
+        setChallenge(result);
       }
     });
 
@@ -72,8 +76,9 @@ export default function SignUp() {
     setProvider(name);
     setError(null);
     try {
-      // A second step on an account that already had one is asked for on the sign-in screen.
-      if ((await auth.signInWithProvider(name)) !== null) toSignIn();
+      // An account that already had a second step still owes it.
+      const result = await auth.signInWithProvider(name);
+      if (result !== null) setChallenge(result);
     } catch (caught) {
       setError(caught);
     } finally {
@@ -83,8 +88,8 @@ export default function SignUp() {
 
   const verify = () =>
     run(async () => {
-      const result = await auth.verifyEmail(address, code);
-      if (result !== null) toSignIn();
+      const result = await auth.verifyEmail(submitted, code);
+      if (result !== null) setChallenge(result);
     });
 
   const again = async () => {
@@ -92,7 +97,7 @@ export default function SignUp() {
     setError(null);
     setSent(false);
     try {
-      await auth.resendVerification(address);
+      await auth.resendVerification(submitted);
       setSent(true);
     } catch (caught) {
       setError(caught);
@@ -106,12 +111,16 @@ export default function SignUp() {
   const slow = error instanceof SlowAnswerError;
   const refused = error instanceof ApiError && error.issues.length > 0;
 
+  if (challenge) {
+    return <SecondStep challenge={challenge} onCancel={() => setChallenge(null)} />;
+  }
+
   if (stage === "verify") {
     return (
       <Screen edges={["top", "bottom"]} centered>
         <View style={{ gap: spacing.xs }}>
           <Title>Check your email</Title>
-          <Body muted>We sent a code to {address}. Enter it to finish creating your account.</Body>
+          <Body muted>We sent a code to {submitted}. Enter it to finish creating your account.</Body>
         </View>
 
         {error ? <Notice>{messageOf(error)}</Notice> : sent ? <Notice tone="success">Code sent. It works for an hour.</Notice> : null}
@@ -143,7 +152,7 @@ export default function SignUp() {
       <Field label="Password" value={password} onChangeText={setPassword} error={issue("password")} secureTextEntry autoComplete="new-password" textContentType="newPassword" returnKeyType="go" onSubmitEditing={create} />
       <Body muted small>At least {MIN_LENGTH} characters. A few unrelated words make a strong one.</Body>
 
-      <Button label="Create account" busy={busy} disabled={name.trim() === "" || address === "" || password.length < MIN_LENGTH} onPress={create} />
+      <Button label="Create account" busy={busy} disabled={name.trim() === "" || address === "" || password.length < MIN_LENGTH || provider !== null} onPress={create} />
       {exists || slow ? <Button variant="secondary" label="Sign in instead" disabled={busy} onPress={toSignIn} /> : null}
       <SocialButtons providers={social} busy={provider} disabled={busy} onPick={withProvider} />
 
