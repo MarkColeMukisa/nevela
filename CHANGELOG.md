@@ -18,6 +18,7 @@ _The mobile app: sign up, Google sign-in, and an app for customers_
 
 ### Changed
 
+- **In the mobile app, an account that holds only the sign-up role now gets the customer app.** That includes accounts that existed before this, such as the ten sample users, which hold only `USER`. They lose the staff home and the Records tab, and keep everything the dashboard gives them. Give an account another role to keep the staff app.
 - **The mobile app's home says so when an account has been given nothing**, instead of showing the command for adding a resource to someone who can't run it.
 
 ### Fixed

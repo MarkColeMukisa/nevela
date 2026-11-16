@@ -95,6 +95,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [defaultRole, setDefaultRole] = useState<string | null>(null);
   const shell = useMemo(() => shellFor(user, defaultRole), [user, defaultRole]);
+  const userId = user?.id ?? null;
+
+  // The role was asked for as the app opened. If that didn't get an answer (no signal, a slow
+  // first request), ask again once someone is signed in, so a customer isn't left in the staff app.
+  useEffect(() => {
+    if (userId === null || defaultRole !== null) return;
+    let live = true;
+    signInMethods().then((methods) => {
+      if (live) setDefaultRole(methods.defaultRole);
+    });
+    return () => {
+      live = false;
+    };
+  }, [userId, defaultRole]);
 
   // Counts every sign-in and sign-out. An answer about "who am I" that set out before
   // the latest one is about a sign-in that is no longer this one, and is dropped.
