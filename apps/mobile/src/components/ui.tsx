@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import type { ComponentProps, ReactNode } from "react";
+import { useState, type ComponentProps, type ReactNode } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type RefreshControlProps, type TextInputProps } from "react-native";
 import { SafeAreaView, useSafeAreaInsets, type Edge } from "react-native-safe-area-context";
 
@@ -84,17 +84,33 @@ export function Button({ label, onPress, variant = "primary", busy = false, disa
 }
 
 /** A labelled text box, with the server's complaint about it underneath when there is one. */
-export function Field({ label, error, style, ...input }: { label: string; error?: string } & TextInputProps) {
+export function Field({ label, error, style, secureTextEntry, ...input }: { label: string; error?: string } & TextInputProps) {
   const colors = useColors();
+  // A password box can be uncovered, so a person can check what they typed on a small keyboard.
+  const [uncovered, setUncovered] = useState(false);
+  const hidden = Boolean(secureTextEntry) && !uncovered;
   return (
     <View style={styles.field}>
       <Text style={{ color: colors.text, fontSize: text.small, fontWeight: "600" }}>{label}</Text>
-      <TextInput
-        accessibilityLabel={label}
-        placeholderTextColor={colors.muted}
-        {...input}
-        style={[styles.input, { color: colors.text, borderColor: error ? colors.danger : colors.border, backgroundColor: colors.background }, style]}
-      />
+      <View>
+        <TextInput
+          accessibilityLabel={label}
+          placeholderTextColor={colors.muted}
+          {...input}
+          secureTextEntry={hidden}
+          style={[styles.input, { color: colors.text, borderColor: error ? colors.danger : colors.border, backgroundColor: colors.background }, secureTextEntry && { paddingRight: 48 }, style]}
+        />
+        {secureTextEntry ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={uncovered ? "Hide password" : "Show password"}
+            hitSlop={8}
+            onPress={() => setUncovered((now) => !now)}
+            style={styles.eye}>
+            <Ionicons name={uncovered ? "eye-off-outline" : "eye-outline"} size={22} color={colors.muted} />
+          </Pressable>
+        ) : null}
+      </View>
       {error ? <Text style={{ color: colors.danger, fontSize: text.small }}>{error}</Text> : null}
     </View>
   );
@@ -151,6 +167,7 @@ const styles = StyleSheet.create({
   button: { minHeight: 48, borderRadius: radius.md, paddingHorizontal: spacing.lg, flexDirection: "row", gap: spacing.sm, alignItems: "center", justifyContent: "center" },
   link: { minHeight: 44, flexDirection: "row", gap: spacing.xs, alignItems: "center", justifyContent: "center" },
   field: { gap: spacing.xs },
+  eye: { position: "absolute", right: 0, top: 0, bottom: 0, width: 48, alignItems: "center", justifyContent: "center" },
   input: { minHeight: 48, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: spacing.md, fontSize: text.body },
   card: { borderWidth: 1, borderRadius: radius.lg, overflow: "hidden" },
   row: { minHeight: 52, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md },
