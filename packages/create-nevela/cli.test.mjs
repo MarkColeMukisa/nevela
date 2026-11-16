@@ -317,6 +317,8 @@ test('the mobile app is copied without what was installed or built, and named fo
 test('a step is one line: what was made, what there is to say about it, and how long it took', async () => {
   const { createProgress, layout, took } = await import('./progress.mjs');
   assert.deepEqual([took(0.4), took(144), took(1900), took(48_240), took(125_000)], ['1ms', '144ms', '1.9s', '48.2s', '2m 5s']);
+  // Rounding never shows sixty seconds, or sixty of them in a minute.
+  assert.deepEqual([took(59_960), took(119_600)], ['1m 0s', '2m 0s']);
 
   // Columns line up whatever the label, and nothing passes the edge of a narrow terminal.
   const short = layout({ label: 'Dashboard', detail: 'Next.js · 208 files', time: '174ms', columns: 80 });

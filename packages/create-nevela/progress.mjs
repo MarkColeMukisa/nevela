@@ -14,9 +14,10 @@ const PLAIN_FRAMES = ['-', '\\', '|', '/'];
 /** How long something took, as short as it reads well: 120ms, 1.9s, 48.2s, 2m 5s. */
 export function took(ms) {
   if (ms < 1000) return `${Math.max(1, Math.round(ms))}ms`;
-  const seconds = ms / 1000;
-  if (seconds < 60) return `${seconds.toFixed(1)}s`;
-  return `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
+  const tenths = Math.round(ms / 100) / 10;
+  if (tenths < 60) return `${tenths.toFixed(1)}s`;
+  const seconds = Math.round(ms / 1000);
+  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 }
 
 /** While a step runs: whole seconds, since tenths would only flicker. */

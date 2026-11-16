@@ -699,7 +699,6 @@ async function main() {
   const began = Date.now();
   const mobile = path.join(root, 'apps', 'mobile');
   const filesIn = (dir) => fs.readdirSync(dir, { withFileTypes: true }).reduce((total, entry) => total + (entry.isDirectory() ? filesIn(path.join(dir, entry.name)) : 1), 0);
-  console.log('');
   await step('Project folder', (say) => {
     fs.mkdirSync(path.join(root, 'apps'), { recursive: true });
     say.done(path.relative(process.cwd(), root) || name);
