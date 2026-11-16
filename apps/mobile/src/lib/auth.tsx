@@ -30,11 +30,19 @@ export interface Challenge {
 /** Which ways of signing in the API has switched on (`GET auth/config`). */
 export interface SignInMethods {
   emailCode: boolean;
+  /** Whether people may create their own account. */
   registration: boolean;
+  /** Whether a new account must prove its email before it can sign in. */
+  requireEmailVerification: boolean;
+  /** The social providers that are switched on and have their keys, such as "google". */
+  social: string[];
 }
 
 type SignedIn = TokenPair & { user: User };
 type Answer = SignedIn | { twoFactor: true; challenge: string; methods: SecondStepMethod[] };
+
+/** What creating an account came to: signed in (null), a code to enter first ("verify"), or a second step owed. */
+export type Registered = "verify" | Challenge | null;
 
 interface AuthContextValue {
   user: User | null;
@@ -50,6 +58,12 @@ interface AuthContextValue {
   sendEmailCode: (email: string) => Promise<void>;
   /** Sign in with an emailed code. Answers a challenge when the account has an authenticator app. */
   signInWithCode: (email: string, code: string) => Promise<Challenge | null>;
+  /** Create an account. Answers "verify" when the email has to be proved before signing in. */
+  register: (name: string, email: string, password: string) => Promise<Registered>;
+  /** Prove an email with the code that was sent to it, which signs the new account in. */
+  verifyEmail: (email: string, code: string) => Promise<Challenge | null>;
+  /** Send the verification code again. */
+  resendVerification: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   /** Read the user again, after a change to the profile. */
   reload: () => Promise<void>;
@@ -128,6 +142,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await api.post("/auth/email-code", { email }, { auth: false });
       },
       signInWithCode: async (email, code) => finish(await api.post<Answer>("/auth/email-code/verify", { email, code: code.trim(), deviceName: deviceName() }, { auth: false })),
+      register: async (name, email, password) => {
+        const answer = await api.post<Answer | { verify: true }>("/auth/register", { name: name.trim(), email, password, deviceName: deviceName() }, { auth: false });
+        return "verify" in answer ? "verify" : finish(answer);
+      },
+      verifyEmail: async (email, code) => finish(await api.post<Answer>("/auth/email/verify", { email, code: code.trim(), deviceName: deviceName() }, { auth: false })),
+      resendVerification: async (email) => {
+        await api.post("/auth/email/send", { email }, { auth: false });
+      },
       signOut: async () => {
         try {
           await api.delete("/auth/token");
@@ -157,5 +179,10 @@ export function useAuth(): AuthContextValue {
 /** Which sign-in methods to offer. Password always works; the rest are the API's to say. */
 export async function signInMethods(): Promise<SignInMethods> {
   const config = await api.get<Partial<SignInMethods>>("/auth/config").catch(() => ({}) as Partial<SignInMethods>);
-  return { emailCode: config.emailCode ?? false, registration: config.registration ?? false };
+  return {
+    emailCode: config.emailCode ?? false,
+    registration: config.registration ?? false,
+    requireEmailVerification: config.requireEmailVerification ?? false,
+    social: Array.isArray(config.social) ? config.social : [],
+  };
 }

@@ -1,3 +1,4 @@
+import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 
@@ -11,14 +12,19 @@ import { spacing } from "@/lib/theme";
  * Sign in: a password, or a code sent by email when the API has that switched on, and
  * then the second step for an account that has one.
  *
- * Signing in with Google, GitHub, a passkey or an emailed link is the dashboard's for
- * now: each ends at a web address, which a phone app has to be taught to open.
+ * Where the API lets people create their own account, there is a way to from here.
+ *
+ * Signing in with a passkey, GitHub or an emailed link is the dashboard's for now: each
+ * ends at a web address, which a phone app has to be taught to open.
  */
 export default function SignIn() {
   const auth = useAuth();
+  // Sent here from sign-up with an address that already has an account: it is filled in.
+  const params = useLocalSearchParams<{ email?: string }>();
   const [way, setWay] = useState<"password" | "code">("password");
   const [emailCode, setEmailCode] = useState(false);
-  const [email, setEmail] = useState("");
+  const [registration, setRegistration] = useState(false);
+  const [email, setEmail] = useState(typeof params.email === "string" ? params.email : "");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
@@ -27,7 +33,10 @@ export default function SignIn() {
   const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
-    signInMethods().then((methods) => setEmailCode(methods.emailCode));
+    signInMethods().then((methods) => {
+      setEmailCode(methods.emailCode);
+      setRegistration(methods.registration);
+    });
   }, []);
 
   /** Run one step, showing what went wrong if it did. */
@@ -79,6 +88,8 @@ export default function SignIn() {
       {emailCode ? (
         <Button variant="link" label={way === "password" ? "Sign in with an emailed code instead" : "Sign in with a password instead"} onPress={() => { setWay(way === "password" ? "code" : "password"); setCodeSent(false); setCode(""); setError(null); }} />
       ) : null}
+
+      {registration ? <Button variant="link" label="New here? Create an account" disabled={busy} onPress={() => router.push("/sign-up")} /> : null}
     </Screen>
   );
 }
