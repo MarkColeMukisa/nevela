@@ -8,6 +8,12 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_The mobile app's password boxes can be uncovered_
+
+### Fixed
+
+- **The mobile app's password boxes had no way to show what was typed.** Signing in, changing a password and the two-step setup all asked for a password with no eye to uncover it, which is hard to get right on a small keyboard. Each password box now has one.
+
 ## [0.30.0] - 2026-11-16
 
 _A mobile app for iOS and Android, from one flag_
