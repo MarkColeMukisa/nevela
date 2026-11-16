@@ -34,7 +34,7 @@ function editable(field: FieldSpec): boolean {
 }
 
 /** A record's value as its control holds it: text for anything typed. */
-function toControl(field: FieldSpec, value: unknown): unknown {
+export function toControl(field: FieldSpec, value: unknown): unknown {
   // A picture field holds the key of its file, or the keys of its files.
   if (field.kind === "file") return field.multiple ? (Array.isArray(value) ? value : []) : value || null;
   if (field.kind === "boolean") return Boolean(value);
@@ -45,7 +45,7 @@ function toControl(field: FieldSpec, value: unknown): unknown {
 }
 
 /** What a control holds, as the API takes it. `problem` when it can't be: letters in a number. */
-function fromControl(field: FieldSpec, held: unknown): { value?: unknown; problem?: string } {
+export function fromControl(field: FieldSpec, held: unknown): { value?: unknown; problem?: string } {
   if (field.kind === "file") return { value: field.multiple ? (Array.isArray(held) ? held : []) : held || null };
   if (field.kind === "boolean") return { value: Boolean(held) };
   if (field.kind === "enum" || field.kind === "belongsTo") return { value: held ?? null };
@@ -146,7 +146,7 @@ export function RecordForm({ resource, record, onSaved }: { resource: Resource; 
   );
 }
 
-function Control({ name, field, resource, record, value, problem, creating, onChange }: { name: string; field: FieldSpec; resource: Resource; record?: ResourceRecord; value: unknown; problem?: string; creating: boolean; onChange: (value: unknown) => void }) {
+export function Control({ name, field, resource, record, value, problem, creating, onChange }: { name: string; field: FieldSpec; resource: Resource; record?: ResourceRecord; value: unknown; problem?: string; creating: boolean; onChange: (value: unknown) => void }) {
   const colors = useColors();
   // A slug made from another field may be left empty on a new record: Laravel writes it.
   const optional = field.required === false || (creating && field.format === "slug" && Boolean(field.from));

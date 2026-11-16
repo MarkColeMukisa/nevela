@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useColorScheme } from "react-native";
 
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { CartProvider } from "@/lib/cart";
 import { ResourcesProvider } from "@/lib/resources";
 import { loadAppearance, setAppearance, useColors } from "@/lib/theme";
 
@@ -21,7 +22,9 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <ResourcesProvider>
-        <Screens />
+        <CartProvider>
+          <Screens />
+        </CartProvider>
       </ResourcesProvider>
     </AuthProvider>
   );
@@ -52,6 +55,9 @@ function Screens() {
           <Stack.Screen name="change-password" options={{ title: "Change password" }} />
           <Stack.Screen name="security" options={{ title: "Sign-in security" }} />
           <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
+          <Stack.Screen name="shop/[id]" options={{ title: "" }} />
+          <Stack.Screen name="shop/checkout" options={{ title: "Checkout" }} />
+          <Stack.Screen name="shop/placed" options={{ headerShown: false }} />
           {/* One set of screens for every resource. Each sets its own title once it knows which. */}
           <Stack.Screen name="r/[slug]/index" options={{ title: "" }} />
           <Stack.Screen name="r/[slug]/new" options={{ title: "" }} />

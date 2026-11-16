@@ -8,16 +8,19 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_The mobile app: sign up, Google sign-in, and an app for customers_
+_The mobile app: sign up, Google, and a shop with a cart and orders_
 
 ### Added
 
 - **Sign up from the mobile app.** Where the API lets people create their own account, the sign-in screen links to a sign-up screen: a name, an email and a password, and the code that was emailed where the API asks for the address to be proved first. A request that timed out after making the account offers to sign in instead, with the address filled in.
 - **Google (and GitHub) sign-in from the mobile app.** The sign-in and sign-up screens show **Continue with Google** where the API has it switched on. The API has a way back of its own for apps, `GET /api/auth/oauth/{provider}/app`, which asks Google who the person is and hands the browser to the app's address with only the state; the app proves it is the one that began the sign-in with a secret it keeps, so nothing taken off the phone signs anybody in. It needs the API's `APP_URL` address registered with Google beside the dashboard's, and the apps it may send people to listed in the new `auth.social.app_redirects` setting (`NEVELA_APP_REDIRECTS`). `nevela new my-app --mobile` sets it. See [From the mobile app](https://nevela-docs.vercel.app/guides/authentication/#from-the-mobile-app).
 - **An app for customers.** The API's auth config now says which role someone who signs up starts with (`defaultRole`), and that role can be set with `NEVELA_DEFAULT_ROLE`. The mobile app gives an account that holds only that role a customer home, listing what they may browse, and no Records tab. Staff and administrators keep the app they had. See [Customers and staff](https://nevela-docs.vercel.app/guides/mobile-app/#customers-and-staff).
+- **A shop on the phone.** When the app has an order resource with lines and a catalogue, a customer's home is a shop: a grid with search, categories and availability, a product screen, a cart kept on the phone for each account, checkout that places the order with its lines in one request, and an **Orders** tab where each order shows its status as a trail. Laravel works out the number, prices and total. It is found from the resources; `site.shop` in `lib/site.ts` adjusts it. See [A shop on the phone](https://nevela-docs.vercel.app/guides/mobile-app/#a-shop-on-the-phone), which also gives the model recipe that keeps customers to their own orders.
+- **`GET /_nevela/resources` carries the app's currency** (`NEVELA_CURRENCY`) on money fields that have none of their own, so the phone formats money as the dashboard does.
 
 ### Changed
 
+- **Money in the mobile app is formatted as in the dashboard**: the currency's symbol and its own number of decimals (none for UGX).
 - **In the mobile app, an account that holds only the sign-up role now gets the customer app.** That includes accounts that existed before this, such as the ten sample users, which hold only `USER`. They lose the staff home and the Records tab, and keep everything the dashboard gives them. Give an account another role to keep the staff app.
 - **The mobile app's home says so when an account has been given nothing**, instead of showing the command for adding a resource to someone who can't run it.
 

@@ -27,10 +27,15 @@ export function pictureUrl(file: StoredFile | null | undefined, size: "thumb" | 
   return order.map((name) => renditions[name]?.url).find(Boolean) ?? file.url;
 }
 
-export function Picture({ file, size = 44, shape = "square", rendition }: { file: StoredFile | null | undefined; size?: number; shape?: "square" | "round"; rendition?: "thumb" | "card" }) {
+/** `size` is in points, or "fill" for the full width of where it is, always square. */
+export function Picture({ file, size = 44, shape = "square", rendition }: { file: StoredFile | null | undefined; size?: number | "fill"; shape?: "square" | "round"; rendition?: "thumb" | "card" }) {
   const colors = useColors();
-  const uri = pictureUrl(file, rendition ?? (size > 96 ? "card" : "thumb"));
-  const frame = { width: size, height: size, borderRadius: shape === "round" ? size / 2 : size > 96 ? radius.md : radius.sm, backgroundColor: colors.surface };
+  const points = size === "fill" ? 200 : size;
+  const uri = pictureUrl(file, rendition ?? (points > 96 ? "card" : "thumb"));
+  const frame =
+    size === "fill"
+      ? { width: "100%" as const, aspectRatio: 1, borderRadius: radius.md, backgroundColor: colors.surface }
+      : { width: size, height: size, borderRadius: shape === "round" ? size / 2 : size > 96 ? radius.md : radius.sm, backgroundColor: colors.surface };
   if (!uri) return <View style={frame} />;
   return <Image source={{ uri }} style={frame} contentFit="cover" cachePolicy="memory-disk" transition={150} recyclingKey={uri} accessibilityLabel={file?.name} />;
 }

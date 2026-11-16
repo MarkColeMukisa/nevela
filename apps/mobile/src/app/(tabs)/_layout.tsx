@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { TAB_BAR_HEIGHT } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
+import { useCanTrack, useCart, useShop } from "@/lib/cart";
 import { useColors } from "@/lib/theme";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
@@ -17,6 +18,11 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   // Customers have no Records tab: that is how staff work with the data. What they may see is on their home.
   const { shell } = useAuth();
+  // Where there is a shop to buy from, a customer's tabs are the shop's.
+  const shop = useShop();
+  const buying = shell === "customer" && shop !== null;
+  const tracking = useCanTrack(shop);
+  const cart = useCart();
   const icon = (name: IconName, active: IconName) => ({ focused, size }: { focused: boolean; size: number }) => <Ionicons name={focused ? active : name} color={focused ? colors.accent : colors.muted} size={size} />;
 
   return (
@@ -46,8 +52,10 @@ export default function TabsLayout() {
           shadowRadius: 16,
         },
       }}>
-      <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: icon("grid-outline", "grid") }} />
+      <Tabs.Screen name="index" options={{ title: buying ? "Shop" : "Home", tabBarIcon: icon(buying ? "storefront-outline" : "grid-outline", buying ? "storefront" : "grid") }} />
       <Tabs.Screen name="records" options={{ title: "Records", href: shell === "customer" ? null : undefined, tabBarIcon: icon("albums-outline", "albums") }} />
+      <Tabs.Screen name="cart" options={{ title: "Cart", href: buying ? undefined : null, tabBarBadge: cart.count > 0 ? cart.count : undefined, tabBarIcon: icon("cart-outline", "cart") }} />
+      <Tabs.Screen name="orders" options={{ title: "Orders", href: buying && tracking ? undefined : null, tabBarIcon: icon("receipt-outline", "receipt") }} />
       <Tabs.Screen name="account" options={{ title: "Account", tabBarIcon: icon("person-outline", "person") }} />
       <Tabs.Screen name="settings" options={{ title: "Settings", tabBarIcon: icon("settings-outline", "settings") }} />
     </Tabs>
