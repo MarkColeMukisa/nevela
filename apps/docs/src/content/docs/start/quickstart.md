@@ -29,14 +29,22 @@ You can skip this: `pnpm create nevela my-app` (or `npm create nevela@latest my-
 nevela new my-app
 ```
 
-Leave the name off and it asks for one. It asks nothing else, and does the setup for you:
+Leave the name off and it asks for one. It asks nothing else, and does the setup for you. Each thing it makes gets a line, and the line in hand shows what it is on: the package that just landed, the table being created.
 
 ```
-  ✔ Creating the Laravel app (1m 58s)
-  ✔ Setting up the database (28s)
-  ✔ Installing dashboard packages (pnpm) (36s)
+  ✔ Project folder           my-app                                        3ms
+  ✔ Dashboard                Next.js · 208 files                         174ms
+  ✔ Laravel app              laravel/laravel v13.11.0                     6.2s
+  ✔ Laravel packages         119 packages                               1m 12s
+  ✔ Environment              .env · SQLite · API tokens                   76ms
+  ✔ Database                 16 migrations                               24.8s
+  ✔ Administrator            admin@example.com
+  ✔ Sample users             2 editors · 8 users
+  ✔ Blog                     Post resource · 3 posts · /blog
+  ✔ Dashboard packages       pnpm · 140 packages                         36.0s
+  ✔ Git repository           git init                                    412ms
 
-  ✔ Created my-app in 2m 26s
+  Created my-app  Laravel API · dashboard · blog · 2m 26s
 
   Then open http://localhost:3000/sign-in and sign in with:
 

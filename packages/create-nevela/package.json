@@ -18,6 +18,7 @@
     "selfupdate.mjs",
     "shell.mjs",
     "project.mjs",
+    "progress.mjs",
     "tool.mjs",
     "template",
     "LICENSE"

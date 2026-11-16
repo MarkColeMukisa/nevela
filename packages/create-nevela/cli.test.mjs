@@ -313,3 +313,53 @@ test('the mobile app is copied without what was installed or built, and named fo
   assert.equal(JSON.parse(fs.readFileSync(path.join(to, 'package.json'), 'utf8')).name, 'my-store-mobile');
   assert.match(fs.readFileSync(path.join(to, 'src/lib/site.ts'), 'utf8'), /name: "My Store"/);
 });
+
+test('a step is one line: what was made, what there is to say about it, and how long it took', async () => {
+  const { createProgress, layout, took } = await import('./progress.mjs');
+  assert.deepEqual([took(0.4), took(144), took(1900), took(48_240), took(125_000)], ['1ms', '144ms', '1.9s', '48.2s', '2m 5s']);
+  // Rounding never shows sixty seconds, or sixty of them in a minute.
+  assert.deepEqual([took(59_960), took(119_600)], ['1m 0s', '2m 0s']);
+
+  // Columns line up whatever the label, and nothing passes the edge of a narrow terminal.
+  const short = layout({ label: 'Dashboard', detail: 'Next.js · 208 files', time: '174ms', columns: 80 });
+  const long = layout({ label: 'Mobile app packages', detail: 'pnpm · 553 packages', time: '1m 1s', columns: 80 });
+  assert.equal(short.label.length, long.label.length);
+  assert.equal(short.detail.length, long.detail.length);
+  const narrow = layout({ label: 'Laravel packages', detail: '37/112  symfony/http-foundation-with-a-long-name', time: '14s', columns: 44 });
+  assert.ok(`  x ${narrow.label} ${narrow.detail} ${narrow.time}`.length <= 44);
+  assert.match(narrow.detail, /…/);
+
+  const plain = (text) => text;
+  const written = [];
+  let clock = 0;
+  const progress = createProgress({ stream: { write: (text) => written.push(text), columns: 80 }, live: false, paint: { dim: plain, green: plain, red: plain }, now: () => clock });
+
+  // Somewhere that isn't a terminal: one finished line a step, and nothing redrawn.
+  const result = await progress.step('Laravel packages', async (say) => {
+    say('1/112  laravel/framework');
+    clock += 48_240;
+    say.done('112 packages');
+    return 'kept';
+  });
+  assert.equal(result, 'kept');
+  assert.equal(written.length, 1);
+  assert.match(written[0], /^ {2}✔ Laravel packages\s+112 packages\s+48\.2s\n$/);
+
+  // Work that was running before the step began reports its own time.
+  await progress.step('Dashboard packages', async () => ({ ok: true, seconds: 36 }));
+  assert.match(written[1], /Dashboard packages\s+36\.0s\n$/);
+
+  // A step that says it didn't work ends with a cross, and one that throws still ends its line.
+  await progress.step('Git repository', () => ({ ok: false }), { failed: (made) => !made.ok });
+  assert.match(written[2], /^ {2}✖ Git repository/);
+  await assert.rejects(progress.step('Database', () => { throw new Error('no'); }));
+  assert.match(written[3], /^ {2}✖ Database/);
+
+  // In a terminal the line is redrawn in place, the cursor hidden meanwhile and put back.
+  const drawn = [];
+  const live = createProgress({ stream: { write: (text) => drawn.push(text), columns: 80 }, live: true, paint: { dim: plain, green: plain, red: plain }, now: () => clock });
+  await live.step('Database', (say) => { say('create products table'); say.done('14 migrations'); });
+  assert.equal(drawn[0], '\x1b[?25l');
+  assert.match(drawn[1], /^\r {2}⠋ Database/);
+  assert.match(drawn.at(-1), /^\r {2}✔ Database\s+14 migrations.*\n\x1b\[\?25h$/);
+});
