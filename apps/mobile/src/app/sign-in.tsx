@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 
+import { SocialButtons } from "@/components/social-buttons";
 import { Body, Button, Field, Notice, Screen, Title } from "@/components/ui";
 import { ApiError, messageOf } from "@/lib/api";
 import { signInMethods, useAuth, type Challenge, type SecondStepMethod } from "@/lib/auth";
@@ -12,10 +13,11 @@ import { spacing } from "@/lib/theme";
  * Sign in: a password, or a code sent by email when the API has that switched on, and
  * then the second step for an account that has one.
  *
- * Where the API lets people create their own account, there is a way to from here.
+ * Where the API has Google (or GitHub) switched on, there is a button for it. Where it lets
+ * people create their own account, there is a way to from here.
  *
- * Signing in with a passkey, GitHub or an emailed link is the dashboard's for now: each
- * ends at a web address, which a phone app has to be taught to open.
+ * Signing in with a passkey or an emailed link is the dashboard's for now: each ends at a
+ * web address, which a phone app has to be taught to open.
  */
 export default function SignIn() {
   const auth = useAuth();
@@ -24,6 +26,8 @@ export default function SignIn() {
   const [way, setWay] = useState<"password" | "code">("password");
   const [emailCode, setEmailCode] = useState(false);
   const [registration, setRegistration] = useState(false);
+  const [social, setSocial] = useState<string[]>([]);
+  const [provider, setProvider] = useState<string | null>(null);
   const [email, setEmail] = useState(typeof params.email === "string" ? params.email : "");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -36,6 +40,7 @@ export default function SignIn() {
     signInMethods().then((methods) => {
       setEmailCode(methods.emailCode);
       setRegistration(methods.registration);
+      setSocial(methods.social);
     });
   }, []);
 
@@ -49,6 +54,18 @@ export default function SignIn() {
       setError(caught);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const withProvider = async (name: string) => {
+    setProvider(name);
+    setError(null);
+    try {
+      setChallenge(await auth.signInWithProvider(name));
+    } catch (caught) {
+      setError(caught);
+    } finally {
+      setProvider(null);
     }
   };
 
@@ -84,6 +101,8 @@ export default function SignIn() {
       ) : (
         <Button label="Email me a code" busy={busy} disabled={address === ""} onPress={() => run(async () => { await auth.sendEmailCode(address); setCodeSent(true); })} />
       )}
+
+      <SocialButtons providers={social} busy={provider} disabled={busy} onPick={withProvider} />
 
       {emailCode ? (
         <Button variant="link" label={way === "password" ? "Sign in with an emailed code instead" : "Sign in with a password instead"} onPress={() => { setWay(way === "password" ? "code" : "password"); setCodeSent(false); setCode(""); setError(null); }} />

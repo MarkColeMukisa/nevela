@@ -228,6 +228,7 @@ jobs:
           grep -q '"name": "demo-app-mobile"' package.json
           grep -q 'name: "Demo App"' src/lib/site.ts
           grep -q '"dev:mobile"' ../../package.json
+          grep -q '^NEVELA_APP_REDIRECTS=demo-app://$' ../api/.env
           pnpm exec tsc --noEmit
           # Metro resolving every import is what a type-check can't promise.
           pnpm exec expo export --platform web --output-dir "$RUNNER_TEMP/mobile-web"

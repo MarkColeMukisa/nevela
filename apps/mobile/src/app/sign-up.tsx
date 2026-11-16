@@ -1,10 +1,11 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
 
+import { SocialButtons } from "@/components/social-buttons";
 import { Body, Button, Field, Notice, Screen, Title } from "@/components/ui";
 import { ApiError, messageOf, SlowAnswerError } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { signInMethods, useAuth } from "@/lib/auth";
 import { site } from "@/lib/site";
 import { spacing } from "@/lib/theme";
 
@@ -28,7 +29,13 @@ export default function SignUp() {
   const [busy, setBusy] = useState(false);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [social, setSocial] = useState<string[]>([]);
+  const [provider, setProvider] = useState<string | null>(null);
   const [error, setError] = useState<unknown>(null);
+
+  useEffect(() => {
+    signInMethods().then((methods) => setSocial(methods.social));
+  }, []);
 
   const address = email.trim();
   const issue = (path: string) => (error instanceof ApiError ? error.issue(path) : undefined);
@@ -59,6 +66,20 @@ export default function SignUp() {
         toSignIn();
       }
     });
+
+  /** Google makes the account too, where the API allows sign-up: it is the same as signing in. */
+  const withProvider = async (name: string) => {
+    setProvider(name);
+    setError(null);
+    try {
+      // A second step on an account that already had one is asked for on the sign-in screen.
+      if ((await auth.signInWithProvider(name)) !== null) toSignIn();
+    } catch (caught) {
+      setError(caught);
+    } finally {
+      setProvider(null);
+    }
+  };
 
   const verify = () =>
     run(async () => {
@@ -124,6 +145,8 @@ export default function SignUp() {
 
       <Button label="Create account" busy={busy} disabled={name.trim() === "" || address === "" || password.length < MIN_LENGTH} onPress={create} />
       {exists || slow ? <Button variant="secondary" label="Sign in instead" disabled={busy} onPress={toSignIn} /> : null}
+      <SocialButtons providers={social} busy={provider} disabled={busy} onPick={withProvider} />
+
       <Button variant="link" label="Already have an account? Sign in" disabled={busy} onPress={toSignIn} />
     </Screen>
   );

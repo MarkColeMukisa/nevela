@@ -38,9 +38,10 @@ The file is yours, and an upgrade never changes it. A setting it doesn't have ta
 | `auth.attempts_per_address` | `300` | Sign-in attempts a minute from one address, on top of ten per account. |
 | `auth.proxy_secret` | none, or `NEVELA_PROXY_SECRET` | Shared with the dashboard, so Laravel believes what it says about a visitor's browser. See [Devices](/guides/authentication/#devices). |
 | `auth.close_account` | `true` | Whether people can close their own account from the Account page. See [Deleted accounts](/guides/deleted-accounts/#switching-close-account-off). |
-| `auth.default_role` | `USER` | The [role](/guides/policies/) someone who signs up starts with. `null` gives none. |
+| `auth.default_role` | `USER`, or `NEVELA_DEFAULT_ROLE` | The [role](/guides/policies/) someone who signs up starts with. `null` gives none. The [mobile app](/guides/mobile-app/#customers-and-staff) treats an account that holds only this role as a customer. |
 | `auth.social.enabled` | `false`, or `SOCIAL_AUTH_ENABLED` | Whether people can sign in with [Google and GitHub](/guides/authentication/#google-and-github). |
 | `auth.social.google`, `auth.social.github` | `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`; `GITHUB_…` the same | Each provider's keys. A provider is offered once both of its keys are set. |
+| `auth.social.app_redirects` | none, or `NEVELA_APP_REDIRECTS` | The addresses a [mobile app](/guides/authentication/#from-the-mobile-app) may be sent back to after Google or GitHub, such as `juice-me://`. Comma separated in `.env`. |
 | `permissions` | `[]` | Permissions of your own, beside the ones every resource gets. See [Permissions of your own](/guides/policies/#permissions-of-your-own). |
 | `auth.issuer` | the app's name | The name an authenticator app and a passkey prompt show. |
 | `currency` | none, or `NEVELA_CURRENCY` | The currency money is shown in, as its ISO 4217 code: `UGX`. See [Money and its currency](/concepts/field-types/#money-and-its-currency). |
@@ -76,6 +77,8 @@ The file is yours, and an upgrade never changes it. A setting it doesn't have ta
 | `NEVELA_PHONE_COUNTRY` | Where a phone number without a `+` is from, as a two-letter code: `UG`. See [Phone numbers](/concepts/field-types/#phone-numbers). Run `nevela generate` after changing it. |
 | `NEVELA_SESSION_ACCESS`, `NEVELA_SESSION_IDLE`, `NEVELA_SESSION_ABSOLUTE` | How long a sign-in lasts, in minutes: 15, 7 days and 30 days unless set. See [How long a sign-in lasts](/guides/authentication/#how-long-a-sign-in-lasts). |
 | `SOCIAL_AUTH_ENABLED` | `true` turns on signing in with [Google and GitHub](/guides/authentication/#google-and-github). Off unless set. |
+| `NEVELA_APP_REDIRECTS` | The addresses a [mobile app](/guides/authentication/#from-the-mobile-app) may be sent back to after Google or GitHub, comma separated: `juice-me://`. |
+| `NEVELA_DEFAULT_ROLE` | The role someone who signs up starts with. `USER` unless set. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google's keys. Google is offered once both are set. |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | GitHub's, the same. |
 | `TURNSTILE_SECRET_KEY` | Cloudflare's secret key, for forms with `"turnstile": true`. |

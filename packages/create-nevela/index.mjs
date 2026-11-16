@@ -21,7 +21,7 @@ import { COMMANDS, findProject, forward, upgrade } from './project.mjs';
 import { shellLine, spawnCommand, windows } from './shell.mjs';
 import { latestVersion, newerVersion, runVersion } from './selfupdate.mjs';
 import { copiesOnPath, globalInstall, INSTALL_COMMAND, removeCommand } from './tool.mjs';
-import { copyLaravelPackage, copyMobileTemplate, copyWebTemplate, fromRepository, templateRecord } from './template.mjs';
+import { copyLaravelPackage, copyMobileTemplate, copyWebTemplate, fromRepository, mobileScheme, templateRecord } from './template.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const VERSION = JSON.parse(fs.readFileSync(path.join(here, 'package.json'), 'utf8')).version;
@@ -839,6 +839,11 @@ async function main() {
           '# Off until this is true. A provider shows once both its keys are set.\n' +
           'SOCIAL_AUTH_ENABLED=false\nGOOGLE_CLIENT_ID=\nGOOGLE_CLIENT_SECRET=\nGITHUB_CLIENT_ID=\nGITHUB_CLIENT_SECRET=\n',
       );
+    }
+    // After Google or GitHub, the API sends the browser back into the mobile app by its own address.
+    // It only does that for addresses it was told about, and this is the app's.
+    if (options.mobile && fs.existsSync(env) && !/^NEVELA_APP_REDIRECTS=/m.test(fs.readFileSync(env, 'utf8'))) {
+      fs.appendFileSync(env, `\n# Where the mobile app may be sent back to after Google or GitHub sign-in. Comma separated.\nNEVELA_APP_REDIRECTS=${mobileScheme(name)}://\n`);
     }
     const sqlite = path.join(api, 'database', 'database.sqlite');
     const usesSqlite = /^DB_CONNECTION=sqlite\s*$/m.test(fs.readFileSync(env, 'utf8'));

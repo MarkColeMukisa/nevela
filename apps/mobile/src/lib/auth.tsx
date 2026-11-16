@@ -4,6 +4,7 @@ import { Platform } from "react-native";
 
 import { api, type TokenPair } from "./api";
 import { shellFor, type Shell } from "./shell";
+import { authorize } from "./social";
 
 /** The signed-in user, as `GET auth/me` describes them. */
 export interface User {
@@ -63,6 +64,11 @@ interface AuthContextValue {
   sendEmailCode: (email: string) => Promise<void>;
   /** Sign in with an emailed code. Answers a challenge when the account has an authenticator app. */
   signInWithCode: (email: string, code: string) => Promise<Challenge | null>;
+  /**
+   * Sign in with Google or another provider, in the phone's browser. Answers a challenge when
+   * the account has a second step. Where the API allows sign-up, a new address gets an account.
+   */
+  signInWithProvider: (provider: string) => Promise<Challenge | null>;
   /** Create an account. Answers "verify" when the email has to be proved before signing in. */
   register: (name: string, email: string, password: string) => Promise<Registered>;
   /** Prove an email with the code that was sent to it, which signs the new account in. */
@@ -154,6 +160,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await api.post("/auth/email-code", { email }, { auth: false });
       },
       signInWithCode: async (email, code) => finish(await api.post<Answer>("/auth/email-code/verify", { email, code: code.trim(), deviceName: deviceName() }, { auth: false })),
+      signInWithProvider: async (provider) => {
+        const answer = await authorize<Answer>(provider, deviceName());
+        // Closing the window, or saying no at the provider, is not an error: nothing has changed.
+        return answer === null ? null : finish(answer);
+      },
       register: async (name, email, password) => {
         const answer = await api.post<Answer | { verify: true }>("/auth/register", { name: name.trim(), email, password, deviceName: deviceName() }, { auth: false });
         return "verify" in answer ? "verify" : finish(answer);
