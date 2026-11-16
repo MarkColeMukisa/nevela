@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { banner } from './banner.mjs';
 import { ATTEMPTS, worthRetrying } from './composer.mjs';
 import { isNewer, latestRelease, onPackagist } from './packagist.mjs';
+import { createProgress, took } from './progress.mjs';
 import { COMMANDS, findProject, forward, upgrade } from './project.mjs';
 import { shellLine, spawnCommand, windows } from './shell.mjs';
 import { latestVersion, newerVersion, runVersion } from './selfupdate.mjs';
@@ -46,6 +47,26 @@ const green = colour(32);
 const red = colour(31);
 // Indigo where there are 256 colours to pick it from; magenta where there are 16.
 const indigo = colour(depth >= 8 ? '38;5;99' : '95');
+
+/**
+ * The list of what is being made, one line each. In a terminal the line in hand moves;
+ * in a log or CI each step is one finished line. The old Windows console can't draw the
+ * spinner's braille, so it gets a plain one: Windows Terminal and Git Bash say who they are.
+ */
+const progress = createProgress({
+  stream: process.stdout,
+  live: Boolean(process.stdout.isTTY) && depth > 1,
+  braille: process.platform !== 'win32' || Boolean(process.env.WT_SESSION || process.env.TERM_PROGRAM || /^xterm/.test(process.env.TERM ?? '')),
+  paint: { dim, green, red },
+});
+const step = progress.step;
+// Stopped half way through a step, the cursor comes back.
+process.on('exit', () => progress.restore());
+process.on('SIGINT', () => {
+  progress.restore();
+  process.stdout.write('\n');
+  process.exit(130);
+});
 
 /**
  * Whether `nevela` was typed, as opposed to create-nevela (`pnpm create nevela`). Kept in
@@ -173,7 +194,7 @@ function runLive(command, args, { cwd, onLine }) {
     child.stdout.setEncoding('utf8').on('data', read);
     child.stderr.setEncoding('utf8').on('data', read);
     child.on('error', (error) => fail(`\`${command} ${args.join(' ')}\` failed.`, String(error)));
-    child.on('close', (code) => resolve({ ok: code === 0, output }));
+    child.on('close', (code) => resolve({ ok: code === 0, output, status: code }));
   });
 }
 
@@ -182,24 +203,6 @@ function available(command, args = ['--version']) {
   return result.status === 0 ? `${result.stdout}${result.stderr}` : null;
 }
 
-const duration = (seconds) => (seconds >= 60 ? `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s` : `${seconds.toFixed(1)}s`);
-
-async function step(label, work) {
-  const started = Date.now();
-  // The "in progress" line is rewritten in place when the step ends. That only works if
-  // it fits on one line; in a narrow terminal it would wrap and be left behind.
-  const inPlace = process.stdout.isTTY && label.length + 30 < (process.stdout.columns ?? 80);
-  if (inPlace) process.stdout.write(`  ${dim('◇')} ${label}…`);
-  // A step may say how far along it is; shown beside the label, rewritten in place.
-  const progress = (text) => {
-    if (inPlace) process.stdout.write(`\r  ${dim('◇')} ${label}… ${dim(text)}   `);
-  };
-  const result = await work(progress);
-  const seconds = result?.seconds ?? (Date.now() - started) / 1000;
-  const took = seconds >= 1 ? dim(` (${duration(seconds)})`) : '';
-  process.stdout.write(`${inPlace ? '\r' : ''}  ${green('✔')} ${label}${took}${' '.repeat(24)}\n`);
-  return result;
-}
 
 function parseArgs(argv) {
   const options = { name: undefined, pm: undefined, install: true, user: true, samples: true, blog: true, git: true, yes: false, bundledPackage: false, devTools: true, mobile: false };
@@ -694,11 +697,20 @@ async function main() {
   const api = path.join(root, 'apps', 'api');
   const web = path.join(root, 'apps', 'web');
   const began = Date.now();
-  fs.mkdirSync(path.join(root, 'apps'), { recursive: true });
+  const mobile = path.join(root, 'apps', 'mobile');
+  const filesIn = (dir) => fs.readdirSync(dir, { withFileTypes: true }).reduce((total, entry) => total + (entry.isDirectory() ? filesIn(path.join(dir, entry.name)) : 1), 0);
+  console.log('');
+  await step('Project folder', (say) => {
+    fs.mkdirSync(path.join(root, 'apps'), { recursive: true });
+    say.done(path.relative(process.cwd(), root) || name);
+  });
 
   // The dashboard first, so its packages can download while Composer works on Laravel.
   // The two don't touch each other, and Composer is the long part.
-  copyWebTemplate(web, { name, title });
+  await step('Dashboard', (say) => {
+    copyWebTemplate(web, { name, title });
+    say.done(`Next.js · ${filesIn(web)} files`);
+  });
   // Shared by the dashboard and the API, so the API can believe what the dashboard tells it
   // about a person's browser (for the list of devices signed in to an account). Made here,
   // per app, and never the same twice.
@@ -715,24 +727,39 @@ async function main() {
   // `nevela upgrade` compares against these to tell the files you changed from the ones
   // you didn't, so an update never overwrites your work.
   write(path.join(web, '.nevela.json'), `${JSON.stringify(templateRecord(VERSION), null, 4)}\n`);
-  const mobile = path.join(root, 'apps', 'mobile');
   if (options.mobile) {
-    copyMobileTemplate(mobile, { name, title });
-    if (pm === 'pnpm') {
-      // React Native's tooling expects one flat node_modules. Its own workspace file also
-      // keeps pnpm from adopting a workspace further up.
-      write(path.join(mobile, 'pnpm-workspace.yaml'), 'nodeLinker: hoisted\n');
-    }
+    await step('Mobile app', (say) => {
+      copyMobileTemplate(mobile, { name, title });
+      if (pm === 'pnpm') {
+        // React Native's tooling expects one flat node_modules. Its own workspace file also
+        // keeps pnpm from adopting a workspace further up.
+        write(path.join(mobile, 'pnpm-workspace.yaml'), 'nodeLinker: hoisted\n');
+      }
+      say.done(`Expo · ${filesIn(mobile)} files`);
+    });
   }
   writeRootFiles(root, { name, title, pm, admin: options.user ? ADMIN : null, samples: options.user && options.samples, blog: options.blog, mobile: options.mobile });
   const packages = options.install ? start(pm, ['install'], { cwd: web }) : null;
   // After the dashboard's, not beside them: two installs at once is what runs a small machine out of memory.
   const mobilePackages = options.install && options.mobile && packages ? packages.done.then(() => start(pm, ['install'], { cwd: mobile }).done) : null;
 
-  const tokens = await step('Creating the Laravel app', async (progress) => {
+  await step('Laravel app', async (say) => {
     // The skeleton only. Its packages are installed below, once, together with Nevela's.
-    run('composer', ['create-project', 'laravel/laravel', 'apps/api', '--no-install', '--no-scripts', '--no-interaction', '--no-progress', '--prefer-dist'], { cwd: root });
+    const skeleton = ['create-project', 'laravel/laravel', 'apps/api', '--no-install', '--no-scripts', '--no-interaction', '--no-progress', '--prefer-dist'];
+    say('downloading the skeleton');
+    const created = await runLive('composer', skeleton, {
+      cwd: root,
+      onLine: (line) => {
+        const version = /Installing laravel\/laravel \(([^)]+)\)/.exec(line);
+        if (version) say(`laravel/laravel ${version[1]}`);
+      },
+    });
+    if (!created.ok) fail(`\`composer ${skeleton.join(' ')}\` failed.`, created.output);
+    const laravel = /Installing laravel\/laravel \(([^)]+)\)/.exec(created.output)?.[1];
+    say.done(laravel ? `laravel/laravel ${laravel}` : 'laravel/laravel');
+  });
 
+  const packagesIn = await step('Laravel packages', async (say) => {
     const wanted = VERSION.split('.').slice(0, 2).map(Number);
     let nevela = `^${wanted.join('.')}`;
     const manifestFile = path.join(api, 'composer.json');
@@ -764,17 +791,22 @@ async function main() {
     for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
       let total = 0;
       let done = 0;
+      say('working out which versions fit together');
       installed = await runLive('composer', install, {
         cwd: api,
         onLine: (line) => {
           const operations = /Package operations: (\d+) installs?/.exec(line);
           if (operations) total = Number(operations[1]);
-          if (/- Installing .*Extracting archive|- Installing .*Symlinking|- Installing .*Junctioning/.test(line)) done++;
-          if (total) progress(`${Math.min(done, total)}/${total} packages`);
+          // Each package is named as it lands, so the wait is something to watch.
+          const landed = /- Installing (\S+) .*(?:Extracting archive|Symlinking|Junctioning)/.exec(line);
+          if (landed) done++;
+          if (total && landed) say(`${Math.min(done, total)}/${total}  ${landed[1]}`);
+          else if (total && done === 0) say(`downloading ${total} packages`);
         },
       });
+      if (installed.ok) say.done(total ? `${total} packages` : '');
       if (installed.ok || attempt === ATTEMPTS || !worthRetrying(installed.output)) break;
-      progress(`a download didn't go through: trying again (${attempt + 1} of ${ATTEMPTS})`);
+      say(`a download didn't go through: trying again (${attempt + 1} of ${ATTEMPTS})`);
       // Where nothing is rewritten in place (a log, CI), it gets a line of its own.
       if (!process.stdout.isTTY) console.log(`  ${dim(`A download didn't go through. Trying again (${attempt + 1} of ${ATTEMPTS})…`)}`);
       await new Promise((resolve) => setTimeout(resolve, attempt * 3000));
@@ -788,6 +820,10 @@ async function main() {
       );
     }
 
+    return true;
+  });
+
+  const tokens = packagesIn && await step('Environment', (say) => {
     // What Composer's create-project scripts would have done, without starting Composer
     // again for each: the .env file, the SQLite database and the app key. The first
     // artisan command is slow for the same reason the index was: files read for the first time.
@@ -806,7 +842,9 @@ async function main() {
       );
     }
     const sqlite = path.join(api, 'database', 'database.sqlite');
-    if (/^DB_CONNECTION=sqlite\s*$/m.test(fs.readFileSync(env, 'utf8')) && !fs.existsSync(sqlite)) fs.writeFileSync(sqlite, '');
+    const usesSqlite = /^DB_CONNECTION=sqlite\s*$/m.test(fs.readFileSync(env, 'utf8'));
+    if (usesSqlite && !fs.existsSync(sqlite)) fs.writeFileSync(sqlite, '');
+    say.done(`.env${usesSqlite ? ' · SQLite' : ''} · API tokens`);
     return addApiTokens(path.join(api, 'app', 'Models', 'User.php'));
   });
 
@@ -814,12 +852,24 @@ async function main() {
   let samples = false;
   let blog = false;
   let blogMissing = false;
-  await step('Setting up the database', () => {
+  await step('Database', async (say) => {
     // One artisan process for the app key, Sanctum's migration, the generated files, the
     // migrations, the starter account and the sample users: each separate call would
     // start Laravel again.
     const account = options.user && tokens ? [`--name=${ADMIN.name}`, `--email=${ADMIN.email}`, `--password=${ADMIN.password}`, ...(options.samples ? [] : ['--no-sample-users'])] : [];
-    const setup = run('php', ['artisan', 'nevela:setup', ...account, ...(options.blog ? [] : ['--no-blog'])], { cwd: api, allowFailure: true });
+    let tables = 0;
+    say('starting Laravel for the first time');
+    const setup = await runLive('php', ['artisan', 'nevela:setup', ...account, ...(options.blog ? [] : ['--no-blog'])], {
+      cwd: api,
+      onLine: (line) => {
+        // "2026_10_01_000000_create_products_table ...... 12ms DONE"
+        const migration = /\d{4}_\d{2}_\d{2}_\d{6}_(\w+) \.{2,}/.exec(line);
+        if (!migration) return;
+        tables++;
+        say(migration[1].replace(/_/g, ' '));
+      },
+    });
+    say.done(tables ? `${tables} migrations` : '');
     if (setup.ok) {
       admin = account.length > 0;
       samples = admin && options.samples;
@@ -840,22 +890,49 @@ async function main() {
     if (account.length) admin = run('php', ['artisan', 'nevela:user', ...account.filter((arg) => arg !== '--no-sample-users')], { cwd: api, allowFailure: true }).ok;
   });
 
+  // What the database step made, each said: these are what a person looks for first.
+  if (admin) progress.note('Administrator', ADMIN.email);
+  if (samples) progress.note('Sample users', '2 editors · 8 users');
+  if (blog) progress.note('Blog', 'Post resource · 3 posts · /blog');
+
+  /** How many packages an install put in place, from what the package manager printed. */
+  const counted = (output) => {
+    const found = /(?:added|Packages: \+|Done in .* using .*?)(\d+)/.exec(output) ?? /\+(\d+)\s*$/m.exec(output);
+    return found ? `${found[1]} packages` : '';
+  };
+
   let installed = false;
   if (packages) {
     // Usually finished long before Composer; the time shown is how long it took, not how long we waited here.
-    installed = (await step(`Installing dashboard packages (${pm})`, () => packages.done)).ok;
+    installed = (await step('Dashboard packages', async (say) => {
+      say(`${pm} install`);
+      const result = await packages.done;
+      say.done(result.ok ? [pm, counted(result.output)].filter(Boolean).join(' · ') : `${pm} install didn't finish`);
+      return result;
+    }, { failed: (result) => !result.ok })).ok;
   }
 
   let mobileInstalled = false;
   if (mobilePackages) {
-    mobileInstalled = (await step(`Installing mobile app packages (${pm})`, () => mobilePackages)).ok;
+    mobileInstalled = (await step('Mobile app packages', async (say) => {
+      say(`${pm} install`);
+      const result = await mobilePackages;
+      say.done(result.ok ? [pm, counted(result.output)].filter(Boolean).join(' · ') : `${pm} install didn't finish`);
+      return result;
+    }, { failed: (result) => !result.ok })).ok;
   }
 
   if (options.git && available('git') && !run('git', ['rev-parse', '--is-inside-work-tree'], { cwd: root, allowFailure: true }).ok) {
-    run('git', ['init', '--quiet'], { cwd: root, allowFailure: true });
+    await step('Git repository', (say) => {
+      const made = run('git', ['init', '--quiet'], { cwd: root, allowFailure: true });
+      say.done(made.ok ? 'git init' : "git init didn't work");
+      return made;
+    }, { failed: (result) => !result.ok });
   }
 
-  console.log(`\n  ${green('✔')} ${bold(`Created ${name}`)} ${dim(`in ${duration((Date.now() - began) / 1000)}`)}\n`);
+  // The app in a line, as the list above is the app in detail.
+  const made = ['Laravel API', 'dashboard', options.mobile ? 'mobile app' : null, blog ? 'blog' : null].filter(Boolean).join(' · ');
+  console.log(`\n  ${green('Created')} ${bold(name)}  ${dim(`${made} · ${took(Date.now() - began)}`)}\n`);
   if (!tokens) {
     console.log(`  ${red('!')} I couldn't add Sanctum's trait to apps/api/app/Models/User.php. Add it by hand:`);
     console.log(`    ${dim('use Laravel\\Sanctum\\HasApiTokens;  and  use HasApiTokens;  inside the class')}\n`);
