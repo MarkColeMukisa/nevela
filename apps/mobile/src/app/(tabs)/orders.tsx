@@ -7,7 +7,7 @@ import { api, messageOf } from "@/lib/api";
 import { useShop } from "@/lib/cart";
 import { display } from "@/lib/format";
 import { optionLabel, type ResourceRecord } from "@/lib/resources";
-import { titleFieldOf } from "@/lib/shop";
+import { titleFieldOf, totalFieldOf } from "@/lib/shop";
 import { radius, spacing, text, useColors } from "@/lib/theme";
 import { useLoaded } from "@/lib/use-loaded";
 import { ago } from "@/lib/when";
@@ -41,7 +41,7 @@ export default function Orders() {
   if (orders.loading) return <Loading />;
 
   const status = Object.entries(shop.orders.fields).find(([name, field]) => /^(status|state|stage)$/i.test(name) && field.kind === "enum");
-  const total = Object.entries(shop.orders.fields).find(([, field]) => field.kind === "float" && field.format === "money");
+  const total = totalFieldOf(shop.orders);
   const title = titleFieldOf(shop.orders);
   const rows = orders.data?.data ?? [];
 

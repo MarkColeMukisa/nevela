@@ -3,8 +3,9 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import { Text, View } from "react-native";
 
 import { Body, Button, Screen } from "@/components/ui";
-import { useShop } from "@/lib/cart";
+import { useCanTrack, useShop } from "@/lib/cart";
 import { display } from "@/lib/format";
+import { totalFieldOf } from "@/lib/shop";
 import { spacing, text, useColors } from "@/lib/theme";
 
 /**
@@ -14,9 +15,10 @@ import { spacing, text, useColors } from "@/lib/theme";
 export default function Placed() {
   const { id, number, total } = useLocalSearchParams<{ id: string; number?: string; total?: string }>();
   const shop = useShop();
+  const canTrack = useCanTrack(shop);
   const colors = useColors();
 
-  const totalField = shop ? Object.values(shop.orders.fields).find((field) => field.kind === "float" && field.format === "money") ?? (shop.price ? shop.catalogue.fields[shop.price] : null) : null;
+  const totalField = shop ? totalFieldOf(shop.orders)?.[1] ?? (shop.price ? shop.catalogue.fields[shop.price] : null) : null;
 
   return (
     <Screen edges={["top", "bottom"]} centered>
@@ -28,7 +30,7 @@ export default function Placed() {
         {total && totalField ? <Text style={{ color: colors.muted, fontSize: text.body }}>{display(totalField, Number(total))}</Text> : null}
         <Body muted>We have your order. You can follow it as it is accepted and made ready.</Body>
       </View>
-      {shop && id ? <Button label="Track this order" icon="receipt-outline" onPress={() => router.replace({ pathname: "/r/[slug]/[id]", params: { slug: shop.orders.slug, id } })} /> : null}
+      {shop && id && canTrack ? <Button label="Track this order" icon="receipt-outline" onPress={() => router.replace({ pathname: "/r/[slug]/[id]", params: { slug: shop.orders.slug, id } })} /> : null}
       <Button variant="secondary" label="Keep shopping" onPress={() => router.replace("/")} />
     </Screen>
   );

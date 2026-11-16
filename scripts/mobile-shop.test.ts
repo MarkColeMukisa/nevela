@@ -4,7 +4,7 @@ import path from "node:path";
 import { test } from "node:test";
 
 import { formatMoney, currencyDigits } from "../apps/mobile/src/lib/money.ts";
-import { addToCart, cartCount, cartTotal, clampQuantity, findShop, NOT_AVAILABLE, orderLines, prefillFrom, setQuantity, sortIssues } from "../apps/mobile/src/lib/shop.ts";
+import { addToCart, cartCount, cartTotal, clampQuantity, findShop, NOT_AVAILABLE, OFF_THE_TRAIL, orderLines, prefillFrom, setQuantity, sortIssues, totalFieldOf } from "../apps/mobile/src/lib/shop.ts";
 
 /** The repository's own example resources, as `GET _nevela/resources` sends them. */
 function repositoryResources(): any[] {
@@ -152,4 +152,17 @@ test("a complaint about what was bought is told to the customer as \"not availab
   assert.deepEqual(sorted.lines[1], [NOT_AVAILABLE, "The quantity must be at least 1."]);
   // Without being told which field it is, Laravel's own words stand.
   assert.equal(sortIssues(issues).lines[1][0], "This one is in the trash. Restore it, or choose another.");
+});
+
+test("the order's total is the money field named like one, not the first money field", () => {
+  const orders = { fields: { deliveryFee: { kind: "float", format: "money" }, total: { kind: "float", format: "money" } } } as never;
+  assert.equal(totalFieldOf(orders)?.[0], "total");
+  const unnamed = { fields: { fee: { kind: "float", format: "money" }, sum: { kind: "float", format: "money" } } } as never;
+  assert.equal(totalFieldOf(unnamed)?.[0], "fee");
+});
+
+test("cancelled and the like are not stages on the trail", () => {
+  assert.ok(OFF_THE_TRAIL.test("cancelled"));
+  assert.ok(OFF_THE_TRAIL.test("rejected"));
+  assert.ok(!OFF_THE_TRAIL.test("completed"));
 });

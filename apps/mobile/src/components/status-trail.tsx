@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { OFF_THE_TRAIL } from "@/lib/shop";
 import { optionLabel, type FieldSpec } from "@/lib/resources";
 import { spacing, text, useColors } from "@/lib/theme";
 
@@ -11,7 +12,8 @@ import { spacing, text, useColors } from "@/lib/theme";
  */
 export function StatusTrail({ field, value }: { field: FieldSpec; value: string }) {
   const colors = useColors();
-  const stages = field.options ?? [];
+  // A cancelled order has not got to Completed: the trail tells nothing, and the status badge says it.
+  const stages = (field.options ?? []).filter((stage) => !OFF_THE_TRAIL.test(stage));
   const at = stages.indexOf(value);
   if (stages.length < 3 || at < 0) return null;
 

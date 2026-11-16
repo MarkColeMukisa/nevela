@@ -6,10 +6,10 @@ import { Control, fromControl, toControl } from "@/components/record-form";
 import { Body, Button, Card, Heading, Notice, Row, Screen } from "@/components/ui";
 import { api, ApiError, messageOf, SlowAnswerError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { useCart, useShop } from "@/lib/cart";
+import { useCanTrack, useCart, useShop } from "@/lib/cart";
 import { display } from "@/lib/format";
 import { applies, type ResourceRecord } from "@/lib/resources";
-import { cartTotal, orderLines, prefillFrom, sortIssues, titleFieldOf, type Shop } from "@/lib/shop";
+import { cartTotal, orderLines, prefillFrom, sortIssues, titleFieldOf, totalFieldOf, type Shop } from "@/lib/shop";
 import { spacing, text, useColors } from "@/lib/theme";
 
 /**
@@ -33,6 +33,7 @@ export default function Checkout() {
 function CheckoutForm({ shop }: { shop: Shop }) {
   const { user } = useAuth();
   const cart = useCart();
+  const canTrack = useCanTrack(shop);
   const colors = useColors();
   const fields = shop.checkout.map((name) => [name, shop.orders.fields[name]] as const);
 
@@ -84,8 +85,8 @@ function CheckoutForm({ shop }: { shop: Shop }) {
     try {
       const saved = await api.post<ResourceRecord>(`/${shop.orders.slug}`, payload);
       // Placed. What the customer is told is Laravel's: its number, its total.
-      cart.clear();
-      const totalField = Object.entries(shop.orders.fields).find(([, field]) => field.kind === "float" && field.format === "money")?.[0];
+      cart.settle(sent.map((line) => line.id));
+      const totalField = totalFieldOf(shop.orders)?.[0];
       router.replace({
         pathname: "/shop/placed",
         params: { id: saved.id, number: String(saved[titleFieldOf(shop.orders)] ?? ""), total: totalField && saved[totalField] !== null && saved[totalField] !== undefined ? String(saved[totalField]) : "" },
@@ -122,7 +123,7 @@ function CheckoutForm({ shop }: { shop: Shop }) {
       {unsure ? (
         <View style={{ gap: spacing.md }}>
           <Notice>The server took too long to answer, so your order may have been placed. Check your orders before ordering again, so it isn't placed twice.</Notice>
-          <Button label="Check my orders" onPress={() => router.navigate("/orders")} />
+          {canTrack ? <Button label="Check my orders" onPress={() => router.navigate("/orders")} /> : null}
           <Button variant="link" label="Back to my cart" onPress={() => router.back()} />
         </View>
       ) : (

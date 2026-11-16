@@ -188,7 +188,7 @@ export function ShopHome({ shop }: { shop: Shop }) {
       )}
 
       {page < pages ? (
-        <Button variant="secondary" label="Show more" busy={more} onPress={async () => { setMore(true); await load(page + 1, query, category); setMore(false); }} />
+        <Button variant="secondary" label="Show more" busy={more} disabled={more || loading} onPress={async () => { setMore(true); await load(page + 1, query, category); setMore(false); }} />
       ) : null}
     </Screen>
   );

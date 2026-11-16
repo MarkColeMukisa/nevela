@@ -28,6 +28,8 @@ interface CartValue {
    */
   refresh: (apply: (current: CartLine[]) => CartLine[]) => void;
   clear: () => void;
+  /** Take out what was ordered, leaving anything added since. */
+  settle: (ids: string[]) => void;
 }
 
 const CartContext = createContext<CartValue | null>(null);
@@ -101,6 +103,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       remove: (id) => setLines((current) => current.filter((line) => line.id !== id)),
       refresh: (apply) => setLines(apply),
       clear: () => setLines([]),
+      settle: (ids) => setLines((current) => current.filter((line) => !ids.includes(line.id))),
     }),
     [lines],
   );

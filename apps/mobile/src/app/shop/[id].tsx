@@ -56,6 +56,7 @@ export default function ProductScreen() {
       <Screen edges={["bottom"]}>
         <Stack.Screen options={{ title: shop.catalogue.label }} />
         <Notice>{gone ? `This ${shop.catalogue.label.toLowerCase()} isn't here any more.` : messageOf(product.error)}</Notice>
+        {gone ? null : <Button label="Try again" onPress={product.reload} />}
       </Screen>
     );
   }

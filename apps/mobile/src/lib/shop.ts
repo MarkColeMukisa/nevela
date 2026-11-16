@@ -176,6 +176,15 @@ export function orderLines(shop: Shop, lines: CartLine[]): Record<string, unknow
   return lines.map((line) => ({ [shop.product]: line.id, [shop.quantity]: line.quantity }));
 }
 
+/** The order's total: a money field named like one, else the first money field. */
+export function totalFieldOf(orders: Resource): [string, FieldSpec] | undefined {
+  const money = Object.entries(orders.fields).filter(([, field]) => field.kind === "float" && field.format === "money");
+  return money.find(([name]) => /^(grand_?total|order_?total|total|amount)$/i.test(name)) ?? money[0];
+}
+
+/** A stage that ends an order some other way than the trail's: it is not "done", and nothing after it is. */
+export const OFF_THE_TRAIL = /cancel|reject|declin|fail|refund|void|expire/i;
+
 /** What a customer is told when the thing they chose can't be ordered, whatever the reason: deleted, in the trash, not theirs to see. */
 export const NOT_AVAILABLE = "This isn't available any more. Take it out of your cart to carry on.";
 
