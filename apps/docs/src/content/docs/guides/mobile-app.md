@@ -74,6 +74,8 @@ If the sign-in screen says it couldn't reach the server, it names the address it
 | Records | Every resource your role may view: search it, open a record, and create, change or delete one where your role allows. See [Your resources](#your-resources). |
 | Account | Your profile picture (choose one or take one), your name, your roles, and changing your password. For someone who may manage them, **People** and **Roles and permissions** too: see [People and roles](#people-and-roles). |
 | Two-step sign-in | Turn on two-step sign-in with an authenticator app (a button that opens the one on the phone, a QR code for one on another device, and the setup key to copy) or with codes by email. Backup codes are shown once, to copy. Make new ones, or turn it off. List your passkeys and remove one. |
+| Activity | The activity log, under Account for whoever holds `activity.view`: who added, changed, deleted, restored or removed which records, newest first, filtered by what was done. The home's **Recent activity** has **See all**. |
+| Trash | Under Account for whoever may delete something: each resource's deleted records and how long each has left. Restore one, remove one for good, or empty a resource's trash. See [The trash](/guides/trash/). |
 | Settings | Light, dark or the phone's appearance. **Devices**: everywhere the account is signed in, browsers and phones alike; sign one out, or all the others. |
 
 Signing in with an emailed link stays in the dashboard for now: it ends at a web address, which a phone app has to be taught to open.

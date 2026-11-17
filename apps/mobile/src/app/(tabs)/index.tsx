@@ -3,10 +3,12 @@ import { router } from "expo-router";
 import { useCallback } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { ActivityRow } from "@/components/activity-row";
 import { CustomerHome } from "@/components/customer-home";
 import { HomeHeader, NothingShared } from "@/components/home-header";
 import { Spark } from "@/components/spark";
 import { Body, Heading, Notice, Screen, type IconName } from "@/components/ui";
+import type { Activity } from "@/lib/activity";
 import { api, messageOf } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { iconFor } from "@/lib/icons";
@@ -30,32 +32,12 @@ interface Figures {
   days: number[];
 }
 
-interface Activity {
-  id: string;
-  action: "created" | "updated" | "deleted" | "restored" | "purged";
-  label: string;
-  slug: string;
-  count: number;
-  title: string | null;
-  recordId: string | null;
-  user: { id: string; name: string | null } | null;
-  at: string;
-}
-
 interface Home {
   figures: Record<string, Figures | null>;
   users: number | null;
   activity: Activity[] | null;
   inbox: Inbox | null;
 }
-
-const ACTIONS: Record<Activity["action"], { icon: IconName; verb: string }> = {
-  created: { icon: "add-circle-outline", verb: "added" },
-  updated: { icon: "create-outline", verb: "changed" },
-  deleted: { icon: "trash-outline", verb: "deleted" },
-  restored: { icon: "refresh-outline", verb: "restored" },
-  purged: { icon: "close-circle-outline", verb: "removed for good" },
-};
 
 /**
  * The staff home: how the app is doing, from what it holds. A card per resource with how many
@@ -163,7 +145,12 @@ function StaffHome() {
 
       {home.data?.activity ? (
         <View style={{ gap: spacing.sm }}>
-          <Heading>Recent activity</Heading>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <Heading>Recent activity</Heading>
+            <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.push("/activity")}>
+              <Text style={{ color: colors.accent, fontSize: text.small, fontWeight: "600" }}>See all</Text>
+            </Pressable>
+          </View>
           {home.data.activity.length === 0 ? (
             <Body muted>Nothing yet. When anyone adds, changes or deletes a record, it shows here.</Body>
           ) : (
@@ -213,34 +200,6 @@ function FigureCard({ resource, figures, loading }: { resource: Resource; figure
   );
 }
 
-function ActivityRow({ entry, you, last }: { entry: Activity; you: string; last: boolean }) {
-  const colors = useColors();
-  const action = ACTIONS[entry.action] ?? ACTIONS.updated;
-  const who = entry.user ? (entry.user.id === you ? "You" : entry.user.name ?? "Someone") : "Someone";
-  const what = entry.count > 1 ? `${entry.count} ${entry.label.toLowerCase()}s` : entry.title ? entry.title : `a ${entry.label.toLowerCase()}`;
-  const opens = entry.recordId && entry.count === 1 && entry.action !== "deleted" && entry.action !== "purged";
-
-  const row = (
-    <View style={[styles.activity, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
-      <View style={[styles.activityIcon, { backgroundColor: colors.accentSoft }]}>
-        <Ionicons name={action.icon} size={16} color={colors.accent} />
-      </View>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text numberOfLines={2} style={{ color: colors.text, fontSize: text.small + 1 }}>
-          <Text style={{ fontWeight: "600" }}>{who}</Text> {action.verb} <Text style={{ fontWeight: "600" }}>{what}</Text>
-        </Text>
-        <Text style={{ color: colors.muted, fontSize: 12 }}>{entry.label} · {ago(entry.at)}</Text>
-      </View>
-    </View>
-  );
-  if (!opens) return row;
-  return (
-    <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/r/[slug]/[id]", params: { slug: entry.slug, id: entry.recordId as string } })} style={({ pressed }) => pressed && { opacity: 0.6 }}>
-      {row}
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   chip: { minHeight: 40, paddingHorizontal: spacing.lg, borderRadius: 20, flexDirection: "row", alignItems: "center", gap: spacing.xs },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
@@ -252,8 +211,6 @@ const styles = StyleSheet.create({
   empty: { borderWidth: 1, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm },
   command: { borderWidth: 1, borderRadius: radius.sm, padding: spacing.md, fontSize: 12, fontFamily: "monospace" },
   list: { borderWidth: 1, borderRadius: radius.lg, overflow: "hidden" },
-  activity: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
-  activityIcon: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
 });
 
 /** Staff and customers are given different homes: see lib/shell.ts. */

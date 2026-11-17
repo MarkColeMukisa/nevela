@@ -54,6 +54,8 @@ export default function Account() {
 
   const initials = (user.name ?? user.email ?? "?").trim().split(/\s+/).slice(0, 2).map((word) => word[0]?.toUpperCase() ?? "").join("");
   const manages = can(user, "users.view") || can(user, "roles.view");
+  // The trash is for those who may delete something: Laravel narrows it to what they may deal with.
+  const mayDelete = user.isAdmin || user.permissions.some((key) => key.endsWith(".delete"));
   const changed = name.trim() !== (user.name ?? "") && name.trim() !== "";
 
   return (
@@ -89,10 +91,20 @@ export default function Account() {
           <Row icon="mail-outline" label="Email" value={user.emailVerified ? "Verified" : "Not verified"} />
           <Row icon="key-outline" label="Two-step sign-in" value={user.twoFactorEnabled ? "On" : "Off"} onPress={() => router.push("/security")} last={!manages} />
           {can(user, "users.view") ? <Row icon="people-outline" label="People" detail="Who can sign in, and their roles" onPress={() => router.push("/access/users")} last={!can(user, "roles.view")} /> : null}
-          {can(user, "roles.view") ? <Row icon="shield-checkmark-outline" label="Roles and permissions" detail="What each role may do" onPress={() => router.push("/access/roles")} last /> : null}
+          {can(user, "roles.view") ? <Row icon="shield-checkmark-outline" label="Roles and permissions" detail="What each role may do" onPress={() => router.push("/access/roles")} last={!can(user, "activity.view") && !mayDelete} /> : null}
         </Card>
         {!manages ? <Body muted small>Roles are given by someone who may manage users.</Body> : null}
       </View>
+
+      {can(user, "activity.view") || mayDelete ? (
+        <View style={{ gap: spacing.sm }}>
+          <Heading>Keeping track</Heading>
+          <Card>
+            {can(user, "activity.view") ? <Row icon="time-outline" label="Activity" detail="Who changed what, and when" onPress={() => router.push("/activity")} last={!mayDelete} /> : null}
+            {mayDelete ? <Row icon="trash-outline" label="Trash" detail="Bring back what was deleted" onPress={() => router.push("/trash")} last /> : null}
+          </Card>
+        </View>
+      ) : null}
 
       <View style={{ gap: spacing.sm }}>
         <Heading>Sign-in</Heading>
