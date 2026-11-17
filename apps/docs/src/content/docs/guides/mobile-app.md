@@ -95,6 +95,44 @@ For a shop that takes orders:
 2. Set `NEVELA_DEFAULT_ROLE=CUSTOMER` and `NEVELA_REGISTRATION=true` in `apps/api/.env`.
 3. Everyone who signs up in the app is now a customer. Staff are made on the Users screen, with their own role.
 
+## A shop on the phone
+
+When the app holds an order resource and a catalogue, a customer's home becomes a shop: a grid of what is for sale, a cart, checkout, and **Orders** to follow what they have bought. Nothing is set in the app; it reads the resources.
+
+It is found when:
+
+- one resource has `items` (the order) and another is its lines, with a belongs-to field back to the order;
+- the lines point at the catalogue with a belongs-to field, and have a `quantity` or `qty` number;
+- the lines' price is the first money field, usually copied from the catalogue (`from: "productId.price"`) so Laravel, not the phone, decides what is paid;
+- the customer's role may view the catalogue and create orders.
+
+Checkout asks for the order's own fields the cart can't know (name, phone, how it will be delivered). A `status`, `state` or `stage` field is never asked: give it a default, or send one from `lib/site.ts`:
+
+```ts
+shop: {
+  send: { status: "pending" },        // fields sent with every order
+  checkout: ["customer", "phone"],     // the order's fields to ask, in this order
+  available: "inStock",                // a true/false field on the catalogue; only those are shown
+  category: "categoryId",              // the field the category chips filter on
+},
+```
+
+An order with no way to fill its required fields is not a shop, and the customer home stays the plain browse list.
+
+The cart is kept on the phone for each account, holds only a product and a quantity, and is emptied on sign-out. The order goes in one request with its lines; the number, prices and total are Laravel's, and the phone shows what comes back. Money is shown in the app's currency (`NEVELA_CURRENCY`, for example `UGX`), as in the dashboard.
+
+### Keep customers to their own orders
+
+Name the field that holds the customer's email as the order's `owner`, in `nevela/resources/order.json`, and run `nevela:generate`:
+
+```json
+{ "name": "Order", "items": "OrderItem", "owner": "email", "fields": { "email": { "kind": "string", "format": "email" } } }
+```
+
+Each customer then sees only their own orders, in the list, on the order's page and in the Orders tab, and an order they place is theirs whatever the phone sends. Staff, who hold `orders.edit`, see every order and move it along (Pending, Accepted, Preparing, Ready, Completed) in the dashboard or the app; the customer's order page shows where it has got to. The app doesn't ask for the owner field: it is the signed-in person's. See [Which records each person sees](/guides/policies/#which-records-each-person-sees).
+
+Without it, anyone who may view orders sees every order. A customer could also post a status of `completed` or a total of their own: the order's status, number and total are for Laravel to set. Give the status a default and let its lines carry the total (`itemsSaved()` on the model sets it), and check as two customers that each sees only their own.
+
 ## Sign in with Google
 
 Where the API has Google (or GitHub) [switched on](/guides/authentication/#google-and-github), the sign-in and sign-up screens show **Continue with Google**. Where sign-up is open, a new address gets an account, as it would from the sign-up screen.

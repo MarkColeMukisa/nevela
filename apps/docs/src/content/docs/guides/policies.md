@@ -124,7 +124,15 @@ Anything shaped like a permission works wherever Laravel checks an ability: `$us
 
 ### Which records each person sees
 
-A permission says whether someone may see courses at all. Which courses is the model's to say, in a `visibleTo` scope, outside the generated block:
+Where records belong to whoever made them, such as a customer's orders, say so in the descriptor and Nevela writes this for you:
+
+```json
+{ "name": "Order", "owner": "email", "fields": { "email": { "kind": "string", "format": "email" } } }
+```
+
+`owner` names a string field that holds the owner's email. Anyone who may edit the resource (`orders.edit`) sees every record; everyone else sees only the ones whose email is theirs, in the list, the counts, a record's page, the trash and the bell, and a record they make is made theirs whatever the request said for it. Staff keep what they send, so an order taken by phone can be put under the customer's email. `nevela:generate` adds the `Owned` trait and its `owner()` method to the model.
+
+For anything else, a model decides itself. A permission says whether someone may see courses at all. Which courses is the model's to say, in a `visibleTo` scope, outside the generated block:
 
 ```php
 // app/Models/Course.php

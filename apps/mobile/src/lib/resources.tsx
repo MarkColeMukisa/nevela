@@ -57,6 +57,8 @@ export interface Resource {
   titleField?: string;
   /** The resource its lines are, for one with line items: an order's "OrderItem". */
   items?: string;
+  /** The field that says whose record it is, kept by Laravel: each person sees their own. An order's "email". */
+  owner?: string;
   fields: Record<string, FieldSpec>;
 }
 
@@ -109,6 +111,8 @@ export function may(user: User | null, resource: Resource, ability: Ability): bo
 interface ResourcesValue {
   /** Every resource the user may view, except ones that are another's lines. */
   resources: Resource[];
+  /** Every resource there is, whether or not the user may view it. */
+  all: Resource[];
   /** Every resource there is, by its name: for following a belongsTo. */
   byName: (name: string) => Resource | undefined;
   bySlug: (slug: string) => Resource | undefined;
@@ -153,6 +157,7 @@ export function ResourcesProvider({ children }: { children: ReactNode }) {
     const lines = new Set(all.map((resource) => resource.items).filter(Boolean));
     return {
       resources: all.filter((resource) => !lines.has(resource.name) && may(user, resource, "view")),
+      all,
       byName: (name) => all.find((resource) => resource.name === name),
       bySlug: (slug) => all.find((resource) => resource.slug === slug),
       loading,

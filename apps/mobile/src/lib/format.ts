@@ -1,3 +1,4 @@
+import { formatMoney } from "./money";
 import { optionLabel, type FieldSpec } from "./resources";
 
 /** A file as a record carries it beside the field, as `<field>File`. */
@@ -43,7 +44,8 @@ export function display(field: FieldSpec, value: unknown): string {
     case "float": {
       const amount = Number(value);
       if (Number.isNaN(amount)) return String(value);
-      if (field.format === "money") return `${field.currency ? `${field.currency} ` : ""}${number(amount, 2)}`;
+      // In its currency with the currency's own decimals (UGX has none), as the dashboard writes it.
+      if (field.format === "money") return formatMoney(amount, field.currency) ?? number(amount, 2);
       if (field.format === "percent") return `${number(amount)}%`;
       if (field.format === "rating") return `${number(amount)} ★`;
       return number(amount);

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
 
 import { Picture } from "@/components/pictures";
+import { StatusTrail } from "@/components/status-trail";
 import { Body, Button, Card, Heading, Loading, Notice, Row, Screen } from "@/components/ui";
 import { api, ApiError, messageOf } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -95,6 +96,7 @@ export default function RecordDetail() {
   const long = fields.filter(([name, field]) => (field.kind === "text" || field.kind === "json") && display(field, data[name]) !== "");
   const pictures = fields.flatMap(([name, field]) => (field.kind === "file" ? filesOf(name, field, data).map((file) => ({ name, file })) : []));
   const lines = resource.items ? byName(resource.items) : undefined;
+  const stages = Object.entries(resource.fields).find(([name, field]) => /^(status|state|stage)$/i.test(name) && field.kind === "enum" && (field.options?.length ?? 0) >= 3);
 
   return (
     <Screen edges={["bottom"]} refreshControl={<RefreshControl refreshing={record.refreshing} onRefresh={record.refresh} />}>
@@ -107,6 +109,8 @@ export default function RecordDetail() {
 
       {failed ? <Notice>{messageOf(failed)}</Notice> : null}
       {record.error ? <Notice>Couldn't refresh this {resource.label.toLowerCase()}, so it may have changed since. {messageOf(record.error)}</Notice> : null}
+
+      {stages && typeof data[stages[0]] === "string" ? <StatusTrail field={stages[1]} value={data[stages[0]] as string} /> : null}
 
       {pictures.some(({ file }) => thumb(file)) ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
@@ -149,7 +153,7 @@ export default function RecordDetail() {
         </View>
       ) : null}
 
-      {lines && Array.isArray(data.items) ? <Lines resource={lines} parent={resource} items={data.items as ResourceRecord[]} /> : null}
+      {lines && Array.isArray(data.items) ? <Lines resource={lines} parent={resource} items={data.items as ResourceRecord[]} editable={may(user, resource, "edit")} /> : null}
 
       {may(user, resource, "edit") ? <Button label="Edit" icon="create-outline" onPress={() => router.push({ pathname: "/r/[slug]/[id]/edit", params: { slug: resource.slug, id: data.id } })} /> : null}
 
@@ -169,7 +173,7 @@ export default function RecordDetail() {
 }
 
 /** A record's lines, such as an order's items: read here, edited in the dashboard. */
-function Lines({ resource, parent, items }: { resource: Resource; parent: Resource; items: ResourceRecord[] }) {
+function Lines({ resource, parent, items, editable }: { resource: Resource; parent: Resource; items: ResourceRecord[]; editable: boolean }) {
   const { byName } = useResources();
   const [related, setRelated] = useState<Record<string, string>>({});
 
@@ -216,7 +220,7 @@ function Lines({ resource, parent, items }: { resource: Resource; parent: Resour
           ))}
         </Card>
       )}
-      <Body muted small>Lines are added and changed in the dashboard.</Body>
+      {editable ? <Body muted small>Lines are added and changed in the dashboard.</Body> : null}
     </View>
   );
 }
