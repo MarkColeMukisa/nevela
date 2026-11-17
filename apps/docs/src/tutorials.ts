@@ -5,6 +5,7 @@ import studentCover from "./assets/tutorials/student-app-cover.webp";
 import billingCover from "./assets/tutorials/billing-app-cover.webp";
 import invoiceCover from "./assets/tutorials/invoice-app-cover.webp";
 import crmCover from "./assets/tutorials/crm-cover.webp";
+import juiceMeCover from "./assets/tutorials/juice-me-cover.webp";
 
 /**
  * The tutorials, for the tutorials page (src/content/docs/tutorials/index.mdx). Each one
@@ -111,6 +112,7 @@ export const tutorials: Tutorial[] = [
     level: "Intermediate",
     minutes: 40,
     topics: ["Mobile app", "Customers and staff", "Orders that are theirs", "Roles"],
+    cover: juiceMeCover,
     icon: "shopping-cart",
     out: true,
   },
