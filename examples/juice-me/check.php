@@ -46,6 +46,13 @@ echo 'total is theirs: ', abs((float) App\Models\Order::where('number', $order['
 $kept = App\Models\Order::findOrFail($forged['id']);
 echo "forged order {$status}: {$kept->email} {$kept->status} ", $kept->number !== 'JM-9999' && (float) $kept->total === (float) $drinks[0]->price ? 'numbered and priced by Laravel' : "kept {$kept->number} {$kept->total}", PHP_EOL;
 
+// A line of minus two would take money off the order: it is refused, and nothing is placed.
+[$status, $negative] = $call('POST', '/api/orders', [
+    'customer' => 'Amara Okafor',
+    'items' => [['beverageId' => $drinks[0]->id, 'quantity' => 1], ['beverageId' => $drinks[1]->id, 'quantity' => -2]],
+]);
+echo "a line of minus two: {$status} ", $negative['issues'][0]['path'] ?? '', PHP_EOL;
+
 // Each sees their own.
 [, $mine] = $call('GET', '/api/orders?perPage=100');
 echo 'amara sees: ', count($mine['data']), ' ', array_diff(array_unique(array_column($mine['data'], 'email')), ['amara@example.com']) === [] ? 'only her own' : 'others too', PHP_EOL;

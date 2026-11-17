@@ -101,6 +101,17 @@ class LineItemsTest extends TestCase
         $this->assertSame(1, OrderItem::count());
     }
 
+    public function test_a_line_of_none_or_fewer_is_refused_so_it_cannot_take_money_off_an_order(): void
+    {
+        foreach ([0, -2] as $quantity) {
+            $this->postJson('/api/orders', $this->order([
+                ['productId' => $this->kettle->id, 'quantity' => 1, 'price' => 49.5],
+                ['productId' => $this->mug->id, 'quantity' => $quantity, 'price' => 8],
+            ]))->assertStatus(422)->assertJsonFragment(['path' => 'items.1.quantity']);
+        }
+        $this->assertSame(0, Order::count());
+    }
+
     public function test_a_wrong_line_is_named_by_its_place_and_nothing_is_saved(): void
     {
         $this->postJson('/api/orders', $this->order([

@@ -66,6 +66,7 @@ grep -q "^order 201 pending numbered amara@example.com$" bar.log
 grep -q "^prices from the beverages: yes$" bar.log
 grep -q "^total is theirs: yes$" bar.log
 grep -q "^forged order 201: amara@example.com pending numbered and priced by Laravel$" bar.log
+grep -q "^a line of minus two: 422 items.1.quantity$" bar.log
 grep -q "^amara sees: 2 only her own$" bar.log
 grep -q "^bo sees: 0$" bar.log
 grep -q "^bo opens amara's order: 404$" bar.log

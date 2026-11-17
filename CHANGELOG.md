@@ -29,6 +29,7 @@ _The mobile app: a shop, orders of your own, and a drinks-app tutorial_
 
 ### Fixed
 
+- **A line's quantity has to be at least one.** The lines of an order (`quantity` or `qty`) were checked to be a whole number, so a line of minus two could be sent over the API and take money off the order's total. Run `nevela generate` to have your lines refuse it. A stock quantity on an ordinary resource is unchanged.
 - **The mobile app's password boxes had no way to show what was typed.** Signing in, changing a password and the two-step setup all asked for a password with no eye to uncover it, which is hard to get right on a small keyboard. Each password box now has one.
 
 ## [0.30.0] - 2026-11-16

@@ -56,7 +56,7 @@ nevela resource Beverage --fields="name:string, description:text?, price:money, 
 | `size:enum(small\|medium\|large)=medium` | Shown on the drink's page. A new drink is medium unless you say otherwise. |
 | `image:image(product)?` | The picture in the grid, made small by the `product` profile. |
 | `category:belongsTo(Category)` | The chips across the top of the shop. |
-| `available:boolean=true` | A drink that is out is left off the shelf, and can't be ordered. |
+| `available:boolean=true` | A drink that is out is left off the shelf, and is taken out of a cart that holds it. |
 
 The seeded drinks have invented names and prices, such as a Coastal Bottle at a million shillings. Before going on, open **Categories** and **Beverages** and give them a bar's names and prices: four categories (Juices, Smoothies, Shakes, Coffee), and a few drinks in each, between UGX 3,000 and 6,500. Orders are seeded next, and copy their lines' prices from the drinks as they are then.
 
