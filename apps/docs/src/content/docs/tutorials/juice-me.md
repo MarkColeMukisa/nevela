@@ -87,7 +87,7 @@ A fixed order moves on in one way: through its actions. Each is a button, with a
         "startPreparing": { "label": "Start preparing", "icon": "cup-soda", "when": { "status": "accepted" }, "set": { "status": "preparing" } },
         "markReady": { "label": "Ready", "icon": "bell", "when": { "status": "preparing" }, "set": { "status": "ready" } },
         "complete": { "label": "Complete", "icon": "check-check", "when": { "status": "ready" }, "set": { "status": "completed" } },
-        "cancel": { "label": "Cancel order", "icon": "x", "confirm": "Cancel this order?", "when": { "status": "pending" }, "set": { "status": "cancelled" } },
+        "cancel": { "label": "Cancel order", "icon": "x", "confirm": "Cancel this order?", "when": { "status": ["pending", "accepted"] }, "set": { "status": "cancelled" }, "fields": { "reason": { "kind": "text", "required": false } } },
         "callOff": { "label": "Cancel with a reason", "icon": "ban", "when": { "status": ["pending", "accepted", "preparing", "ready"] }, "set": { "status": "cancelled" }, "fields": { "reason": { "kind": "text" } } }
     }
 ```
@@ -98,7 +98,7 @@ nevela generate Order
 
 - `when` is where the order has to be for its button to show: **Accept** only on a pending order, and Laravel refuses it on any other. A list is any of them: the bar can cancel an order up to the moment it is ready.
 - `set` is what the button does: it moves the status on. That is all these do, so there is no code to write for them.
-- **Cancel order** is the customer's: one tap, after a question, while nobody has started on it.
+- **Cancel order** is the customer's, after a question, until the bar starts making it: while the order is pending or accepted. They may say why, and needn't: the reason is `"required": false`. Once it is being prepared, only the bar can call it off.
 - **Cancel with a reason** is the bar's. It asks for the reason, and it is required: the customer is told it.
 
 Every press is kept as a step in the order's history: what was done, by whom and when, and the reason. The customer the order belongs to reads it on their phone, and is told of each step as it happens: **Your order JM-0014 is now Accepted**.
@@ -144,7 +144,7 @@ Open **Roles** in the dashboard and make two:
 | `CUSTOMER` | **View** on Beverages and Categories; **View**, **Create** and **Cancel order** on Orders. |
 | `STAFF` | **View**, **Create**, **Edit** and **Delete** on Beverages; the same on Categories except Delete; on Orders, **View** and **Edit**, and **Accept**, **Start preparing**, **Ready**, **Complete** and **Cancel with a reason**. |
 
-On a fixed resource **Edit** edits nothing once a record is made. What it still says is who runs the place: staff see every order, and keep what they send when they take one for someone. The buttons are each given by name, so a customer can cancel their own order and can't accept it.
+On a fixed resource **Edit** edits nothing once a record is made. What it still says is who runs the place: staff see every order, and keep what they send when they take one for someone. The buttons are each given by name, so a customer can cancel their own order and can't accept it. When they cancel, the bar's staff are told, with their reason if they gave one.
 
 Anyone who signs up from the phone is a `CUSTOMER`. The bar's staff are made on the **Users** screen, or:
 
@@ -171,7 +171,7 @@ Add a few drinks. The cart is kept on the phone, for each account, and a drink t
 
 ![The cart: three drinks with quantities to change, and their total in shillings.](../../../assets/tutorials/juice-me-cart.png)
 
-Open **Orders** for your orders, newest first, and one for where it has got to. While it is pending it has a **Cancel order** button. There is no **Edit**: the order is what you placed.
+Open **Orders** for your orders, newest first, and one for where it has got to. Until the bar starts preparing it, it has a **Cancel order** button, which asks why (you needn't say). There is no **Edit**: the order is what you placed.
 
 ## 9. The bar moves it along
 
