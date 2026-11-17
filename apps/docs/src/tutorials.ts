@@ -103,4 +103,15 @@ export const tutorials: Tutorial[] = [
     icon: "contact",
     out: true,
   },
+  {
+    slug: "juice-me",
+    title: "A drinks app on the phone",
+    summary:
+      "A beverage ordering app for a campus juice bar. Customers sign up on their phones, order and follow their order; staff move it along. A shop on the phone with no mobile code, orders that each belong to their customer, and a total and a status only the bar decides.",
+    level: "Intermediate",
+    minutes: 40,
+    topics: ["Mobile app", "Customers and staff", "Orders that are theirs", "Roles"],
+    icon: "shopping-cart",
+    out: true,
+  },
 ];

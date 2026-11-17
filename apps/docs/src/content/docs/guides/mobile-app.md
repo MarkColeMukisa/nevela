@@ -121,6 +121,8 @@ An order with no way to fill its required fields is not a shop, and the customer
 
 The cart is kept on the phone for each account, holds only a product and a quantity, and is emptied on sign-out. The order goes in one request with its lines; the number, prices and total are Laravel's, and the phone shows what comes back. Money is shown in the app's currency (`NEVELA_CURRENCY`, for example `UGX`), as in the dashboard.
 
+A whole app built this way, from an empty folder, is in the tutorial [A drinks app on the phone](/tutorials/juice-me/).
+
 ### Keep customers to their own orders
 
 Name the field that holds the customer's email as the order's `owner`, in `nevela/resources/order.json`, and run `nevela:generate`:

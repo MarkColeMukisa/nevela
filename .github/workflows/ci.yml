@@ -720,7 +720,10 @@ jobs:
             name="$(basename "$(dirname "$steps")")"
             echo "::group::$name"
             # --bundled-package: the package as it is in this commit, not the last release.
-            node create-nevela/package/index.mjs "$name" --yes --pm pnpm --bundled-package
+            # A tutorial that needs more of `nevela new` (a mobile app) says so in new-args.
+            extra=""
+            if [ -f "$(dirname "$steps")/new-args" ]; then extra="$(cat "$(dirname "$steps")/new-args")"; fi
+            node create-nevela/package/index.mjs "$name" --yes --pm pnpm --bundled-package $extra
             (cd "$name" && bash "$steps")
             (cd "$name/apps/web" && pnpm exec tsc --noEmit && pnpm run build)
             echo "::endgroup::"

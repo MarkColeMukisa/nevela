@@ -8,7 +8,7 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
-_The mobile app: sign up, Google, and a shop with a cart and orders_
+_The mobile app: a shop, orders of your own, and a drinks-app tutorial_
 
 ### Added
 
@@ -17,6 +17,8 @@ _The mobile app: sign up, Google, and a shop with a cart and orders_
 - **An app for customers.** The API's auth config now says which role someone who signs up starts with (`defaultRole`), and that role can be set with `NEVELA_DEFAULT_ROLE`. The mobile app gives an account that holds only that role a customer home, listing what they may browse, and no Records tab. Staff and administrators keep the app they had. See [Customers and staff](https://nevela-docs.vercel.app/guides/mobile-app/#customers-and-staff).
 - **A shop on the phone.** When the app has an order resource with lines and a catalogue, a customer's home is a shop: a grid with search, categories and availability, a product screen, a cart kept on the phone for each account, checkout that places the order with its lines in one request, and an **Orders** tab where each order shows its status as a trail. Laravel works out the number, prices and total. It is found from the resources; `site.shop` in `lib/site.ts` adjusts it. See [A shop on the phone](https://nevela-docs.vercel.app/guides/mobile-app/#a-shop-on-the-phone), which also gives the model recipe that keeps customers to their own orders.
 - **Records that belong to their maker: `"owner"` in a descriptor.** `"owner": "email"` names the string field that holds whose record it is. Each person sees only their own records (the list, counts, a record's page, the trash, the bell), a record they make is made theirs whatever the request said, and anyone who may edit the resource sees them all. `nevela:generate` adds the `Owned` trait to the model. The mobile shop uses it so each customer sees only their own orders, and doesn't ask for the field. See [Which records each person sees](https://nevela-docs.vercel.app/guides/policies/#which-records-each-person-sees).
+- **`nevela resource --owner=email`**, the same setting from the command line. The owner field may be left out of a request (Laravel fills it), and staff who make a record without one own it.
+- **A seventh tutorial: [A drinks app on the phone](https://nevela-docs.vercel.app/tutorials/juice-me/).** A beverage ordering app for a campus juice bar, built from an empty folder with `nevela new juice-me --mobile`: customers sign up on their phones, order and follow their order; staff move it along. CI builds it in a new app, checks what each person orders and sees, and checks the mobile app finds its shop in the resources. A tutorial may now say in `examples/<name>/new-args` what `nevela new` should be given.
 - **`GET /_nevela/resources` carries the app's currency** (`NEVELA_CURRENCY`) on money fields that have none of their own, so the phone formats money as the dashboard does.
 
 ### Changed

@@ -4,7 +4,9 @@ description: "Companies and a million contacts, with values checked and kept one
 prev:
   link: /tutorials/invoice-app/
   label: An invoice app
-next: false
+next:
+  link: /tutorials/juice-me/
+  label: A drinks app on the phone
 ---
 
 A CRM is mostly ordinary data done right. A contact's phone number has to be real, from any country, and kept one way, so that the same number typed two ways is one number. Nobody should be able to type "blue" for a company's brand colour. And there are a lot of rows, so the test data has to be big enough to show where the app will struggle.
