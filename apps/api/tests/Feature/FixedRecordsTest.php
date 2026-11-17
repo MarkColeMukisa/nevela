@@ -52,6 +52,8 @@ class FixedRecordsTest extends TestCase
                     'email' => ['kind' => 'string', 'format' => 'email', 'required' => false],
                     'status' => ['kind' => 'enum', 'options' => ['pending', 'accepted', 'ready', 'cancelled'], 'default' => 'pending'],
                     'total' => ['kind' => 'float', 'format' => 'money', 'required' => false],
+                    'paid' => ['kind' => 'boolean', 'default' => false],
+                    'dueAt' => ['kind' => 'datetime', 'required' => false],
                 ],
                 'actions' => [
                     'accept' => ['label' => 'Accept', 'when' => ['status' => 'pending'], 'set' => ['status' => 'accepted']],
@@ -161,6 +163,10 @@ class FixedRecordsTest extends TestCase
     public function test_staff_move_it_along_and_each_step_is_in_its_history_and_told_to_the_customer(): void
     {
         $id = $this->placed();
+        // Values that come back from the database in another form than the model gives them
+        // (a total, a yes, a time): none of them changes, so none of them is in a step.
+        $this->app['auth']->forgetGuards();
+        Booking::query()->findOrFail($id)->update(['total' => 60000, 'paid' => true, 'due_at' => now()->addHour()]);
 
         Sanctum::actingAs($this->staff);
         $this->postJson("/api/bookings/{$id}/_actions/accept")->assertOk()->assertJsonPath('record.status', 'accepted');
@@ -212,12 +218,21 @@ class FixedRecordsTest extends TestCase
         $this->assertSame('The kettles are sold out.', $told['body']);
     }
 
-    public function test_the_customer_is_not_told_of_what_they_did_themselves(): void
+    public function test_a_customer_who_cancels_is_not_told_but_the_staff_are(): void
     {
         $id = $this->placed();
         $this->postJson("/api/bookings/{$id}/_actions/cancel")->assertOk();
 
         $titles = array_column($this->getJson('/api/_nevela/notifications')->json('items'), 'title');
         $this->assertNotContains('Your booking Amara is now Cancelled', $titles);
+
+        // The people who run bookings hear of it, before they start on one that is off.
+        Sanctum::actingAs($this->staff);
+        $told = collect($this->getJson('/api/_nevela/notifications')->json('items'))->firstWhere('title', 'Booking Amara is now Cancelled');
+        $this->assertNotNull($told);
+        $this->assertSame('By Amara.', $told['body']);
+        // Bo, another customer, hears nothing of it.
+        Sanctum::actingAs($this->bo);
+        $this->assertNotContains('Booking Amara is now Cancelled', array_column($this->getJson('/api/_nevela/notifications')->json('items'), 'title'));
     }
 }

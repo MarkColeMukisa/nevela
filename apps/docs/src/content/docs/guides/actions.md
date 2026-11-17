@@ -90,7 +90,7 @@ Each value must be one the field can have: an option of an enum, and not nothing
 
 Every record action that is done is kept, as a step in the record's history: what was done, by whom, when, what it changed and what was filled in for it. Unlike the [activity log](/guides/notifications/#the-activity-log), nothing is merged: three steps are three rows. The record's page in the dashboard shows them, and so does the mobile app, to whoever may see the record. For an order that belongs to a customer, that is the customer too.
 
-When the resource has an [owner](/guides/policies/#which-records-each-person-sees), the person a record belongs to is told of each step through the bell, unless they took it themselves: **Your order JM-0014 is now Ready**, with the reason as the notice's text when the action asked for one.
+When the resource has an [owner](/guides/policies/#which-records-each-person-sees), the person a record belongs to is told of each step through the bell, unless they took it themselves: **Your order JM-0014 is now Ready**, with the reason as the notice's text when the action asked for one. A step they take themselves, such as a customer cancelling, is told instead to those who may edit the resource: **Order JM-0014 is now Cancelled**, by Amara Okafor.
 
 ```
 GET /api/_nevela/history/{slug}/{id}
