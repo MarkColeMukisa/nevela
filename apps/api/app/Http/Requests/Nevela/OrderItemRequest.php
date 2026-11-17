@@ -22,14 +22,14 @@ class OrderItemRequest extends ResourceRequest
             : Gate::allows('create', OrderItem::class);
     }
 
-    // nevela:generated:start hash=272b0fcb9a17
+    // nevela:generated:start hash=a2225f3853a6
     public function rules(): array
     {
         $orderItem = $this->route('order_item');
 
         return [
             'productId' => ['required', 'uuid', Rule::exists('products', 'id')],
-            'quantity' => ['required', 'integer'],
+            'quantity' => ['required', 'integer', 'min:1'],
             'price' => ['nullable', 'numeric'],
             'orderId' => ['required', 'uuid', Rule::exists('orders', 'id')],
         ];

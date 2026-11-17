@@ -1348,8 +1348,8 @@ final class ResourceGenerator
      */
     private function rules(Descriptor $d, Field $f, array $all = []): array
     {
-        // A slug made from another field, a number and a copy may be left empty: they are filled in.
-        $rules = [$f->alwaysRequired() && $f->from === null && $f->auto === null ? "'required'" : "'nullable'"];
+        // A slug made from another field, a number, a copy and an owner may be left empty: they are filled in.
+        $rules = [$f->alwaysRequired() && $f->from === null && $f->auto === null && $d->owner !== $f->name ? "'required'" : "'nullable'"];
         // With a default, leaving it out is saying "the usual". Sent, it is checked like any other.
         if ($f->whenLeftOut() !== null) {
             array_unshift($rules, "'sometimes'");
@@ -1386,6 +1386,11 @@ final class ResourceGenerator
             $f->kind === 'enum' => ['Rule::in(['.implode(', ', array_map(fn ($o) => "'{$o}'", $f->options)).'])'],
         };
         $rules = [...$rules, ...$type];
+        // How many of a thing a line has is at least one: a line of minus two would take money off an order. (Only a line's:
+        // a product's own "quantity" is what is in stock, and may be none.)
+        if (in_array($f->kind, ['int', 'float'], true) && preg_match('/^(quantity|qty)$/i', $f->name) && array_filter($all, fn (Descriptor $o) => $o->items === $d->name) !== []) {
+            $rules[] = $f->kind === 'int' ? "'min:1'" : "'gt:0'";
+        }
         if ($f->unique) {
             $rules[] = "Rule::unique('{$d->table}', '{$f->column()}')->ignore(\${$d->variable()})";
         }
@@ -1687,7 +1692,7 @@ final class ResourceGenerator
         foreach ($d->fields as $f) {
             $options = array_filter([
                 // (A slug made from another field is optional in the form: left empty, Laravel makes it.)
-                'required' => $f->alwaysRequired() && $f->from === null && $f->auto === null ? null : 'false',
+                'required' => $f->alwaysRequired() && $f->from === null && $f->auto === null && $d->owner !== $f->name ? null : 'false',
                 'unique' => $f->unique ? 'true' : null,
                 'label' => $f->label ? $j($f->label) : null,
                 'format' => in_array($f->format, ['money', 'percent', 'rating'], true) ? $j($f->format) : null,
