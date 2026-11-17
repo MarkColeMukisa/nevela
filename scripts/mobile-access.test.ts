@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { actionName, actionsOf, can, changedGrants, featureToggled, grantsFrom, heldOf, rolesLine, rolesToggled, toggled, usesPatterns } from "../apps/mobile/src/lib/access.ts";
+import { actionName, actionsOf, can, changedGrants, featureToggled, grantsFrom, heldOf, personChanges, roleChanges, rolesLine, rolesToggled, toggled, usesPatterns } from "../apps/mobile/src/lib/access.ts";
 
 const orders = { key: "orders", name: "Orders", actions: ["create", "view", "edit", "delete", "cancel"], labels: { cancel: "Cancel an order" } };
 
@@ -52,4 +52,20 @@ test("people and their roles are named plainly", () => {
   assert.equal(rolesLine({ roles: [] }), "No role");
   assert.deepEqual(rolesToggled(["a"], "b"), ["a", "b"]);
   assert.deepEqual(rolesToggled(["a", "b"], "a"), ["b"]);
+});
+
+test("only what a person changed is sent, so a stale screen can't undo another administrator", () => {
+  const person = { name: null, email: "a@example.com", active: true, roles: [{ id: "1", name: "STAFF" }] };
+  // A new password for someone with no name sends no name, and nothing else.
+  assert.deepEqual(personChanges(person, { name: "", email: "a@example.com", password: "a good long passphrase", active: true, roles: ["1"] }), { password: "a good long passphrase" });
+  assert.deepEqual(personChanges(person, { name: "Ada", email: "a@example.com", password: "", active: true, roles: ["1"] }), { name: "Ada" });
+  assert.deepEqual(personChanges(person, { name: "", email: "a@example.com", password: "", active: false, roles: ["1", "2"] }), { active: false, roles: ["1", "2"] });
+  assert.deepEqual(personChanges(person, { name: "", email: "a@example.com", password: "", active: true, roles: ["1"] }), {});
+  const role = { name: "STAFF", description: null, permissions: ["orders.view"] };
+  assert.deepEqual(roleChanges(role, { name: "STAFF", description: "The bar", permissions: ["orders.view"] }), { description: "The bar" });
+  assert.deepEqual(roleChanges(role, { name: "STAFF", description: "", permissions: ["orders.edit", "orders.view"] }), { grants: ["orders.edit", "orders.view"] });
+});
+
+test("a module grant is a pattern too", () => {
+  assert.equal(usesPatterns({ grants: ["@resources.view"] }), true);
 });

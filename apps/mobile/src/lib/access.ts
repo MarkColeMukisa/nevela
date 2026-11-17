@@ -97,9 +97,32 @@ export function heldOf(permissions: string[], feature: Feature): number {
   return feature.actions.filter((action) => permissions.includes(keyOf(feature.key, action))).length;
 }
 
-/** Whether a role is written with patterns ("*", "products.*"), which saving the matrix writes out one by one. */
+/** Whether a role is written with patterns ("*", "products.*", a whole module as "@resources.view"), which saving the matrix writes out one by one. */
 export function usesPatterns(role: Pick<RoleRow, "grants">): boolean {
-  return role.grants.some((grant) => grant.includes("*"));
+  return role.grants.some((grant) => grant.includes("*") || grant.startsWith("@"));
+}
+
+/** What to change about a role: only what the person changed, so a stale screen can't put back what another administrator took away. */
+export function roleChanges(role: Pick<RoleRow, "name" | "description" | "permissions">, now: { name: string; description: string; permissions: string[] }): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (now.name.trim() !== role.name) out.name = now.name.trim();
+  if ((now.description.trim() || null) !== role.description) out.description = now.description.trim() || null;
+  if (changedGrants(role, now.permissions)) out.grants = grantsFrom(now.permissions);
+  return out;
+}
+
+/** What to change about a person: only what differs from what was loaded. */
+export function personChanges(
+  person: Pick<AccessUser, "name" | "email" | "active" | "roles">,
+  now: { name: string; email: string; password: string; active: boolean; roles: string[] },
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (now.name.trim() !== (person.name ?? "")) out.name = now.name.trim();
+  if (now.email.trim() !== (person.email ?? "")) out.email = now.email.trim();
+  if (now.password !== "") out.password = now.password;
+  if (now.active !== person.active) out.active = now.active;
+  if ([...now.roles].sort().join() !== person.roles.map((role) => role.id).sort().join()) out.roles = now.roles;
+  return out;
 }
 
 /** What to send as a role's grants: each permission that is on, once, in a steady order. */

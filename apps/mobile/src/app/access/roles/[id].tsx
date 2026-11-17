@@ -6,7 +6,7 @@ import { Choice } from "@/components/choice";
 import { Body, Button, Card, Field, Heading, Loading, Notice, Screen } from "@/components/ui";
 import { api, ApiError, messageOf } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { actionName, actionsOf, can, changedGrants, featureToggled, grantsFrom, heldOf, keyOf, toggled, usesPatterns, type Catalog, type Feature, type RoleRow } from "@/lib/access";
+import { actionName, actionsOf, can, featureToggled, grantsFrom, heldOf, keyOf, roleChanges, toggled, usesPatterns, type Catalog, type Feature, type RoleRow } from "@/lib/access";
 import { spacing, text, useColors } from "@/lib/theme";
 import { useLoaded } from "@/lib/use-loaded";
 
@@ -47,7 +47,7 @@ function Form({ role, catalog }: { role: RoleRow | null; catalog: Catalog }) {
 
   const issue = (path: string) => (error instanceof ApiError ? error.issue(path) : undefined);
   const named = ["name", "description", "grants"].some((path) => issue(path));
-  const dirty = creating || name.trim() !== role.name || (description.trim() || null) !== role.description || changedGrants(role, permissions);
+  const dirty = creating || Object.keys(roleChanges(role, { name, description, permissions })).length > 0;
 
   const save = async () => {
     setBusy(true);
@@ -59,7 +59,7 @@ function Form({ role, catalog }: { role: RoleRow | null; catalog: Catalog }) {
         router.replace({ pathname: "/access/roles/[id]", params: { id: made.id } });
         return;
       }
-      await api.patch(`/_nevela/roles/${role.id}`, body);
+      await api.patch(`/_nevela/roles/${role.id}`, roleChanges(role, { name, description, permissions }));
       router.back();
     } catch (caught) {
       setError(caught);

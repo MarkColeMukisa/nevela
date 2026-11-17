@@ -6,7 +6,7 @@ import { Choice } from "@/components/choice";
 import { Body, Button, Card, Field, Heading, Loading, Notice, Row, Screen } from "@/components/ui";
 import { api, ApiError, messageOf } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { can, rolesToggled, type AccessUser, type RoleRow } from "@/lib/access";
+import { can, personChanges, rolesToggled, type AccessUser, type RoleRow } from "@/lib/access";
 import { spacing, text, useColors } from "@/lib/theme";
 import { useLoaded } from "@/lib/use-loaded";
 import { ago } from "@/lib/when";
@@ -50,7 +50,7 @@ function Form({ person, roles }: { person: AccessUser | null; roles: RoleRow[] }
 
   const issue = (path: string) => (error instanceof ApiError ? error.issue(path) : undefined);
   const named = ["name", "email", "password", "roles"].some((path) => issue(path));
-  const dirty = creating || name !== (person.name ?? "") || email !== (person.email ?? "") || password !== "" || active !== person.active || [...held].sort().join() !== person.roles.map((role) => role.id).sort().join();
+  const dirty = creating || Object.keys(personChanges(person, { name, email, password, active, roles: held })).length > 0;
 
   const save = async () => {
     setBusy(true);
@@ -62,7 +62,7 @@ function Form({ person, roles }: { person: AccessUser | null; roles: RoleRow[] }
         router.replace({ pathname: "/access/users/[id]", params: { id: made.id } });
         return;
       }
-      await api.patch(`/_nevela/users/${person.id}`, { name: name.trim(), email: email.trim(), roles: held, active, ...(password ? { password } : {}) });
+      await api.patch(`/_nevela/users/${person.id}`, personChanges(person, { name, email, password, active, roles: held }));
       router.back();
     } catch (caught) {
       setError(caught);

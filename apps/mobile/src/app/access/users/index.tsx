@@ -24,6 +24,8 @@ export default function Users() {
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [problem, setProblem] = useState<unknown>(null);
+  // Bumped whenever the list starts over: an answer for an older list is dropped.
+  const generation = useRef(0);
 
   const load = useCallback(() => api.get<Page>("/_nevela/users", { q: asked || undefined, perPage: 25 }), [asked]);
   const people = useLoaded(load);
@@ -37,6 +39,7 @@ export default function Users() {
         first.current = false;
         return;
       }
+      generation.current++;
       setMore([]);
       setPage(1);
       reload();
@@ -51,24 +54,26 @@ export default function Users() {
   const total = people.data?.meta.total ?? 0;
 
   const showMore = async () => {
+    const mine = generation.current;
     setLoadingMore(true);
     setProblem(null);
     try {
       const next = await api.get<Page>("/_nevela/users", { q: asked || undefined, perPage: 25, page: page + 1 });
+      if (mine !== generation.current) return;
       setMore((current) => [...current, ...next.data]);
       setPage(page + 1);
     } catch (caught) {
-      setProblem(caught);
+      if (mine === generation.current) setProblem(caught);
     } finally {
-      setLoadingMore(false);
+      if (mine === generation.current) setLoadingMore(false);
     }
   };
 
   return (
-    <Screen edges={["bottom"]} refreshControl={<RefreshControl refreshing={people.refreshing} onRefresh={() => { setMore([]); setPage(1); people.refresh(); }} />}>
+    <Screen edges={["bottom"]} refreshControl={<RefreshControl refreshing={people.refreshing} onRefresh={() => { generation.current++; setLoadingMore(false); setMore([]); setPage(1); people.refresh(); }} />}>
       {people.error || problem ? <Notice>{messageOf(people.error ?? problem)}</Notice> : null}
 
-      <Field label="Search" placeholder="Name or email" value={search} onChangeText={setSearch} onSubmitEditing={() => { setMore([]); setPage(1); setAsked(search.trim()); }} returnKeyType="search" autoCapitalize="none" />
+      <Field label="Search" placeholder="Name or email" value={search} onChangeText={setSearch} onSubmitEditing={() => { generation.current++; setLoadingMore(false); setMore([]); setPage(1); setAsked(search.trim()); }} returnKeyType="search" autoCapitalize="none" />
       {can(user, "users.create") ? <Button label="Add a person" icon="person-add-outline" onPress={() => router.push("/access/users/new")} /> : null}
 
       {rows.length === 0 ? (
