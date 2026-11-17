@@ -8,6 +8,12 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_The activity log and the trash in the mobile app_
+
+### Added
+
+- **Activity and Trash in the mobile app.** Under Account, in a new **Keeping track** card. **Activity** is the activity log: who added, changed, deleted, restored or removed which records, newest first, filtered by what was done, for whoever holds `activity.view`; the home's **Recent activity** has a **See all** that opens it. **Trash** lists each resource's deleted records with how long each has left: restore one, remove one for good, or empty a resource's trash, for whoever may delete something. Laravel decides what each person sees and may do, as in the dashboard. See [What is in it](https://nevela-docs.vercel.app/guides/mobile-app/#what-is-in-it).
+
 ## [0.31.1] - 2026-11-17
 
 _A cover for the drinks-app tutorial_

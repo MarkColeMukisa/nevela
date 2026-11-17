@@ -55,6 +55,9 @@ function Screens() {
           <Stack.Screen name="change-password" options={{ title: "Change password" }} />
           <Stack.Screen name="security" options={{ title: "Sign-in security" }} />
           <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
+          <Stack.Screen name="activity" options={{ title: "Activity" }} />
+          <Stack.Screen name="trash/index" options={{ title: "Trash" }} />
+          <Stack.Screen name="trash/[slug]" options={{ title: "Trash" }} />
           <Stack.Screen name="access/users/index" options={{ title: "People" }} />
           <Stack.Screen name="access/users/[id]" options={{ title: "" }} />
           <Stack.Screen name="access/roles/index" options={{ title: "Roles and permissions" }} />
