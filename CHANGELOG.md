@@ -8,6 +8,12 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_A cover for the drinks-app tutorial_
+
+### Added
+
+- **A cover picture for the [drinks-app tutorial](https://nevela-docs.vercel.app/tutorials/juice-me/)**, on the tutorials page and on its sample post in every new app's blog.
+
 ## [0.31.0] - 2026-11-17
 
 _The mobile app: a shop, people and roles, and a drinks tutorial_
