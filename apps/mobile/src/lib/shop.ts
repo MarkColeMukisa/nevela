@@ -104,7 +104,8 @@ export function findShop(all: Resource[], settings: ShopSettings = {}): Shop | n
       settings.checkout ??
       Object.entries(orders.fields)
         .filter(([name, field]) => {
-          if (field.auto || field.from || !askable(field)) return false;
+          // Whose order it is, Laravel knows: it is the signed-in person's.
+          if (field.auto || field.from || name === orders.owner || !askable(field)) return false;
           // The order's total comes from its lines.
           if (field.kind === "float" && field.format === "money") return false;
           if (name in send) return false;
@@ -115,7 +116,7 @@ export function findShop(all: Resource[], settings: ShopSettings = {}): Shop | n
         .map(([name]) => name);
 
     // Everything an order has to have is either asked for or sent. If not, there is no order to place.
-    const missing = Object.entries(orders.fields).some(([name, field]) => owed(field) && !checkout.includes(name) && !(name in send));
+    const missing = Object.entries(orders.fields).some(([name, field]) => owed(field) && !checkout.includes(name) && !(name in send) && name !== orders.owner);
     const unaskable = checkout.some((name) => !orders.fields[name] || !askable(orders.fields[name]));
     if (missing || unaskable) continue;
 

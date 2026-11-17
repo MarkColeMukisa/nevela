@@ -12,7 +12,7 @@ class Order extends Model
 
     protected $table = 'orders';
 
-    // nevela:generated:start hash=3e578c0d0a80
+    // nevela:generated:start hash=2523b4d7198f
     // Deleted records go to the trash, where they can be restored for a while.
     use \Nevela\Laravel\Concerns\Trashable;
     // $record->optionLabel('status'): what its value is called, in the dashboard's words.
@@ -23,6 +23,13 @@ class Order extends Model
     protected function numbered(): array
     {
         return ['number' => 'ORD'];
+    }
+    // Each person sees their own: staff, who may edit Orders, see all of them.
+    use \Nevela\Laravel\Concerns\Owned;
+
+    protected function owner(): string
+    {
+        return 'email';
     }
 
     protected $fillable = ['number', 'customer', 'email', 'phone', 'status', 'total', 'notes'];
@@ -41,17 +48,6 @@ class Order extends Model
     // nevela:generated:end
 
     // Your own relationships, scopes and accessors go here — outside the generated block.
-
-    /**
-     * Which orders someone sees: whoever may change orders sees them all, and someone who
-     * may only look sees the ones placed with their email, as a customer sees their own.
-     */
-    public function scopeVisibleTo(Builder $query, User $user): void
-    {
-        if (! $user->can('orders.edit')) {
-            $query->where('email', $user->email);
-        }
-    }
 
     /** Called once its lines are saved: the order's total is what they come to. */
     public function itemsSaved(): void

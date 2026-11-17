@@ -45,8 +45,8 @@ test("it is a shop once the status is sent, and it is found with nothing written
   assert.equal(shop.image, "image");
   assert.equal(shop.category, "categoryId");
   assert.equal(shop.available, "active");
-  // The customer is asked for who and where, never for the number, the total or the status.
-  assert.deepEqual(shop.checkout, ["customer", "email", "phone", "notes"]);
+  // The customer is asked for who and where, never for the number, the total, the status or their own email (the order is theirs by Laravel's own doing).
+  assert.deepEqual(shop.checkout, ["customer", "phone", "notes"]);
 });
 
 test("a status with a default is the shop's to decide, and leaves the checkout without it", () => {
@@ -165,4 +165,15 @@ test("cancelled and the like are not stages on the trail", () => {
   assert.ok(OFF_THE_TRAIL.test("cancelled"));
   assert.ok(OFF_THE_TRAIL.test("rejected"));
   assert.ok(!OFF_THE_TRAIL.test("completed"));
+});
+
+test("whose order it is, Laravel knows: the owner field is never asked at checkout", () => {
+  const shop = findShop(repositoryResources(), { send: { status: "pending" } });
+  assert.ok(shop);
+  assert.equal(shop.orders.owner, "email");
+  assert.ok(!shop.checkout.includes("email"));
+  // Even when it is one the order has to have.
+  const strict = repositoryResources().map((resource) => (resource.name === "Order" ? { ...resource, fields: { ...resource.fields, email: { ...resource.fields.email, required: true } } } : resource));
+  assert.ok(findShop(strict, { send: { status: "pending" } }));
+  assert.equal(findShop(strict.map((resource) => (resource.name === "Order" ? { ...resource, owner: undefined } : resource)), { send: { status: "pending" } })?.checkout.includes("email"), true);
 });

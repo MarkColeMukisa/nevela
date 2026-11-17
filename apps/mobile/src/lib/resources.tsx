@@ -57,6 +57,8 @@ export interface Resource {
   titleField?: string;
   /** The resource its lines are, for one with line items: an order's "OrderItem". */
   items?: string;
+  /** The field that says whose record it is, kept by Laravel: each person sees their own. An order's "email". */
+  owner?: string;
   fields: Record<string, FieldSpec>;
 }
 

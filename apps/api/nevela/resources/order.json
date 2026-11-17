@@ -8,6 +8,7 @@
     "icon": "shopping-cart",
     "group": "Catalogue",
     "items": "OrderItem",
+    "owner": "email",
     "fields": {
         "number": {
             "kind": "string",

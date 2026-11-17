@@ -123,38 +123,15 @@ The cart is kept on the phone for each account, holds only a product and a quant
 
 ### Keep customers to their own orders
 
-The framework checks permissions per resource, not per row or per field, so a customer who may create and view orders could otherwise read everyone's, or post a status of `completed`. Say so on the model: stamp the owner when it is created, ignore what only staff may set, and limit what is listed.
+Name the field that holds the customer's email as the order's `owner`, in `nevela/resources/order.json`, and run `nevela:generate`:
 
-```php
-protected static function booted(): void
-{
-    static::creating(function (Order $order): void {
-        $user = request()->user();
-        if ($user === null || $user->can('orders.edit')) {
-            return; // staff, a seeder, the console: whatever they send is kept
-        }
-        $order->email = $user->email;
-        $order->status = 'pending';
-        $order->total = null;
-        $order->number = Numbering::next($order->getTable(), 'number', 'ORD');
-    });
-}
-
-public function scopeVisibleTo(Builder $query, User $user): void
-{
-    if (! $user->can('orders.edit')) {
-        $query->where('email', $user->email);
-    }
-}
-
-/** Called once its lines are saved. */
-public function itemsSaved(): void
-{
-    $this->update(['total' => $this->orderItems()->get()->sum(fn ($item) => $item->quantity * $item->price)]);
-}
+```json
+{ "name": "Order", "items": "OrderItem", "owner": "email", "fields": { "email": { "kind": "string", "format": "email" } } }
 ```
 
-Staff, who hold `orders.edit`, move an order along (Pending, Accepted, Preparing, Ready, Completed) in the dashboard or the app, and the customer's order page shows where it has got to. Try it as two customers: each should see only their own orders.
+Each customer then sees only their own orders, in the list, on the order's page and in the Orders tab, and an order they place is theirs whatever the phone sends. Staff, who hold `orders.edit`, see every order and move it along (Pending, Accepted, Preparing, Ready, Completed) in the dashboard or the app; the customer's order page shows where it has got to. The app doesn't ask for the owner field: it is the signed-in person's. See [Which records each person sees](/guides/policies/#which-records-each-person-sees).
+
+Without it, anyone who may view orders sees every order. A customer could also post a status of `completed` or a total of their own: the order's status, number and total are for Laravel to set. Give the status a default and let its lines carry the total (`itemsSaved()` on the model sets it), and check as two customers that each sees only their own.
 
 ## Sign in with Google
 

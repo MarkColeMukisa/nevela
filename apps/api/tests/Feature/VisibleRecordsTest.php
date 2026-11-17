@@ -77,6 +77,23 @@ class VisibleRecordsTest extends TestCase
         $this->deleteJson("/api/orders/{$this->mine->id}")->assertNoContent();
     }
 
+    public function test_an_order_a_customer_places_is_theirs_whatever_the_request_said(): void
+    {
+        Role::query()->where('name', 'CUSTOMER')->update(['grants' => ['orders.view', 'orders.create', 'order_items.view', 'products.view']]);
+        Permissions::forget();
+
+        Sanctum::actingAs($this->customer);
+        $id = $this->postJson('/api/orders', ['customer' => 'Amara', 'email' => 'bo@example.com', 'status' => 'pending'])->assertCreated()->json('id');
+        $this->assertSame('amara@example.com', Order::find($id)->email);
+        $this->getJson("/api/orders/{$id}")->assertOk();
+        $this->getJson('/api/orders')->assertJsonPath('meta.total', 3);
+
+        // Staff keep what they send: an order taken for someone by phone is that someone's.
+        Sanctum::actingAs($this->ada);
+        $id = $this->postJson('/api/orders', ['customer' => 'Bo', 'email' => 'bo@example.com', 'status' => 'pending'])->assertCreated()->json('id');
+        $this->assertSame('bo@example.com', Order::find($id)->email);
+    }
+
     public function test_the_trash_holds_only_what_they_could_see(): void
     {
         $this->mine->delete();
