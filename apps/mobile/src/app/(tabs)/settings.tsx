@@ -30,7 +30,7 @@ export default function Settings() {
       <View style={{ gap: spacing.sm }}>
         <Heading>Security</Heading>
         <Card>
-          <Row icon="key-outline" label="Two-step sign-in and passkeys" onPress={() => router.push("/security")} />
+          <Row icon="key-outline" label="Two-step sign-in" detail="Authenticator and codes, and removing passkeys" onPress={() => router.push("/security")} />
           <Row icon="phone-portrait-outline" label="Devices" detail="Where you are signed in, and signing one out" onPress={() => router.push("/devices")} last />
         </Card>
       </View>

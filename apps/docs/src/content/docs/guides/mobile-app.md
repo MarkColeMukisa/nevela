@@ -72,8 +72,8 @@ If the sign-in screen says it couldn't reach the server, it names the address it
 | Create an account | Name, email and password, where the API lets people [sign up](/guides/authentication/#letting-people-sign-up). Where it asks for the email to be proved first, the code it sent. |
 | Home | How the app is doing, from what it holds. A card per resource with how many there are, how many were added this week against last, and a chart of the last 30 days. A button to add each kind of record, the latest changes from [the activity log](/guides/notifications/), and the bell. Every number is the API's, asked for with the person's own permissions. |
 | Records | Every resource your role may view: search it, open a record, and create, change or delete one where your role allows. See [Your resources](#your-resources). |
-| Account | Your profile picture (choose one or take one), your name, your roles, and changing your password. |
-| Two-step sign-in and passkeys | Turn on two-step sign-in with an authenticator app (a button that opens the one on the phone, a QR code for one on another device, and the setup key to copy) or with codes by email. Backup codes are shown once, to copy. Make new ones, or turn it off. List your passkeys and remove one. |
+| Account | Your profile picture (choose one or take one), your name, your roles, and changing your password. For someone who may manage them, **People** and **Roles and permissions** too: see [People and roles](#people-and-roles). |
+| Two-step sign-in | Turn on two-step sign-in with an authenticator app (a button that opens the one on the phone, a QR code for one on another device, and the setup key to copy) or with codes by email. Backup codes are shown once, to copy. Make new ones, or turn it off. List your passkeys and remove one. |
 | Settings | Light, dark or the phone's appearance. **Devices**: everywhere the account is signed in, browsers and phones alike; sign one out, or all the others. |
 
 Signing in with an emailed link stays in the dashboard for now: it ends at a web address, which a phone app has to be taught to open.
@@ -94,6 +94,15 @@ For a shop that takes orders:
 1. Make a `CUSTOMER` role on the dashboard's Roles screen, with the permissions customers need.
 2. Set `NEVELA_DEFAULT_ROLE=CUSTOMER` and `NEVELA_REGISTRATION=true` in `apps/api/.env`.
 3. Everyone who signs up in the app is now a customer. Staff are made on the Users screen, with their own role.
+
+## People and roles
+
+Whoever may view users or roles (an administrator, or a role you give those permissions) finds **People** and **Roles and permissions** under Account. Everyone else doesn't see them, and Laravel refuses the requests anyway.
+
+- **People**: everyone who can sign in, with a search. Open one to change their name, email or roles, give them a new password, switch their sign-in off, sign them out everywhere, or remove them. **Add a person** makes an account with a password and roles.
+- **Roles and permissions**: each role, how many permissions it has and how many people hold it. Open one to name it and switch on what it may do to each part of the app: View, Create, Edit and Delete, and an action of a resource's own, such as "Cancel an order". **Make a role** adds one.
+
+It is the same rule as in the dashboard, kept by Laravel: nobody can give a role that allows more than their own, change an account that allows more than theirs, switch off their own account, or take the last administrator's access away. The built-in roles can be edited and not renamed or deleted, and ADMIN always allows everything.
 
 ## A shop on the phone
 

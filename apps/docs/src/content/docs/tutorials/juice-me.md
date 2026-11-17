@@ -124,7 +124,7 @@ Anyone who signs up from the phone is a `CUSTOMER`. The bar's staff are made on 
 nevela user --name="Mercy Auma" --email=mercy@example.com --password=password --role=STAFF
 ```
 
-Laravel checks all of this on every request. What the phone shows follows from it: a customer has no Records tab, and Mercy, who may edit orders, has the staff app.
+You can do the same on the phone, signed in as the administrator: **Account**, then **Roles and permissions** and **People**. Laravel checks all of this on every request. What the phone shows follows from it: a customer has no Records tab, and Mercy, who may edit orders, has the staff app.
 
 ## 7. On the phone
 
@@ -154,6 +154,10 @@ On the phone, open the order again, or pull down to refresh: the trail has moved
 ![An order on a phone: its number, a trail of five steps with the first two ticked and Preparing marked, the order's details and its three lines.](../../../assets/tutorials/juice-me-order.png)
 
 Sign up a second customer, on a second phone or after signing out of the first. They see an empty Orders tab, and none of yours: Laravel doesn't say another customer's order exists. Their cart is theirs too, and signing out takes it off the phone.
+
+## 9. Continue with Google
+
+Customers can sign up and in with their Google account. It isn't on in this app until you give it a Google client of your own, and Google only sends people back to an https address, so it can't be tried on `http://192.168…`: [From the mobile app](/guides/authentication/#from-the-mobile-app) says what to register with Google and which line to add to `apps/api/.env`. Once the API has it, **Continue with Google** is on the sign-in and sign-up screens, with no change to the app. A customer who signs up this way is a `CUSTOMER` like any other.
 
 ## What you built
 
