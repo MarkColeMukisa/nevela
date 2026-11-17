@@ -39,12 +39,14 @@ export interface ResourceAction {
   on: "record" | "collection";
   /** A question asked before it runs. */
   confirm?: string;
-  /** Field values a record must have for the action to apply to it. */
-  when?: Record<string, string | number | boolean | null>;
+  /** Field values a record must have for the action to apply to it: one value, or a list it may be any of. */
+  when?: Record<string, string | number | boolean | null | (string | number | boolean)[]>;
   /** What it asks for, in a sheet. */
   fields?: Record<string, ActionField>;
   /** A record action that can also be run on the rows selected in the table. */
   many?: boolean;
+  /** What it does, when that is only to give fields these values: { status: "accepted" }. */
+  set?: Record<string, string | number | boolean | null>;
 }
 
 interface ResourceExtras {
@@ -55,6 +57,8 @@ interface ResourceExtras {
   blog?: string;
   /** What its public form checks, and the address it has proved (the descriptor's "protect" and "confirm"). */
   form?: ResourceForm;
+  /** Not edited or deleted once made: it changes only through its actions (the descriptor's "fixed"). */
+  fixed?: boolean;
 }
 
 /** A resource's public form, as far as the dashboard needs to know of it. */
@@ -75,6 +79,14 @@ const extras = ((registry as { extras?: unknown }).extras ?? {}) as Record<strin
 /** A resource's actions, in the order the descriptor gives them. */
 export function actionsOf(resourceName: string): ResourceAction[] {
   return Object.entries(extras[resourceName]?.actions ?? {}).map(([key, action]) => ({ ...action, key }));
+}
+
+/**
+ * Whether a resource's records are fixed once made, as a placed order is: Laravel refuses an
+ * edit or a deletion from anyone, so the dashboard offers neither, only the record's actions.
+ */
+export function fixedOf(resourceName: string): boolean {
+  return extras[resourceName]?.fixed === true;
 }
 
 /** The field a resource's records are published by, if it has one. */
@@ -102,10 +114,14 @@ export function siteLinks(): { label: string; href: string }[] {
 export function actionApplies(action: ResourceAction, record: Record<string, unknown>): boolean {
   return Object.entries(action.when ?? {}).every(([field, wanted]) => {
     const value = record[field] ?? null;
-    if (wanted === null) return value === null;
-    if (value === null) return false;
-    // A yes/no value may arrive as 1 or 0.
-    if (typeof wanted === "boolean") return (value === true || value === 1 || value === "1") === wanted;
-    return String(value) === String(wanted);
+    const matches = (one: string | number | boolean | null) => {
+      if (one === null) return value === null;
+      if (value === null) return false;
+      // A yes/no value may arrive as 1 or 0.
+      if (typeof one === "boolean") return (value === true || value === 1 || value === "1") === one;
+      return String(value) === String(one);
+    };
+    // A list is any one of its values.
+    return Array.isArray(wanted) ? wanted.some(matches) : matches(wanted);
   });
 }

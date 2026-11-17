@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
 
 import { Picture } from "@/components/pictures";
+import { RecordActions } from "@/components/record-actions";
+import { RecordHistory, type Step } from "@/components/record-history";
 import { StatusTrail } from "@/components/status-trail";
 import { Body, Button, Card, Heading, Loading, Notice, Row, Screen } from "@/components/ui";
 import { api, ApiError, messageOf } from "@/lib/api";
@@ -27,6 +29,23 @@ export default function RecordDetail() {
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [failed, setFailed] = useState<unknown>(null);
+  const [steps, setSteps] = useState<Step[]>([]);
+  const [said, setSaid] = useState<string | null>(null);
+
+  // Its history, for a resource whose records move on through actions: who did what, when.
+  const hasActions = Object.values(resource?.actions ?? {}).some((action) => (action.on ?? "record") === "record");
+  const loadHistory = useCallback(async () => {
+    if (!hasActions) return;
+    try {
+      const found = await api.get<{ data: Step[] }>(`/_nevela/history/${slug}/${encodeURIComponent(id)}`);
+      setSteps(found.data);
+    } catch {
+      // Before its migration has run there is no history to show: the record is still there.
+    }
+  }, [hasActions, slug, id]);
+  useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
 
   // Back from the edit screen: show what was saved.
   const first = useRef(true);
@@ -38,7 +57,8 @@ export default function RecordDetail() {
         return;
       }
       reload();
-    }, [reload]),
+      void loadHistory();
+    }, [reload, loadHistory]),
   );
 
   // What each record this one belongs to is called.
@@ -99,7 +119,7 @@ export default function RecordDetail() {
   const stages = Object.entries(resource.fields).find(([name, field]) => /^(status|state|stage)$/i.test(name) && field.kind === "enum" && (field.options?.length ?? 0) >= 3);
 
   return (
-    <Screen edges={["bottom"]} refreshControl={<RefreshControl refreshing={record.refreshing} onRefresh={record.refresh} />}>
+    <Screen edges={["bottom"]} refreshControl={<RefreshControl refreshing={record.refreshing} onRefresh={() => { setSaid(null); void record.refresh(); void loadHistory(); }} />}>
       <Stack.Screen options={{ title: resource.label }} />
 
       <View style={{ gap: spacing.xs }}>
@@ -111,6 +131,17 @@ export default function RecordDetail() {
       {record.error ? <Notice>Couldn't refresh this {resource.label.toLowerCase()}, so it may have changed since. {messageOf(record.error)}</Notice> : null}
 
       {stages && typeof data[stages[0]] === "string" ? <StatusTrail field={stages[1]} value={data[stages[0]] as string} /> : null}
+
+      {said ? <Notice tone="success">{said}</Notice> : null}
+      <RecordActions
+        resource={resource}
+        record={data}
+        onDone={(_, message) => {
+          setSaid(message);
+          void record.reload();
+          void loadHistory();
+        }}
+      />
 
       {pictures.some(({ file }) => thumb(file)) ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
@@ -154,6 +185,8 @@ export default function RecordDetail() {
       ) : null}
 
       {lines && Array.isArray(data.items) ? <Lines resource={lines} parent={resource} items={data.items as ResourceRecord[]} editable={may(user, resource, "edit")} /> : null}
+
+      <RecordHistory resource={resource} steps={steps} you={user ? String(user.id) : null} />
 
       {may(user, resource, "edit") ? <Button label="Edit" icon="create-outline" onPress={() => router.push({ pathname: "/r/[slug]/[id]/edit", params: { slug: resource.slug, id: data.id } })} /> : null}
 

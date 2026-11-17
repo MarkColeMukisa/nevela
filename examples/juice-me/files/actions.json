@@ -1,0 +1,8 @@
+{
+    "accept": { "label": "Accept", "icon": "check", "when": { "status": "pending" }, "set": { "status": "accepted" } },
+    "startPreparing": { "label": "Start preparing", "icon": "cup-soda", "when": { "status": "accepted" }, "set": { "status": "preparing" } },
+    "markReady": { "label": "Ready", "icon": "bell", "when": { "status": "preparing" }, "set": { "status": "ready" } },
+    "complete": { "label": "Complete", "icon": "check-check", "when": { "status": "ready" }, "set": { "status": "completed" } },
+    "cancel": { "label": "Cancel order", "icon": "x", "confirm": "Cancel this order?", "when": { "status": "pending" }, "set": { "status": "cancelled" } },
+    "callOff": { "label": "Cancel with a reason", "icon": "ban", "when": { "status": ["pending", "accepted", "preparing", "ready"] }, "set": { "status": "cancelled" }, "fields": { "reason": { "kind": "text" } } }
+}

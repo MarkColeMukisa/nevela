@@ -36,7 +36,8 @@ That writes `app/Nevela/Actions/InternshipApplication/Accept.php`, once, and the
 | `icon` | A [Lucide](https://lucide.dev) icon name, one of those in `apps/web/components/dashboard/resource-action.tsx` (`check`, `send`, `archive`, `mail` and others). Add another there. Optional. |
 | `on` | `record`: a button on a record's page and in its row menu. `collection`: a button beside New, for the list as a whole. Defaults to `record`. |
 | `confirm` | A question asked first, in the dialog Delete uses. Optional. |
-| `when` | Field values a record must have for the action to apply. The button is hidden on a record that doesn't match, and Laravel refuses it there too. Optional, and for `record` actions only. |
+| `when` | Field values a record must have for the action to apply: one value, or a list it may be any of (`{ "status": ["pending", "accepted"] }`). The button is hidden on a record that doesn't match, and Laravel refuses it there too. Optional, and for `record` actions only. |
+| `set` | What it does, when that is only to give fields values: `{ "status": "accepted" }`. Nevela does it, and no class is written. See [Moving a status on](#moving-a-status-on). |
 | `fields` | What it asks for before it runs. See [Asking for something](#asking-for-something). |
 | `many` | `true` lets a `record` action run on the rows selected in the table as well. |
 
@@ -70,6 +71,45 @@ By the time `handle()` runs, Nevela has checked that the person holds the action
 It runs inside a database transaction. If it throws, what it changed in the database is undone, and the person is told that it didn't work and that nothing was changed. While the Laravel app is in debug mode they are also told why. To refuse with a message of your own, use `abort(409, 'This applicant has withdrawn.')`.
 
 Until you have written it, the class says so: pressing the button answers "Accept does nothing yet", with the file to write it in.
+
+## Moving a status on
+
+Many actions do one thing: move a record to its next step. Accept an order, mark it ready, cancel it. For those, say the values in `set`, and there is nothing to write:
+
+```json
+"actions": {
+    "accept": { "label": "Accept", "when": { "status": "pending" }, "set": { "status": "accepted" } },
+    "markReady": { "label": "Ready", "when": { "status": "accepted" }, "set": { "status": "ready" } },
+    "callOff": { "label": "Cancel with a reason", "when": { "status": ["pending", "accepted"] }, "set": { "status": "cancelled" }, "fields": { "reason": { "kind": "text" } } }
+}
+```
+
+Each value must be one the field can have: an option of an enum, and not nothing for a required field. `nevela generate` says which, if not. If you write the action's class anyway, it runs after the values are set, for what else should happen (a text message, say).
+
+## A record's history
+
+Every record action that is done is kept, as a step in the record's history: what was done, by whom, when, what it changed and what was filled in for it. Unlike the [activity log](/guides/notifications/#the-activity-log), nothing is merged: three steps are three rows. The record's page in the dashboard shows them, and so does the mobile app, to whoever may see the record. For an order that belongs to a customer, that is the customer too.
+
+When the resource has an [owner](/guides/policies/#which-records-each-person-sees), the person a record belongs to is told of each step through the bell, unless they took it themselves: **Your order JM-0014 is now Ready**, with the reason as the notice's text when the action asked for one.
+
+```
+GET /api/_nevela/history/{slug}/{id}
+```
+
+answers `{ "data": [ { "action", "label", "user": { "id", "name" }, "changes": { "status": { "from", "to" } }, "input", "at" } ] }`, oldest first, and 404 for a record the person may not see.
+
+## Records fixed once made
+
+A placed order shouldn't be edited after the fact, by anyone. Make the resource with `--fixed`, or put `"fixed": true` in its descriptor, and once a record is made:
+
+- Nobody signed in edits or deletes it: not staff, not the administrator. The dashboard and the mobile app offer no Edit and no Delete, and Laravel answers 409 to anything that tries, from wherever.
+- Its [lines](/guides/line-items/) can't be added to, changed or taken away.
+- It moves on only through its actions, each a step in its history.
+- Someone who may not edit the resource (a customer) can't choose, when they make one, the values its actions set. A new order of theirs is pending, whatever the request said.
+
+What is still allowed: finishing a record in the request that made it (its lines, and a total worked out from them in `itemsSaved()`), an action, and anything run where nobody is signed in: seeders, the console, queued jobs and the scheduler. Removing a test order is done there: `php nevela tinker`, then `App\Models\Order::find($id)->forceDelete()`.
+
+On a fixed resource the **Edit** permission no longer edits anything once a record is made. With an [owner](/guides/policies/#which-records-each-person-sees) it still says who runs the place: those who hold it see every record.
 
 ## Asking for something
 
@@ -135,6 +175,6 @@ With `"many": true`, a record action is also offered in the bar that appears whe
 |---|---|
 | 403 | The person doesn't hold the action's permission. |
 | 404 | No such action, or no such record, or one they may not see. |
-| 409 | The record doesn't match `when`. `code` is `NOT_APPLICABLE`. |
+| 409 | The record doesn't match `when`. `code` is `NOT_APPLICABLE`. Also an edit or a deletion of a [fixed](#records-fixed-once-made) record, by any address. |
 | 422 | Something in `input` is not valid. `issues` says what, by field. |
 | 500 | The class threw. Nothing was changed. |

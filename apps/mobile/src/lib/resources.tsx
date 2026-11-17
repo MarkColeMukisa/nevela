@@ -59,7 +59,28 @@ export interface Resource {
   items?: string;
   /** The field that says whose record it is, kept by Laravel: each person sees their own. An order's "email". */
   owner?: string;
+  /** Not edited or deleted once made, by anyone: it moves on through its actions. A placed order. */
+  fixed?: boolean;
   fields: Record<string, FieldSpec>;
+  /** What can be done to a record, or to the list, beyond adding, changing and deleting: Accept, Cancel. */
+  actions?: Record<string, ResourceAction>;
+}
+
+export type WhenValue = string | number | boolean | null;
+
+/** One of a resource's actions, as its descriptor says it. */
+export interface ResourceAction {
+  label: string;
+  icon?: string;
+  on?: "record" | "collection";
+  /** A question to ask before it runs. */
+  confirm?: string;
+  /** Field values a record must have for it to apply: one value, or a list it may be any of. */
+  when?: Record<string, WhenValue | WhenValue[]>;
+  /** What it asks the person for. */
+  fields?: Record<string, FieldSpec>;
+  /** The values it gives fields, when that is all it does: { status: "accepted" }. */
+  set?: Record<string, WhenValue>;
 }
 
 /** A record of any resource: its id, its fields, and the details of its files beside them. */
@@ -105,6 +126,8 @@ export function applies(field: FieldSpec, values: Record<string, unknown>): bool
 
 /** Whether the user holds a permission on a resource. Laravel decides each request whatever this says. */
 export function may(user: User | null, resource: Resource, ability: Ability): boolean {
+  // A fixed record (a placed order) is changed and deleted by nobody, an administrator included.
+  if (resource.fixed && (ability === "edit" || ability === "delete")) return false;
   return Boolean(user && (user.isAdmin || user.permissions.includes(`${resource.table}.${ability}`)));
 }
 
