@@ -20,6 +20,11 @@ export default function TrashOf() {
   const colors = useColors();
   const load = useCallback(() => api.get<Page>(`/_nevela/trash/${slug}`, { perPage: 50 }), [slug]);
   const trash = useLoaded(load);
+  // Pages after the first, fetched with Show more. Dropped whenever the list starts over.
+  const [more, setMore] = useState<TrashRecord[]>([]);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const generation = useRef(0);
   const [working, setWorking] = useState<string | null>(null);
   const [asking, setAsking] = useState<string | null>(null);
   const [emptying, setEmptying] = useState(false);
@@ -28,9 +33,38 @@ export default function TrashOf() {
   // One change at a time: a second press while one is under way would answer for the wrong row.
   const busy = useRef(false);
 
+  const startOver = () => {
+    generation.current++;
+    setMore([]);
+    setPage(1);
+    setLoadingMore(false);
+  };
+
   if (trash.loading) return <Loading />;
-  const rows = trash.data?.data ?? [];
+  const seen = new Set<string>();
+  const rows = [...(trash.data?.data ?? []), ...more].filter((record) => {
+    if (seen.has(record.id)) return false;
+    seen.add(record.id);
+    return true;
+  });
   const total = trash.data?.meta.total ?? 0;
+  const morePages = page < (trash.data?.meta.totalPages ?? 1);
+
+  const showMore = async () => {
+    const mine = generation.current;
+    setLoadingMore(true);
+    setError(null);
+    try {
+      const next = await api.get<Page>(`/_nevela/trash/${slug}`, { perPage: 50, page: page + 1 });
+      if (mine !== generation.current) return;
+      setMore((current) => [...current, ...next.data]);
+      setPage(page + 1);
+    } catch (caught) {
+      if (mine === generation.current) setError(caught);
+    } finally {
+      if (mine === generation.current) setLoadingMore(false);
+    }
+  };
 
   const run = async (id: string | null, what: () => Promise<unknown>, said: string) => {
     if (busy.current) return;
@@ -43,6 +77,7 @@ export default function TrashOf() {
       setAsking(null);
       setEmptying(false);
       setDone(said);
+      startOver();
       await trash.reload();
     } catch (caught) {
       setError(caught);
@@ -53,7 +88,7 @@ export default function TrashOf() {
   };
 
   return (
-    <Screen edges={["bottom"]} refreshControl={<RefreshControl refreshing={trash.refreshing} onRefresh={trash.refresh} />}>
+    <Screen edges={["bottom"]} refreshControl={<RefreshControl refreshing={trash.refreshing} onRefresh={() => { startOver(); trash.refresh(); }} />}>
       <Stack.Screen options={{ title: title ?? "Trash" }} />
       {error || trash.error ? <Notice>{messageOf(error ?? trash.error)}</Notice> : null}
       {done ? <Notice tone="success">{done}</Notice> : null}
@@ -84,7 +119,12 @@ export default function TrashOf() {
               </View>
             </Card>
           ))}
-          {total > rows.length ? <Body muted small>Showing the latest {rows.length} of {total}.</Body> : null}
+          {morePages ? (
+            <View style={{ gap: spacing.sm }}>
+              <Body muted small>Showing the latest {rows.length} of {total}.</Body>
+              <Button variant="secondary" label="Show more" busy={loadingMore} disabled={working !== null} onPress={showMore} />
+            </View>
+          ) : null}
 
           {emptying ? (
             <View style={{ gap: spacing.sm }}>

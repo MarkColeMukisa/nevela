@@ -41,6 +41,7 @@ export default function ActivityScreen() {
         return;
       }
       generation.current++;
+      setLoadingMore(false);
       setMore([]);
       setPage(1);
       reload();
@@ -56,8 +57,16 @@ export default function ActivityScreen() {
 
   if (!can(user, "activity.view") || !user) return <Screen edges={["bottom"]}><Body muted>You don't have access to the activity log.</Body></Screen>;
 
-  const rows = [...(log.data?.data ?? []), ...more];
-  const total = log.data?.meta.total ?? 0;
+  // Pages are counted from the newest entry, so a change made meanwhile shifts them and the
+  // next page can repeat an entry already shown: show each one once.
+  const seen = new Set<string>();
+  const rows = [...(log.data?.data ?? []), ...more].filter((entry) => {
+    const key = String(entry.id);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const morePages = page < (log.data?.meta.totalPages ?? 1);
 
   const showMore = async () => {
     const mine = generation.current;
@@ -95,7 +104,7 @@ export default function ActivityScreen() {
           ))}
         </View>
       )}
-      {rows.length < total ? <Button variant="secondary" label="Show more" busy={loadingMore} onPress={showMore} /> : null}
+      {morePages ? <Button variant="secondary" label="Show more" busy={loadingMore} onPress={showMore} /> : null}
     </Screen>
   );
 }
