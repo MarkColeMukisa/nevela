@@ -7,7 +7,7 @@ import { FileCell } from "@/components/dashboard/fields/file-cell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { adminPermissions, allowedActions, allResources, dashboardStore, requireAccess, resourcePath } from "@/lib/dashboard";
-import { actionApplies, publishFieldOf, publishState } from "@/lib/extras";
+import { actionApplies, actionsOf, publishFieldOf, publishState } from "@/lib/extras";
 import { fileName, fileUrl, privateFileUrl } from "@/lib/files";
 import { fileKeys, filesOf } from "@/lib/gallery";
 import { lineTitles, linesOf, linesResource } from "@/lib/line-items";
@@ -19,6 +19,7 @@ import { trashFor } from "@/lib/trash";
 import { LocalTime } from "./local-time";
 import { PageHeader } from "./page-header";
 import { PrintButton } from "./print-button";
+import { RecordHistory } from "./record-history";
 import { RecordActions } from "./record-actions";
 import type { RelationMeta } from "./fields/field-widget";
 
@@ -194,6 +195,8 @@ export async function RecordDetail({ resource, id }: { resource: Resource; id: s
         </Card>
 
         <div className="flex flex-col gap-6 print:hidden">
+          {/* What its actions have done: Accepted by Mercy, then Ready. Only a resource with actions has any. */}
+          {actionsOf(resource.name).some((action) => action.on === "record") && <RecordHistory resource={resource} id={id} />}
 
           {related.map(({ relation, target, rows, total, filterKey }) => (
             <Card key={relation.key}>

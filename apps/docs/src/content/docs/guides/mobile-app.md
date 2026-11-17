@@ -142,7 +142,11 @@ Name the field that holds the customer's email as the order's `owner`, in `nevel
 { "name": "Order", "items": "OrderItem", "owner": "email", "fields": { "email": { "kind": "string", "format": "email" } } }
 ```
 
-Each customer then sees only their own orders, in the list, on the order's page and in the Orders tab, and an order they place is theirs whatever the phone sends. Staff, who hold `orders.edit`, see every order and move it along (Pending, Accepted, Preparing, Ready, Completed) in the dashboard or the app; the customer's order page shows where it has got to. The app doesn't ask for the owner field: it is the signed-in person's. See [Which records each person sees](/guides/policies/#which-records-each-person-sees).
+Each customer then sees only their own orders, in the list, on the order's page and in the Orders tab, and an order they place is theirs whatever the phone sends. Staff, who hold `orders.edit`, see every order. The app doesn't ask for the owner field: it is the signed-in person's. See [Which records each person sees](/guides/policies/#which-records-each-person-sees).
+
+### Fix an order once it is placed
+
+Make the order resource [fixed](/guides/actions/#records-fixed-once-made) (`--fixed`, or `"fixed": true`) and give it [actions that move its status on](/guides/actions/#moving-a-status-on): Accept, Ready, Cancel. Then nobody edits or deletes a placed order, the administrator included, and the order's page on the phone has a button for each step the person may take, where the order is now. A customer can hold **Cancel** without holding **Accept**. Under the buttons is the order's history (who did what, and when), and the customer is told of each step in the bell. [A drinks app on the phone](/tutorials/juice-me/) does all of it.
 
 Without it, anyone who may view orders sees every order. A customer could also post a status of `completed` or a total of their own: the order's status, number and total are for Laravel to set. Give the status a default and let its lines carry the total (`itemsSaved()` on the model sets it), and check as two customers that each sees only their own.
 
@@ -169,7 +173,7 @@ Pull down on **Records**, or open the app again, and Products is there. That hol
 | Screen | What it does |
 |---|---|
 | The list | Search, pull to refresh, and more as you scroll. Each row is the record's title, its picture when it has one, and the two fields that say most about it: a status, an amount, what it belongs to, a date. |
-| A record | Every field as a person reads it: money and dates formatted, an enum by its label, a `belongsTo` by the other record's title and a tap away from it. Pictures, and [line items](/guides/line-items/) where the resource has them. |
+| A record | Every field as a person reads it: money and dates formatted, an enum by its label, a `belongsTo` by the other record's title and a tap away from it. Pictures, and [line items](/guides/line-items/) where the resource has them. Its [actions](/guides/actions/), a button each, for the person who may and while they apply, asking first what they ask; and its history, once one has been done. |
 | New and edit | A control per field: a keyboard to suit the format, a switch for a yes or no, a list for an enum, a search of the other resource for a `belongsTo`. A field with [a condition](/concepts/field-types/#a-field-that-only-sometimes-applies) appears when the condition holds. |
 
 What Laravel says about a save is shown where it belongs: a refused field under that field, and "someone else saved this first" when [two people edit the same record](/guides/web-app/#two-people-editing-the-same-record). An edit sends only the fields that changed. Deleting moves a record to [the trash](/guides/trash/), to be restored from the dashboard.
@@ -182,7 +186,7 @@ Not from the phone yet:
 - **Other files and JSON.** A PDF or a JSON field is the dashboard's to edit. A resource with a required file that isn't a picture can't be created from the app, and the form says so.
 - **Line items.** An order's lines are read on the phone and edited in the dashboard. Editing the order itself leaves its lines as they are.
 - **Dates** are typed, as `2026-11-15` or `2026-11-15 14:30`, not picked from a calendar.
-- **Actions, bulk changes, import and export.**
+- **Actions on the whole list, bulk changes, import and export.** A record's own actions are on its page.
 
 The screens are four files under `src/app/r/[slug]/`, shared by every resource, with the form in `src/components/record-form.tsx`. To give one resource a screen of its own, add it as below and link to it from wherever you like.
 

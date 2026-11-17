@@ -1,4 +1,4 @@
-import { actionsOf, type ResourceAction } from "@/lib/extras";
+import { actionsOf, fixedOf, type ResourceAction } from "@/lib/extras";
 import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { can, type Policy, type PolicyAction, type Resource } from "@flaredev/core";
@@ -54,6 +54,9 @@ export async function dashboardSession() {
 
 /** Whether the current person may do `action` on a resource: their permissions, and the display policy if there is one. */
 export async function mayDo(resource: Resource, action: PolicyAction): Promise<boolean> {
+  // A fixed resource's records (a placed order) are edited and deleted by nobody, an
+  // administrator included: Laravel refuses it. They move on through their actions.
+  if ((action === "update" || action === "delete") && fixedOf(resource.name)) return false;
   const { session, roles, may } = await dashboardSession();
   if (!session || !may(permissionFor(resource, action))) return false;
   const policy = policyFor(resource.name);

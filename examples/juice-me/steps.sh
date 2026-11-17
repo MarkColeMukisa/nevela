@@ -18,6 +18,13 @@ yours() { node -e '
   if (!model.includes(marker)) throw new Error(`${file} has no line for your own code`);
   fs.writeFileSync(file, model.replace(marker, `${marker}\n\n${fs.readFileSync(from, "utf8").trimEnd()}`));
 ' "$@"; }
+# Adds a section to a descriptor, as the tutorial has you do in your editor.
+merge() { node -e '
+  const fs = require("fs"), [file, key, from] = process.argv.slice(1);
+  const descriptor = JSON.parse(fs.readFileSync(file, "utf8"));
+  descriptor[key] = { ...(descriptor[key] ?? {}), ...JSON.parse(fs.readFileSync(from, "utf8")) };
+  fs.writeFileSync(file, JSON.stringify(descriptor, null, 4) + "\n");
+' "$@"; }
 # Does what the tutorial does by hand on the Roles screen.
 by_hand() {
   local script="$here/by-hand.php"
@@ -38,15 +45,19 @@ nevela resource Beverage --fields="name:string, description:text?, price:money, 
 by_hand menu
 
 # 4. Orders and what is in them
-nevela resource Order --fields="number:auto(JM), customer:string, email:email, phone:tel?, delivery:enum(collection|delivery)=collection, details:text?, status:enum(pending|accepted|preparing|ready|completed)=pending, total:money?" --items="OrderItem: beverage:belongsTo(Beverage), quantity:int, price:money(beverage.price)" --owner=email --icon=shopping-bag --seed=12
+nevela resource Order --fields="number:auto(JM), customer:string, email:email, phone:tel?, delivery:enum(collection|delivery)=collection, details:text?, status:enum(pending|accepted|preparing|ready|completed|cancelled)=pending, total:money?" --items="OrderItem: beverage:belongsTo(Beverage), quantity:int, price:money(beverage.price)" --owner=email --fixed --icon=shopping-bag --seed=12
 
-# 5. The total, and what only the bar decides
+# 5. What happens to an order: buttons, not edits
+merge apps/api/nevela/resources/order.json actions "$here/files/actions.json"
+nevela generate Order
+
+# 6. The total, and what only the bar decides
 yours apps/api/app/Models/Order.php "$here/files/itemsSaved.php"
 yours apps/api/app/Models/Order.php "$here/files/placed.php"
 
-# 6. Customers and staff
-by_hand role CUSTOMER beverages.view categories.view orders.create orders.view
-by_hand role STAFF beverages.view beverages.create beverages.edit beverages.delete categories.view categories.create categories.edit orders.view orders.edit
+# 7. Customers and staff
+by_hand role CUSTOMER beverages.view categories.view orders.create orders.view orders.cancel
+by_hand role STAFF beverages.view beverages.create beverages.edit beverages.delete categories.view categories.create categories.edit orders.view orders.edit orders.accept orders.start_preparing orders.mark_ready orders.complete orders.call_off
 nevela user --name="Mercy Auma" --email=mercy@example.com --password=password --role=STAFF
 
 # Checks: what the tutorial says you have. Nothing below here is a step of the tutorial.
@@ -57,6 +68,9 @@ grep -q "Resource: Order .* 12 records" status.log
 grep -q "none pending" status.log
 grep -q 'price: field.float({ format: "money", currency: "UGX" })' apps/web/resources/beverage.resource.ts
 grep -q '"owner": "email"' apps/api/nevela/resources/order.json
+grep -q '"fixed": true' apps/api/nevela/resources/order.json
+# Buttons that only set the status have no class to write.
+test ! -e apps/api/app/Nevela/Actions/Order/Accept.php
 # Customers who sign up, what they order and see, and what only the bar decides.
 check="$here/check.php"
 command -v cygpath > /dev/null && check="$(cygpath -w "$check")" # a Windows PHP reads Windows paths
@@ -74,8 +88,17 @@ grep -q "^bo changes it: 404$" bar.log
 grep -q "^amara changes her own status: 403$" bar.log
 grep -q "^still pending$" bar.log
 grep -q "^mercy sees: 14 of 14$" bar.log
+grep -q "^mercy edits it: 409$" bar.log
+grep -q "^the administrator deletes it: 409$" bar.log
 grep -q "^mercy accepts it: 200 accepted$" bar.log
 grep -q "^amara sees it accepted$" bar.log
+grep -q "^amara is told: Your order JM-[0-9]* is now Accepted$" bar.log
+grep -q "^its history: Accept by Mercy Auma, pending to accepted$" bar.log
+grep -q "^mercy cancels it without a reason: 422$" bar.log
+grep -q "^mercy cancels it: 200 cancelled, Out of mangoes today$" bar.log
+grep -q "^amara cancels a ready one: 200 cancelled$" bar.log
+grep -q "^amara cancels it again: 409$" bar.log
+grep -q "^the bar hears: By Amara Okafor. Plans changed$" bar.log
 grep -q "^on the shelf: only what is available$" bar.log
 # The mobile app, reading the same resources, finds a shop with nothing written for it.
 node --experimental-strip-types --no-warnings "$here/shop-check.mjs" | tee shop.log

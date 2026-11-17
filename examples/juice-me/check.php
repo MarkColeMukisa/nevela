@@ -72,11 +72,44 @@ echo 'still ', App\Models\Order::findOrFail($order['id'])->status, PHP_EOL;
 $as('mercy@example.com');
 [, $all] = $call('GET', '/api/orders?perPage=100');
 echo 'mercy sees: ', $all['meta']['total'], ' of ', App\Models\Order::count(), PHP_EOL;
-[$status, $moved] = $call('PATCH', "/api/orders/{$order['id']}", ['status' => 'accepted']);
-echo "mercy accepts it: {$status} {$moved['status']}", PHP_EOL;
+// A placed order is not edited or deleted, even by the administrator: it moves on by its buttons.
+[$status] = $call('PATCH', "/api/orders/{$order['id']}", ['status' => 'accepted']);
+echo "mercy edits it: {$status}", PHP_EOL;
+$as('admin@example.com');
+[$status] = $call('DELETE', "/api/orders/{$order['id']}");
+echo "the administrator deletes it: {$status}", PHP_EOL;
+$as('mercy@example.com');
+[$status, $moved] = $call('POST', "/api/orders/{$order['id']}/_actions/accept");
+echo "mercy accepts it: {$status} {$moved['record']['status']}", PHP_EOL;
 $as('amara@example.com');
 [, $again] = $call('GET', "/api/orders/{$order['id']}");
 echo "amara sees it {$again['status']}", PHP_EOL;
+[, $bell] = $call('GET', '/api/_nevela/notifications');
+$told = array_values(array_filter(array_column($bell['items'], 'title'), fn ($title) => str_starts_with($title, 'Your order')));
+echo 'amara is told: ', $told[0] ?? 'nothing', PHP_EOL;
+[, $history] = $call('GET', "/api/_nevela/history/orders/{$order['id']}");
+$step = $history['data'][0];
+echo "its history: {$step['label']} by {$step['user']['name']}, {$step['changes']['status']['from']} to {$step['changes']['status']['to']}", PHP_EOL;
+$as('mercy@example.com');
+$call('POST', "/api/orders/{$order['id']}/_actions/startPreparing");
+[$status] = $call('POST', "/api/orders/{$order['id']}/_actions/callOff");
+echo "mercy cancels it without a reason: {$status}", PHP_EOL;
+[$status, $off] = $call('POST', "/api/orders/{$order['id']}/_actions/callOff", ['input' => ['reason' => 'Out of mangoes today']]);
+[, $history] = $call('GET', "/api/_nevela/history/orders/{$order['id']}");
+echo "mercy cancels it: {$status} {$off['record']['status']}, ", end($history['data'])['input']['reason'] ?? '', PHP_EOL;
+// Made and ready, and she no longer wants it: she cancels, and may say why. The bar hears.
+foreach (['accept', 'startPreparing', 'markReady'] as $step) {
+    $call('POST', "/api/orders/{$forged['id']}/_actions/{$step}");
+}
+$as('amara@example.com');
+[$status, $off] = $call('POST', "/api/orders/{$forged['id']}/_actions/cancel", ['input' => ['reason' => 'Plans changed']]);
+echo "amara cancels a ready one: {$status} {$off['record']['status']}", PHP_EOL;
+[$status] = $call('POST', "/api/orders/{$forged['id']}/_actions/cancel");
+echo "amara cancels it again: {$status}", PHP_EOL;
+$as('mercy@example.com');
+[, $bell] = $call('GET', '/api/_nevela/notifications');
+$heard = array_values(array_filter($bell['items'], fn ($item) => $item['title'] === "Order {$forged['number']} is now Cancelled"));
+echo 'the bar hears: ', $heard[0]['body'] ?? 'nothing', PHP_EOL;
 
 // A drink that is out is not on the shelf: the customer's list can say so with a filter.
 $drinks[0]->update(['available' => false]);
