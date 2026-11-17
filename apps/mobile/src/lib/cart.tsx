@@ -3,7 +3,10 @@ import { createContext, use, useEffect, useMemo, useRef, useState, type ReactNod
 
 import { useAuth } from "./auth";
 import { may, useResources } from "./resources";
-import { addToCart, cartCount, clampQuantity, findShop, setQuantity, type CartLine, type Shop } from "./shop";
+import { router } from "expo-router";
+
+import { comeBackTo } from "./guest";
+import { addToCart, cartCount, clampQuantity, findCatalogue, findShop, setQuantity, type CartLine, type Catalogue, type Shop } from "./shop";
 import { site } from "./site";
 
 /**
@@ -129,6 +132,35 @@ export function useShop(): Shop | null {
     const found = findShop(all, site.shop);
     return found && may(user, found.catalogue, "view") && may(user, found.orders, "create") ? found : null;
   }, [all, user]);
+}
+
+/**
+ * What there is to browse: the signed-in person's shop, or, for someone not signed in, what
+ * Laravel says anyone may read of what is sold. Null when there is neither.
+ */
+export function useCatalogue(): Catalogue | null {
+  const shop = useShop();
+  const { all } = useResources();
+  const { user } = useAuth();
+  return useMemo(() => shop ?? (user === null ? findCatalogue(all, site.shop) : null), [shop, all, user]);
+}
+
+/**
+ * Putting something in the cart, or, for a guest, signing in first: they are taken to sign in,
+ * and back to what they were adding once they have. Returns whether it went in the cart.
+ */
+export function useAddToCart(): (item: Omit<CartLine, "quantity">, quantity?: number) => boolean {
+  const cart = useCart();
+  const { user } = useAuth();
+  return (item, quantity = 1) => {
+    if (user === null) {
+      comeBackTo(`/shop/${encodeURIComponent(item.id)}`);
+      router.push({ pathname: "/sign-in", params: { reason: "cart" } });
+      return false;
+    }
+    cart.add(item, quantity);
+    return true;
+  };
 }
 
 /** Whether this person may look at the orders they have placed. */

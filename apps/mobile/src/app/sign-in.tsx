@@ -7,6 +7,7 @@ import { SocialButtons } from "@/components/social-buttons";
 import { Body, Button, Field, Notice, Screen, Title } from "@/components/ui";
 import { ApiError, messageOf } from "@/lib/api";
 import { signInMethods, useAuth, type Challenge } from "@/lib/auth";
+import { takeComeBack } from "@/lib/guest";
 import { site } from "@/lib/site";
 import { spacing } from "@/lib/theme";
 
@@ -23,7 +24,7 @@ import { spacing } from "@/lib/theme";
 export default function SignIn() {
   const auth = useAuth();
   // Sent here from sign-up with an address that already has an account: it is filled in.
-  const params = useLocalSearchParams<{ email?: string }>();
+  const params = useLocalSearchParams<{ email?: string; reason?: string }>();
   const [way, setWay] = useState<"password" | "code">("password");
   const [emailCode, setEmailCode] = useState(false);
   const [registration, setRegistration] = useState(false);
@@ -81,7 +82,7 @@ export default function SignIn() {
     <Screen edges={["top", "bottom"]} centered>
       <View style={{ gap: spacing.xs }}>
         <Title>{site.name}</Title>
-        <Body muted>{way === "password" ? "Sign in to continue." : codeSent ? `Enter the code we sent to ${address}.` : "We'll email you a code to sign in with."}</Body>
+        <Body muted>{way === "password" ? (params.reason === "cart" ? "Sign in to add it to your cart. You'll come back to it." : "Sign in to continue.") : codeSent ? `Enter the code we sent to ${address}.` : "We'll email you a code to sign in with."}</Body>
       </View>
 
       {error && !(error instanceof ApiError && error.issues.length > 0) ? <Notice>{messageOf(error)}</Notice> : null}
@@ -110,6 +111,8 @@ export default function SignIn() {
       ) : null}
 
       {registration ? <Button variant="link" label="New here? Create an account" disabled={busy} onPress={() => router.push("/sign-up")} /> : null}
+      {/* Come from the shop, before signing in: back to it. */}
+      {router.canGoBack() ? <Button variant="link" label="Keep browsing" disabled={busy} onPress={() => { takeComeBack(); router.back(); }} /> : null}
     </Screen>
   );
 }

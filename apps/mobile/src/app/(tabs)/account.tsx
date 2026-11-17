@@ -21,7 +21,17 @@ export default function Account() {
   const [saved, setSaved] = useState(false);
   const [sending, setSending] = useState(false);
 
-  if (!user) return null;
+  // Browsing before signing in: what an account is for, and the way to one.
+  if (!user) {
+    return (
+      <Screen inTabs>
+        <Title>Your account</Title>
+        <Body muted>Sign in to order, keep a cart and follow your orders. New here? An account takes a minute.</Body>
+        <Button label="Sign in" icon="log-in-outline" onPress={() => router.push("/sign-in")} />
+        <Button variant="secondary" label="Create an account" onPress={() => router.push("/sign-up")} />
+      </Screen>
+    );
+  }
 
   const changePicture = async (picked: Picked[]) => {
     setSending(true);

@@ -215,6 +215,7 @@ const styles = StyleSheet.create({
 
 /** Staff and customers are given different homes: see lib/shell.ts. */
 export default function HomeScreen() {
-  const { shell } = useAuth();
-  return shell === "customer" ? <CustomerHome /> : <StaffHome />;
+  const { shell, user } = useAuth();
+  // Someone browsing before signing in sees the shop, as a customer would.
+  return shell === "customer" || !user ? <CustomerHome /> : <StaffHome />;
 }

@@ -2,6 +2,7 @@ import { createContext, use, useCallback, useEffect, useMemo, useState, type Rea
 
 import { api } from "./api";
 import { useAuth, type User } from "./auth";
+import { readPath } from "./guest";
 
 /**
  * The app's resources, as Laravel describes them (`GET _nevela/resources`).
@@ -61,6 +62,10 @@ export interface Resource {
   owner?: string;
   /** Not edited or deleted once made, by anyone: it moves on through its actions. A placed order. */
   fixed?: boolean;
+  /** Read by someone not signed in, from what anyone may read (GET public/_nevela/resources): its reads go to /public. */
+  open?: boolean;
+  /** What a shop sells, said by Laravel to someone not signed in, so they can browse it. */
+  sold?: boolean;
   fields: Record<string, FieldSpec>;
   /** What can be done to a record, or to the list, beyond adding, changing and deleting: Accept, Cancel. */
   actions?: Record<string, ResourceAction>;
@@ -156,21 +161,23 @@ export function ResourcesProvider({ children }: { children: ReactNode }) {
 
   const reload = useCallback(async () => {
     try {
-      const { data } = await api.get<{ data: Resource[] }>("/_nevela/resources");
+      // Signed out, what anyone may read: a shop to browse before signing in, when there is one.
+      const { data } = signedIn
+        ? await api.get<{ data: Resource[] }>("/_nevela/resources")
+        : await api.get<{ data: Resource[] }>("/public/_nevela/resources", undefined, { auth: false });
       setAll(data);
       setError(null);
     } catch (caught) {
-      setError(caught);
+      // An API from before guests could browse has no such address: nothing to browse.
+      if (!signedIn) setAll([]);
+      setError(signedIn ? caught : null);
     }
-  }, []);
+  }, [signedIn]);
 
   useEffect(() => {
     // What one account was shown is not carried over to the next.
     titles.clear();
-    if (!signedIn) {
-      setAll([]);
-      return;
-    }
+    setAll([]);
     setLoading(true);
     reload().finally(() => setLoading(false));
   }, [signedIn, account, reload]);
@@ -209,7 +216,7 @@ export async function relatedTitles(resource: Resource, ids: string[]): Promise<
       .filter((id) => !titles.has(`${resource.slug}:${id}`))
       .map(async (id) => {
         try {
-          titles.set(`${resource.slug}:${id}`, titleOf(resource, await api.get<ResourceRecord>(`/${resource.slug}/${encodeURIComponent(id)}`)));
+          titles.set(`${resource.slug}:${id}`, titleOf(resource, await api.get<ResourceRecord>(readPath(resource, `/${encodeURIComponent(id)}`), undefined, { auth: !resource.open })));
         } catch {
           // Deleted, or not theirs to see: the screen shows nothing for it.
         }

@@ -23,6 +23,12 @@ export interface ShopSettings {
   category?: string;
 }
 
+/**
+ * What is sold, and how to show it: all a guest needs to browse, with no order to place.
+ * A Shop is a Catalogue with the order beside it.
+ */
+export type Catalogue = Pick<Shop, "catalogue" | "title" | "price" | "image" | "description" | "category" | "available">;
+
 export interface Shop {
   /** The order resource, and the resource its lines are. */
   orders: Resource;
@@ -86,18 +92,10 @@ export function findShop(all: Resource[], settings: ShopSettings = {}): Shop | n
     const quantity = Object.entries(lines.fields).find(([name, field]) => (field.kind === "int" || field.kind === "float") && QUANTITY.test(name))?.[0];
     if (!link || !bought || !quantity) continue;
 
-    const catalogue = byName.get(bought[1].target as string) as Resource;
     const linePrice = Object.entries(lines.fields).find(([, field]) => field.kind === "float" && field.format === "money");
     // The line's price is usually copied from the thing bought ("productId.price"): that is the price to show.
     const copied = linePrice?.[1].from?.startsWith(`${bought[0]}.`) ? linePrice[1].from.slice(bought[0].length + 1) : null;
-    const money = Object.entries(catalogue.fields).find(([, field]) => field.kind === "float" && field.format === "money")?.[0] ?? null;
-    const price = copied && catalogue.fields[copied] ? copied : money;
-
-    const images = Object.entries(catalogue.fields).filter(([, field]) => field.kind === "file" && field.accept?.includes("image"));
-    const image = (images.find(([, field]) => !field.multiple) ?? images[0])?.[0] ?? null;
-    const description = Object.entries(catalogue.fields).find(([, field]) => field.kind === "text")?.[0] ?? null;
-    const category = settings.category ?? Object.entries(catalogue.fields).find(([, field]) => field.kind === "belongsTo" && byName.has(field.target as string))?.[0] ?? null;
-    const available = settings.available ?? Object.entries(catalogue.fields).find(([name, field]) => field.kind === "boolean" && AVAILABLE.test(name))?.[0] ?? null;
+    const { catalogue, title, price, image, description, category, available } = catalogueOf(byName.get(bought[1].target as string) as Resource, byName, settings, copied);
 
     const send = settings.send ?? {};
     const checkout =
@@ -120,9 +118,32 @@ export function findShop(all: Resource[], settings: ShopSettings = {}): Shop | n
     const unaskable = checkout.some((name) => !orders.fields[name] || !askable(orders.fields[name]));
     if (missing || unaskable) continue;
 
-    return { orders, lines, link, product: bought[0], catalogue, quantity, title: titleFieldOf(catalogue), price, image, description, category, available, checkout, send };
+    return { orders, lines, link, product: bought[0], catalogue, quantity, title, price, image, description, category, available, checkout, send };
   }
   return null;
+}
+
+/** How a catalogue is shown: its title, price, picture, description, category and "can be ordered" fields, where it has them. */
+function catalogueOf(catalogue: Resource, byName: Map<string, Resource>, settings: ShopSettings, copiedPrice: string | null = null): Catalogue {
+  const money = Object.entries(catalogue.fields).find(([, field]) => field.kind === "float" && field.format === "money")?.[0] ?? null;
+  const price = copiedPrice && catalogue.fields[copiedPrice] ? copiedPrice : money;
+  const images = Object.entries(catalogue.fields).filter(([, field]) => field.kind === "file" && field.accept?.includes("image"));
+  const image = (images.find(([, field]) => !field.multiple) ?? images[0])?.[0] ?? null;
+  const description = Object.entries(catalogue.fields).find(([, field]) => field.kind === "text")?.[0] ?? null;
+  const category = settings.category ?? Object.entries(catalogue.fields).find(([, field]) => field.kind === "belongsTo" && byName.has(field.target as string))?.[0] ?? null;
+  const available = settings.available ?? Object.entries(catalogue.fields).find(([name, field]) => field.kind === "boolean" && AVAILABLE.test(name))?.[0] ?? null;
+  return { catalogue, title: titleFieldOf(catalogue), price, image, description, category, available };
+}
+
+/**
+ * What a guest may browse: the resource Laravel says is sold, from what anyone may read
+ * (GET public/_nevela/resources). Null when nothing sold is open to them: then the app opens
+ * on signing in, as an app with no public shop always has.
+ */
+export function findCatalogue(open: Resource[], settings: ShopSettings = {}): Catalogue | null {
+  const sold = open.find((resource) => resource.sold);
+  if (!sold) return null;
+  return catalogueOf(sold, new Map(open.map((resource) => [resource.name, resource])), settings);
 }
 
 /** Which of the signed-in person's details an order field starts out with: their name for the customer's, their email for an email. */

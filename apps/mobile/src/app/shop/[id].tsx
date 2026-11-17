@@ -6,7 +6,8 @@ import { Picture } from "@/components/pictures";
 import { Stepper } from "@/components/stepper";
 import { Body, Button, Card, Loading, Notice, Row, Screen } from "@/components/ui";
 import { api, ApiError, messageOf } from "@/lib/api";
-import { useCart, useShop } from "@/lib/cart";
+import { useAddToCart, useCatalogue } from "@/lib/cart";
+import { readPath } from "@/lib/guest";
 import { display, filesOf, type StoredFile } from "@/lib/format";
 import { fieldLabel, relatedTitles, useResources, type ResourceRecord } from "@/lib/resources";
 import { cartItemOf, isAvailable, priceOf, titleOf } from "@/lib/shop-item";
@@ -16,12 +17,16 @@ import { useLoaded } from "@/lib/use-loaded";
 /** One thing the shop sells: its pictures, what it is, what it costs, and how many to put in the cart. */
 export default function ProductScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const shop = useShop();
-  const cart = useCart();
+  // The shop, or for someone not signed in, what of it anyone may browse.
+  const shop = useCatalogue();
+  const addToCart = useAddToCart();
   const colors = useColors();
   const { byName } = useResources();
 
-  const load = useCallback(() => (shop ? api.get<ResourceRecord>(`/${shop.catalogue.slug}/${encodeURIComponent(id)}`) : Promise.reject(new Error("There is no shop in this app."))), [shop, id]);
+  const load = useCallback(
+    () => (shop ? api.get<ResourceRecord>(readPath(shop.catalogue, `/${encodeURIComponent(id)}`), undefined, { auth: !shop.catalogue.open }) : Promise.reject(new Error("There is no shop in this app."))),
+    [shop, id],
+  );
   const product = useLoaded(load);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
@@ -73,8 +78,8 @@ export default function ProductScreen() {
   );
 
   const add = () => {
-    cart.add(cartItemOf(shop, record), quantity);
-    setAdded(true);
+    // A guest is taken to sign in first, and brought back here.
+    if (addToCart(cartItemOf(shop, record), quantity)) setAdded(true);
   };
 
   return (

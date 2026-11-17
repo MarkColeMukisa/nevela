@@ -229,7 +229,7 @@ async function request<T>(path: string, { method = "GET", body, file, query, aut
 }
 
 export const api = {
-  get: <T>(path: string, query?: Options["query"]) => request<T>(path, { query }),
+  get: <T>(path: string, query?: Options["query"], options: Pick<Options, "auth"> = {}) => request<T>(path, { query, ...options }),
   post: <T>(path: string, body?: unknown, options: Pick<Options, "auth"> = {}) => request<T>(path, { method: "POST", body: body ?? {}, ...options }),
   patch: <T>(path: string, body: unknown) => request<T>(path, { method: "PATCH", body }),
   put: <T>(path: string, body: unknown) => request<T>(path, { method: "PUT", body }),
