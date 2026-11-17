@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Booking;
-use App\Models\BookingLine;
+use App\Models\Portion;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
@@ -46,7 +46,7 @@ class FixedRecordsTest extends TestCase
                 'name' => 'Booking',
                 'fixed' => true,
                 'owner' => 'email',
-                'items' => 'BookingLine',
+                'items' => 'Portion',
                 'fields' => [
                     'customer' => ['kind' => 'string'],
                     'email' => ['kind' => 'string', 'format' => 'email', 'required' => false],
@@ -63,7 +63,7 @@ class FixedRecordsTest extends TestCase
                 ],
             ]),
             Descriptor::fromArray([
-                'name' => 'BookingLine',
+                'name' => 'Portion',
                 'fields' => [
                     'bookingId' => ['kind' => 'belongsTo', 'target' => 'Booking'],
                     'productId' => ['kind' => 'belongsTo', 'target' => 'Product'],
@@ -73,8 +73,8 @@ class FixedRecordsTest extends TestCase
         ]);
         Access::reset();
         Permissions::forget();
-        Role::query()->create(['name' => 'CUSTOMER', 'description' => null, 'grants' => ['bookings.view', 'bookings.create', 'bookings.cancel', 'booking_lines.view', 'booking_lines.create', 'products.view'], 'is_system' => false]);
-        Role::query()->create(['name' => 'STAFF', 'description' => null, 'grants' => ['bookings.*', 'bookings.accept', 'bookings.mark_ready', 'bookings.decline', 'booking_lines.*', 'products.view'], 'is_system' => false]);
+        Role::query()->create(['name' => 'CUSTOMER', 'description' => null, 'grants' => ['bookings.view', 'bookings.create', 'bookings.cancel', 'portions.view', 'portions.create', 'products.view'], 'is_system' => false]);
+        Role::query()->create(['name' => 'STAFF', 'description' => null, 'grants' => ['bookings.*', 'bookings.accept', 'bookings.mark_ready', 'bookings.decline', 'portions.*', 'products.view'], 'is_system' => false]);
         $this->admin = User::factory()->create(['name' => 'Ada']);
         Access::grant($this->admin, 'ADMIN');
         $this->staff = User::factory()->create(['name' => 'Mercy Auma']);
@@ -98,7 +98,7 @@ class FixedRecordsTest extends TestCase
     public function test_a_booking_is_finished_in_the_request_that_makes_it_and_a_customer_cant_choose_its_status(): void
     {
         // As an order's itemsSaved() does: the total, worked out once the lines are saved.
-        Event::listen('eloquent.created: '.BookingLine::class, function (BookingLine $line) {
+        Event::listen('eloquent.created: '.Portion::class, function (Portion $line) {
             Booking::query()->find($line->booking_id)?->update(['total' => 99]);
         });
         Sanctum::actingAs($this->amara);
@@ -138,15 +138,15 @@ class FixedRecordsTest extends TestCase
     public function test_its_lines_are_fixed_with_it(): void
     {
         $id = $this->placed();
-        $line = BookingLine::query()->where('booking_id', $id)->firstOrFail();
+        $line = Portion::query()->where('booking_id', $id)->firstOrFail();
 
         Sanctum::actingAs($this->admin);
         $this->patchJson("/api/bookings/{$id}", ['items' => [['productId' => $this->kettle->id, 'quantity' => 9]]])->assertStatus(409);
-        $this->postJson('/api/booking-lines', ['bookingId' => $id, 'productId' => $this->kettle->id, 'quantity' => 1])->assertStatus(409);
-        $this->patchJson("/api/booking-lines/{$line->id}", ['quantity' => 5])->assertStatus(409);
-        $this->deleteJson("/api/booking-lines/{$line->id}")->assertStatus(409);
+        $this->postJson('/api/portions', ['bookingId' => $id, 'productId' => $this->kettle->id, 'quantity' => 1])->assertStatus(409);
+        $this->patchJson("/api/portions/{$line->id}", ['quantity' => 5])->assertStatus(409);
+        $this->deleteJson("/api/portions/{$line->id}")->assertStatus(409);
 
-        $this->assertSame([2], BookingLine::query()->where('booking_id', $id)->pluck('quantity')->all());
+        $this->assertSame([2], Portion::query()->where('booking_id', $id)->pluck('quantity')->all());
     }
 
     public function test_the_console_and_seeders_still_can(): void
