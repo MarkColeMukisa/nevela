@@ -94,10 +94,10 @@ grep -q "^mercy accepts it: 200 accepted$" bar.log
 grep -q "^amara sees it accepted$" bar.log
 grep -q "^amara is told: Your order JM-[0-9]* is now Accepted$" bar.log
 grep -q "^its history: Accept by Mercy Auma, pending to accepted$" bar.log
-grep -q "^amara cancels it while it is made: 409$" bar.log
 grep -q "^mercy cancels it without a reason: 422$" bar.log
 grep -q "^mercy cancels it: 200 cancelled, Out of mangoes today$" bar.log
-grep -q "^amara cancels an accepted one: 200 cancelled$" bar.log
+grep -q "^amara cancels a ready one: 200 cancelled$" bar.log
+grep -q "^amara cancels it again: 409$" bar.log
 grep -q "^the bar hears: By Amara Okafor. Plans changed$" bar.log
 grep -q "^on the shelf: only what is available$" bar.log
 # The mobile app, reading the same resources, finds a shop with nothing written for it.

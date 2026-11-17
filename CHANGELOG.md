@@ -19,7 +19,7 @@ _Orders that can't be edited once placed, and buttons that move them on_
 
 ### Changed
 
-- **The [drinks-app tutorial](https://nevela-docs.vercel.app/tutorials/juice-me/): placed orders are fixed.** Orders are made with `--fixed` and a `cancelled` status, and move on by buttons: **Accept**, **Start preparing**, **Ready**, **Complete**, the customer's **Cancel order** until the bar starts making it (pending or accepted, with a reason if they like), and the bar's **Cancel with a reason**. The customer reads the order's history on the phone and is told of each step.
+- **The [drinks-app tutorial](https://nevela-docs.vercel.app/tutorials/juice-me/): placed orders are fixed.** Orders are made with `--fixed` and a `cancelled` status, and move on by buttons: **Accept**, **Start preparing**, **Ready**, **Complete**, the customer's **Cancel order** at any time until it is completed (with a reason if they like; the bar is told), and the bar's **Cancel with a reason**. The customer reads the order's history on the phone and is told of each step.
 
 ## [0.31.2] - 2026-11-17
 
