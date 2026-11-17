@@ -92,6 +92,12 @@ class VisibleRecordsTest extends TestCase
         Sanctum::actingAs($this->ada);
         $id = $this->postJson('/api/orders', ['customer' => 'Bo', 'email' => 'bo@example.com', 'status' => 'pending'])->assertCreated()->json('id');
         $this->assertSame('bo@example.com', Order::find($id)->email);
+
+        // One they make with no email is their own, and one that is saved with it emptied keeps it.
+        $id = $this->postJson('/api/orders', ['customer' => 'Walk-in', 'status' => 'pending'])->assertCreated()->json('id');
+        $this->assertSame($this->ada->email, Order::find($id)->email);
+        $this->patchJson("/api/orders/{$this->mine->id}", ['email' => null])->assertOk();
+        $this->assertSame('amara@example.com', $this->mine->fresh()->email);
     }
 
     public function test_the_trash_holds_only_what_they_could_see(): void

@@ -2,8 +2,9 @@
 title: "A drinks app on the phone"
 description: "A beverage ordering app for a campus juice bar: customers sign up on their phones, order and follow their order; staff accept it and move it along. Built with a mobile app and a dashboard from one set of resources."
 prev:
-  link: /tutorials/
-  label: All tutorials
+  link: /tutorials/crm/
+  label: A CRM
+next: false
 ---
 
 You will build the ordering app of a campus juice bar: customers sign up on their phones, choose drinks, check out and follow their order from Pending to Completed, and the bar's staff accept orders and move them along. There is no mobile code to write. The phone's shop is read from the same resources as the dashboard. It takes about forty minutes.
@@ -148,7 +149,7 @@ Open **Orders** for your orders, newest first, and one for where it has got to.
 
 In the dashboard, sign in as `admin@example.com` with the password `password`. Open **Orders**: your order is at the top, with all the others. Press **Edit**, change its status to **Accepted**, and save.
 
-On the phone, open the order again, or pull down to refresh: the trail has moved. Move it to **Preparing**, **Ready** and **Completed** the same way, as in the picture below. A staff account signed in on a phone does the same there, in Records.
+On the phone, open the order again, or pull down to refresh: the trail has moved. Move it to **Preparing**, **Ready** and **Completed** the same way, as in the picture below.
 
 ![An order on a phone: its number, a trail of five steps with the first two ticked and Preparing marked, the order's details and its three lines.](../../../assets/tutorials/juice-me-order.png)
 
