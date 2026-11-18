@@ -136,6 +136,105 @@ final class Nevela
         }, self::all());
     }
 
+    /**
+     * The resources anyone may read, as a signed-out client reads them
+     * (GET public/_nevela/resources): only those with a "public.read", each with only the
+     * fields it opens, and nothing about what it is not open for. The one a shop sells (what
+     * an order's lines point at) says so, `"sold": true`, so the mobile app can open on the
+     * shop for someone who hasn't signed in. The order and its lines are never described.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function publicDescribed(): array
+    {
+        $all = self::all();
+        [$sold, $price] = self::soldOf($all);
+        $currency = config('nevela.currency');
+        $described = [];
+        foreach ($all as $d) {
+            $read = $d->public?->read;
+            if ($read === null) {
+                continue;
+            }
+            $fields = [];
+            foreach ($read as $name) {
+                $field = $d->fields[$name] ?? null;
+                if ($field === null) {
+                    continue;
+                }
+                $array = $field->toArray();
+                // What a field depends on that isn't open would say something about it: dropped.
+                unset($array['when'], $array['from'], $array['auto']);
+                if (($array['kind'] ?? null) === 'float' && ($array['format'] ?? null) === 'money' && ! isset($array['currency']) && is_string($currency) && $currency !== '') {
+                    $array['currency'] = $currency;
+                }
+                $fields[$name] = $array;
+            }
+            $described[] = array_filter([
+                'name' => $d->name,
+                'table' => $d->table,
+                'slug' => $d->slug,
+                'label' => $d->label,
+                'pluralLabel' => $d->pluralLabel,
+                'icon' => $d->icon,
+                'titleField' => $d->titleField !== null && isset($fields[$d->titleField]) ? $d->titleField : null,
+                'by' => $d->public->by,
+                'sold' => $d->name === $sold ?: null,
+                // The price an order's line copies from it: the one charged, so the one to show.
+                'price' => $d->name === $sold && $price !== null && isset($fields[$price]) ? $price : null,
+                'open' => true,
+                'fields' => $fields,
+            ], fn ($v) => $v !== null);
+        }
+
+        return $described;
+    }
+
+    /**
+     * What a shop sells, found as the mobile app finds it for someone signed in: the first
+     * resource whose lines point back at it and at one other resource, by a quantity. That
+     * other resource is what is sold, and nothing else: an order's lines that also point at
+     * a shelf don't sell the shelf. With the field a line's price is copied from, if any.
+     *
+     * @param  list<Descriptor>  $all
+     * @return array{0: string|null, 1: string|null}
+     */
+    private static function soldOf(array $all): array
+    {
+        $names = array_map(fn (Descriptor $d) => $d->name, $all);
+        foreach ($all as $d) {
+            $lines = $d->items === null ? null : self::find($d->items);
+            if ($lines === null) {
+                continue;
+            }
+            $link = null;
+            $bought = null;
+            foreach ($lines->fields as $name => $field) {
+                if ($field->kind !== 'belongsTo') {
+                    continue;
+                }
+                if ($field->target === $d->name) {
+                    $link ??= $name;
+                } elseif ($bought === null && in_array($field->target, $names, true)) {
+                    $bought = [$name, $field->target];
+                }
+            }
+            $quantity = array_filter($lines->fields, fn ($field, $name) => in_array($field->kind, ['int', 'float'], true) && preg_match('/^(quantity|qty)$/i', (string) $name), ARRAY_FILTER_USE_BOTH);
+            if ($link === null || $bought === null || $quantity === []) {
+                continue;
+            }
+            foreach ($lines->fields as $field) {
+                if ($field->kind === 'float' && $field->format === 'money' && is_string($field->from) && str_starts_with($field->from, $bought[0].'.')) {
+                    return [$bought[1], substr($field->from, strlen($bought[0]) + 1)];
+                }
+            }
+
+            return [$bought[1], null];
+        }
+
+        return [null, null];
+    }
+
     public static function forget(): void
     {
         self::$descriptors = [];

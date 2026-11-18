@@ -7,10 +7,12 @@ import { HomeHeader } from "@/components/home-header";
 import { Picture } from "@/components/pictures";
 import { Body, Button, Notice, Screen } from "@/components/ui";
 import { api, messageOf } from "@/lib/api";
-import { useCart } from "@/lib/cart";
+import { useAuth } from "@/lib/auth";
+import { useAddToCart, useCart } from "@/lib/cart";
 import { display } from "@/lib/format";
 import { titleField, useResources, type ResourceRecord } from "@/lib/resources";
-import type { Shop } from "@/lib/shop";
+import { readPath, recordKey } from "@/lib/guest";
+import type { Catalogue } from "@/lib/shop";
 import { cartItemOf, pictureOf, priceOf, titleOf } from "@/lib/shop-item";
 import { radius, spacing, text, useColors } from "@/lib/theme";
 import { useLoaded } from "@/lib/use-loaded";
@@ -28,11 +30,14 @@ interface Page {
  * narrow by category, and a button on each to put it in the cart. Only what can be ordered
  * is listed, when the catalogue says which that is.
  */
-export function ShopHome({ shop }: { shop: Shop }) {
+export function ShopHome({ shop }: { shop: Catalogue }) {
   const colors = useColors();
   const cart = useCart();
+  const add = useAddToCart();
+  const { user } = useAuth();
   const { byName } = useResources();
-  const inbox = useLoaded(loadInbox);
+  // Someone browsing before signing in has no bell to ask about.
+  const inbox = useLoaded(useCallback(() => (user ? loadInbox() : Promise.resolve(null)), [user]));
 
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
@@ -55,7 +60,7 @@ export function ShopHome({ shop }: { shop: Shop }) {
     useCallback(async () => {
       const target = grouping?.target ? byName(grouping.target) : undefined;
       if (!target) return [];
-      const { data } = await api.get<{ data: ResourceRecord[] }>(`/${target.slug}`, { perPage: 30 });
+      const { data } = await api.get<{ data: ResourceRecord[] }>(readPath(target), { perPage: 30 }, { auth: !target.open });
       return data.map((record) => ({ id: record.id, title: String(record[titleField(target)] ?? "") }));
     }, [grouping, byName]),
   );
@@ -67,7 +72,8 @@ export function ShopHome({ shop }: { shop: Shop }) {
         const asked: Record<string, string | number | boolean> = { page: wanted, perPage: PER_PAGE, q: text.trim() };
         if (shop.category && chosen) asked[`filter[${shop.category}]`] = chosen;
         if (shop.available) asked[`filter[${shop.available}]`] = true;
-        const answer = await api.get<Page>(`/${shop.catalogue.slug}`, asked);
+        // What anyone may read is read without signing in.
+        const answer = await api.get<Page>(readPath(shop.catalogue), asked, { auth: !shop.catalogue.open });
         if (mine !== latest.current) return;
         setItems((current) => (wanted === 1 ? answer.data : [...current, ...answer.data.filter((record) => !current.some((had) => had.id === record.id))]));
         setPage(answer.meta.page);
@@ -162,26 +168,28 @@ export function ShopHome({ shop }: { shop: Shop }) {
             const price = priceOf(shop, item);
             const count = inCart(item.id);
             return (
-              <Pressable
-                key={item.id}
-                accessibilityRole="button"
-                accessibilityLabel={`${titleOf(shop, item)}${price !== null && priceField ? `, ${display(priceField, price)}` : ""}`}
-                onPress={() => router.push({ pathname: "/shop/[id]", params: { id: item.id } })}
-                style={({ pressed }) => [styles.card, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.7 }]}>
-                <Picture file={pictureOf(shop, item)} size="fill" rendition="card" />
-                <View style={styles.cardText}>
-                  <Text numberOfLines={2} style={{ color: colors.text, fontSize: text.body, fontWeight: "600" }}>{titleOf(shop, item)}</Text>
-                  {price !== null && priceField ? <Text style={{ color: colors.muted, fontSize: text.small }}>{display(priceField, price)}</Text> : null}
-                </View>
+              <View key={item.id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${titleOf(shop, item)}${price !== null && priceField ? `, ${display(priceField, price)}` : ""}`}
+                  onPress={() => router.push({ pathname: "/shop/[id]", params: { id: recordKey(shop.catalogue, item) } })}
+                  style={({ pressed }) => pressed && { opacity: 0.7 }}>
+                  <Picture file={pictureOf(shop, item)} size="fill" rendition="card" />
+                  <View style={styles.cardText}>
+                    <Text numberOfLines={2} style={{ color: colors.text, fontSize: text.body, fontWeight: "600" }}>{titleOf(shop, item)}</Text>
+                    {price !== null && priceField ? <Text style={{ color: colors.muted, fontSize: text.small }}>{display(priceField, price)}</Text> : null}
+                  </View>
+                </Pressable>
+                {/* Beside the card's button, not in it: a button can't hold another. */}
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Add ${titleOf(shop, item)} to the cart`}
                   hitSlop={6}
-                  onPress={() => cart.add(cartItemOf(shop, item))}
+                  onPress={() => add(cartItemOf(shop, item))}
                   style={[styles.add, { backgroundColor: colors.brand }]}>
                   {count > 0 ? <Text style={{ color: colors.onBrand, fontWeight: "700", fontSize: text.small }}>{count}</Text> : <Ionicons name="add" size={20} color={colors.onBrand} />}
                 </Pressable>
-              </Pressable>
+              </View>
             );
           })}
         </View>

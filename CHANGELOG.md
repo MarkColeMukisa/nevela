@@ -8,6 +8,13 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+_Browsing the shop on the phone before signing in_
+
+### Added
+
+- **The mobile app's shop is open before signing in**, when what it sells has a [public side](https://nevela-docs.vercel.app/guides/public-site/). Someone who isn't signed in opens on the shop, browses, searches and opens a product; **Add to cart** takes them to sign in or make an account, then back to what they were adding. Signed-in screens stay behind sign-in. An app whose catalogue isn't public opens on signing in, as before. See [Let people browse before signing in](https://nevela-docs.vercel.app/guides/mobile-app/#let-people-browse-before-signing-in).
+- **`GET /api/public/_nevela/resources`**: what anyone may read, described: only resources with a `public.read`, each cut to the fields it opens, with the one a shop sells marked `"sold": true`. Nothing of the order or its lines.
+
 ## [0.32.0] - 2026-11-17
 
 _Orders that can't be edited once placed, and buttons that move them on_

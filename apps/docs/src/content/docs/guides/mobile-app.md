@@ -144,6 +144,20 @@ Name the field that holds the customer's email as the order's `owner`, in `nevel
 
 Each customer then sees only their own orders, in the list, on the order's page and in the Orders tab, and an order they place is theirs whatever the phone sends. Staff, who hold `orders.edit`, see every order. The app doesn't ask for the owner field: it is the signed-in person's. See [Which records each person sees](/guides/policies/#which-records-each-person-sees).
 
+### Let people browse before signing in
+
+A shop usually shows what it sells to anyone, and asks them to sign in when they put something in the cart. Give what is sold a [public side](/guides/public-site/), and the app does the same: it opens on the shop for someone who isn't signed in, and on **Add to cart** takes them to sign in (or make an account) and back to what they were adding.
+
+```json
+"public": {
+    "read": { "fields": ["name", "description", "price", "image", "categoryId", "available"], "throttle": "600,1" }
+}
+```
+
+Write which records are on the shelf in the model's `scopePublicQuery` (for drinks, `$query->where('available', true)`), and give the category the same, with the fields its chips need, if the shop is narrowed by one. The app reads `GET /api/public/_nevela/resources`, which describes only the resources with a `public.read` and only the fields each opens. It says which of them is sold, and nothing about the order or its lines. An app whose catalogue has no public side opens on signing in, as before.
+
+`"throttle": "600,1"` is ten requests a second. Phones on one Wi-Fi, a campus or an office, reach Laravel from one address and are counted together. The default, 60 a minute, is one student's browsing.
+
 ### Fix an order once it is placed
 
 Make the order resource [fixed](/guides/actions/#records-fixed-once-made) (`--fixed`, or `"fixed": true`) and give it [actions that move its status on](/guides/actions/#moving-a-status-on): Accept, Ready, Cancel. Then nobody edits or deletes a placed order, the administrator included, and the order's page on the phone has a button for each step the person may take, where the order is now. A customer can hold **Cancel** without holding **Accept**. Under the buttons is the order's history (who did what, and when), and the customer is told of each step in the bell. [A drinks app on the phone](/tutorials/juice-me/) does all of it.

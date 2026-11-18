@@ -6,7 +6,7 @@ import { HomeHeader, NothingShared } from "@/components/home-header";
 import { ShopHome } from "@/components/shop-home";
 import { Card, Heading, Notice, Row, Screen } from "@/components/ui";
 import { messageOf } from "@/lib/api";
-import { useShop } from "@/lib/cart";
+import { useCatalogue } from "@/lib/cart";
 import { iconFor } from "@/lib/icons";
 import { useResources } from "@/lib/resources";
 import { spacing } from "@/lib/theme";
@@ -18,7 +18,8 @@ import { loadInbox } from "@/app/notifications";
  * otherwise a list of what the app shares with them.
  */
 export function CustomerHome() {
-  const shop = useShop();
+  // The shop, or for someone not signed in, what of it anyone may browse.
+  const shop = useCatalogue();
   return shop ? <ShopHome shop={shop} /> : <Browse />;
 }
 

@@ -127,6 +127,8 @@ Make the field [private](/guides/images/#private-files) for anything personal: `
 
 Each resource's reading, its form and its upload are counted separately, for each visitor. Past the limit the answer is 429.
 
+A phone calls Laravel itself, so a visitor is their address. Phones on one network (a campus, an office) share an address and one allowance: raise `read.throttle` on what the [mobile app shows before signing in](/guides/mobile-app/#let-people-browse-before-signing-in).
+
 Through the web app every request reaches Laravel from the web app's server. So that visitors are counted apart, the web app passes on each visitor's address with the secret the two apps share (`NEVELA_PROXY_SECRET`, set in both when the app was created). Without the secret set in production, all visitors are counted as one.
 
 The address it passes on is the one the proxy in front of the web app saw, the last entry of `X-Forwarded-For`, and not the first, which is whatever the request came with: a visitor who could choose the address they are counted by would have a fresh allowance with every request. That is right for a web app behind one proxy, which is what a host or a single nginx gives you. Set `NEVELA_TRUSTED_PROXIES` in the web app's environment when it is otherwise:

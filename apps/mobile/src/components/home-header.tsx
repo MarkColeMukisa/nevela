@@ -25,7 +25,22 @@ export function HomeHeader({ unread }: { unread: number }) {
     const timer = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(timer);
   }, []);
-  if (!user) return null;
+  // Browsing before signing in: a welcome, and the way to sign in where the bell would be.
+  if (!user) {
+    return (
+      <View style={styles.header}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ color: colors.muted, fontSize: text.small }}>{greeting(now)}</Text>
+          <Text accessibilityRole="header" style={{ color: colors.text, fontSize: 24, fontWeight: "700", letterSpacing: -0.5 }} numberOfLines={1} adjustsFontSizeToFit>
+            Welcome to {site.name}
+          </Text>
+        </View>
+        <Pressable accessibilityRole="button" hitSlop={8} onPress={() => router.push("/sign-in")} style={[styles.signIn, { backgroundColor: colors.brand }]}>
+          <Text style={{ color: colors.onBrand, fontWeight: "700", fontSize: text.small }}>Sign in</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   const first = user.name?.trim().split(/\s+/)[0];
 
@@ -71,6 +86,7 @@ export function NothingShared() {
 }
 
 const styles = StyleSheet.create({
+  signIn: { minHeight: 38, paddingHorizontal: spacing.lg, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   header: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   round: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   badge: { position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, borderWidth: 2, alignItems: "center", justifyContent: "center" },
