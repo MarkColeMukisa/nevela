@@ -1,13 +1,13 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { router } from "expo-router";
+import { router, usePathname } from "expo-router";
 import { useEffect } from "react";
 import { useColorScheme } from "react-native";
 
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { CartProvider, useCatalogue } from "@/lib/cart";
-import { takeComeBack } from "@/lib/guest";
+import { forgetComeBack, takeComeBack } from "@/lib/guest";
 import { ResourcesProvider, useResources } from "@/lib/resources";
 import { loadAppearance, setAppearance, useColors } from "@/lib/theme";
 
@@ -47,6 +47,13 @@ function Screens() {
   useEffect(() => {
     if (!waiting) SplashScreen.hideAsync();
   }, [waiting]);
+
+  // Left the way in without signing in (Back, a gesture, Keep browsing): where they were
+  // going is forgotten, so signing in later from Account doesn't open an old product.
+  const pathname = usePathname();
+  useEffect(() => {
+    if (user === null && !/^\/(sign-in|sign-up|oauth)/.test(pathname)) forgetComeBack();
+  }, [user, pathname]);
 
   // Signed in from the shop (by password, a code, Google or a new account): back to what
   // they were adding, once the screens for someone signed in are there to go to.

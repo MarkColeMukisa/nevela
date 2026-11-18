@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/auth";
 import { useAddToCart, useCart } from "@/lib/cart";
 import { display } from "@/lib/format";
 import { titleField, useResources, type ResourceRecord } from "@/lib/resources";
-import { readPath } from "@/lib/guest";
+import { readPath, recordKey } from "@/lib/guest";
 import type { Catalogue } from "@/lib/shop";
 import { cartItemOf, pictureOf, priceOf, titleOf } from "@/lib/shop-item";
 import { radius, spacing, text, useColors } from "@/lib/theme";
@@ -172,7 +172,7 @@ export function ShopHome({ shop }: { shop: Catalogue }) {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`${titleOf(shop, item)}${price !== null && priceField ? `, ${display(priceField, price)}` : ""}`}
-                  onPress={() => router.push({ pathname: "/shop/[id]", params: { id: item.id } })}
+                  onPress={() => router.push({ pathname: "/shop/[id]", params: { id: recordKey(shop.catalogue, item) } })}
                   style={({ pressed }) => pressed && { opacity: 0.7 }}>
                   <Picture file={pictureOf(shop, item)} size="fill" rendition="card" />
                   <View style={styles.cardText}>

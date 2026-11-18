@@ -40,11 +40,19 @@ class PublicDescriptionTest extends TestCase
                 'public' => ['read' => ['fields' => ['name', 'price', 'shelf'], 'throttle' => '600,1']],
             ]),
             Descriptor::fromArray([
+                'name' => 'Shelf',
+                'fields' => ['name' => ['kind' => 'string']],
+                'public' => ['read' => ['fields' => ['name']]],
+            ]),
+            Descriptor::fromArray([
                 'name' => 'Unit',
                 'fields' => [
                     'basketId' => ['kind' => 'belongsTo', 'target' => 'Basket'],
                     'snackId' => ['kind' => 'belongsTo', 'target' => 'Snack'],
+                    // Lines that also say where it was taken from: the shelf isn't what is sold.
+                    'shelfId' => ['kind' => 'belongsTo', 'target' => 'Shelf', 'required' => false],
                     'quantity' => ['kind' => 'int'],
+                    'price' => ['kind' => 'float', 'format' => 'money', 'from' => 'snackId.price'],
                 ],
             ]),
         ]);
@@ -58,6 +66,13 @@ class PublicDescriptionTest extends TestCase
         $snack = $data->firstWhere('name', 'Snack');
         $this->assertNotNull($snack);
         $this->assertTrue($snack['sold']);
+        // The price a line copies, which is what checkout charges.
+        $this->assertSame('price', $snack['price']);
+        // One thing is sold: the shelf a line also points at is public, and not sold.
+        $shelf = $data->firstWhere('name', 'Shelf');
+        $this->assertNotNull($shelf);
+        $this->assertArrayNotHasKey('sold', $shelf);
+        $this->assertSame(1, $data->where('sold', true)->count());
         $this->assertTrue($snack['open']);
         $this->assertSame(['name', 'price', 'shelf'], array_keys($snack['fields']));
         $this->assertSame('UGX', $snack['fields']['price']['currency']);

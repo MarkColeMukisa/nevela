@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { comeBackTo, readPath, takeComeBack } from "../apps/mobile/src/lib/guest.ts";
+import { comeBackTo, forgetComeBack, readPath, recordKey, takeComeBack } from "../apps/mobile/src/lib/guest.ts";
 import { findCatalogue } from "../apps/mobile/src/lib/shop.ts";
 
 // What GET public/_nevela/resources answers for the drinks tutorial with a public menu.
@@ -58,5 +58,30 @@ test("signing in goes back to what they were adding, once, and only somewhere in
   comeBackTo("//evil.example/x");
   assert.equal(takeComeBack(), null);
   comeBackTo("https://evil.example/x");
+  assert.equal(takeComeBack(), null);
+});
+
+test("a guest is shown the price an order is charged, as named by Laravel", () => {
+  const twoPrices = { ...beverage, price: "salePrice", fields: { ...beverage.fields, salePrice: { kind: "float" as const, format: "money" } } };
+  assert.equal(findCatalogue([twoPrices])?.price, "salePrice");
+  assert.equal(findCatalogue([beverage])?.price, "price");
+});
+
+test("an override naming a field that isn't public is left out for a guest, not sent to be refused", () => {
+  assert.equal(findCatalogue([category, beverage], { available: "inStock", category: "shelfId" })?.available, "available");
+  assert.equal(findCatalogue([category, beverage], { available: "inStock" })?.category, "categoryId");
+  assert.equal(findCatalogue([category, beverage], { available: "available" })?.available, "available");
+});
+
+test("a guest opens a record by the field its public side reads by, else by its id", () => {
+  assert.equal(recordKey({ open: true, by: "slug" }, { id: "1", slug: "mango-juice" }), "mango-juice");
+  assert.equal(recordKey({ open: true }, { id: "1", slug: "mango-juice" }), "1");
+  assert.equal(recordKey({ by: "slug" }, { id: "1", slug: "mango-juice" }), "1");
+  assert.equal(recordKey({ open: true, by: "slug" }, { id: "1" }), "1");
+});
+
+test("leaving sign-in to keep browsing forgets where they were going", () => {
+  comeBackTo("/shop/abc");
+  forgetComeBack();
   assert.equal(takeComeBack(), null);
 });

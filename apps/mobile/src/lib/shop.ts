@@ -143,7 +143,14 @@ function catalogueOf(catalogue: Resource, byName: Map<string, Resource>, setting
 export function findCatalogue(open: Resource[], settings: ShopSettings = {}): Catalogue | null {
   const sold = open.find((resource) => resource.sold);
   if (!sold) return null;
-  return catalogueOf(sold, new Map(open.map((resource) => [resource.name, resource])), settings);
+  // What is on the shelf is the model's publicQuery to say, and the public list refuses a
+  // filter on a field it doesn't open: an override naming one is left to that, not sent.
+  const guest: ShopSettings = {
+    ...settings,
+    available: settings.available && sold.fields[settings.available] ? settings.available : undefined,
+    category: settings.category && sold.fields[settings.category] ? settings.category : undefined,
+  };
+  return catalogueOf(sold, new Map(open.map((resource) => [resource.name, resource])), guest, sold.price ?? null);
 }
 
 /** Which of the signed-in person's details an order field starts out with: their name for the customer's, their email for an email. */

@@ -13,11 +13,25 @@ export function comeBackTo(path: string): void {
   waiting = path.startsWith("/") && !path.startsWith("//") ? path : null;
 }
 
+/** They went back to browsing without signing in: nowhere to come back to. */
+export function forgetComeBack(): void {
+  waiting = null;
+}
+
 /** Where they were, once, then forgotten. Null when they came to sign in on their own. */
 export function takeComeBack(): string | null {
   const path = waiting;
   waiting = null;
   return path;
+}
+
+/**
+ * What a record is opened by: its id, or for a guest, the field the resource's public side
+ * fetches one by ("by": "slug"), since the public route doesn't know ids then.
+ */
+export function recordKey(resource: { open?: boolean; by?: string }, record: { id: string } & Record<string, unknown>): string {
+  const by = resource.open && resource.by ? record[resource.by] : undefined;
+  return typeof by === "string" && by !== "" ? by : record.id;
 }
 
 /** The path of a read for a guest or for someone signed in: what anyone may read is under /public. */
