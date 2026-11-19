@@ -26,3 +26,7 @@ expo-env.d.ts
 apps/mobile/dist/
 apps/mobile/package-lock.json
 apps/mobile/pnpm-lock.yaml
+
+# Launch videos made with /brag: renders, music, fonts and the Hyperframes project
+brag-output/
+brag-output-*/
