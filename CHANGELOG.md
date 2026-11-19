@@ -10,7 +10,7 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [0.33.1] - 2026-11-19
 
-_Sign-in works with the routes cached, and the scheduler on hosts with no cron_
+_Sign-in with cached routes, and the scheduler without cron_
 
 ### Added
 
