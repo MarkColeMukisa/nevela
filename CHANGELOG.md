@@ -8,6 +8,18 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- **[Deploying to a container host](https://nevela-docs.vercel.app/guides/container-hosts/)**: the Laravel app on Sevalla, Railway, Fly.io, Render and other hosts that run one container from a start command: a disk that lasts for SQLite and uploads, the queue without a worker, the scheduler without cron (`php artisan schedule:work` beside the web server), and caching.
+
+### Changed
+
+- **"The scheduler isn't running" says what to do on a host with no cron**: run `php artisan schedule:work` beside the web server. The bell's notice links to how, and `nevela deploy:check` puts that first when it runs in a container.
+
+### Fixed
+
+- **Sign-in and public routes work with the routes cached.** With `php artisan route:cache` or `php artisan optimize`, which many hosts run on start, every sign-in failed with `Rate limiter [nevela-auth] is not defined` and every public route with `Target class [nevela.throttle] does not exist`, both a 500. The rate limiter and the middleware alias are now set up whether the routes come from the cache or not.
+
 ## [0.33.0] - 2026-11-18
 
 _Browsing the shop on the phone before signing in_

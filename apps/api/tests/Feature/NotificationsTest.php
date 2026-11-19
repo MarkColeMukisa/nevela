@@ -238,6 +238,9 @@ class NotificationsTest extends TestCase
         $this->assertSame('Nevela 99.0.0 is out', $conditions['release']['title']);
         $this->assertSame('info', $conditions['release']['tone']);
         $this->assertSame("The scheduler isn't running", $conditions['scheduler']['title']);
+        // A host with no cron and no Laravel Cloud toggle is told what works there too.
+        $this->assertStringContainsString('php artisan schedule:work', $conditions['scheduler']['body']);
+        $this->assertStringEndsWith('/guides/container-hosts/#the-scheduler', $conditions['scheduler']['url']);
         $this->assertSame("Emails aren't being sent", $conditions['mail']['title']);
         $this->assertFalse($conditions->has('migrations'));
 

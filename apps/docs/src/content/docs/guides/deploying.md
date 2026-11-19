@@ -3,7 +3,7 @@ title: "Deploying"
 description: "What each of the two apps needs in production."
 ---
 
-Nevela is two apps. Deploy each the way you would deploy any Laravel or Next.js app. On Laravel Cloud, follow [Deploying to Laravel Cloud](/guides/laravel-cloud/), which goes through both step by step.
+Nevela is two apps. Deploy each the way you would deploy any Laravel or Next.js app. On Laravel Cloud, follow [Deploying to Laravel Cloud](/guides/laravel-cloud/), which goes through both step by step. On a host that runs the app in one container from a start command (Sevalla, Railway, Fly.io, Render), see also [Deploying to a container host](/guides/container-hosts/).
 
 ## The Laravel app
 
@@ -12,9 +12,9 @@ Nevela is two apps. Deploy each the way you would deploy any Laravel or Next.js 
 - Check who holds which [role](/guides/policies/). A generated policy asks for a permission; in an app from before 0.5.0 the policies still allow any signed-in user until you change them.
 - Install with `composer install --no-dev --optimize-autoloader`. A new app has Composer's optimized autoloader turned off, because building it made creating an app take minutes longer; production should have it, and the flag turns it on.
 - If you ever change `APP_KEY`, keep the old one in `APP_PREVIOUS_KEYS`. Beside what Laravel itself needs it for, it is what keeps [blocked emails](/guides/deleted-accounts/#what-is-kept-of-a-removed-account) blocked.
-- Run `php artisan config:cache` and `php artisan route:cache` as usual. Nevela's routes are cached with the rest.
+- Run `php artisan config:cache` and `php artisan route:cache` (or `php artisan optimize`) as usual. Nevela's routes are cached with the rest. On 0.33.0 and earlier, leave out `route:cache`: with routes cached, sign-in and public routes failed.
 - Keep `bootstrap/cache` writable, as Laravel needs it to be. Nevela keeps a note there of the tables and columns it has found (`nevela-schema.json`), so it doesn't ask the database again on every request. Migrations clear it. If you ever remove a table or column without a migration, run `php artisan optimize:clear`.
-- Add Laravel's scheduler to cron: `* * * * * cd /path/to/api && php artisan schedule:run >> /dev/null 2>&1`. It is what empties [the trash](/guides/trash/) of records past their 30 days each night. Without it they go the next time someone opens the Trash page. The same run removes files visitors uploaded through a [public form](/guides/public-site/) and never sent, and people who joined a list and never [confirmed their address](/guides/protecting-forms/#proving-an-address). The scheduler also sends the hourly digest of form notices that were held back, and removes [sign-ins that have ended](/guides/authentication/#how-long-a-sign-in-lasts).
+- Add Laravel's scheduler to cron: `* * * * * cd /path/to/api && php artisan schedule:run >> /dev/null 2>&1`. It is what empties [the trash](/guides/trash/) of records past their 30 days each night. Without it they go the next time someone opens the Trash page. The same run removes files visitors uploaded through a [public form](/guides/public-site/) and never sent, and people who joined a list and never [confirmed their address](/guides/protecting-forms/#proving-an-address). The scheduler also sends the hourly digest of form notices that were held back, and removes [sign-ins that have ended](/guides/authentication/#how-long-a-sign-in-lasts). On a host with no cron, run `php artisan schedule:work` beside the web server instead: see [the scheduler on a container host](/guides/container-hosts/#the-scheduler).
 
 ### Faster, with Octane
 

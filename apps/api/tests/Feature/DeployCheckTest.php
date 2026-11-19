@@ -98,6 +98,21 @@ class DeployCheckTest extends TestCase
             ->assertFailed();
     }
 
+    /** A container host often has neither cron nor Laravel Cloud's switch: each way is named (#137). */
+    public function test_no_scheduler_names_each_way_to_run_it(): void
+    {
+        $this->wellSetUp();
+        Cache::forget(DeployCheckCommand::HEARTBEAT);
+
+        Artisan::call('nevela:deploy:check', ['--no-dashboard' => true]);
+        // One line, however the terminal wrapped it.
+        $output = preg_replace('/\s+/', ' ', Artisan::output());
+
+        $this->assertStringContainsString('switch on the scheduler for the app', $output);
+        $this->assertStringContainsString('* * * * * php artisan schedule:run', $output);
+        $this->assertStringContainsString('(php artisan schedule:work &) && <start the web server>', $output);
+    }
+
     public function test_a_queue_with_no_worker_is_found_out_and_a_worker_is_seen(): void
     {
         $this->wellSetUp();

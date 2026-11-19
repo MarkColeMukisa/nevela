@@ -76,6 +76,7 @@ export default defineConfig({
             { label: "Configuration", slug: "guides/configuration" },
             { label: "Deploying", slug: "guides/deploying" },
             { label: "Deploying to Laravel Cloud", slug: "guides/laravel-cloud" },
+            { label: "Deploying to a container host", slug: "guides/container-hosts" },
           ],
         },
         {
