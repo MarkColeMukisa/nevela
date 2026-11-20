@@ -215,6 +215,8 @@ The dashboard never lets the browser see a token: its server holds it in a cooki
 
 Laravel decides every request exactly as it does for the dashboard: the same validation, the same policies. The phone shows up under **Devices**, by its own name, beside the browsers.
 
+Photos go up as a form (`multipart/form-data`): React Native reads the picture from disk itself, where bytes read into JavaScript first arrive altered on Android. So they meet PHP's form limits, `upload_max_filesize` and `post_max_size`, 2 MB and 8 MB unless `php.ini` says otherwise. The app shrinks a photo larger than 2048 pixels to that size before sending it (`MAX_SIDE` in `src/lib/upload.ts`), which keeps it well under; Laravel shrinks it again to the field's [image profile](/guides/images/). A large picture that can't be shrunk can still go over, and Laravel then answers with a 413 naming the setting to raise. See [Uploading](/guides/images/#uploading).
+
 | File | What it does |
 |---|---|
 | `src/lib/api.ts` | The only `fetch` to Laravel. Finds the API, adds the token, renews it. |
