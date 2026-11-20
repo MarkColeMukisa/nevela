@@ -2,7 +2,7 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { router, usePathname } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useColorScheme } from "react-native";
 
 import { AuthProvider, useAuth } from "@/lib/auth";
@@ -43,6 +43,11 @@ function Screens() {
   // Until it is known whether there is a shop to browse, the splash stays: else the sign-in
   // form would flash before the shop.
   const waiting = loading || (user === null && describing);
+  // Only the app's opening waits with no screens. Signing out describes the shop again, and
+  // taking the navigator away then left Expo Router clearing routes of one that was gone:
+  // "REMOVE_ROUTES … was not handled by any navigator" (#136).
+  const [started, setStarted] = useState(false);
+  if (!waiting && !started) setStarted(true);
 
   useEffect(() => {
     if (!waiting) SplashScreen.hideAsync();
@@ -65,7 +70,7 @@ function Screens() {
     return () => clearTimeout(timer);
   }, [user, waiting]);
 
-  if (waiting) return null;
+  if (waiting && !started) return null;
 
   const base = dark ? DarkTheme : DefaultTheme;
   const theme = { ...base, colors: { ...base.colors, background: colors.background, card: colors.background, text: colors.text, border: colors.border, primary: colors.brand } };
@@ -74,8 +79,9 @@ function Screens() {
     <ThemeProvider value={theme}>
       <StatusBar style={dark ? "light" : "dark"} />
       <Stack screenOptions={{ headerBackButtonDisplayMode: "minimal", headerShadowVisible: false, contentStyle: { backgroundColor: colors.background } }}>
-        {/* The shop, for someone signed in, and for anyone at all when what it sells is public. */}
-        <Stack.Protected guard={user !== null || browsing}>
+        {/* The shop, for someone signed in, and for anyone at all when what it sells is public.
+            Kept while the shop is described again after signing out, so the screen in front stays. */}
+        <Stack.Protected guard={user !== null || browsing || (user === null && describing)}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="shop/[id]" options={{ title: "" }} />
         </Stack.Protected>
