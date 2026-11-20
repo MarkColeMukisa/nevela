@@ -167,6 +167,17 @@ export function ResourcesProvider({ children }: { children: ReactNode }) {
   // whoever was there before, is dropped, not shown to the next person.
   const latest = useRef(0);
 
+  // Signed in or out: loading from this very render, not one later in an effect. For that one
+  // render the screens saw nobody signed in, no shop and nothing loading, so the shop's
+  // screens were dropped and put back, which Expo Router reported as an error (#136).
+  const who = `${signedIn}:${account}`;
+  const [loadedFor, setLoadedFor] = useState(who);
+  if (loadedFor !== who) {
+    setLoadedFor(who);
+    setAll([]);
+    setLoading(true);
+  }
+
   const reload = useCallback(async () => {
     const mine = ++latest.current;
     try {
