@@ -103,7 +103,7 @@ All are under `/api/auth`. The ones marked 🔒 need a token.
 | | `POST /password/forgot`, `/password/reset` | Email a reset link; set `newPassword` with its `token`. |
 | | `POST /oauth/{provider}/start`, `/oauth/{provider}/callback` | Sign in with `google` or `github`: where to send the browser, then the code it came back with. See [how it works](/guides/authentication/#google-and-github). |
 | 🔒 | `GET /me`, `PATCH /me` | The signed-in user; change `name` or `avatar`. |
-| 🔒 | `PUT /avatar?name=me.jpg` | Upload a profile picture. The body is the file. |
+| 🔒 | `PUT /avatar?name=me.jpg` | Upload a profile picture. The body is the file, or a form's `file` part, as for any upload. |
 | 🔒 | `POST /password` | Change the password: `currentPassword`, `newPassword`. |
 | 🔒 | `POST /close` | Close your own account, with `password`. It is kept, and can be [restored](/guides/deleted-accounts/). |
 | 🔒 | `GET /sessions`, `DELETE /sessions`, `DELETE /sessions/{id}` | List devices; sign out the others, or one. |
@@ -353,7 +353,7 @@ A resource with [line items](/guides/line-items/#in-the-api) sends its lines wit
 
 | Method | Path | Does |
 |---|---|---|
-| `PUT` | `/api/_nevela/uploads/{Resource}/{field}?name=kettle.jpg` | Stores a file. The request body is the file itself. |
+| `PUT` | `/api/_nevela/uploads/{Resource}/{field}?name=kettle.jpg` | Stores a file. The request body is the file itself, or a form's `file` part sent by `POST` with `_method=PUT` (see [Uploading](/guides/images/#uploading)). |
 | `GET` | `/api/_nevela/files/{key}` | The stored file. No token needed. |
 | `GET` | `/api/_nevela/profiles` | The image profiles and their renditions. |
 

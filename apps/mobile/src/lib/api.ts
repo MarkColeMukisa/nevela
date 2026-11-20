@@ -178,6 +178,8 @@ interface Options {
   body?: unknown;
   /** A file, sent as it is: the body of the request is the file, and `type` what it is. */
   file?: { body: Blob; type: string };
+  /** A form, sent as multipart/form-data. Its Content-Type, with the boundary, is the form's own to set. */
+  form?: FormData;
   /** Longer than the usual wait, for a photo going up over a phone's connection. */
   timeout?: number;
   query?: Record<string, string | number | boolean | null | undefined>;
@@ -185,7 +187,7 @@ interface Options {
   auth?: boolean;
 }
 
-async function request<T>(path: string, { method = "GET", body, file, query, auth = true, timeout }: Options = {}): Promise<T> {
+async function request<T>(path: string, { method = "GET", body, file, form, query, auth = true, timeout }: Options = {}): Promise<T> {
   const search = Object.entries(query ?? {})
     .filter(([, value]) => value !== undefined && value !== null && value !== "")
     .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
@@ -195,12 +197,12 @@ async function request<T>(path: string, { method = "GET", body, file, query, aut
   const attempt = async (): Promise<Response> => {
     const headers: Record<string, string> = { Accept: "application/json" };
     if (file) headers["Content-Type"] = file.type;
-    else if (body !== undefined) headers["Content-Type"] = "application/json";
+    else if (body !== undefined && !form) headers["Content-Type"] = "application/json";
     if (auth) {
       const held = await tokens();
       if (held.access) headers.Authorization = `Bearer ${held.access}`;
     }
-    return send(target, { method, headers, body: file ? file.body : body === undefined ? undefined : JSON.stringify(body) }, timeout);
+    return send(target, { method, headers, body: form ?? (file ? file.body : body === undefined ? undefined : JSON.stringify(body)) }, timeout);
   };
 
   if (auth) {
@@ -236,6 +238,11 @@ export const api = {
   delete: <T = null>(path: string) => request<T>(path, { method: "DELETE" }),
   /** PUT a file: the request's body is the file itself, which is how Laravel takes an upload. */
   upload: <T>(path: string, file: { body: Blob; type: string }, query?: Options["query"]) => request<T>(path, { method: "PUT", file, query, timeout: UPLOAD_TIMEOUT_MS }),
+  /**
+   * The same upload as a form, as a phone sends it: POST, with _method=PUT in the form,
+   * since PHP reads a form only from a POST. Laravel takes the form's "file" part.
+   */
+  uploadForm: <T>(path: string, form: FormData, query?: Options["query"]) => request<T>(path, { method: "POST", form, query, timeout: UPLOAD_TIMEOUT_MS }),
 
   async hasToken(): Promise<boolean> {
     const held = await tokens();
