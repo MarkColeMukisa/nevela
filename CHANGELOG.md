@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Fixed
+
+- **Signing out of the mobile app no longer shows a red error.** In an app whose shop is public, every sign-out showed `The action 'REMOVE_ROUTES' … was not handled by any navigator` in development. The screens now stay while the shop is described again, and the description starts loading in the same moment as the sign-out.
+
 ## [0.33.1] - 2026-11-19
 
 _Sign-in with cached routes, and the scheduler without cron_
