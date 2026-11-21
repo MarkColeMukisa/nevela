@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.33.2] - 2026-11-21
+
+_Photos from Android, and signing out without an error_
+
 ### Fixed
 
 - **Photos upload from Android phones.** The mobile app's photo uploads were refused on Android with "photo.jpg doesn't contain image data": a picture read into JavaScript arrived altered. The app now sends it as a form (`multipart/form-data`), which React Native reads from disk itself, and shrinks a photo larger than 2048 pixels before sending it. Any upload address (a resource's file field, the profile picture, a public form's file) takes a form's `file` part, sent by `POST` with `_method=PUT`, as well as the file as the request's body; every check is the same. A file over PHP's `upload_max_filesize` gets a 413 naming the setting. See [Uploading](https://nevela-docs.vercel.app/guides/images/#uploading).
@@ -881,7 +885,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.33.1...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.33.2...HEAD
+[0.33.2]: https://github.com/MarkColeMukisa/nevela/compare/v0.33.1...v0.33.2
 [0.33.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.33.0...v0.33.1
 [0.33.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.32.0...v0.33.0
 [0.32.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.31.2...v0.32.0
