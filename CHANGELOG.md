@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- **The API as an OpenAPI 3.1 document, from the descriptors**: `GET /api/_nevela/openapi.json`, for anyone signed in. It covers every resource's endpoints, with their fields, types, required fields, choices, sorting, filters, uploads, actions, public side and the permission each takes. `nevela openapi --output=openapi.json` writes it to a file, for a client generator or a docs site. The dashboard has a page to read it, **API**, for administrators. Tests send real requests to a generated app and hold every answer to the document. See [The API as OpenAPI](https://nevela-docs.vercel.app/reference/api/#the-api-as-openapi).
+
 ## [0.33.2] - 2026-11-21
 
 _Photos from Android, and signing out without an error_

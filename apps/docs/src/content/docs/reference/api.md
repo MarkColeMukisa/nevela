@@ -430,6 +430,34 @@ GET /_nevela/resources
 
 Returns `{ "data": [ … ] }` with every descriptor. Tooling can use it to check that the web app and the API describe the same resources.
 
+## The API as OpenAPI
+
+```
+GET /_nevela/openapi.json
+```
+
+The API as an [OpenAPI 3.1](https://spec.openapis.org/oas/v3.1.0) document, written from the descriptors. It covers every resource's endpoints on this page: the list with its sort, search and filters, a record, creating and changing one, deleting it, creating several, stats, insights, its uploads, its actions and its public side. It also covers how to get a token. Each endpoint names the permission it takes, as `x-nevela-permission`.
+
+| For each resource | Schema |
+|---|---|
+| A record, as the API answers with it: every key it always has, and no other | `Product` |
+| What a create takes, with what it requires | `ProductInput` |
+| What a `PUT` takes: the same, and `updatedAt` | `ProductReplace` |
+| What a `PATCH` takes: any of them | `ProductPatch` |
+| What anyone may read of it, signed out | `PublicProduct` |
+
+It needs a token, like `/_nevela/resources`, since it says the same things. To give it to a tool that can't sign in, such as a client generator or a docs site, write it to a file:
+
+```sh
+nevela openapi --output=openapi.json
+```
+
+The path is from the Laravel app's folder, `apps/api`. Without `--output` the document is printed.
+
+The dashboard shows it as a page to read, **API**, under Manage, for administrators. It has the same file to download.
+
+The document is made by the same rules as the generated code, and Nevela's tests send real requests to a generated app and hold every answer to it. A record's schema lists every key, so a response with a key missing or one added fails them.
+
 ## Adding your own routes
 
 `routes/nevela.php` is loaded under the same prefix and middleware. Add routes below its generated block and they get the token check and the same error format:
