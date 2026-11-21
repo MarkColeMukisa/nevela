@@ -135,13 +135,19 @@ namespace Tests\Feature {
 
         public function test_every_route_the_descriptors_make_is_in_it_and_nothing_else(): void
         {
+            // A resource's routes, by their addresses: its own, its public ones, and a public form's helpers.
+            $patterns = [];
+            foreach (Nevela::all() as $d) {
+                $slug = preg_quote($d->slug, '#');
+                $name = preg_quote($d->name, '#');
+                $patterns[] = "#^api/(public/)?{$slug}(/|$)#";
+                $patterns[] = "#^api/public/_nevela/(form|confirm)/{$slug}(/|$)#";
+                $patterns[] = "#^api/public/_nevela/uploads/{$name}/#";
+            }
             $generated = [];
-            $slugs = array_map(fn (Descriptor $d) => $d->slug, Nevela::all());
             foreach (Route::getRoutes()->getRoutes() as $route) {
                 /** @var LaravelRoute $route */
-                $name = (string) $route->getName();
-                $own = array_filter($slugs, fn (string $slug) => str_starts_with($name, "nevela.{$slug}.") || str_starts_with($name, "nevela.public.{$slug}."));
-                if ($own === []) {
+                if (array_filter($patterns, fn (string $pattern) => preg_match($pattern, $route->uri()) === 1) === []) {
                     continue;
                 }
                 foreach (array_diff($route->methods(), ['HEAD']) as $method) {
