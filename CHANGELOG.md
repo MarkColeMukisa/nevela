@@ -10,6 +10,7 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ### Fixed
 
+- **Photos upload from Android phones.** The mobile app's photo uploads were refused on Android with "photo.jpg doesn't contain image data": a picture read into JavaScript arrived altered. The app now sends it as a form (`multipart/form-data`), which React Native reads from disk itself, and shrinks a photo larger than 2048 pixels before sending it. Any upload address (a resource's file field, the profile picture, a public form's file) takes a form's `file` part, sent by `POST` with `_method=PUT`, as well as the file as the request's body; every check is the same. A file over PHP's `upload_max_filesize` gets a 413 naming the setting. See [Uploading](https://nevela-docs.vercel.app/guides/images/#uploading).
 - **Signing out of the mobile app no longer shows a red error.** In an app whose shop is public, every sign-out showed `The action 'REMOVE_ROUTES' … was not handled by any navigator` in development. The screens now stay while the shop is described again, and the description starts loading in the same moment as the sign-out.
 
 ## [0.33.1] - 2026-11-19

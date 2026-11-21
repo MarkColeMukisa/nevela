@@ -107,6 +107,16 @@ curl -X PUT "http://127.0.0.1:8000/api/_nevela/uploads/Product/image?name=kettle
   --data-binary @kettle.jpg
 ```
 
+Or send it as a form, as the [mobile app](/guides/mobile-app/) does: the file in a part named `file`, by `POST` with `_method=PUT`, since PHP reads a form only from a `POST`. Without `?name=`, the part's file name is used.
+
+```sh
+curl -X POST "http://127.0.0.1:8000/api/_nevela/uploads/Product/image" \
+  -H "Authorization: Bearer $TOKEN" -H "Accept: application/json" \
+  -F _method=PUT -F "file=@kettle.jpg;type=image/jpeg"
+```
+
+A form goes through PHP's own limits first: `upload_max_filesize` and `post_max_size` in `php.ini`, 2 MB and 8 MB unless changed. A file over them is refused with a 413 that names the setting. A file sent as the body only meets the field's limit.
+
 The answer is the same object as `imageFile` above. Put its `key` in the record:
 
 ```sh
