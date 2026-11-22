@@ -112,7 +112,7 @@ const HELP = `  Create a new Nevela app: a Laravel API, with a dashboard, a phon
     --tier <web|mobile|both>   Which apps: web is the API and a dashboard; mobile the API and a
                                phone app (Expo) with no dashboard; both all three. Default: web.
     --mail <resend|brevo|smtp> How it sends email on a server. Default: resend. On this computer
-                               emails go to the log until you give it a key.
+                               emails go to the log until you set MAIL_MAILER in apps/api/.env.
     --pm <pnpm|npm|yarn|bun>   Package manager for the dashboard and the phone app. Default: the
                                one you ran this with.
     --no-install               Don't install the dashboard's or the phone app's dependencies.
@@ -230,16 +230,22 @@ function parseArgs(argv) {
     else if (arg === '--no-git') options.git = false;
     else if (arg === '--no-dev-tools' || arg === '--fast') options.devTools = false;
     else if (arg === '--bundled-package') options.bundledPackage = true;
-    else if (arg === '--tier') options.tier = argv[++i];
-    else if (arg.startsWith('--tier=')) options.tier = arg.slice(7);
-    else if (arg === '--mail') options.mail = argv[++i];
-    else if (arg.startsWith('--mail=')) options.mail = arg.slice(7);
+    else if (arg === '--tier' || arg === '--mail' || arg.startsWith('--tier=') || arg.startsWith('--mail=')) {
+      const key = arg.slice(2, 6);
+      const value = arg.includes('=') ? arg.slice(7) : argv[++i];
+      // Given without a value, it isn't left off: the default would be a choice nobody made.
+      if (value === undefined || value === '' || value.startsWith('-')) {
+        options.problem ??= `--${key} needs a value: ${Object.keys(key === 'tier' ? TIERS : MAILERS).join(', ')}.`;
+        if (value?.startsWith('-')) i--;
+      } else options[key] = value;
+    }
     else if (arg === '--pm') options.pm = argv[++i];
     else if (arg.startsWith('--pm=')) options.pm = arg.slice(5);
     // Said once a newer installer has had its chance: the option may be one only it knows.
     else if (arg.startsWith('-')) options.problem ??= `Unknown option ${arg}. Run with --help to see the options.`;
     else if (options.name === undefined) options.name = arg;
-    else fail(`Unexpected argument "${arg}". The app name is "${options.name}".`);
+    // Possibly the value of an option only a newer installer knows: said after it has had its chance.
+    else options.problem ??= `Unexpected argument "${arg}". The app name is "${options.name}".`;
   }
   // A value only a newer installer knows, the same.
   options.problem ??= choiceProblem('tier', options.tier, TIERS) ?? choiceProblem('mail', options.mail, MAILERS);

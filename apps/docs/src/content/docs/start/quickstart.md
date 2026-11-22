@@ -158,7 +158,7 @@ It lists the Nevela version, which migrations have run and which are pending, ho
 | Option | Meaning |
 |---|---|
 | `--tier <web\|mobile\|both>` | Which apps it has. `web`: the API and the dashboard. `mobile`: the API and [a phone app](/guides/mobile-app/) (Expo), with no dashboard. `both`: all three. Asked when left off; `web` with `--yes`. |
-| `--mail <resend\|brevo\|smtp>` | How it [sends email](/guides/deploying/#mail) on a server. Asked when left off; `resend` with `--yes`. On your computer, emails go to the log until you set a key. |
+| `--mail <resend\|brevo\|smtp>` | How it [sends email](/guides/deploying/#mail) on a server. Asked when left off; `resend` with `--yes`. On your computer, emails go to the log until you set `MAIL_MAILER` and its settings in `apps/api/.env`. |
 | `--pm <pnpm\|npm\|yarn\|bun>` | Package manager for the dashboard and the phone app. Default: pnpm when you have it, and npm otherwise. |
 | `--no-install` | Don't install the dashboard's or the phone app's dependencies. |
 | `--fast` | Leave out PHPUnit, Pint and Laravel's other development packages. About a third quicker. |

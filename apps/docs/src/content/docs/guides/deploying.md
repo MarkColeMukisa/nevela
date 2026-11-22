@@ -58,7 +58,7 @@ Sign-up codes, sign-in links and password resets are email, so a server needs a 
 | Brevo | `MAIL_MAILER=smtp`, `MAIL_HOST=smtp-relay.brevo.com`, `MAIL_PORT=587`, and `MAIL_USERNAME` and `MAIL_PASSWORD`: the SMTP login and key from Brevo's SMTP & API settings. |
 | SMTP | `MAIL_MAILER=smtp`, and your provider's `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME` and `MAIL_PASSWORD`. |
 
-Set `MAIL_FROM_ADDRESS` to an address on a domain the provider has verified for you, or mail may be refused as spam. To change provider later, change these settings; for Resend in an app made with another choice, add its package first: `cd apps/api && composer require resend/resend-php`. `deploy:check` names any of these that is missing.
+Set `MAIL_FROM_ADDRESS` to an address on a domain the provider has verified for you, or mail may be refused as spam. To change provider later, change these settings; for Resend in an app made with another choice, add its package first: `cd apps/api && composer require resend/resend-php`. `deploy:check` fails when mail still goes to the log in production, when SMTP has no `MAIL_HOST`, and when Resend has no key or no package. It doesn't try the credentials: send yourself a sign-in code to be sure.
 
 ## An app with no dashboard
 
