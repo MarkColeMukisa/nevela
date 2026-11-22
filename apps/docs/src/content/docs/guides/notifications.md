@@ -50,6 +50,7 @@ Above the notifications, an administrator sees what is wrong with the app right 
 | The scheduler hasn't run in 15 minutes | In production |
 | Mail goes to the log | In production |
 | The cache keeps nothing between requests | In production |
+| `NEVELA_WEB_URL` is this computer (localhost), so the buttons in emails lead nowhere | In production |
 
 They are the same checks as [`nevela deploy:check`](/reference/commands/#nevela-deploycheck), worked out at most every five minutes. The bell never asks Packagist for the newest release itself: the scheduler does that each night.
 
@@ -97,6 +98,22 @@ Notices::toPermission('orders.view', new Notice(
 ```
 
 `toPermission()` takes a third argument, the person who did it, who is then not told. Telling never fails the work that caused it: a problem is reported to your log and passed over. At most 500 people are told of any one thing.
+
+## Following the bell elsewhere
+
+Each notice, Nevela's own and yours, is also an event, `NoticeSent`, with the ids of everyone told. Listen for it to send the same thing on, for example to their phones:
+
+```php
+use Illuminate\Support\Facades\Event;
+use Nevela\Laravel\Events\NoticeSent;
+
+// In AppServiceProvider::boot()
+Event::listen(NoticeSent::class, function (NoticeSent $sent) {
+    Push::send($sent->userIds, $sent->title, $sent->body, $sent->url);
+});
+```
+
+The event carries the notice's `title`, `body`, `url`, `tone`, `kind` and `group` as plain values, so a queued listener (`ShouldQueue`) can take it. It fires only once the work that caused it is saved: a notice told inside a transaction that is rolled back is never sent on. A listener that fails is reported to your log and doesn't fail that work, even inside a transaction.
 
 ## Over the API
 

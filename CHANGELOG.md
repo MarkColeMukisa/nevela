@@ -8,6 +8,17 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- **Each bell notice is also an event, `NoticeSent`**, with the ids of everyone told, so a push to their phones (or anything else) can follow the bell. It fires once the work is saved, and a failing listener never fails the work. See [Following the bell elsewhere](https://nevela-docs.vercel.app/guides/notifications/#following-the-bell-elsewhere).
+- **The mobile app's web version survives static hosts**: `npm run export:web` moves the icon fonts out of the `node_modules` folders Expo puts inside `dist/`. Hosts that skip such folders, as Sevalla's static sites do, left every icon an empty box. See [Put it on a phone for real](https://nevela-docs.vercel.app/guides/mobile-app/#put-it-on-a-phone-for-real).
+- **The bell warns an administrator in production when `NEVELA_WEB_URL` is still localhost**, since every button in sign-in, verification and reset emails then leads nowhere. `nevela deploy:check` now catches every local address, not only localhost and 127.0.0.1.
+
+### Fixed
+
+- **SQLite no longer answers "database is locked" when busy.** A dashboard or a phone's home screen asks for many things at once. Nevela now sets SQLite to wait up to five seconds for another write, to let readers carry on while something is written (WAL), and to take the write lock when a transaction starts. A value of the app's own is kept, and `DB_BUSY_TIMEOUT`, `DB_JOURNAL_MODE`, `DB_SYNCHRONOUS` and `DB_TRANSACTION_MODE` change them.
+- **The mobile app's web version no longer crashes once an appearance is chosen.** A browser has no `Appearance.setColorScheme`, and the web version now follows the computer's own setting.
+
 ## [0.34.0] - 2026-11-22
 
 _The API described as OpenAPI, from your resources_

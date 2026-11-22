@@ -9,12 +9,14 @@ use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
 use Nevela\Laravel\Access\Access;
 use Nevela\Laravel\Auth\AuthMail;
+use Nevela\Laravel\Events\NoticeSent;
 use Nevela\Laravel\Forms\ConfirmAddress;
 use Nevela\Laravel\Forms\FormGuard;
 use Nevela\Laravel\Models\Role;
@@ -242,17 +244,72 @@ class NotificationsTest extends TestCase
         $this->assertStringContainsString('php artisan schedule:work', $conditions['scheduler']['body']);
         $this->assertStringEndsWith('/guides/container-hosts/#the-scheduler', $conditions['scheduler']['url']);
         $this->assertSame("Emails aren't being sent", $conditions['mail']['title']);
+        // NEVELA_WEB_URL is still the developer's own computer, so every email button leads nowhere.
+        $this->assertSame('Email links point at this computer', $conditions['web-url']['title']);
+        $this->assertStringContainsString('http://localhost:3000', $conditions['web-url']['body']);
         $this->assertFalse($conditions->has('migrations'));
 
         Sanctum::actingAs($other);
         $this->getJson('/api/_nevela/notifications')->assertOk()->assertJsonPath('conditions', []);
 
-        // Upgraded, and the scheduler running: those go once worked out again.
+        // Upgraded, the scheduler running and the dashboard's real address set: those go once worked out again.
         Cache::put(Conditions::LATEST, Nevela::VERSION);
         Cache::forever('nevela:scheduler:ran-at', time());
+        config(['nevela.auth.web_url' => 'https://shop.example.com']);
         Conditions::forget();
         Sanctum::actingAs($admin);
         $this->assertSame(['mail'], array_column($this->getJson('/api/_nevela/notifications')->json('conditions'), 'id'));
+    }
+
+    public function test_an_address_only_this_computer_reaches_is_called_local(): void
+    {
+        foreach (['http://localhost:3000', 'http://127.0.0.1', 'http://app.localhost', 'http://0.0.0.0:3000', 'http://[::1]:3000', ''] as $local) {
+            $this->assertTrue(Conditions::isLocal($local), $local);
+        }
+        foreach (['https://shop.example.com', 'http://192.168.1.17:3000', 'https://localhost-shop.com'] as $reachable) {
+            $this->assertFalse(Conditions::isLocal($reachable), $reachable);
+        }
+    }
+
+    // --- what follows the bell
+
+    public function test_each_notice_is_an_event_for_pushes_to_follow_once_it_is_saved(): void
+    {
+        $ada = $this->user('USER');
+        $bo = $this->user('USER');
+        $sent = [];
+        Event::listen(NoticeSent::class, function (NoticeSent $event) use (&$sent) {
+            $sent[] = [$event->userIds, $event->title];
+        });
+
+        Notices::send([$ada, $bo], new Notice('Your order has shipped', url: '/dashboard/orders/1'));
+        $this->assertSame([[[(string) $ada->getKey(), (string) $bo->getKey()], 'Your order has shipped']], $sent);
+
+        // Told inside work that is then undone: in the bell nowhere, and no push either.
+        try {
+            DB::transaction(function () use ($ada) {
+                Notices::send($ada, new Notice('Order placed'));
+                throw new RuntimeException('the payment failed');
+            });
+        } catch (RuntimeException) {
+        }
+        $this->assertCount(1, $sent);
+
+        // Plain values, so a queued listener can carry it: a grouped notice's "many" is a closure.
+        $grouped = NoticeSent::of(['1'], new Notice('New order', group: 'orders', many: fn (int $n) => "{$n} new orders"));
+        $this->assertSame('orders', unserialize(serialize($grouped))->group);
+
+        // A listener that fails doesn't fail the work, or the notice: outside a transaction, and
+        // inside one, where it runs after the commit, once the work is saved.
+        Event::listen(NoticeSent::class, fn () => throw new RuntimeException('push service down'));
+        $this->assertSame(1, Notices::send($bo, new Notice('Still told')));
+        $this->assertSame(1, DB::transaction(fn () => Notices::send($bo, new Notice('Told in a transaction'))));
+        $this->assertSame(['Still told', 'Told in a transaction'], array_slice(array_column($this->rowsOf($bo), 'title'), 1));
+
+        // Nobody to tell: no event.
+        $count = count($sent);
+        Notices::send([], new Notice('To nobody'));
+        $this->assertCount($count, $sent);
     }
 
     // --- reading them

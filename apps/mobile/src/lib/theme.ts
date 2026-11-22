@@ -57,8 +57,9 @@ export async function loadAppearance(): Promise<AppearanceChoice> {
 
 /** Apply a choice now and keep it for the next launch. Every screen follows, since each reads the colour scheme. */
 export async function setAppearance(choice: AppearanceChoice): Promise<void> {
-  // "unspecified" hands the decision back to the phone.
-  Appearance.setColorScheme(choice === "system" ? "unspecified" : choice);
+  // "unspecified" hands the decision back to the phone. A browser has no way to be told: the
+  // web version follows the computer's own setting, and calling it there crashed the app.
+  if (typeof Appearance.setColorScheme === "function") Appearance.setColorScheme(choice === "system" ? "unspecified" : choice);
   if (choice === "system") await storage.removeItem(APPEARANCE_KEY).catch(() => undefined);
   else await storage.setItem(APPEARANCE_KEY, choice).catch(() => undefined);
 }
