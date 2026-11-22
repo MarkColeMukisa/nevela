@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "A shop on the phone, and people and roles to run it";
+export const RELEASE_HEADLINE = "Pick web, mobile or both, and how your app sends email";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "New: customers get a shop in the mobile app, each sees only their own orders, and an administrator manages people and roles from the phone. Build it in the new drinks-app tutorial.",
-  href: "/tutorials/juice-me/",
-  label: "A drinks app on the phone",
+  text: "New: nevela new asks which apps you want (a dashboard, a phone app with no dashboard, or both) and how the app sends email: Resend, Brevo or SMTP.",
+  href: "/start/quickstart/#options-for-nevela-new",
+  label: "The new options",
 };
