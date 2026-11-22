@@ -8,6 +8,14 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- **The home screen leads with the business, in an app with a shop.** Both the dashboard and the phone show today's orders against the same time last week, how many are waiting, and sales over the last seven days against the seven before. Cancelled orders are left out of sales. They come from a new endpoint, `GET /_nevela/shop-figures`, which counts the orders the person may see. See [Shop figures](https://nevela-docs.vercel.app/reference/api/#shop-figures).
+
+### Changed
+
+- **The phone's home no longer shows "Nevela x.y.z is out".** Whoever runs the business can't act on it, so an administrator now finds it under Settings → About, marked as being for whoever builds the app. The dashboard's bell is unchanged.
+
 ## [0.36.0] - 2026-11-22
 
 _Pick web, mobile or both, and how your app sends email_

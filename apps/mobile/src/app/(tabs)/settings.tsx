@@ -7,15 +7,23 @@ import { Button, Card, Heading, Row, Screen, Title } from "@/components/ui";
 import { API_URL } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { loadAppearance, setAppearance, spacing, type AppearanceChoice } from "@/lib/theme";
+import { loadInbox, type Inbox } from "../notifications";
 
-/** Settings: the devices you are signed in on, what this app is talking to, and signing out. */
+/**
+ * Settings: the devices you are signed in on, what this app is talking to, and signing out. A new
+ * Nevela release is told of under About, for whoever builds the app: whoever runs the business
+ * can't act on it, so it stays off their home screen.
+ */
 export default function Settings() {
   const { signOut } = useAuth();
   const [leaving, setLeaving] = useState(false);
   const [appearance, setChosen] = useState<AppearanceChoice>("system");
+  const [release, setRelease] = useState<Inbox["conditions"][number] | null>(null);
 
   useEffect(() => {
     loadAppearance().then(setChosen);
+    // Administrators only: the API tells no one else of a release.
+    loadInbox().then((inbox) => setRelease(inbox.conditions.find((condition) => condition.id === "release") ?? null)).catch(() => undefined);
   }, []);
 
   const choose = (choice: AppearanceChoice) => {
@@ -50,7 +58,8 @@ export default function Settings() {
         <Heading>About</Heading>
         <Card>
           <Row icon="server-outline" label="Server" detail={API_URL} />
-          <Row icon="information-circle-outline" label="Version" value={Constants.expoConfig?.version ?? "1.0.0"} last />
+          <Row icon="information-circle-outline" label="Version" value={Constants.expoConfig?.version ?? "1.0.0"} last={release === null} />
+          {release ? <Row icon="rocket-outline" label={release.title} detail={`For whoever builds the app. ${release.body}`} last /> : null}
         </Card>
       </View>
 
