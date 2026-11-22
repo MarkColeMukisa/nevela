@@ -60,9 +60,12 @@ class ListFiltersTest extends TestCase
         $this->assertSame(['Teapot'], $this->names('filter[price][gt]=10&filter[price][lt]=30'));
         $this->assertSame(['Tea towel', 'Teapot'], $this->names('filter[name][contains]=TEA'));
         // A % is a character to find, not "anything".
-        $this->assertSame([], $this->names('filter[name][contains]=%25'));
+        $this->product('100% cotton', 3);
+        $this->assertSame(['100% cotton'], $this->names('filter[name][contains]=%25'));
+        $this->assertSame(['100% cotton'], $this->names('q=%25'));
+        $this->assertSame([], $this->names('q=_'));
         $this->assertSame(['Kettle', 'Mug', 'Tea towel'], $this->names('filter[name][in]=Kettle,Mug,Tea towel'));
-        $this->assertSame(['Kettle', 'Mug', 'Tea towel', 'Teapot'], $this->names('filter[kind]=stock,digital'));
+        $this->assertSame(['100% cotton', 'Kettle', 'Mug', 'Tea towel', 'Teapot'], $this->names('filter[kind]=stock,digital'));
         $this->assertSame(['Tea towel'], $this->names('filter[kind][]=digital'));
     }
 

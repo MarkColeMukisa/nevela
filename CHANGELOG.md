@@ -18,6 +18,10 @@ The first line under a version, in italics, is the release in a few words. The d
   - Each operator is allowed only where it fits the field. One that doesn't is a 400 that names it. Insights take the same filters, and the OpenAPI document lists them. See [Listing](https://nevela-docs.vercel.app/reference/api/#listing).
 - **`?include=items` lists records with their lines.** A list of orders can show what is in each without one request per order, and the lines of the whole page come in one query.
 
+### Fixed
+
+- **Searching for `%` or `_` on SQLite or SQL Server finds them.** Before, they matched nothing there.
+
 ## [0.34.1] - 2026-11-22
 
 _SQLite that waits, a web export that keeps its icons_
