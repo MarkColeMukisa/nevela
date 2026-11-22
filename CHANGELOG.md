@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.35.0] - 2026-11-22
+
+_Lists that filter by range, by several values, and bring their lines_
+
 ### Added
 
 - **Lists filter by more than one equal value.**
@@ -922,7 +926,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.34.1...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.35.0...HEAD
+[0.35.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.34.1...v0.35.0
 [0.34.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.34.0...v0.34.1
 [0.34.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.33.2...v0.34.0
 [0.33.2]: https://github.com/MarkColeMukisa/nevela/compare/v0.33.1...v0.33.2
