@@ -8,6 +8,16 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- **Lists filter by more than one equal value.**
+  - **Several values at once:** `filter[status]=paid,sent`, or `filter[name][in]=…` for text.
+  - **Ranges:** `filter[price][gt]=10`, `[lt]` and `[between]=10,50` for numbers, dates and times.
+  - **Words within:** `filter[name][contains]=tea`.
+  - **When a record was made or changed:** `filter[createdAt][gt]=2026-11-01`. A date given for a time stands for the whole day.
+  - Each operator is allowed only where it fits the field. One that doesn't is a 400 that names it. Insights take the same filters, and the OpenAPI document lists them. See [Listing](https://nevela-docs.vercel.app/reference/api/#listing).
+- **`?include=items` lists records with their lines.** A list of orders can show what is in each without one request per order, and the lines of the whole page come in one query.
+
 ## [0.34.1] - 2026-11-22
 
 _SQLite that waits, a web export that keeps its icons_

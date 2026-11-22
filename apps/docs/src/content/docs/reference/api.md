@@ -167,7 +167,23 @@ GET /products?page=2&perPage=25&sort=-price&q=lamp&filter[kind]=stock
 | `perPage` | Records per page. Default 25, at most 100. |
 | `sort` | A field name to sort by. Prefix with `-` for descending. `createdAt` and `updatedAt` work too. Default `-createdAt`. `text` fields cannot be sorted. |
 | `q` | Search text. Matches any `string` field that contains it. |
-| `filter[field]` | Keep records where the field equals the value. Use `true` or `false` for booleans. An empty value or `null` matches records where an optional field is empty. `text` fields cannot be filtered. |
+| `filter[field]` | Keep records where the field equals the value. Use `true` or `false` for booleans. An empty value or `null` matches records where an optional field is empty. `text` fields cannot be filtered. For an `enum`, a relation or a whole number, several values separated by commas keep records with any of them: `filter[status]=paid,sent`. |
+| `filter[field][operator]` | Keep records that pass the operator, from the table below. Several can be given, and a record has to pass all of them: `filter[price][gt]=10&filter[price][lt]=100`. |
+| `include` | `items`: each record with its lines, as on its own page. Only for a resource with [line items](/guides/line-items/). |
+
+| Operator | Fields | Keeps records where the field is |
+|---|---|---|
+| `in` | `string`, numbers, `enum`, relations | any of the values, separated by commas, at most 100 |
+| `gt` | numbers, dates, times | larger, or later |
+| `lt` | numbers, dates, times | smaller, or earlier |
+| `between` | numbers, dates, times | from the first value to the second, both included: `filter[total][between]=10,50` |
+| `contains` | `string` | one that contains the words, in any case |
+
+`createdAt` and `updatedAt` take `gt`, `lt` and `between` too, so `filter[createdAt][gt]=2026-11-01` lists what was made after the 1st of November.
+
+A date given for a time stands for the whole day: `between=2026-11-01,2026-11-30` covers all of the 30th, `gt=2026-11-01` starts at the 2nd, and `lt=2026-11-01` ends before the 1st begins. A time is ISO 8601. Without an offset it is read in the app's timezone (`config/app.php`).
+
+An operator a field can't take, such as `gt` on an `enum`, is refused with 400, and each issue names the parameter.
 
 ```json
 {
