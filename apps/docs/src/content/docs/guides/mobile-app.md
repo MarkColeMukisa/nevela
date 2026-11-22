@@ -19,6 +19,8 @@ For the API and the phone app alone, with no dashboard:
 nevela new my-app --tier mobile
 ```
 
+With a `nevela` from before 0.36, run `nevela update` first: an older one doesn't know `--tier`.
+
 Everything here works the same, except the parts about the dashboard. Emails carry codes instead of buttons, and there is no blog. See [An app with no dashboard](/guides/deploying/#an-app-with-no-dashboard).
 
 :::note

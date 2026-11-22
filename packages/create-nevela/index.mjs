@@ -236,12 +236,13 @@ function parseArgs(argv) {
     else if (arg.startsWith('--mail=')) options.mail = arg.slice(7);
     else if (arg === '--pm') options.pm = argv[++i];
     else if (arg.startsWith('--pm=')) options.pm = arg.slice(5);
-    else if (arg.startsWith('-')) fail(`Unknown option ${arg}. Run with --help to see the options.`);
+    // Said once a newer installer has had its chance: the option may be one only it knows.
+    else if (arg.startsWith('-')) options.problem ??= `Unknown option ${arg}. Run with --help to see the options.`;
     else if (options.name === undefined) options.name = arg;
     else fail(`Unexpected argument "${arg}". The app name is "${options.name}".`);
   }
-  const problem = choiceProblem('tier', options.tier, TIERS) ?? choiceProblem('mail', options.mail, MAILERS);
-  if (problem) fail(problem);
+  // A value only a newer installer knows, the same.
+  options.problem ??= choiceProblem('tier', options.tier, TIERS) ?? choiceProblem('mail', options.mail, MAILERS);
   return options;
 }
 
@@ -396,7 +397,7 @@ The site has a blog at http://localhost:3000/blog. Posts are written under **Pos
 
 ` : ''}## Email
 
-On this computer emails are written to \`apps/api/storage/logs/laravel.log\`, and \`php nevela dev\` prints sign-in and verification codes as well. On a server, set the keys under "Mail" in \`apps/api/.env.example\`, then check with \`php nevela deploy:check\`.
+On this computer emails are written to \`apps/api/storage/logs/laravel.log\`, and \`php nevela dev\` prints sign-in and verification codes as well. On a server, set the mail settings that \`apps/api/.env.example\` names in the server's own environment, never in that file, which is committed. Then check with \`php nevela deploy:check\`.
 
 ## Add a resource
 
@@ -732,6 +733,7 @@ async function main() {
       console.log(outdated);
     }
   }
+  if (options.problem) fail(options.problem);
 
   let name = options.name;
   if (name === undefined) {
@@ -1057,7 +1059,7 @@ async function main() {
     console.log(`  ${dim('Scan the QR code with Expo Go on a phone on the same Wi-Fi, and sign in with the same account.')}`);
   }
   console.log(`\n  Add ${blog ? 'a' : 'your first'} resource: ${dim(`${nevela} resource Product --fields="name:string, price:money"`)}`);
-  console.log(`  Email goes to apps/api/storage/logs here. For a server, fill in the ${MAILERS[mail].label} keys in apps/api/.env.example.`);
+  console.log(`  Email goes to apps/api/storage/logs here. On a server, set the ${MAILERS[mail].label} settings apps/api/.env.example names in its environment.`);
   console.log(`  Check the app: ${dim(`${nevela} status`)}   Upgrade it later: ${dim(`${nevela} upgrade`)}   Everything: ${dim(nevela)}`);
   if (nevela !== 'php nevela' && nevela !== 'nevela') {
     console.log(`\n  ${dim(`In this shell "php" isn't a command (your PHP is php.bat), so use ${nevela}. In PowerShell, php nevela works too.`)}`);

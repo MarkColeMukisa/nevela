@@ -73,7 +73,7 @@ export function withMail(text, mail, { server }) {
     smtp: "SMTP, with your provider's host, port, user and password",
   }[mail];
   const note = server
-    ? `# Mail is sent through ${how}.`
+    ? `# Mail is sent through ${how}. Set the values in the server's environment, never in this file: it is committed.`
     : `# On a server, mail is sent through ${how}. Here emails go to storage/logs/laravel.log; set MAIL_MAILER=${mailer} to send them.`;
   return `${out.replace(/\n*$/, '\n')}\n${note}\n${extra.map((line) => `${line}\n`).join('')}`;
 }

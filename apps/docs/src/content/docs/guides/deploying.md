@@ -50,7 +50,7 @@ If the app has [public pages](/guides/public-site/), two more things:
 
 ## Mail
 
-Sign-up codes, sign-in links and password resets are email, so a server needs a way to send it. `nevela new` asks which, and writes it into `apps/api/.env.example`, the settings a server starts from. On your computer `MAIL_MAILER` stays `log`: emails are written to `storage/logs/laravel.log`, and `nevela dev` prints the codes too.
+Sign-up codes, sign-in links and password resets are email, so a server needs a way to send it. `nevela new` asks which, and names the settings it needs in `apps/api/.env.example`. Give them their values in the server's environment (the host's settings, or the server's own `.env`), never in `.env.example`: it is committed. On your computer `MAIL_MAILER` stays `log`: emails are written to `storage/logs/laravel.log`, and `nevela dev` prints the codes too.
 
 | Choice | On the server |
 |---|---|
@@ -62,7 +62,7 @@ Set `MAIL_FROM_ADDRESS` to an address on a domain the provider has verified for 
 
 ## An app with no dashboard
 
-An app made with `--tier mobile` is the API and a phone app. Its `.env` has `NEVELA_DASHBOARD=false`. Emails then carry codes and no buttons, since there are no dashboard pages to open, and `deploy:check` doesn't ask for `NEVELA_WEB_URL` or `NEVELA_PROXY_SECRET`. Google and GitHub sign-in from the phone come back to the API's own address, as they do in every app.
+An app made with `--tier mobile` is the API and a phone app. Its `.env` has `NEVELA_DASHBOARD=false`. Nothing then emails a link to a dashboard page: the verification email carries its code alone, sign-in links are switched off, and asking for a forgotten-password email answers 404 with the code `NO_DASHBOARD`. `deploy:check` doesn't ask for `NEVELA_WEB_URL` or `NEVELA_PROXY_SECRET`. Google and GitHub sign-in from the phone come back to the API's own address, as they do in every app.
 
 The phone app has no screen yet for a forgotten password: someone who forgets theirs signs in with an emailed code. On the server, `php artisan nevela:user their@example.com --reset` gives them a new password.
 

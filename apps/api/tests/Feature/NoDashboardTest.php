@@ -42,6 +42,25 @@ class NoDashboardTest extends TestCase
         $this->assertStringContainsString($mail['secret'], implode(' ', $mail['lines']));
     }
 
+    public function test_no_email_links_to_pages_that_are_not_there(): void
+    {
+        User::factory()->create(['email' => 'ada@example.com']);
+
+        // A sign-in link and a reset link would open dashboard pages: neither is sent.
+        $this->getJson('/api/auth/config')->assertOk()->assertJsonPath('magicLink', false)->assertJsonPath('emailCode', true);
+        $this->postJson('/api/auth/magic-link', ['email' => 'ada@example.com'])->assertNotFound();
+        $this->postJson('/api/auth/password/forgot', ['email' => 'ada@example.com'])->assertNotFound()->assertJsonPath('code', 'NO_DASHBOARD');
+        // The same answer for an address with no account: it gives nothing away.
+        $this->postJson('/api/auth/password/forgot', ['email' => 'nobody@example.com'])->assertNotFound()->assertJsonPath('code', 'NO_DASHBOARD');
+        $this->assertSame([], AuthMail::$outbox);
+
+        // A code is typed into the app, so it still comes.
+        $this->postJson('/api/auth/email-code', ['email' => 'ada@example.com'])->assertOk();
+        $this->assertNull(end(AuthMail::$outbox)['action']);
+
+        $this->artisan('nevela:user', ['account' => 'ada@example.com', '--link' => true])->expectsOutputToContain('NEVELA_DASHBOARD=false')->assertFailed();
+    }
+
     public function test_deploy_check_does_not_ask_where_the_dashboard_is(): void
     {
         $this->app['env'] = 'production';

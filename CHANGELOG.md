@@ -10,9 +10,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ### Added
 
-- **`nevela new` asks which apps you want: Web, Mobile, or Web and mobile.** Mobile is the API and the Expo phone app, with no dashboard. `--tier web|mobile|both` answers ahead of time, and `--mobile` still means both. An app with no dashboard has `NEVELA_DASHBOARD=false`. Its emails carry codes instead of buttons to pages that aren't there, and `deploy:check`, `status` and the bell stop asking where the dashboard is. `nevela status` checks the API where the phone app looks for it. See [An app with no dashboard](https://nevela-docs.vercel.app/guides/deploying/#an-app-with-no-dashboard).
+- **`nevela new` asks which apps you want: Web, Mobile, or Web and mobile.** Mobile is the API and the Expo phone app, with no dashboard. `--tier web|mobile|both` answers ahead of time, and `--mobile` still means both. An app with no dashboard has `NEVELA_DASHBOARD=false`. Nothing emails a link to a page that isn't there: the verification email carries its code alone, and sign-in links and the forgotten-password email are switched off (the phone app signs in with emailed codes). `deploy:check`, `status` and the bell stop asking where the dashboard is. `nevela status` checks the API where the phone app looks for it. See [An app with no dashboard](https://nevela-docs.vercel.app/guides/deploying/#an-app-with-no-dashboard).
 - **`nevela new` asks how the app sends email: Resend (the default), Brevo or SMTP.** `--mail` answers ahead of time. The choice goes into `.env.example` for the server, and a Resend app gets Resend's PHP package, which Laravel's `resend` mailer needs. On your computer emails still go to the log, so signing up works before there is a key. `deploy:check` names a Resend app with no `RESEND_API_KEY`, or without the package. See [Mail](https://nevela-docs.vercel.app/guides/deploying/#mail).
 - With `--yes`, or without a terminal, nothing is asked: a web app that sends with Resend.
+- To use `--tier` and `--mail`, run `nevela update` first. An older `nevela` stops at an option it doesn't know. Without them, it hands over to the newest installer, which asks.
 
 ## [0.35.0] - 2026-11-22
 
