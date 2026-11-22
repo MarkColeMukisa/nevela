@@ -229,7 +229,7 @@ jobs:
           grep -q '"name": "Demo App"' app.json
           grep -q '"scheme": "demo-app"' app.json
           grep -q '"name": "demo-app-mobile"' package.json
-          grep -q 'name: "Demo App"' src/lib/site.ts
+          grep -q 'name: brand.name' src/lib/site.ts && grep -q 'name: "Demo App"' ../../packages/shared/brand.ts
           grep -q '"dev:mobile"' ../../package.json
           grep -q '^NEVELA_APP_REDIRECTS=demo-app://$' ../api/.env
           pnpm exec tsc --noEmit
