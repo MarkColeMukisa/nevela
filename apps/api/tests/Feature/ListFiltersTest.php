@@ -94,6 +94,9 @@ class ListFiltersTest extends TestCase
         $this->assertSame(['Spade', 'Teapot'], $this->names('filter[createdAt][gt]=2026-11-01'));
         $this->assertSame(['Kettle', 'Mug'], $this->names('filter[createdAt][lt]=2026-11-02'));
         $this->assertSame(['Mug', 'Spade', 'Teapot'], $this->names('filter[createdAt][gt]=2026-11-01T12:00:00'));
+        // Saved to the second: 08:00:00 is before 08:00:00.5, and not from it.
+        $this->assertSame(['Kettle'], $this->names('filter[createdAt][lt]=2026-11-01T08:00:00.5'));
+        $this->assertSame(['Mug', 'Spade', 'Teapot'], $this->names('filter[createdAt][between]=2026-11-01T08:00:00.5,2026-11-30'));
     }
 
     public function test_what_a_field_cannot_be_asked_is_a_400_that_says_why(): void
