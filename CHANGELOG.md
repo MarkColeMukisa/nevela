@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.34.1] - 2026-11-22
+
+_SQLite that waits, a web export that keeps its icons_
+
 ### Added
 
 - **Each bell notice is also an event, `NoticeSent`**, with the ids of everyone told, so a push to their phones (or anything else) can follow the bell. It fires once the work is saved, and a failing listener never fails the work. See [Following the bell elsewhere](https://nevela-docs.vercel.app/guides/notifications/#following-the-bell-elsewhere).
@@ -904,7 +908,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.34.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.34.1...HEAD
+[0.34.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.34.0...v0.34.1
 [0.34.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.33.2...v0.34.0
 [0.33.2]: https://github.com/MarkColeMukisa/nevela/compare/v0.33.1...v0.33.2
 [0.33.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.33.0...v0.33.1
