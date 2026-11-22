@@ -101,7 +101,8 @@ grep -q "^amara cancels it again: 409$" bar.log
 grep -q "^the bar hears: By Amara Okafor. Plans changed$" bar.log
 grep -q "^on the shelf: only what is available$" bar.log
 # The mobile app, reading the same resources, finds a shop with nothing written for it.
-node --experimental-strip-types --no-warnings "$here/shop-check.mjs" | tee shop.log
+# --import: the app imports "@shared/…" (packages/shared), which only its bundler knows; this teaches Node.
+node --experimental-strip-types --no-warnings --import "$here/../../scripts/shared-alias.mjs" "$here/shop-check.mjs" | tee shop.log
 grep -q "^shop: Beverage sold in Order, lines OrderItem$" shop.log
 grep -q "^asked at checkout: customer,phone,delivery,details$" shop.log
 grep -q "^price price, picture image, available available, category categoryId$" shop.log
