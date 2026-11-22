@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Create a new Nevela app: a Laravel API and a Next.js dashboard, side by side.
+// Create a new Nevela app: a Laravel API, with a Next.js dashboard, an Expo phone app, or both.
 //
 //   pnpm create nevela my-app
 //   npm create nevela@latest my-app
@@ -14,6 +14,7 @@ import path from 'node:path';
 import readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { banner } from './banner.mjs';
+import { choiceProblem, decide, MAILERS, TIERS, withMail } from './choices.mjs';
 import { ATTEMPTS, worthRetrying } from './composer.mjs';
 import { isNewer, latestRelease, onPackagist } from './packagist.mjs';
 import { createProgress, took } from './progress.mjs';
@@ -81,14 +82,14 @@ function showTitle() {
   console.log(banner({ version: VERSION, depth, columns: process.stdout.columns ?? 80, compact: Boolean(process.env.NEVELA_HANDED_OVER) }));
 }
 
-const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
+const HELP = `  Create a new Nevela app: a Laravel API, with a dashboard, a phone app, or both.
 
   ${bold('Get the nevela command')}  (once; everything below is then this short)
     npm install -g create-nevela
 
   ${bold('Anywhere')}
-    nevela new [name] [options]   Create an app. It asks for the name if you leave it off.
-    nevela new [name] --mobile    The same, with a mobile app (Expo) beside the dashboard.
+    nevela new [name] [options]   Create an app. It asks for the name, which apps it should
+                                  have and how it sends email, unless you say with the options.
                                   Without the command: pnpm create nevela <name>
     nevela update                 Update the nevela command itself to the latest version
     nevela --version              Which version the nevela command is, and this app when in one
@@ -108,19 +109,23 @@ const HELP = `  Create a new Nevela app: a Laravel API and a Next.js dashboard.
     nevela seed | user | generate | migrate | trash | disposable | artisan <command>
 
   ${bold('Options')}
-    --pm <pnpm|npm|yarn|bun>   Package manager for the dashboard. Default: the one you ran this with.
-    --no-install               Don't install the dashboard's dependencies.
+    --tier <web|mobile|both>   Which apps: web is the API and a dashboard; mobile the API and a
+                               phone app (Expo) with no dashboard; both all three. Default: web.
+    --mail <resend|brevo|smtp> How it sends email on a server. Default: resend. On this computer
+                               emails go to the log until you set MAIL_MAILER in apps/api/.env.
+    --pm <pnpm|npm|yarn|bun>   Package manager for the dashboard and the phone app. Default: the
+                               one you ran this with.
+    --no-install               Don't install the dashboard's or the phone app's dependencies.
     --no-user                  Don't create the starter admin account, or the sample users.
     --no-sample-users          Create the admin only, without the ten sample users.
     --no-blog                  Leave out the blog: the Post resource, its sample posts and /blog.
-    --mobile                   Add a mobile app in apps/mobile: Expo, for iOS and Android. It signs
-                               in to the same API with the same accounts.
+    --mobile                   The same as --tier both: a phone app beside the dashboard.
     --fast                     Leave out PHPUnit, Pint and Laravel's other development packages.
                                About a third quicker. Add them later: cd apps/api && composer install
     --no-git                   Don't run git init.
     --bundled-package          Use the copy of nevela/laravel that ships with this installer
                                instead of the release on Packagist.
-    -y, --yes                  Ask nothing. (Only the app name is ever asked for.)
+    -y, --yes                  Ask nothing: a web app that sends with Resend, unless the options say.
     -h, --help                 Show this.
     -v, --version              Show the version. Piped or captured, the number alone.
 
@@ -206,7 +211,7 @@ function available(command, args = ['--version']) {
 
 
 function parseArgs(argv) {
-  const options = { name: undefined, pm: undefined, install: true, user: true, samples: true, blog: true, git: true, yes: false, bundledPackage: false, devTools: true, mobile: false };
+  const options = { name: undefined, pm: undefined, install: true, user: true, samples: true, blog: true, git: true, yes: false, bundledPackage: false, devTools: true, mobile: false, tier: undefined, mail: undefined };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '-h' || arg === '--help') {
@@ -225,12 +230,25 @@ function parseArgs(argv) {
     else if (arg === '--no-git') options.git = false;
     else if (arg === '--no-dev-tools' || arg === '--fast') options.devTools = false;
     else if (arg === '--bundled-package') options.bundledPackage = true;
+    else if (arg === '--tier' || arg === '--mail' || arg.startsWith('--tier=') || arg.startsWith('--mail=')) {
+      const key = arg.slice(2, 6);
+      const value = arg.includes('=') ? arg.slice(7) : argv[++i];
+      // Given without a value, it isn't left off: the default would be a choice nobody made.
+      if (value === undefined || value === '' || value.startsWith('-')) {
+        options.problem ??= `--${key} needs a value: ${Object.keys(key === 'tier' ? TIERS : MAILERS).join(', ')}.`;
+        if (value?.startsWith('-')) i--;
+      } else options[key] = value;
+    }
     else if (arg === '--pm') options.pm = argv[++i];
     else if (arg.startsWith('--pm=')) options.pm = arg.slice(5);
-    else if (arg.startsWith('-')) fail(`Unknown option ${arg}. Run with --help to see the options.`);
+    // Said once a newer installer has had its chance: the option may be one only it knows.
+    else if (arg.startsWith('-')) options.problem ??= `Unknown option ${arg}. Run with --help to see the options.`;
     else if (options.name === undefined) options.name = arg;
-    else fail(`Unexpected argument "${arg}". The app name is "${options.name}".`);
+    // Possibly the value of an option only a newer installer knows: said after it has had its chance.
+    else options.problem ??= `Unexpected argument "${arg}". The app name is "${options.name}".`;
   }
+  // A value only a newer installer knows, the same.
+  options.problem ??= choiceProblem('tier', options.tier, TIERS) ?? choiceProblem('mail', options.mail, MAILERS);
   return options;
 }
 
@@ -307,7 +325,7 @@ function write(file, contents) {
   fs.writeFileSync(file, contents);
 }
 
-function writeRootFiles(root, { name, title, pm, admin, samples, blog, mobile }) {
+function writeRootFiles(root, { name, title, pm, admin, samples, blog, web, mobile }) {
   write(path.join(root, 'package.json'), `${JSON.stringify({
     name,
     version: '0.1.0',
@@ -317,16 +335,22 @@ function writeRootFiles(root, { name, title, pm, admin, samples, blog, mobile })
       dev: 'php nevela dev',
       nevela: 'php nevela',
       'dev:api': 'cd apps/api && php artisan serve',
-      'dev:web': `cd apps/web && ${pm} run dev`,
+      ...(web ? { 'dev:web': `cd apps/web && ${pm} run dev` } : {}),
       ...(mobile ? { 'dev:mobile': 'cd apps/mobile && npx expo start' } : {}),
     },
   }, null, 2)}\n`);
 
-  write(path.join(root, '.gitignore'), `node_modules/\nvendor/\n.env\n.env.*\n!.env.example\n.next/\n*.tsbuildinfo\nnext-env.d.ts\n${mobile ? '.expo/\nexpo-env.d.ts\n' : ''}`);
+  write(path.join(root, '.gitignore'), `node_modules/\nvendor/\n.env\n.env.*\n!.env.example\n${web ? '.next/\n*.tsbuildinfo\nnext-env.d.ts\n' : ''}${mobile ? '.expo/\nexpo-env.d.ts\n' : ''}`);
+
+  const apps = web && mobile
+    ? 'a Laravel API in `apps/api`, a Next.js dashboard in `apps/web` and an Expo phone app in `apps/mobile`'
+    : web ? 'a Laravel API in `apps/api` and a Next.js dashboard in `apps/web`'
+      : 'a Laravel API in `apps/api` and an Expo phone app in `apps/mobile`, with no dashboard';
+  const signIn = web ? 'Sign in at http://localhost:3000/sign-in.' : 'Sign in from the phone app (below).';
 
   write(path.join(root, 'README.md'), `# ${title}
 
-A [Nevela](${DOCS}) app: a Laravel API in \`apps/api\` and a Next.js dashboard in \`apps/web\`.
+A [Nevela](${DOCS}) app: ${apps}.
 
 ## Run it
 
@@ -334,9 +358,11 @@ A [Nevela](${DOCS}) app: a Laravel API in \`apps/api\` and a Next.js dashboard i
 php nevela dev
 \`\`\`
 
-That starts the Laravel API and the dashboard together and prints where each is: normally http://127.0.0.1:8000 and http://localhost:3000. If another program already has a port, it uses the next free one. Sign in at http://localhost:3000/sign-in.
+${web
+    ? 'That starts the Laravel API and the dashboard together and prints where each is: normally http://127.0.0.1:8000 and http://localhost:3000.'
+    : 'That starts the Laravel API, open to your network so a phone on the same Wi-Fi can reach it: normally on port 8000.'} If another program already has a port, it uses the next free one. ${signIn}
 
-To check the app at any time (versions, migrations, users, and whether the dashboard is reaching this API):
+To check the app at any time (versions, migrations, users, and whether the API is running where ${web ? 'the dashboard' : 'the phone app'} looks for it):
 
 \`\`\`sh
 php nevela status
@@ -349,23 +375,23 @@ The app starts with an administrator, in your local database only:
 | Email | \`${admin.email}\` |
 | Password | \`${admin.password}\` |
 ${samples ? `
-Ten sample users are there as well, with the same password: two editors and eight users, one of them switched off. They are under **Users** in the dashboard, and what each role may do is under **Roles**. Delete them before real use.
+Ten sample users are there as well, with the same password: two editors and eight users, one of them switched off.${web ? ' They are under **Users** in the dashboard, and what each role may do is under **Roles**.' : ''} Delete them before real use.
 ` : ''}` : ''}
 Everything else runs from this folder too, with \`php nevela\`:
 
 \`\`\`sh
 php nevela user        # add someone who can sign in
-php nevela status      # versions, migrations, users, and what the dashboard is talking to
+php nevela status      # versions, migrations, users, and whether the API is running
 php nevela upgrade     # bring this app to the latest Nevela
 php nevela             # everything it can do
 \`\`\`
 
-${mobile ? `## The mobile app
+${mobile ? `## The phone app
 
 \`apps/mobile\` is an [Expo](https://expo.dev) app for iOS and Android. It signs in to the same API with the same accounts.
 
 \`\`\`sh
-php nevela dev                        # the API, open to your network while a mobile app is in the project
+php nevela dev                        # the API, open to your network while a phone app is in the project
 cd apps/mobile && npx expo start      # in another terminal
 \`\`\`
 
@@ -375,13 +401,17 @@ Scan the QR code with the Expo Go app on a phone that is on the same Wi-Fi, or p
 
 The site has a blog at http://localhost:3000/blog. Posts are written under **Posts** in the dashboard, and a post is on the site once it is published. Its pages are in \`apps/web/app/blog\` and its settings in \`apps/web/lib/blog.ts\`: both are yours to change.
 
-` : ''}## Add a resource
+` : ''}## Email
+
+On this computer emails are written to \`apps/api/storage/logs/laravel.log\`, and \`php nevela dev\` prints sign-in and verification codes as well. On a server, set the mail settings that \`apps/api/.env.example\` names in the server's own environment, never in that file, which is committed. Then check with \`php nevela deploy:check\`.
+
+## Add a resource
 
 \`\`\`sh
 php nevela resource Product --fields="name:string, sku:string!, price:money, notes:text?"
 \`\`\`
 
-That creates the table as well. Reload the dashboard: Products is in the sidebar. Fill it with \`php nevela seed Product\`.
+That creates the table as well. ${web ? 'Reload the dashboard: Products is in the sidebar.' : 'Reopen the phone app: Products is under Records.'} Fill it with \`php nevela seed Product\`.
 
 ## Before real use
 
@@ -548,8 +578,8 @@ function nameProblem(name) {
 }
 
 /**
- * Ask what the app is called, until the answer is a name that can be used. The only
- * question this ever asks, and only when the name was left off.
+ * Ask what the app is called, until the answer is a name that can be used. Only when the
+ * name was left off.
  */
 async function askName() {
   const prompt = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -566,6 +596,37 @@ async function askName() {
       const problem = nameProblem(answer.trim());
       if (problem === null) return answer.trim();
       console.log(`  ${red('✖')} ${problem}\n`);
+    }
+  } finally {
+    prompt.close();
+  }
+}
+
+/**
+ * Ask one of a few things by number, until the answer is one of them. Enter takes the first.
+ * Ctrl+C or the end of input leaves, having created nothing.
+ */
+async function askChoice(question, choices) {
+  const keys = Object.keys(choices);
+  const prompt = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const closed = new Promise((resolve) => prompt.once('close', () => resolve(null)));
+  prompt.on('SIGINT', () => prompt.close());
+  try {
+    console.log(`  ${green(question)}`);
+    keys.forEach((key, i) => console.log(`    ${bold(`${i + 1}`)}  ${choices[key].label.padEnd(15)} ${dim(choices[key].detail)}`));
+    for (;;) {
+      const answer = await Promise.race([prompt.question(`  ${dim(`1-${keys.length}, Enter for ${choices[keys[0]].label}:`)} `).catch(() => null), closed]);
+      if (answer === null) {
+        console.log('\n');
+        process.exit(130);
+      }
+      const typed = answer.trim().toLowerCase();
+      const picked = typed === '' ? keys[0] : keys[Number(typed) - 1] ?? keys.find((key) => key === typed || choices[key].label.toLowerCase() === typed);
+      if (picked) {
+        console.log('');
+        return picked;
+      }
+      console.log(`  ${red('✖')} Type a number from 1 to ${keys.length}.\n`);
     }
   } finally {
     prompt.close();
@@ -678,6 +739,7 @@ async function main() {
       console.log(outdated);
     }
   }
+  if (options.problem) fail(options.problem);
 
   let name = options.name;
   if (name === undefined) {
@@ -691,6 +753,14 @@ async function main() {
   }
 
   const root = path.resolve(process.cwd(), name);
+
+  // Which apps, and how mail is sent: asked only of someone at a terminal, and only what no option said.
+  const asking = !options.yes && process.stdin.isTTY;
+  const { tier, mail } = await decide(options, asking ? askChoice : null);
+  const hasWeb = TIERS[tier].web;
+  const hasMobile = TIERS[tier].mobile;
+  // The blog is pages of the dashboard: with no dashboard there is nowhere for it.
+  if (!hasWeb) options.blog = false;
 
   checkRequirements();
   const pm = detectPackageManager(options.pm);
@@ -707,27 +777,29 @@ async function main() {
 
   // The dashboard first, so its packages can download while Composer works on Laravel.
   // The two don't touch each other, and Composer is the long part.
-  await step('Dashboard', (say) => {
-    copyWebTemplate(web, { name, title });
-    say.done(`Next.js · ${filesIn(web)} files`);
-  });
+  if (hasWeb) {
+    await step('Dashboard', (say) => {
+      copyWebTemplate(web, { name, title });
+      say.done(`Next.js · ${filesIn(web)} files`);
+    });
+  }
   // Shared by the dashboard and the API, so the API can believe what the dashboard tells it
   // about a person's browser (for the list of devices signed in to an account). Made here,
   // per app, and never the same twice.
   const proxySecret = crypto.randomBytes(24).toString('hex');
-  write(
+  if (hasWeb) write(
     path.join(web, '.env.local'),
     `# Where the Laravel API is, including its prefix.\nNEVELA_API_URL=http://127.0.0.1:8000/api\n\n# The same value as in apps/api/.env. It lets the API trust this app's word on a visitor's browser.\nNEVELA_PROXY_SECRET=${proxySecret}\n`,
   );
-  if (pm === 'pnpm') {
+  if (hasWeb && pm === 'pnpm') {
     // Its own workspace file: lets sharp build, and keeps pnpm from adopting a workspace further up.
     write(path.join(web, 'pnpm-workspace.yaml'), 'allowBuilds:\n  sharp: true\n');
   }
   // Which dashboard this app started from, with a fingerprint of every file in it.
   // `nevela upgrade` compares against these to tell the files you changed from the ones
   // you didn't, so an update never overwrites your work.
-  write(path.join(web, '.nevela.json'), `${JSON.stringify(templateRecord(VERSION), null, 4)}\n`);
-  if (options.mobile) {
+  if (hasWeb) write(path.join(web, '.nevela.json'), `${JSON.stringify(templateRecord(VERSION), null, 4)}\n`);
+  if (hasMobile) {
     await step('Mobile app', (say) => {
       copyMobileTemplate(mobile, { name, title });
       if (pm === 'pnpm') {
@@ -738,10 +810,12 @@ async function main() {
       say.done(`Expo · ${filesIn(mobile)} files`);
     });
   }
-  writeRootFiles(root, { name, title, pm, admin: options.user ? ADMIN : null, samples: options.user && options.samples, blog: options.blog, mobile: options.mobile });
-  const packages = options.install ? start(pm, ['install'], { cwd: web }) : null;
+  writeRootFiles(root, { name, title, pm, admin: options.user ? ADMIN : null, samples: options.user && options.samples, blog: options.blog, web: hasWeb, mobile: hasMobile });
+  const packages = options.install && hasWeb ? start(pm, ['install'], { cwd: web }) : null;
   // After the dashboard's, not beside them: two installs at once is what runs a small machine out of memory.
-  const mobilePackages = options.install && options.mobile && packages ? packages.done.then(() => start(pm, ['install'], { cwd: mobile }).done) : null;
+  const mobilePackages = options.install && hasMobile
+    ? (packages ? packages.done.then(() => start(pm, ['install'], { cwd: mobile }).done) : start(pm, ['install'], { cwd: mobile }).done)
+    : null;
 
   await step('Laravel app', async (say) => {
     // The skeleton only. Its packages are installed below, once, together with Nevela's.
@@ -780,7 +854,8 @@ async function main() {
     // Sanctum and Nevela go into composer.json here, so the one install below does
     // everything. (`php artisan install:api` would add Sanctum in a Composer run of its own,
     // plus a routes/api.php this app doesn't use: Nevela registers its routes itself.)
-    manifest.require = { ...manifest.require, 'laravel/sanctum': '^4.0', 'nevela/laravel': nevela };
+    // Laravel's resend mailer talks to Resend through Resend's own PHP package.
+    manifest.require = { ...manifest.require, 'laravel/sanctum': '^4.0', 'nevela/laravel': nevela, ...(mail === 'resend' ? { 'resend/resend-php': '^1.0' } : {}) };
     fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 4)}\n`);
 
     // A download Composer couldn't write or fetch is tried again: on Windows the first files
@@ -829,7 +904,7 @@ async function main() {
     // artisan command is slow for the same reason the index was: files read for the first time.
     const env = path.join(api, '.env');
     if (!fs.existsSync(env) && fs.existsSync(`${env}.example`)) fs.copyFileSync(`${env}.example`, env);
-    if (fs.existsSync(env) && !/^NEVELA_PROXY_SECRET=/m.test(fs.readFileSync(env, 'utf8'))) {
+    if (hasWeb && fs.existsSync(env) && !/^NEVELA_PROXY_SECRET=/m.test(fs.readFileSync(env, 'utf8'))) {
       fs.appendFileSync(env, `\n# The same value as in apps/web/.env.local.\nNEVELA_PROXY_SECRET=${proxySecret}\n`);
     }
     // Where to switch on Google and GitHub, and the keys they need, so nobody has to look the names up.
@@ -843,13 +918,21 @@ async function main() {
     }
     // After Google or GitHub, the API sends the browser back into the mobile app by its own address.
     // It only does that for addresses it was told about, and this is the app's.
-    if (options.mobile && fs.existsSync(env) && !/^NEVELA_APP_REDIRECTS=/m.test(fs.readFileSync(env, 'utf8'))) {
+    if (hasMobile && fs.existsSync(env) && !/^NEVELA_APP_REDIRECTS=/m.test(fs.readFileSync(env, 'utf8'))) {
       fs.appendFileSync(env, `\n# Where the mobile app may be sent back to after Google or GitHub sign-in. Comma separated.\nNEVELA_APP_REDIRECTS=${mobileScheme(name)}://\n`);
+    }
+    // How mail is sent: named for a server in .env.example, kept in the log on this computer.
+    // With no dashboard, emails carry codes and nothing asks where the dashboard is.
+    for (const [file, server] of [[env, false], [`${env}.example`, true]]) {
+      if (!fs.existsSync(file)) continue;
+      let text = withMail(fs.readFileSync(file, 'utf8'), mail, { server });
+      if (!hasWeb) text = `${text.replace(/\n*$/, '\n')}\n# This app has no dashboard: an API and a phone app.\nNEVELA_DASHBOARD=false\n`;
+      fs.writeFileSync(file, text);
     }
     const sqlite = path.join(api, 'database', 'database.sqlite');
     const usesSqlite = /^DB_CONNECTION=sqlite\s*$/m.test(fs.readFileSync(env, 'utf8'));
     if (usesSqlite && !fs.existsSync(sqlite)) fs.writeFileSync(sqlite, '');
-    say.done(`.env${usesSqlite ? ' · SQLite' : ''} · API tokens`);
+    say.done(`.env${usesSqlite ? ' · SQLite' : ''} · mail with ${MAILERS[mail].label} · API tokens`);
     return addApiTokens(path.join(api, 'app', 'Models', 'User.php'));
   });
 
@@ -936,7 +1019,7 @@ async function main() {
   }
 
   // The app in a line, as the list above is the app in detail.
-  const made = ['Laravel API', 'dashboard', options.mobile ? 'mobile app' : null, blog ? 'blog' : null].filter(Boolean).join(' · ');
+  const made = ['Laravel API', hasWeb ? 'dashboard' : null, hasMobile ? 'phone app' : null, blog ? 'blog' : null].filter(Boolean).join(' · ');
   console.log(`\n  ${green('Created')} ${bold(name)}  ${dim(`${made} · ${took(Date.now() - began)}`)}\n`);
   if (!tokens) {
     console.log(`  ${red('!')} I couldn't add Sanctum's trait to apps/api/app/Models/User.php. Add it by hand:`);
@@ -953,17 +1036,19 @@ async function main() {
   }
   console.log('  Next:\n');
   console.log(`    cd ${name}`);
-  if (!options.install) console.log(`    cd apps/web && ${pm} install && cd ../..`);
+  if (!options.install && hasWeb) console.log(`    cd apps/web && ${pm} install && cd ../..`);
   const nevela = nevelaCommand(pm);
   if (!admin) console.log(`    ${nevela} user   ${dim('# someone to sign in as')}`);
   console.log(`    ${nevela} dev\n`);
-  console.log(`  Then open ${indigo('http://localhost:3000/sign-in')}${admin ? ' and sign in with:' : ''}`);
+  console.log(hasWeb
+    ? `  Then open ${indigo('http://localhost:3000/sign-in')}${admin ? ' and sign in with:' : ''}`
+    : `  Then, in another terminal: ${bold(`cd apps/mobile${options.install ? '' : ` && ${pm} install`} && npx expo start`)}${admin ? ', and sign in on the phone with:' : ''}`);
   if (admin) {
     console.log(`\n    Email      ${bold(ADMIN.email)}`);
     console.log(`    Password   ${bold(ADMIN.password)}\n`);
     console.log(`  ${dim(`That account is the administrator, and is in this app's local database only. Add your own: ${nevela} user`)}`);
     if (samples) {
-      console.log(`  ${dim(`Ten sample users are there too, with the same password: 2 editors and 8 users. See them under Users, and what each may do under Roles.`)}`);
+      console.log(`  ${dim(`Ten sample users are there too, with the same password: 2 editors and 8 users.${hasWeb ? ' See them under Users, and what each may do under Roles.' : ''}`)}`);
     }
   }
   if (blog) {
@@ -971,12 +1056,16 @@ async function main() {
   } else if (blogMissing) {
     console.log(`\n  The blog couldn't be set up, so this app has none yet. Everything else is in place. Add it later: ${dim(`${nevela} blog`)}`);
   }
-  if (options.mobile) {
+  if (hasMobile && !hasWeb) {
+    console.log(`\n  ${dim('Scan the QR code with Expo Go on a phone on the same Wi-Fi, or press a or i for an emulator.')}`);
+  }
+  if (hasMobile && hasWeb) {
     console.log(`\n  The mobile app is in ${bold('apps/mobile')}. With ${nevela} dev running, in another terminal:`);
     console.log(`\n    cd apps/mobile${options.install ? '' : ` && ${pm} install`} && npx expo start\n`);
     console.log(`  ${dim('Scan the QR code with Expo Go on a phone on the same Wi-Fi, and sign in with the same account.')}`);
   }
   console.log(`\n  Add ${blog ? 'a' : 'your first'} resource: ${dim(`${nevela} resource Product --fields="name:string, price:money"`)}`);
+  console.log(`  Email goes to apps/api/storage/logs here. On a server, set the ${MAILERS[mail].label} settings apps/api/.env.example names in its environment.`);
   console.log(`  Check the app: ${dim(`${nevela} status`)}   Upgrade it later: ${dim(`${nevela} upgrade`)}   Everything: ${dim(nevela)}`);
   if (nevela !== 'php nevela' && nevela !== 'nevela') {
     console.log(`\n  ${dim(`In this shell "php" isn't a command (your PHP is php.bat), so use ${nevela}. In PowerShell, php nevela works too.`)}`);

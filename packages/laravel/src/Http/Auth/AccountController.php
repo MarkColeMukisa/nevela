@@ -91,6 +91,12 @@ final class AccountController
         }
         [$code, $hash] = Challenges::code();
         Challenges::put('verify-email', mb_strtolower($user->email), ['user' => (string) $user->getAuthIdentifier(), 'code' => $hash], self::VERIFY_SECONDS);
+        if (! Web::exists()) {
+            // No dashboard page to link to: the code is typed into the app.
+            AuthMail::send($user->email, 'Verify your email for '.AuthMail::app(), ["Your verification code is {$code}.", 'Enter it in the app. It expires in an hour.'], null, $code);
+
+            return;
+        }
         $url = Web::url('/verify-email', ['email' => $user->email, 'code' => $code, 'next' => Web::path($next, '/dashboard/account')], $request);
         AuthMail::send($user->email, 'Verify your email for '.AuthMail::app(), ["Your verification code is {$code}.", 'Or use the button. Both expire in an hour.'], ['Verify email', $url], "{$code}  {$url}");
     }
@@ -205,6 +211,10 @@ final class AccountController
     public function forgotPassword(Request $request): JsonResponse
     {
         $input = $request->validate(['email' => ['required', 'email']]);
+        if (! Web::exists()) {
+            // The link would open a dashboard page this app hasn't got. Said the same for every address.
+            return $this->refuse('NO_DASHBOARD', 'This app has no page to choose a new password on. Sign in with a code sent by email, or ask an administrator to set a new password.', 404);
+        }
         if (($user = Account::findByEmail($input['email'])) && ! ClosedAccounts::isClosed($user)) {
             $token = Challenges::start('reset-password', ['user' => (string) $user->getAuthIdentifier()], self::RESET_SECONDS);
             $url = Web::url('/reset-password', ['token' => $token], $request);

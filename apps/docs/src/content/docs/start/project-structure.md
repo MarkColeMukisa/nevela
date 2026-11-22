@@ -14,7 +14,7 @@ my-app/
 └─ package.json
 ```
 
-`nevela new my-app --mobile` adds a third, `apps/mobile`: [the mobile app](/guides/mobile-app/).
+`nevela new my-app --mobile` (or `--tier both`) adds a third, `apps/mobile`: [the mobile app](/guides/mobile-app/). With `--tier mobile` there is `apps/mobile` and no `apps/web`.
 
 ## apps/api, the Laravel app
 
