@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { ActivityIcon, LayoutDashboardIcon, ShieldCheckIcon, Trash2Icon, UserCircleIcon, UserXIcon, UsersIcon } from "lucide-react";
+import { ActivityIcon, CodeIcon, LayoutDashboardIcon, ShieldCheckIcon, Trash2Icon, UserCircleIcon, UserXIcon, UsersIcon } from "lucide-react";
 import { ChevronsUpDownIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
@@ -80,8 +80,8 @@ function byGroup(resources: NavResource[]): [string, NavResource[], boolean][] {
  */
 /** Sections every dashboard has, whatever resources the app defines. */
 const ACCOUNT_LINKS: { href: string; label: string; icon: typeof ActivityIcon }[] = [{ href: "/dashboard/account", label: "Account", icon: UserCircleIcon }];
-// Empty for now: the observability pages return once Laravel serves them.
-const ADMIN_LINKS: typeof ACCOUNT_LINKS = [];
+// For whoever runs the app: the API its resources make, to build on.
+const ADMIN_LINKS: typeof ACCOUNT_LINKS = [{ href: "/dashboard/api", label: "API", icon: CodeIcon }];
 
 export function DashboardSidebar({
   appName,
