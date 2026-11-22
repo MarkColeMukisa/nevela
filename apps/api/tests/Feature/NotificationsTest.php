@@ -279,7 +279,7 @@ class NotificationsTest extends TestCase
         $bo = $this->user('USER');
         $sent = [];
         Event::listen(NoticeSent::class, function (NoticeSent $event) use (&$sent) {
-            $sent[] = [$event->userIds, $event->notice->title];
+            $sent[] = [$event->userIds, $event->title];
         });
 
         Notices::send([$ada, $bo], new Notice('Your order has shipped', url: '/dashboard/orders/1'));
@@ -295,10 +295,16 @@ class NotificationsTest extends TestCase
         }
         $this->assertCount(1, $sent);
 
-        // A listener that fails doesn't fail the work, or the notice.
+        // Plain values, so a queued listener can carry it: a grouped notice's "many" is a closure.
+        $grouped = NoticeSent::of(['1'], new Notice('New order', group: 'orders', many: fn (int $n) => "{$n} new orders"));
+        $this->assertSame('orders', unserialize(serialize($grouped))->group);
+
+        // A listener that fails doesn't fail the work, or the notice: outside a transaction, and
+        // inside one, where it runs after the commit, once the work is saved.
         Event::listen(NoticeSent::class, fn () => throw new RuntimeException('push service down'));
         $this->assertSame(1, Notices::send($bo, new Notice('Still told')));
-        $this->assertSame('Still told', $this->rowsOf($bo)[1]->title ?? null);
+        $this->assertSame(1, DB::transaction(fn () => Notices::send($bo, new Notice('Told in a transaction'))));
+        $this->assertSame(['Still told', 'Told in a transaction'], array_slice(array_column($this->rowsOf($bo), 'title'), 1));
 
         // Nobody to tell: no event.
         $count = count($sent);

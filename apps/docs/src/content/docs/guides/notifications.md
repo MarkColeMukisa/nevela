@@ -109,11 +109,11 @@ use Nevela\Laravel\Events\NoticeSent;
 
 // In AppServiceProvider::boot()
 Event::listen(NoticeSent::class, function (NoticeSent $sent) {
-    Push::send($sent->userIds, $sent->notice->title, $sent->notice->body, $sent->notice->url);
+    Push::send($sent->userIds, $sent->title, $sent->body, $sent->url);
 });
 ```
 
-It fires only once the work that caused it is saved: a notice told inside a transaction that is rolled back is never sent on. A listener that fails is reported to your log and doesn't fail that work.
+The event carries the notice's `title`, `body`, `url`, `tone`, `kind` and `group` as plain values, so a queued listener (`ShouldQueue`) can take it. It fires only once the work that caused it is saved: a notice told inside a transaction that is rolled back is never sent on. A listener that fails is reported to your log and doesn't fail that work, even inside a transaction.
 
 ## Over the API
 
