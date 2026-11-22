@@ -11,7 +11,15 @@ description: "An Expo app for iOS and Android that signs in to the same API with
 nevela new my-app --mobile
 ```
 
-That is `nevela new` with one more folder: the API in `apps/api`, the dashboard in `apps/web`, and the mobile app in `apps/mobile`, named for your app and with its packages installed.
+That is `nevela new` with one more folder: the API in `apps/api`, the dashboard in `apps/web`, and the mobile app in `apps/mobile`, named for your app and with its packages installed. `--mobile` is short for `--tier both`, and `nevela new` asks which you want when you leave it off.
+
+For the API and the phone app alone, with no dashboard:
+
+```sh
+nevela new my-app --tier mobile
+```
+
+Everything here works the same, except the parts about the dashboard. Emails carry codes instead of buttons, and there is no blog. See [An app with no dashboard](/guides/deploying/#an-app-with-no-dashboard).
 
 :::note
 The mobile app is new in 0.30. `nevela upgrade` does not update `apps/mobile` yet; it leaves the folder alone.

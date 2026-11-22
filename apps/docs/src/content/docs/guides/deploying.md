@@ -48,6 +48,24 @@ If the app has [public pages](/guides/public-site/), two more things:
 - **`TURNSTILE_SECRET_KEY`** in the Laravel app and **`NEXT_PUBLIC_TURNSTILE_SITE_KEY`** in the web app, if a form asks for the [robot check](/guides/protecting-forms/#setting-up-turnstile). Without the secret a form that asks for it answers 503 in production. The site key is built in, so set it before building the web app. A check counts only if it was solved on the site `NEVELA_WEB_URL` names, so that has to be the site's real address (or list the names in `TURNSTILE_HOSTNAMES`).
 - **A queue worker** (`php artisan queue:work`) for the Laravel app, if a form sends mail through `PublicMail` or [confirms an address](/guides/protecting-forms/#proving-an-address). That mail is queued.
 
+## Mail
+
+Sign-up codes, sign-in links and password resets are email, so a server needs a way to send it. `nevela new` asks which, and writes it into `apps/api/.env.example`, the settings a server starts from. On your computer `MAIL_MAILER` stays `log`: emails are written to `storage/logs/laravel.log`, and `nevela dev` prints the codes too.
+
+| Choice | On the server |
+|---|---|
+| Resend | `MAIL_MAILER=resend` and `RESEND_API_KEY` from [resend.com/api-keys](https://resend.com/api-keys). The app has Resend's PHP package (`resend/resend-php`), which Laravel's `resend` mailer needs. |
+| Brevo | `MAIL_MAILER=smtp`, `MAIL_HOST=smtp-relay.brevo.com`, `MAIL_PORT=587`, and `MAIL_USERNAME` and `MAIL_PASSWORD`: the SMTP login and key from Brevo's SMTP & API settings. |
+| SMTP | `MAIL_MAILER=smtp`, and your provider's `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME` and `MAIL_PASSWORD`. |
+
+Set `MAIL_FROM_ADDRESS` to an address on a domain the provider has verified for you, or mail may be refused as spam. To change provider later, change these settings; for Resend in an app made with another choice, add its package first: `cd apps/api && composer require resend/resend-php`. `deploy:check` names any of these that is missing.
+
+## An app with no dashboard
+
+An app made with `--tier mobile` is the API and a phone app. Its `.env` has `NEVELA_DASHBOARD=false`. Emails then carry codes and no buttons, since there are no dashboard pages to open, and `deploy:check` doesn't ask for `NEVELA_WEB_URL` or `NEVELA_PROXY_SECRET`. Google and GitHub sign-in from the phone come back to the API's own address, as they do in every app.
+
+The phone app has no screen yet for a forgotten password: someone who forgets theirs signs in with an emailed code. On the server, `php artisan nevela:user their@example.com --reset` gives them a new password.
+
 ## Checklist
 
 Run `php artisan nevela:deploy:check` on the server after each deploy. It checks most of this list for you, and the dashboard as well. See [nevela deploy:check](/reference/commands/#nevela-deploycheck).

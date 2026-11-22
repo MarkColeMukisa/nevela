@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
 import { ATTEMPTS, worthRetrying } from './composer.mjs';
+import { choiceProblem, decide, MAILERS, setEnv, TIERS, withMail } from './choices.mjs';
 import { banner, ROWS, TAGLINE, WIDTH } from './banner.mjs';
 import { get } from './net.mjs';
 import { artisanArguments, COMMANDS, findProject, repairManifest, repairScripts } from './project.mjs';
@@ -362,4 +363,51 @@ test('a step is one line: what was made, what there is to say about it, and how 
   assert.equal(drawn[0], '\x1b[?25l');
   assert.match(drawn[1], /^\r {2}⠋ Database/);
   assert.match(drawn.at(-1), /^\r {2}✔ Database\s+14 migrations.*\n\x1b\[\?25h$/);
+});
+
+test('which apps and which mailer: an option decides, else the answer, else web and Resend', async () => {
+  // Nobody to ask (CI, -y, a pipe): never a question.
+  assert.deepEqual(await decide({}, null), { tier: 'web', mail: 'resend' });
+  // --mobile from before there were tiers still means a phone app beside the dashboard.
+  assert.deepEqual(await decide({ mobile: true }, null), { tier: 'both', mail: 'resend' });
+  assert.deepEqual(await decide({ tier: 'mobile', mail: 'brevo', mobile: true }, null), { tier: 'mobile', mail: 'brevo' });
+
+  // Asked only what no option said.
+  const asked = [];
+  const ask = async (question, choices) => { asked.push(question); return choices === TIERS ? 'mobile' : 'smtp'; };
+  assert.deepEqual(await decide({}, ask), { tier: 'mobile', mail: 'smtp' });
+  assert.equal(asked.length, 2);
+  asked.length = 0;
+  assert.deepEqual(await decide({ tier: 'web' }, ask), { tier: 'web', mail: 'smtp' });
+  assert.equal(asked.length, 1);
+
+  assert.equal(choiceProblem('tier', 'desktop', TIERS), '--tier must be one of: web, mobile, both. You gave "desktop".');
+  assert.equal(choiceProblem('mail', undefined, MAILERS), null);
+  assert.deepEqual(Object.keys(TIERS).map((key) => [TIERS[key].web, TIERS[key].mobile]), [[true, false], [false, true], [true, true]]);
+});
+
+test('the chosen mailer is named for a server, and emails stay in the log on this computer', () => {
+  const skeleton = 'APP_NAME=Laravel\nMAIL_MAILER=log\nMAIL_SCHEME=null\nMAIL_HOST=127.0.0.1\nMAIL_PORT=2525\nMAIL_USERNAME=null\nMAIL_PASSWORD=null\nMAIL_FROM_ADDRESS="hello@example.com"\n';
+
+  const server = withMail(skeleton, 'resend', { server: true });
+  assert.match(server, /^MAIL_MAILER=resend$/m);
+  assert.match(server, /^RESEND_API_KEY=$/m);
+  const local = withMail(skeleton, 'resend', { server: false });
+  assert.match(local, /^MAIL_MAILER=log$/m);
+  assert.match(local, /set MAIL_MAILER=resend to send them/);
+
+  const brevo = withMail(skeleton, 'brevo', { server: true });
+  assert.match(brevo, /^MAIL_MAILER=smtp$/m);
+  assert.match(brevo, /^MAIL_HOST=smtp-relay\.brevo\.com$/m);
+  assert.match(brevo, /^MAIL_PORT=587$/m);
+  assert.match(brevo, /^MAIL_USERNAME=$/m);
+  assert.doesNotMatch(brevo, /RESEND/);
+  // Each key once: the skeleton's line is changed, not a second one added.
+  assert.equal(brevo.match(/^MAIL_HOST=/gm).length, 1);
+
+  const smtp = withMail(skeleton, 'smtp', { server: true });
+  assert.match(smtp, /^MAIL_HOST=$/m);
+
+  assert.equal(setEnv('A=1\nB=2\n', 'B', '3'), 'A=1\nB=3\n');
+  assert.equal(setEnv('A=1', 'C', 'x'), 'A=1\nC=x\n');
 });
