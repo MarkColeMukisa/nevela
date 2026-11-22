@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.36.0] - 2026-11-22
+
+_Pick web, mobile or both, and how your app sends email_
+
 ### Added
 
 - **`nevela new` asks which apps you want: Web, Mobile, or Web and mobile.** Mobile is the API and the Expo phone app, with no dashboard. `--tier web|mobile|both` answers ahead of time, and `--mobile` still means both. An app with no dashboard has `NEVELA_DASHBOARD=false`. Nothing emails a link to a page that isn't there: the verification email carries its code alone, and sign-in links and the forgotten-password email are switched off (the phone app signs in with emailed codes). `deploy:check`, `status` and the bell stop asking where the dashboard is. `nevela status` checks the API where the phone app looks for it. See [An app with no dashboard](https://nevela-docs.vercel.app/guides/deploying/#an-app-with-no-dashboard).
@@ -933,7 +937,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.35.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.36.0...HEAD
+[0.36.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.35.0...v0.36.0
 [0.35.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.34.1...v0.35.0
 [0.34.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.34.0...v0.34.1
 [0.34.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.33.2...v0.34.0
