@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Nevela\Actions\DocBooking {
-    use App\Models\DocBooking;
+namespace App\Nevela\Actions\DocVisit {
+    use App\Models\DocVisit;
 
     class Confirm
     {
-        public function handle(DocBooking $booking, array $input): ?string
+        public function handle(DocVisit $booking, array $input): ?string
         {
             $booking->update(['status' => 'confirmed']);
 
@@ -24,7 +24,7 @@ namespace App\Nevela\Actions\DocBooking {
 
 namespace Tests\Feature {
     use App\Models\Category;
-    use App\Models\DocBooking;
+    use App\Models\DocVisit;
     use App\Models\DocVenue;
     use App\Models\Product;
     use App\Models\User;
@@ -75,7 +75,7 @@ namespace Tests\Feature {
                     'public' => ['read' => ['fields' => ['name', 'stars']]],
                 ]),
                 Descriptor::fromArray([
-                    'name' => 'DocBooking',
+                    'name' => 'DocVisit',
                     'fields' => [
                         'docVenueId' => ['kind' => 'belongsTo', 'target' => 'DocVenue'],
                         'guest' => ['kind' => 'string'],
@@ -165,27 +165,27 @@ namespace Tests\Feature {
             $missing = array_values(array_diff(array_unique($generated), $documented));
             $this->assertSame([], $missing, 'routes the descriptors make that the document leaves out');
             $this->assertContains('GET /public/doc-venues', $documented);
-            $this->assertContains('POST /doc-bookings/{id}/_actions/confirm', $documented);
-            $this->assertContains('POST /doc-bookings/_actions/confirm', $documented);
-            $this->assertContains('POST /doc-bookings/_actions/remind', $documented);
+            $this->assertContains('POST /doc-visits/{id}/_actions/confirm', $documented);
+            $this->assertContains('POST /doc-visits/_actions/confirm', $documented);
+            $this->assertContains('POST /doc-visits/_actions/remind', $documented);
         }
 
         public function test_what_a_create_needs_is_what_the_generated_request_requires(): void
         {
-            $input = $this->doc['components']['schemas']['DocBookingInput'];
+            $input = $this->doc['components']['schemas']['DocVisitInput'];
             // A default, a yes/no left alone (a no) and an optional field aren't needed.
             $this->assertSame(['docVenueId', 'guest', 'day'], $input['required']);
             $this->assertArrayNotHasKey('updatedAt', $input['properties']);
-            $this->assertArrayHasKey('updatedAt', $this->doc['components']['schemas']['DocBookingReplace']['properties']);
-            $this->assertArrayNotHasKey('required', $this->doc['components']['schemas']['DocBookingPatch']);
+            $this->assertArrayHasKey('updatedAt', $this->doc['components']['schemas']['DocVisitReplace']['properties']);
+            $this->assertArrayNotHasKey('required', $this->doc['components']['schemas']['DocVisitPatch']);
             $this->assertSame(['customer', 'status'], $this->doc['components']['schemas']['OrderInput']['required']);
             // A line's link to its order is set by saving it with the order.
             $this->assertArrayNotHasKey('orderId', $this->doc['components']['schemas']['OrderItemLine']['properties']);
 
             // Each required field, left out, is refused for itself; the ones not listed aren't.
-            $refused = $this->postJson('/api/doc-bookings', [])->assertUnprocessable();
+            $refused = $this->postJson('/api/doc-visits', [])->assertUnprocessable();
             $this->assertEqualsCanonicalizing($input['required'], array_column($refused->json('issues'), 'path'));
-            $this->check('post', '/doc-bookings', $refused);
+            $this->check('post', '/doc-visits', $refused);
         }
 
         public function test_what_the_api_answers_fits_the_document(): void
@@ -229,16 +229,16 @@ namespace Tests\Feature {
             $this->check('get', '/doc-venues', $this->getJson('/api/doc-venues')->assertOk());
 
             // Every kind of value, an action on one and on several, and one on the list.
-            $booking = $this->postJson('/api/doc-bookings', ['docVenueId' => $venue->id, 'guest' => 'Grace', 'day' => '2026-12-01', 'startsAt' => '2026-12-01T18:00:00Z', 'amount' => 120, 'note' => '<p>Window <b>table</b></p>']);
-            $this->check('post', '/doc-bookings', $booking->assertCreated());
-            $second = DocBooking::create(['doc_venue_id' => $venue->id, 'guest' => 'Lin', 'day' => '2026-12-02', 'status' => 'pending', 'paid' => false]);
-            $this->check('post', '/doc-bookings/{id}/_actions/confirm', $this->postJson('/api/doc-bookings/'.$booking->json('id').'/_actions/confirm')->assertOk());
-            $this->check('post', '/doc-bookings/{id}/_actions/confirm', $this->postJson('/api/doc-bookings/'.$booking->json('id').'/_actions/confirm')->assertConflict());
-            $this->check('post', '/doc-bookings/_actions/confirm', $this->postJson('/api/doc-bookings/_actions/confirm', ['ids' => [$booking->json('id'), $second->id]])->assertOk());
-            $this->check('post', '/doc-bookings/_actions/remind', $this->postJson('/api/doc-bookings/_actions/remind', ['input' => ['message' => 'See you soon']])->assertOk());
-            $this->check('post', '/doc-bookings/_actions/remind', $this->postJson('/api/doc-bookings/_actions/remind', ['input' => []])->assertUnprocessable());
-            $this->check('delete', '/doc-bookings/{id}', $this->deleteJson("/api/doc-bookings/{$second->id}")->assertNoContent());
-            $this->check('get', '/doc-bookings/{id}', $this->getJson("/api/doc-bookings/{$second->id}")->assertNotFound());
+            $booking = $this->postJson('/api/doc-visits', ['docVenueId' => $venue->id, 'guest' => 'Grace', 'day' => '2026-12-01', 'startsAt' => '2026-12-01T18:00:00Z', 'amount' => 120, 'note' => '<p>Window <b>table</b></p>']);
+            $this->check('post', '/doc-visits', $booking->assertCreated());
+            $second = DocVisit::create(['doc_venue_id' => $venue->id, 'guest' => 'Lin', 'day' => '2026-12-02', 'status' => 'pending', 'paid' => false]);
+            $this->check('post', '/doc-visits/{id}/_actions/confirm', $this->postJson('/api/doc-visits/'.$booking->json('id').'/_actions/confirm')->assertOk());
+            $this->check('post', '/doc-visits/{id}/_actions/confirm', $this->postJson('/api/doc-visits/'.$booking->json('id').'/_actions/confirm')->assertConflict());
+            $this->check('post', '/doc-visits/_actions/confirm', $this->postJson('/api/doc-visits/_actions/confirm', ['ids' => [$booking->json('id'), $second->id]])->assertOk());
+            $this->check('post', '/doc-visits/_actions/remind', $this->postJson('/api/doc-visits/_actions/remind', ['input' => ['message' => 'See you soon']])->assertOk());
+            $this->check('post', '/doc-visits/_actions/remind', $this->postJson('/api/doc-visits/_actions/remind', ['input' => []])->assertUnprocessable());
+            $this->check('delete', '/doc-visits/{id}', $this->deleteJson("/api/doc-visits/{$second->id}")->assertNoContent());
+            $this->check('get', '/doc-visits/{id}', $this->getJson("/api/doc-visits/{$second->id}")->assertNotFound());
 
             // Signed out: the public list and record, a form with a photo.
             $this->app['auth']->forgetGuards();
