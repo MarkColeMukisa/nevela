@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Nevela\Laravel\Access\Visibility;
+use Nevela\Laravel\Generator\ResourceGenerator;
 use Nevela\Laravel\Media\Uploads;
 use Nevela\Laravel\Support\Descriptor;
 use Nevela\Laravel\Support\Insights;
@@ -256,18 +257,24 @@ final class Nevela
     /**
      * The same, for a descriptor that was handed over and not looked up: the public list
      * is the resource with only the fields anyone may see, so nothing else can be sorted,
-     * filtered or searched by.
+     * filtered or searched by, and not when a record was made or changed ($timestamps false).
      *
      * @param  class-string<\Illuminate\Http\Resources\Json\JsonResource>  $resourceClass
      */
-    public static function listFor(Builder $query, Descriptor $resource, Request $request, string $resourceClass): JsonResponse
+    public static function listFor(Builder $query, Descriptor $resource, Request $request, string $resourceClass, bool $timestamps = true): JsonResponse
     {
-        $list = ListQuery::parse($resource, $request->query(), (int) config('nevela.per_page', 25), (int) config('nevela.max_per_page', 100));
+        $list = ListQuery::parse($resource, $request->query(), (int) config('nevela.per_page', 25), (int) config('nevela.max_per_page', 100), (string) config('app.timezone', 'UTC'), $timestamps);
         if (! $list->ok()) {
             return response()->json(['error' => 'Invalid query.', 'issues' => $list->issues], 400);
         }
 
         self::narrow($query, $resource, $list);
+
+        // ?include=items: each record with its lines, loaded for the whole page in one query.
+        $lines = in_array('items', $list->include, true) ? (new ResourceGenerator)->lineItems($resource, self::all()) : null;
+        if ($lines !== null && method_exists($query->getModel(), $lines['name'])) {
+            $query->with($lines['name']);
+        }
 
         $query->reorder()
             ->orderBy($list->sort['column'], $list->sort['direction'])
@@ -280,6 +287,14 @@ final class Nevela
             if ($field->kind === 'file') {
                 // A gallery's column is a list of keys: every key of every record.
                 Uploads::preload($page->getCollection()->pluck($field->column())->flatten());
+            }
+        }
+        if ($lines !== null && $page->getCollection()->first()?->relationLoaded($lines['name'])) {
+            $all = $page->getCollection()->pluck($lines['name'])->flatten(1);
+            foreach ($lines['resource']->fields as $field) {
+                if ($field->kind === 'file') {
+                    Uploads::preload($all->pluck($field->column())->flatten());
+                }
             }
         }
 
@@ -300,10 +315,9 @@ final class Nevela
         if ($list->q !== null) {
             $columns = array_map(fn ($f) => $f->column(), array_values(array_filter($resource->fields, fn ($f) => $f->searchable())));
             if ($columns !== []) {
-                $pattern = '%'.addcslashes($list->q, '%_\\').'%';
-                $query->where(function (Builder $where) use ($columns, $pattern) {
+                $query->where(function (Builder $where) use ($columns, $list) {
                     foreach ($columns as $column) {
-                        $where->orWhereLike($column, $pattern);
+                        self::whereContains($where, $column, (string) $list->q, 'or');
                     }
                 });
             }
@@ -326,6 +340,40 @@ final class Nevela
                 continue;
             }
             $field = $resource->fields[$filter['field']] ?? null;
+            $op = $filter['op'] ?? null;
+            if ($op === 'contains') {
+                self::whereContains($query, $filter['column'], (string) $filter['value']);
+
+                continue;
+            }
+            if ($op === 'range') {
+                foreach ($filter['value'] as [$comparison, $bound]) {
+                    // A time is compared as one in the app's timezone, which is how Laravel saves them.
+                    if ($bound instanceof \DateTimeInterface) {
+                        // Times are saved to the second. A bound part-way through one compares as
+                        // that second: before 12:00:00.5 takes in 12:00:00, from it leaves it out.
+                        if ((int) $bound->format('u') !== 0) {
+                            $comparison = match ($comparison) {
+                                '<' => '<=',
+                                '>=' => '>',
+                                default => $comparison,
+                            };
+                        }
+                        $bound = $bound->format('Y-m-d H:i:s');
+                    }
+                    $query->where($filter['column'], $comparison, $bound);
+                }
+
+                continue;
+            }
+            if ($op === 'in') {
+                $values = $field?->kind === 'belongsTo'
+                    ? array_values(array_filter($filter['value'], fn ($id) => self::couldBeId((string) $field->target, (string) $id)))
+                    : $filter['value'];
+                $values === [] ? $query->whereRaw('1 = 0') : $query->whereIn($filter['column'], $values);
+
+                continue;
+            }
             if ($filter['value'] !== null && $field?->kind === 'belongsTo' && ! self::couldBeId((string) $field->target, (string) $filter['value'])) {
                 // Nothing belongs to a record that can't exist. Asked anyway, some databases
                 // answer a number column given letters with an error instead of with no rows.
@@ -337,6 +385,24 @@ final class Nevela
                 ? $query->whereNull($filter['column'])
                 : $query->where($filter['column'], $filter['value']);
         }
+    }
+
+    /**
+     * Where a column contains these words, in any case. A % or _ in them is a character to
+     * find, not a wildcard: escaped with a backslash, which SQLite and SQL Server only take
+     * as the escape when told so (MySQL and Postgres always do).
+     */
+    private static function whereContains(Builder $query, string $column, string $words, string $boolean = 'and'): void
+    {
+        $driver = $query->getConnection()->getDriverName();
+        // SQL Server also reads [a-z] as a set of characters.
+        $pattern = '%'.addcslashes($words, $driver === 'sqlsrv' ? '%_[\\' : '%_\\').'%';
+        if (in_array($driver, ['sqlite', 'sqlsrv'], true)) {
+            $query->whereRaw($query->getQuery()->getGrammar()->wrap($column)." LIKE ? ESCAPE '\\'", [$pattern], $boolean);
+
+            return;
+        }
+        $query->whereLike($column, $pattern, false, $boolean);
     }
 
     /**
@@ -382,8 +448,8 @@ final class Nevela
             return response()->json(['error' => 'Invalid query.', 'issues' => [['param' => 'unit', 'message' => 'Must be day, week or month.']]], 400);
         }
         // The same parameters as the list. Where in the list someone is makes no difference to a count.
-        $params = array_diff_key($request->query(), array_flip(['unit', 'page', 'perPage', 'sort', 'columns']));
-        $list = ListQuery::parse($resource, $params, (int) config('nevela.per_page', 25), (int) config('nevela.max_per_page', 100));
+        $params = array_diff_key($request->query(), array_flip(['unit', 'page', 'perPage', 'sort', 'columns', 'include']));
+        $list = ListQuery::parse($resource, $params, (int) config('nevela.per_page', 25), (int) config('nevela.max_per_page', 100), (string) config('app.timezone', 'UTC'));
         if (! $list->ok()) {
             return response()->json(['error' => 'Invalid query.', 'issues' => $list->issues], 400);
         }
