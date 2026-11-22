@@ -2,9 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Picture } from "@/components/pictures";
-import { Body, Loading, Notice } from "@/components/ui";
+import { Body, Loading, Notice, TAB_BAR_HEIGHT, Title } from "@/components/ui";
 import { api, messageOf } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { display, filesOf } from "@/lib/format";
@@ -29,9 +30,19 @@ function summaryFields(resource: Resource): string[] {
     .map(([name]) => name);
 }
 
-/** The list of one resource: search, pull to refresh, and more as you scroll. */
-export default function RecordList() {
+/** The list of one resource, as a screen of its own: /r/[slug]. */
+export default function RecordListScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
+  return <RecordList slug={slug} />;
+}
+
+/**
+ * The list of one resource: search, pull to refresh, and more as you scroll. On a screen of its
+ * own it sets the header; as a tab (`tab`, its title there) it draws its own, and leaves room
+ * for the tab bar floating over its foot.
+ */
+export function RecordList({ slug, tab }: { slug: string; tab?: string }) {
+  const insets = useSafeAreaInsets();
   const { bySlug, byName, loading: describing } = useResources();
   const { user } = useAuth();
   const colors = useColors();
@@ -109,24 +120,25 @@ export default function RecordList() {
 
   if (!resource) return describing ? <Loading /> : <View style={styles.message}><Body muted>There is no such resource in this app.</Body></View>;
 
+  const AddButton = () => (
+    <Pressable accessibilityRole="button" accessibilityLabel={`New ${resource.label.toLowerCase()}`} hitSlop={12} onPress={() => router.push({ pathname: "/r/[slug]/new", params: { slug: resource.slug } })}>
+      <Ionicons name="add" size={28} color={colors.text} />
+    </Pressable>
+  );
   const summary = summaryFields(resource);
   const image = Object.entries(resource.fields).find(([, field]) => field.kind === "file" && field.accept?.includes("image") && !field.multiple)?.[0];
   const canCreate = may(user, resource, "create");
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <Stack.Screen
-        options={{
-          title: resource.pluralLabel,
-          headerRight: canCreate
-            ? () => (
-                <Pressable accessibilityRole="button" accessibilityLabel={`New ${resource.label.toLowerCase()}`} hitSlop={12} onPress={() => router.push({ pathname: "/r/[slug]/new", params: { slug: resource.slug } })}>
-                  <Ionicons name="add" size={28} color={colors.text} />
-                </Pressable>
-              )
-            : undefined,
-        }}
-      />
+    <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: tab ? insets.top + spacing.md : 0 }}>
+      {tab ? (
+        <View style={styles.tabHeader}>
+          <Title>{tab}</Title>
+          {canCreate ? <AddButton /> : null}
+        </View>
+      ) : (
+        <Stack.Screen options={{ title: resource.pluralLabel, headerRight: canCreate ? () => <AddButton /> : undefined }} />
+      )}
 
       <View style={styles.searchBar}>
         <TextInput accessibilityLabel="Search" placeholder={`Search ${resource.pluralLabel.toLowerCase()}`} placeholderTextColor={colors.muted} value={search} onChangeText={setSearch} autoCorrect={false} autoCapitalize="none" clearButtonMode="while-editing" returnKeyType="search" style={[styles.search, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surface }]} />
@@ -153,7 +165,7 @@ export default function RecordList() {
           ListHeaderComponent={total !== null && records.length > 0 ? <Text style={[styles.count, { color: colors.muted }]}>{total === 1 ? `1 ${resource.label.toLowerCase()}` : `${total.toLocaleString()} ${resource.pluralLabel.toLowerCase()}`}</Text> : undefined}
           ListEmptyComponent={error ? undefined : <View style={styles.message}><Body muted>{search ? `No ${resource.pluralLabel.toLowerCase()} match "${search}".` : `No ${resource.pluralLabel.toLowerCase()} yet.`}</Body></View>}
           ListFooterComponent={more ? <ActivityIndicator style={{ padding: spacing.lg }} color={colors.muted} /> : undefined}
-          contentContainerStyle={{ paddingBottom: spacing.xxl }}
+          contentContainerStyle={{ paddingBottom: tab ? TAB_BAR_HEIGHT + Math.max(insets.bottom, 10) + spacing.xxl : spacing.xxl }}
           renderItem={({ item }) => {
             const line = summary
               .map((name) => {
@@ -180,6 +192,7 @@ export default function RecordList() {
 }
 
 const styles = StyleSheet.create({
+  tabHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
   searchBar: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   search: { minHeight: 44, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: spacing.md, fontSize: text.body },
   count: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm, fontSize: text.small },

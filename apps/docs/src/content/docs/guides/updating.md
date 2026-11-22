@@ -184,6 +184,26 @@ A release reaches Composer a few minutes after it is published. Upgrade in that 
 
 **An app with a `packages/nevela-laravel` folder** installs the package from that folder, because it was created before the package was on Packagist. `npx create-nevela upgrade` moves it to Packagist. Afterwards you can delete the folder.
 
+## The shared folder
+
+From 0.37, the dashboard and the phone app share `packages/shared` (see [Project structure](/start/project-structure/#packagesshared-what-both-apps-share)). Upgrading an older app adds the folder, writing only the files the app hasn't got.
+
+The dashboard reaches it because `apps/web/next.config.ts` builds with the project folder as its root. An upgrade updates that file like any other. If you had changed it, yours is kept, and `upgrade` and `status` say so. Add these lines to it yourself:
+
+```ts
+import path from "node:path";
+
+const project = path.join(__dirname, "..", "..");
+
+const config: NextConfig = {
+  // …what you had
+  turbopack: { root: project },
+  outputFileTracingRoot: project,
+};
+```
+
+Without them, the build fails with `Can't resolve '@shared/…'`.
+
 ## Where the new dashboard comes from
 
 The update downloads the dashboard for the version it is moving to. It tries npm first, then the release tag on GitHub, so it works straight after a release even before the npm package is published.

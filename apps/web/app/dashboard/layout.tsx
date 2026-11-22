@@ -7,6 +7,7 @@ import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { SessionWatchdog } from "@/components/dashboard/session-watchdog";
 import { dashboardLinks } from "@/lib/dashboard-nav";
 import { allResources, dashboardSession, mayDo } from "@/lib/dashboard";
+import { sidebarTabs } from "@/lib/layout";
 import { navigableResources } from "@/lib/lines";
 import { fileUrl } from "@/lib/files";
 import { loadInbox } from "@/lib/notifications";
@@ -47,10 +48,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const trash = (await Promise.all(allResources().map((resource) => mayDo(resource, "delete")))).some(Boolean);
   // What the bell shows first. It asks again by itself from then on.
   const inbox = await loadInbox();
+  // First under Home, as on the phone: packages/shared/layout.ts.
+  const tabs = await sidebarTabs();
 
   return (
     <SidebarProvider defaultOpen={!collapsed}>
-      <DashboardSidebar appName={site.name} resources={resources} links={dashboardLinks} isAdmin={isAdmin} access={access} trash={trash} user={account} />
+      <DashboardSidebar appName={site.name} resources={resources} tabs={tabs} links={dashboardLinks} isAdmin={isAdmin} access={access} trash={trash} user={account} />
       {/* min-w-0: a flex item is at least as wide as what is in it, so a wide table widened the page. Now it scrolls in its own box. */}
       <SidebarInset className="min-w-0">
         <DashboardHeader user={account} initialTheme={theme} inbox={inbox} />

@@ -1,12 +1,14 @@
+import { brand } from "@shared/brand";
 import type { ThemeName } from "./theme";
 
 /**
  * What the site says about itself: the home page, the sign-in screens' side panels and
- * the page titles read from here. Edit freely.
+ * the page titles read from here. Edit freely. The name and tagline are the brand's, in
+ * packages/shared/brand.ts, which the phone app reads too: change them there.
  */
 export const site = {
-  name: "Nevela",
-  tagline: "The fastest way to run your business",
+  name: brand.name,
+  tagline: brand.tagline,
   description: "Nevela keeps your team, your customers and your data in one place, and it's live on the edge in every region.",
   /**
    * The look of the whole app: sign-in screens, dashboard, admin and home page.

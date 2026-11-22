@@ -181,6 +181,7 @@ jobs:
           test -f "$RUNNER_TEMP/create-nevela/package/template/mobile/app.json"
           test -f "$RUNNER_TEMP/create-nevela/package/template/mobile/_gitignore"
           test ! -e "$RUNNER_TEMP/create-nevela/package/template/mobile/node_modules"
+          for file in brand themes layout shop tabs; do test -f "$RUNNER_TEMP/create-nevela/package/template/shared/$file.ts"; done
           test -f "$RUNNER_TEMP/create-nevela/package/packagist.mjs"
           for file in selfupdate shell project tool; do test -f "$RUNNER_TEMP/create-nevela/package/$file.mjs"; done
           test -f "$RUNNER_TEMP/create-nevela/package/LICENSE"
@@ -195,6 +196,8 @@ jobs:
         working-directory: ${{ runner.temp }}/demo-app
         run: |
           test -f apps/web/.gitignore
+          # What the dashboard and the phone app share, with the app's name in the brand.
+          grep -q "name: \"Demo App\"" packages/shared/brand.ts
           test -f apps/web/.env.local
           test -f apps/api/routes/nevela.php
           grep -q "export const resources = \[\] as const;" apps/web/resources/index.ts

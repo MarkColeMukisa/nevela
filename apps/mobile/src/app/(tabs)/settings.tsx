@@ -10,12 +10,14 @@ import { loadAppearance, setAppearance, spacing, type AppearanceChoice } from "@
 import { loadInbox, type Inbox } from "../notifications";
 
 /**
- * Settings: the devices you are signed in on, what this app is talking to, and signing out. A new
+ * Settings, which staff see as More: their account and every record, then the devices you are signed in on, what this app is talking to, and signing out. A new
  * Nevela release is told of under About, for whoever builds the app: whoever runs the business
  * can't act on it, so it stays off their home screen.
  */
 export default function Settings() {
-  const { signOut } = useAuth();
+  const { signOut, shell, user } = useAuth();
+  // For staff this tab is More: what isn't one of the tabs (packages/shared/layout.ts) is reached from here.
+  const staff = user !== null && shell !== "customer";
   const [leaving, setLeaving] = useState(false);
   const [appearance, setChosen] = useState<AppearanceChoice>("system");
   const [release, setRelease] = useState<Inbox["conditions"][number] | null>(null);
@@ -33,7 +35,14 @@ export default function Settings() {
 
   return (
     <Screen inTabs>
-      <Title>Settings</Title>
+      <Title>{staff ? "More" : "Settings"}</Title>
+
+      {staff ? (
+        <Card>
+          <Row icon="person-outline" label="Account" detail="Your profile, and people, roles, activity and the trash where your role allows" onPress={() => router.push("/account")} />
+          <Row icon="albums-outline" label="All records" detail="Every resource your role may see" onPress={() => router.push("/records")} last />
+        </Card>
+      ) : null}
 
       <View style={{ gap: spacing.sm }}>
         <Heading>Security</Heading>

@@ -312,7 +312,26 @@ test('the mobile app is copied without what was installed or built, and named fo
   const app = JSON.parse(fs.readFileSync(path.join(to, 'app.json'), 'utf8')).expo;
   assert.deepEqual([app.name, app.slug, app.scheme], ['My Store', 'my-store', 'my-store']);
   assert.equal(JSON.parse(fs.readFileSync(path.join(to, 'package.json'), 'utf8')).name, 'my-store-mobile');
-  assert.match(fs.readFileSync(path.join(to, 'src/lib/site.ts'), 'utf8'), /name: "My Store"/);
+  // The name it shows is the brand's, shared with the dashboard; Metro is told where that is.
+  assert.match(fs.readFileSync(path.join(to, 'src/lib/site.ts'), 'utf8'), /name: brand\.name/);
+  assert.ok(fs.existsSync(path.join(to, 'metro.config.js')), 'metro.config.js is copied');
+});
+
+test('the shared folder is copied next to the apps, with the new app name in the brand', async () => {
+  const { copySharedTemplate } = await import('./template.mjs');
+  const to = path.join(scratch(), 'packages', 'shared');
+  copySharedTemplate(to, { title: 'My "Store"' });
+
+  for (const file of ['brand.ts', 'themes.ts', 'layout.ts', 'shop.ts', 'tabs.ts']) {
+    assert.ok(fs.existsSync(path.join(to, file)), `${file} is copied`);
+  }
+  assert.match(fs.readFileSync(path.join(to, 'brand.ts'), 'utf8'), /name: "My \\"Store\\""/);
+  // Both apps reach it through the same alias.
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  for (const app of ['web', 'mobile']) {
+    const tsconfig = fs.readFileSync(path.resolve(here, '..', '..', 'apps', app, 'tsconfig.json'), 'utf8');
+    assert.match(tsconfig, /"@shared\/\*": \[\s*"\.\.\/\.\.\/packages\/shared\/\*"\s*\]/, `${app} has the @shared alias`);
+  }
 });
 
 test('a step is one line: what was made, what there is to say about it, and how long it took', async () => {

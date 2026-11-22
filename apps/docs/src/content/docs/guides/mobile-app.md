@@ -96,8 +96,10 @@ One app, two shapes, chosen by role with nothing to set in the app. The API says
 
 | | Customer | Staff |
 |---|---|---|
-| Tabs | Home, Account, Settings | Home, Records, Account, Settings |
-| Home | A greeting, the bell, and a list of what the account may browse | The overview: a card per resource with its numbers, the latest activity and quick add |
+| Tabs | Home, Account, Settings | Home, the tabs in `packages/shared/layout.ts`, then More. In a shop that is **Home, Orders, Catalogue, More**; with no shop, **Home, Records, More** |
+| Home | A greeting, the bell, and a list of what the account may browse | The overview: in a shop, today's orders and sales first; then a card per resource with its numbers, the latest activity and quick add |
+
+Staff see the same layout on the phone as in the dashboard, whose sidebar starts with the same tabs under Home. Both read it from `packages/shared/layout.ts` (see [Project structure](/start/project-structure/#packagesshared-what-both-apps-share)). **More** holds everything that isn't a tab: the account (people, roles, activity and the trash where the role allows), every record, security, appearance and About. To choose the tabs yourself, name the resources there: `tabs: ["Booking", "Service"]`. At most three fit between Home and More.
 
 What a customer may see and do is still the [role's permissions](/guides/policies/), checked by Laravel on every request. A new account on a role with no permissions sees "Your account is ready" until someone gives it access.
 

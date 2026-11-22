@@ -10,11 +10,28 @@ my-app/
 ├─ apps/
 │  ├─ api/      the Laravel app
 │  └─ web/      the Next.js dashboard
+├─ packages/
+│  └─ shared/   what the dashboard and the phone app share: the brand, the themes, the layout
 ├─ nevela       the app's own launcher: php nevela does what nevela does
 └─ package.json
 ```
 
 `nevela new my-app --mobile` (or `--tier both`) adds a third, `apps/mobile`: [the mobile app](/guides/mobile-app/). With `--tier mobile` there is `apps/mobile` and no `apps/web`.
+
+## packages/shared, what both apps share
+
+Plain TypeScript, with no build step. The dashboard and the phone app import it as `@shared/…`, so the two say the same thing and are laid out the same way.
+
+| File | What it holds | Whose |
+|---|---|---|
+| `brand.ts` | The app's name and tagline. | Yours |
+| `layout.ts` | The tabs that come first, after Home and before More: a shop's orders and what it sells (`"shop"`), or the resources you name, such as `["Booking", "Service"]`. | Yours |
+| `themes.ts` | The phone app's colours, by theme, and the theme in use. | Yours to add to |
+| `shop.ts`, `tabs.ts` | How a shop is found in your resources, and which tabs that gives. The Laravel API finds a shop by the same rule. | Nevela's |
+
+`nevela upgrade` adds a file of these an app hasn't got, and never changes one it has.
+
+The dashboard reaches the folder because `apps/web/next.config.ts` builds with the project as its root (`turbopack.root`). The phone app reaches it through `apps/mobile/metro.config.js`. On a host that builds one app at a time, such as Laravel Cloud with a root directory of `apps/web`, the whole repository is there while it builds, and what is imported is bundled into the build.
 
 ## apps/api, the Laravel app
 

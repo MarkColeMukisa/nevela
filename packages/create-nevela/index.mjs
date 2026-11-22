@@ -22,7 +22,7 @@ import { COMMANDS, findProject, forward, upgrade } from './project.mjs';
 import { shellLine, spawnCommand, windows } from './shell.mjs';
 import { latestVersion, newerVersion, runVersion } from './selfupdate.mjs';
 import { copiesOnPath, globalInstall, INSTALL_COMMAND, removeCommand } from './tool.mjs';
-import { copyLaravelPackage, copyMobileTemplate, copyWebTemplate, fromRepository, mobileScheme, templateRecord } from './template.mjs';
+import { copyLaravelPackage, copyMobileTemplate, copySharedTemplate, copyWebTemplate, fromRepository, mobileScheme, templateRecord } from './template.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const VERSION = JSON.parse(fs.readFileSync(path.join(here, 'package.json'), 'utf8')).version;
@@ -774,6 +774,9 @@ async function main() {
     fs.mkdirSync(path.join(root, 'apps'), { recursive: true });
     say.done(path.relative(process.cwd(), root) || name);
   });
+
+  // What the dashboard and the phone app both import: the brand, the themes and the layout.
+  copySharedTemplate(path.join(root, 'packages', 'shared'), { title });
 
   // The dashboard first, so its packages can download while Composer works on Laravel.
   // The two don't touch each other, and Composer is the long part.

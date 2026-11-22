@@ -22,6 +22,7 @@ export const sources = {
   web: fromRepo ? path.resolve(here, '..', '..', 'apps', 'web') : path.join(bundled, 'web'),
   laravel: fromRepo ? path.resolve(here, '..', 'laravel') : path.join(bundled, 'laravel'),
   mobile: fromRepo ? path.resolve(here, '..', '..', 'apps', 'mobile') : path.join(bundled, 'mobile'),
+  shared: fromRepo ? path.resolve(here, '..', 'shared') : path.join(bundled, 'shared'),
 };
 
 /** Never part of a new app: build output, installs and local settings. */
@@ -72,10 +73,9 @@ export function copyWebTemplate(to, { name, title }) {
   manifest.name = `${name}-web`;
   fs.writeFileSync(packageFile, `${JSON.stringify(manifest, null, 2)}\n`);
 
+  // The name itself is the brand's, in packages/shared/brand.ts (copySharedTemplate).
   const siteFile = path.join(to, 'lib', 'site.ts');
-  const site = fs.readFileSync(siteFile, 'utf8')
-    .replace('name: "Nevela"', `name: ${JSON.stringify(title)}`)
-    .replace('description: "Nevela keeps', `description: "${title.replace(/"/g, '')} keeps`);
+  const site = fs.readFileSync(siteFile, 'utf8').replace('description: "Nevela keeps', `description: "${title.replace(/"/g, '')} keeps`);
   fs.writeFileSync(siteFile, site);
 
   // The generator fills this in; it has to exist for the first build.
@@ -139,8 +139,16 @@ export function copyMobileTemplate(to, { name, title }) {
   app.expo.scheme = mobileScheme(name);
   fs.writeFileSync(appFile, `${JSON.stringify(app, null, 2)}\n`);
 
-  const siteFile = path.join(to, 'src', 'lib', 'site.ts');
-  fs.writeFileSync(siteFile, fs.readFileSync(siteFile, 'utf8').replace('name: "Nevela"', `name: ${JSON.stringify(title)}`));
+}
+
+/**
+ * packages/shared: the brand, the themes and the layout the dashboard and the phone app both
+ * import, named for the new app. Next to apps/, whichever apps the project has.
+ */
+export function copySharedTemplate(to, { title }) {
+  copyTree(sources.shared, to);
+  const brandFile = path.join(to, 'brand.ts');
+  fs.writeFileSync(brandFile, fs.readFileSync(brandFile, 'utf8').replace('name: "Nevela"', `name: ${JSON.stringify(title)}`));
 }
 
 /** The Laravel package, for installing by path until it is on Packagist. */
@@ -153,6 +161,7 @@ export function buildTemplate(to) {
   copyTree(sources.web, path.join(to, 'web'), exampleResourceFilter(sources.web));
   copyLaravelPackage(path.join(to, 'laravel'));
   copyTree(sources.mobile, path.join(to, 'mobile'), skipMobile);
+  copyTree(sources.shared, path.join(to, 'shared'));
   hideGitignores(to);
 }
 
