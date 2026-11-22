@@ -95,6 +95,19 @@ class SharedFolderUpgradeTest extends TestCase
         $this->assertStringNotContainsString('so it was kept', preg_replace('/\s+/', ' ', Artisan::output()));
     }
 
+    public function test_the_brand_an_older_app_gets_keeps_its_own_name_and_tagline(): void
+    {
+        $site = "export const site = {\n  name: \"My \\\"Shop\\\"\",\n  tagline: \"Fresh \$5 juice\",\n  description: \"…\",\n};\n";
+        $brand = "export const brand = {\n  name: \"Nevela\",\n  /** One line. */\n  tagline: \"The fastest way to run your business\",\n};\n";
+
+        $this->assertSame(
+            "export const brand = {\n  name: \"My \\\"Shop\\\"\",\n  /** One line. */\n  tagline: \"Fresh \$5 juice\",\n};\n",
+            \Nevela\Laravel\Console\UpdateCommand::brandFrom($site, $brand),
+        );
+        // A site.ts that no longer says them leaves the template's as they are.
+        $this->assertSame($brand, \Nevela\Laravel\Console\UpdateCommand::brandFrom("export const site = { name: brand.name };\n", $brand));
+    }
+
     private function remove(string $dir): void
     {
         if (! is_dir($dir)) {

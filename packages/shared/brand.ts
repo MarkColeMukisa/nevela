@@ -8,7 +8,7 @@
 export const brand = {
   name: "Nevela",
   /** One line under the name: the sign-in screens and the home page show it. */
-  tagline: "Your business, in one place",
+  tagline: "The fastest way to run your business",
 };
 
 export type Brand = typeof brand;

@@ -1,4 +1,5 @@
-import { brand } from "@shared/brand";
+// By relative path, not "@shared/…": an app that made tsconfig.json its own still builds.
+import { brand } from "../../../packages/shared/brand";
 import type { ThemeName } from "./theme";
 
 /**
