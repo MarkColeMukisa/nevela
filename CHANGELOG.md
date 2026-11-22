@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.34.0] - 2026-11-22
+
+_The API described as OpenAPI, from your resources_
+
 ### Added
 
 - **The API as an OpenAPI 3.1 document, from the descriptors**: `GET /api/_nevela/openapi.json`, for anyone signed in. It covers every resource's endpoints, with their fields, types, required fields, choices, sorting, filters, uploads, actions, public side and the permission each takes. `nevela openapi --output=openapi.json` writes it to a file, for a client generator or a docs site. The dashboard has a page to read it, **API**, for administrators. Tests send real requests to a generated app and hold every answer to the document. See [The API as OpenAPI](https://nevela-docs.vercel.app/reference/api/#the-api-as-openapi).
@@ -889,7 +893,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.33.2...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.34.0...HEAD
+[0.34.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.33.2...v0.34.0
 [0.33.2]: https://github.com/MarkColeMukisa/nevela/compare/v0.33.1...v0.33.2
 [0.33.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.33.0...v0.33.1
 [0.33.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.32.0...v0.33.0
