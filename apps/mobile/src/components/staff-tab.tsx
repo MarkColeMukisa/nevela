@@ -10,5 +10,6 @@ import { RecordList } from "../app/r/[slug]/index";
 export function StaffTabScreen({ index }: { index: number }) {
   const tab = useStaffTabs()[index];
   if (!tab) return <Loading />;
-  return <RecordList slug={tab.resource.slug} tab={tab.title} />;
+  // Keyed by the resource: if the slot comes to hold another, its list starts afresh.
+  return <RecordList key={tab.resource.slug} slug={tab.resource.slug} tab={tab.title} />;
 }

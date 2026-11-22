@@ -14,6 +14,8 @@ export const MOST_STAFF_TABS = 3;
  * others. Empty in an app with no shop: Records is the tab then.
  */
 export function useStaffTabs(): StaffTab<Resource>[] {
-  const { resources } = useResources();
-  return useMemo(() => staffTabs(layout, resources).slice(0, MOST_STAFF_TABS), [resources]);
+  // `all` has the lines (an order's OrderItem), which the shop is found by; `resources` leaves them
+  // out, as they are edited with their order. A tab is only ever one of `resources`.
+  const { all, resources } = useResources();
+  return useMemo(() => staffTabs(layout, all, resources).slice(0, MOST_STAFF_TABS), [all, resources]);
 }

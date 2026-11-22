@@ -58,7 +58,7 @@ class SharedFolderUpgradeTest extends TestCase
     public function test_an_older_app_gets_the_shared_files_it_lacks_and_is_told_about_its_own_next_config(): void
     {
         $oldConfig = "export default {};\n";
-        $newConfig = "const project = '../..';\nexport default { turbopack: { root: project } };\n";
+        $newConfig = "const project = '../..';\nexport default { turbopack: { root: project }, outputFileTracingRoot: project };\n";
         $this->template(
             ['next.config.ts' => $newConfig, 'package.json' => '{"name":"web"}'],
             ['brand.ts' => "export const brand = { name: \"Nevela\" };\n", 'layout.ts' => "export const layout = { tabs: \"shop\" };\n"],
@@ -85,7 +85,7 @@ class SharedFolderUpgradeTest extends TestCase
     public function test_an_app_whose_next_config_the_update_replaces_is_not_warned(): void
     {
         $oldConfig = "export default {};\n";
-        $this->template(['next.config.ts' => "export default { turbopack: { root: '../..' } };\n"], ['layout.ts' => "export const layout = {};\n"]);
+        $this->template(['next.config.ts' => "export default { turbopack: { root: '../..' }, outputFileTracingRoot: '../..' };\n"], ['layout.ts' => "export const layout = {};\n"]);
         // Untouched since the old template: the update replaces it, turbopack and all.
         file_put_contents("{$this->root}/apps/web/next.config.ts", $oldConfig);
         file_put_contents("{$this->root}/apps/web/.nevela.json", json_encode(['template' => '0.1.0', 'files' => ['next.config.ts' => DashboardUpdate::hash($oldConfig)]]));
@@ -104,8 +104,20 @@ class SharedFolderUpgradeTest extends TestCase
             "export const brand = {\n  name: \"My \\\"Shop\\\"\",\n  /** One line. */\n  tagline: \"Fresh \$5 juice\",\n};\n",
             \Nevela\Laravel\Console\UpdateCommand::brandFrom($site, $brand),
         );
+        // Single quotes, escape and all, are kept as written.
+        $this->assertStringContainsString("  name: 'Bob\\'s Bar',\n", \Nevela\Laravel\Console\UpdateCommand::brandFrom("  name: 'Bob\\'s Bar',\n", $brand));
         // A site.ts that no longer says them leaves the template's as they are.
         $this->assertSame($brand, \Nevela\Laravel\Console\UpdateCommand::brandFrom("export const site = { name: brand.name };\n", $brand));
+    }
+
+    public function test_a_config_sets_its_root_only_with_both_settings(): void
+    {
+        $sets = fn (string $config) => \Nevela\Laravel\Console\UpdateCommand::setsRoot($config);
+
+        $this->assertTrue($sets("turbopack: { root: project },\n  outputFileTracingRoot: project,"));
+        $this->assertFalse($sets("turbopack: {},\n  outputFileTracingRoot: project,"));
+        $this->assertFalse($sets('turbopack: { root: project },'));
+        $this->assertTrue($sets((string) file_get_contents(base_path('../web/next.config.ts'))), 'the template sets it');
     }
 
     private function remove(string $dir): void

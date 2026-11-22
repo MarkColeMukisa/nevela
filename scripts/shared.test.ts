@@ -52,6 +52,11 @@ test("staff tabs: the shop's orders and what it sells, only what the person may 
     ["Category", "Categories"],
     ["Order", "Orders"],
   ]);
+  // The shop is found by its lines, so `all` has to have them, even where the lines are kept
+  // out of the visible list (the phone's `resources` leaves an order's items out).
+  const withoutLines = all.filter((resource) => resource.name !== "OrderItem");
+  assert.deepEqual(staffTabs(layout, withoutLines), []);
+  assert.deepEqual(staffTabs(layout, all, withoutLines).map((tab) => tab.resource.name), ["Order", "Product"]);
   // No shop and none named: no tabs, and each app shows its plain records there.
   assert.deepEqual(staffTabs(layout, [byName("Category")]), []);
 });
