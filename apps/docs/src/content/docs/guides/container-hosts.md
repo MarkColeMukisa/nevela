@@ -27,7 +27,7 @@ php artisan migrate --force \
 Add a persistent disk and mount it at `storage/app` in the Laravel app. That folder holds:
 
 - **Uploads.** Images and files go to the `public` disk (`storage/app/public`) unless `NEVELA_UPLOADS_DISK` names another; [private files](/guides/images/#private-files) go to `storage/app/private`. `php artisan storage:link` in the start command links `public/storage` to them again in each new container.
-- **The SQLite database**, if you use one: set `DB_DATABASE` to its full path on the disk, for example `/app/storage/app/database.sqlite` where the app is in `/app`.
+- **The SQLite database**, if you use one: set `DB_DATABASE` to its full path on the disk, for example `/app/storage/app/database.sqlite` where the app is in `/app`. From 0.34.1 Nevela sets SQLite up for many requests at once, which a dashboard or a phone's home screen makes. Writes wait up to five seconds for each other (`busy_timeout`), readers carry on while something is written (`journal_mode=wal`), and a transaction takes the write lock when it starts. Without these, busy moments answer "database is locked". A value of your own in `config/database.php` is kept, and `DB_BUSY_TIMEOUT`, `DB_JOURNAL_MODE`, `DB_SYNCHRONOUS` and `DB_TRANSACTION_MODE` change them.
 
 With a managed database (Postgres, MySQL) instead, only the uploads need the disk. Or set `NEVELA_UPLOADS_DISK` to an S3-compatible disk and the container needs no disk at all.
 

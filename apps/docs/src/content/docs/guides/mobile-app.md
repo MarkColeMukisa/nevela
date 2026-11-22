@@ -274,7 +274,16 @@ Expo Go is for developing. To give the app to other people, build it:
 2. Set your own `ios.bundleIdentifier` and `android.package` in `app.json`, such as `com.example.myapp`.
 3. Build with [EAS](https://docs.expo.dev/build/introduction/): `npx eas-cli@latest build --platform android` (or `ios`).
 
-`npx expo start --web` runs the app in a browser, which is handy for a quick look. Don't ship that: a browser has no keychain, so the tokens sit in the page's storage, where any script on the page can read them. The dashboard is the web app.
+`npx expo start --web` runs the app in a browser, which is handy for a quick look. Think before shipping it: a browser has no keychain, so the tokens sit in the page's storage, where any script on the page can read them. The dashboard is the web app.
+
+When a web version is worth that, for example for iPhone users before you have an Apple developer account, build it for a static host:
+
+```sh
+cd apps/mobile
+EXPO_PUBLIC_API_URL=https://api.example.com/api npm run export:web
+```
+
+Publish `dist/`, with `index.html` as both the index and the error page, so an address inside the app loads directly. `export:web` also moves the icon fonts out of `node_modules` folders inside `dist/`. Hosts that skip such folders when they upload, as Sevalla's static sites do, would otherwise leave every icon an empty box.
 
 ## Add one to an app you already have
 
