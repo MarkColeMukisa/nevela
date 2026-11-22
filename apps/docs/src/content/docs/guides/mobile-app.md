@@ -80,13 +80,13 @@ If the sign-in screen says it couldn't reach the server, it names the address it
 |---|---|
 | Sign in | Email and password, with an eye to check what you typed. An emailed code as well, when the API has [that switched on](/guides/authentication/). **Continue with Google** where the API has it. Then the second step for an account that has one: an authenticator app, an emailed code or a backup code. |
 | Create an account | Name, email and password, where the API lets people [sign up](/guides/authentication/#letting-people-sign-up). Where it asks for the email to be proved first, the code it sent. |
-| Home | How the app is doing, from what it holds. A card per resource with how many there are, how many were added this week against last, and a chart of the last 30 days. A button to add each kind of record, the latest changes from [the activity log](/guides/notifications/), and the bell. Every number is the API's, asked for with the person's own permissions. |
+| Home | How the app is doing, from what it holds. In an app with a shop it starts with the business: today's orders against the same time last week, how many are waiting, and sales over the last seven days against the seven before ([shop figures](/reference/api/#shop-figures)). Then a card per resource with how many there are, how many were added this week against last, and a chart of the last 30 days. A button to add each kind of record, the latest changes from [the activity log](/guides/notifications/), and the bell. Every number is the API's, asked for with the person's own permissions. |
 | Records | Every resource your role may view: search it, open a record, and create, change or delete one where your role allows. See [Your resources](#your-resources). |
 | Account | Your profile picture (choose one or take one), your name, your roles, and changing your password. For someone who may manage them, **People** and **Roles and permissions** too: see [People and roles](#people-and-roles). |
 | Two-step sign-in | Turn on two-step sign-in with an authenticator app (a button that opens the one on the phone, a QR code for one on another device, and the setup key to copy) or with codes by email. Backup codes are shown once, to copy. Make new ones, or turn it off. List your passkeys and remove one. |
 | Activity | The activity log, under Account for whoever holds `activity.view`: who added, changed, deleted, restored or removed which records, newest first, filtered by what was done. The home's **Recent activity** has **See all**. |
 | Trash | Under Account for whoever may delete something: each resource's deleted records and how long each has left. Restore one, remove one for good, or empty a resource's trash. See [The trash](/guides/trash/). |
-| Settings | Light, dark or the phone's appearance. **Devices**: everywhere the account is signed in, browsers and phones alike; sign one out, or all the others. |
+| Settings | Light, dark or the phone's appearance. **Devices**: everywhere the account is signed in, browsers and phones alike; sign one out, or all the others. Under **About**, an administrator is told when a new Nevela release is out. It is for whoever builds the app, so it stays off the home screen. |
 
 Signing in with an emailed link stays in the dashboard for now: it ends at a web address, which a phone app has to be taught to open.
 
@@ -96,8 +96,10 @@ One app, two shapes, chosen by role with nothing to set in the app. The API says
 
 | | Customer | Staff |
 |---|---|---|
-| Tabs | Home, Account, Settings | Home, Records, Account, Settings |
-| Home | A greeting, the bell, and a list of what the account may browse | The overview: a card per resource with its numbers, the latest activity and quick add |
+| Tabs | Home, Account, Settings | Home, the tabs in `packages/shared/layout.ts`, then More. In a shop that is **Home, Orders, Catalogue, More**; with no shop, **Home, Records, More** |
+| Home | A greeting, the bell, and a list of what the account may browse | The overview: in a shop, today's orders and sales first; then a card per resource with its numbers, the latest activity and quick add |
+
+Staff see the same layout on the phone as in the dashboard, whose sidebar starts with the same tabs under Home. Both read it from `packages/shared/layout.ts` (see [Project structure](/start/project-structure/#packagesshared-what-both-apps-share)). **More** holds everything that isn't a tab: the account (people, roles, activity and the trash where the role allows), every record, security, appearance and About. To choose the tabs yourself, name the resources there: `tabs: ["Booking", "Service"]`. At most three fit between Home and More.
 
 What a customer may see and do is still the [role's permissions](/guides/policies/), checked by Laravel on every request. A new account on a role with no permissions sees "Your account is ready" until someone gives it access.
 

@@ -1,43 +1,15 @@
 import { Appearance, useColorScheme } from "react-native";
 
+import { theme, themes } from "@shared/themes";
+
 import * as storage from "./storage";
 
 /**
- * The app's colours and sizes, in one place. They match the dashboard's default look:
- * near-black on white, and the reverse in the dark. Change them here and every screen follows.
+ * The app's colours and sizes, in one place. The colours are the theme's, from
+ * packages/shared/themes.ts, which the dashboard's look is matched to: change them there and
+ * every screen follows.
  */
-const light = {
-  background: "#ffffff",
-  surface: "#f6f6f7",
-  border: "#e5e5e7",
-  text: "#0a0a0a",
-  muted: "#6b7280",
-  /** Buttons and the active tab. */
-  brand: "#0a0a0a",
-  onBrand: "#ffffff",
-  danger: "#dc2626",
-  success: "#16a34a",
-  /** Charts, the icons on cards, the active tab: the one colour among the greys. */
-  accent: "#4f46e5",
-  accentSoft: "#eef2ff",
-  tabBar: "#ffffff",
-};
-
-const dark: typeof light = {
-  background: "#0a0a0a",
-  surface: "#18181b",
-  border: "#27272a",
-  text: "#fafafa",
-  muted: "#9ca3af",
-  brand: "#fafafa",
-  onBrand: "#0a0a0a",
-  danger: "#f87171",
-  success: "#4ade80",
-  accent: "#818cf8",
-  accentSoft: "#1e1b4b",
-  tabBar: "#18181b",
-};
-
+const { light, dark } = themes[theme];
 export type Colors = typeof light;
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;

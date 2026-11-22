@@ -1,12 +1,15 @@
 /**
- * What the app calls itself: the sign-in screen and the home screen read it. Edit freely.
- * The name under the icon on the phone is `name` in app.json.
+ * What the app calls itself: the sign-in screen and the home screen read it. The name and
+ * tagline are the brand's, in packages/shared/brand.ts, which the dashboard reads too: change
+ * them there. The name under the icon on the phone is `name` in app.json.
  */
+import { brand } from "@shared/brand";
+
 import type { ShopSettings } from "./shop";
 
 export const site = {
-  name: "Nevela",
-  tagline: "Your business, in your pocket",
+  name: brand.name,
+  tagline: brand.tagline,
   /**
    * The shop customers see is found in your resources: an order with lines that point at
    * what is sold (Order, OrderItem and Product). Say here how yours differs, if it does:

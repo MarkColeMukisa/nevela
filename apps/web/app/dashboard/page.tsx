@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRightIcon, PlusIcon } from "lucide-react";
+import { ArrowRightIcon, BanknoteIcon, ClockIcon, PlusIcon, ShoppingBagIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,11 +10,66 @@ import { StatCards, type Stat } from "@/components/dashboard/stat-card";
 import { ActivityList } from "@/components/dashboard/activity-list";
 import { loadActivity } from "@/lib/activity";
 import { adminPermissions, allResources, dashboardSession, resourcePath, resourceStats, trend } from "@/lib/dashboard";
+import { laravel } from "@/lib/laravel";
 import { navigableResources } from "@/lib/lines";
+import { formatMoney } from "@/lib/number";
 import { requireSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Dashboard" };
+
+/** GET _nevela/shop-figures: the shop at a glance. Only an app with a shop answers it. */
+interface ShopFigures {
+  orders: { slug: string; label: string; pluralLabel: string };
+  today: { orders: number; sameTimeLastWeek: number };
+  pending: number | null;
+  pendingStatus: string | null;
+  statusField: string | null;
+  sales: { total: number; week: number; lastWeek: number } | null;
+  currency: string | null;
+}
+
+/**
+ * The business first, in an app with a shop: today's orders against the same time last week,
+ * what is waiting, and sales this week against last. 404 without a shop and 403 for a role that
+ * sees no orders: both are no figures, and the page goes on without them.
+ */
+async function shopStats(): Promise<Stat[]> {
+  const answer = await laravel("_nevela/shop-figures").catch(() => null);
+  if (!answer?.ok) return [];
+  const figures = answer.body as ShopFigures;
+  const orders = `/dashboard/${figures.orders.slug}`;
+  const stats: Stat[] = [
+    {
+      label: `${figures.orders.pluralLabel} today`,
+      value: figures.today.orders,
+      hint: `${figures.today.sameTimeLastWeek.toLocaleString()} by this time last week`,
+      change: trend(figures.today.orders, figures.today.sameTimeLastWeek),
+      icon: ShoppingBagIcon,
+      href: orders,
+    },
+  ];
+  if (figures.pending !== null && figures.pendingStatus && figures.statusField) {
+    stats.push({
+      label: `${figures.pendingStatus.charAt(0).toUpperCase()}${figures.pendingStatus.slice(1)}`,
+      value: figures.pending,
+      hint: figures.pending === 0 ? "nothing waiting" : "waiting for you",
+      icon: ClockIcon,
+      href: `${orders}?filter[${figures.statusField}]=${encodeURIComponent(figures.pendingStatus)}`,
+    });
+  }
+  if (figures.sales) {
+    stats.push({
+      label: "Sales, last 7 days",
+      value: formatMoney(figures.sales.week, figures.currency) ?? figures.sales.week.toLocaleString(),
+      hint: `${formatMoney(figures.sales.lastWeek, figures.currency) ?? figures.sales.lastWeek.toLocaleString()} the 7 before`,
+      change: trend(figures.sales.week, figures.sales.lastWeek),
+      icon: BanknoteIcon,
+      href: orders,
+    });
+  }
+  return stats;
+}
 
 /** The first thing you see when you sign in: how much data there is, and what's left to set up. */
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
@@ -36,7 +91,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   );
 
   // Who did what lately, for those whose roles include the activity log.
-  const { may } = await dashboardSession();
+  const [{ may }, shop] = await Promise.all([dashboardSession(), shopStats()]);
   const activity = may("activity.view") ? await loadActivity({ perPage: 8 }) : null;
   // Not migrated, or not reachable: the Activity page says which. Here it is left out.
   const recent = activity?.status === "ok" ? activity.page : null;
@@ -64,6 +119,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </Alert>
       )}
 
+      <StatCards stats={shop} />
       <StatCards stats={stats} />
 
       {noneForYou && (

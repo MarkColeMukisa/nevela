@@ -6,6 +6,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "r
 import { ActivityRow } from "@/components/activity-row";
 import { CustomerHome } from "@/components/customer-home";
 import { HomeHeader, NothingShared } from "@/components/home-header";
+import { ShopFiguresCard, type ShopFigures } from "@/components/shop-figures";
 import { Spark } from "@/components/spark";
 import { Body, Heading, Notice, Screen, type IconName } from "@/components/ui";
 import type { Activity } from "@/lib/activity";
@@ -37,6 +38,8 @@ interface Home {
   users: number | null;
   activity: Activity[] | null;
   inbox: Inbox | null;
+  /** The shop at a glance, in an app with a shop; null otherwise. */
+  shop: ShopFigures | null;
 }
 
 /**
@@ -65,13 +68,15 @@ function StaffHome() {
         return null;
       }
     };
-    const [figures, users, activity, inbox] = await Promise.all([
+    const [figures, users, activity, inbox, shop] = await Promise.all([
       Promise.all(shown.map(async (resource) => [resource.slug, await figuresOf(resource)] as const)),
       can("users.view") ? api.get<{ meta: { total: number } }>("/_nevela/users", { perPage: 1 }).then((answer) => answer.meta.total).catch(() => null) : Promise.resolve(null),
       can("activity.view") ? api.get<{ data: Activity[] }>("/_nevela/activity", { perPage: 6 }).then((answer) => answer.data).catch(() => null) : Promise.resolve(null),
       loadInbox().catch(() => null),
+      // 404 in an app without a shop, 403 for a role that sees no orders: both are no figures.
+      api.get<ShopFigures>("/_nevela/shop-figures").catch(() => null),
     ]);
-    return { figures: Object.fromEntries(figures), users, activity, inbox };
+    return { figures: Object.fromEntries(figures), users, activity, inbox, shop };
     // The resources shown decide what to ask for; `key` stands for them.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, can]);
@@ -81,7 +86,8 @@ function StaffHome() {
 
   const creatable = resources.filter((resource) => may(user, resource, "create"));
   const unread = home.data?.inbox?.unread ?? 0;
-  const conditions = home.data?.inbox?.conditions ?? [];
+  // A new Nevela release is for whoever builds the app, not whoever runs the business: it is under Settings, About.
+  const conditions = (home.data?.inbox?.conditions ?? []).filter((condition) => condition.id !== "release");
 
   return (
     <Screen inTabs refreshControl={<RefreshControl refreshing={home.refreshing} onRefresh={home.refresh} />}>
@@ -93,6 +99,8 @@ function StaffHome() {
         </Pressable>
       ) : null}
       {describing ?? home.error ? <Notice>{messageOf(describing ?? home.error)}</Notice> : null}
+
+      {home.data?.shop ? <ShopFiguresCard figures={home.data.shop} /> : null}
 
       {creatable.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }} style={{ marginHorizontal: -spacing.lg }}>

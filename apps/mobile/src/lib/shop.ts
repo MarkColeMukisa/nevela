@@ -1,3 +1,5 @@
+import { shopShapes } from "@shared/shop";
+
 import type { FieldSpec, Resource } from "./resources";
 
 /**
@@ -53,7 +55,6 @@ export interface Shop {
   send: Record<string, unknown>;
 }
 
-const QUANTITY = /^(quantity|qty)$/i;
 const AVAILABLE = /^(active|available|availability|in_?stock|published|enabled)$/i;
 /** An order's status, and its like: the shop's to decide. A customer is never asked for one. */
 const STATUS = /^(status|state|stage)$/i;
@@ -82,20 +83,12 @@ const askable = (field: FieldSpec) => field.kind !== "file" && field.kind !== "j
 export function findShop(all: Resource[], settings: ShopSettings = {}): Shop | null {
   const byName = new Map(all.map((resource) => [resource.name, resource]));
 
-  for (const orders of all) {
-    const lines = orders.items ? byName.get(orders.items) : undefined;
-    if (!lines) continue;
-
-    const links = Object.entries(lines.fields).filter(([, field]) => field.kind === "belongsTo" && field.target);
-    const link = links.find(([, field]) => field.target === orders.name)?.[0];
-    const bought = links.find(([name, field]) => name !== link && field.target !== orders.name && byName.has(field.target as string));
-    const quantity = Object.entries(lines.fields).find(([name, field]) => (field.kind === "int" || field.kind === "float") && QUANTITY.test(name))?.[0];
-    if (!link || !bought || !quantity) continue;
-
+  // Which resources are shaped like a shop is the rule both apps and the API share (packages/shared/shop.ts).
+  for (const { orders, lines, link, product, catalogue: sold, quantity } of shopShapes(all)) {
     const linePrice = Object.entries(lines.fields).find(([, field]) => field.kind === "float" && field.format === "money");
     // The line's price is usually copied from the thing bought ("productId.price"): that is the price to show.
-    const copied = linePrice?.[1].from?.startsWith(`${bought[0]}.`) ? linePrice[1].from.slice(bought[0].length + 1) : null;
-    const { catalogue, title, price, image, description, category, available } = catalogueOf(byName.get(bought[1].target as string) as Resource, byName, settings, copied);
+    const copied = linePrice?.[1].from?.startsWith(`${product}.`) ? linePrice[1].from.slice(product.length + 1) : null;
+    const { catalogue, title, price, image, description, category, available } = catalogueOf(sold, byName, settings, copied);
 
     const send = settings.send ?? {};
     const checkout =
@@ -118,7 +111,7 @@ export function findShop(all: Resource[], settings: ShopSettings = {}): Shop | n
     const unaskable = checkout.some((name) => !orders.fields[name] || !askable(orders.fields[name]));
     if (missing || unaskable) continue;
 
-    return { orders, lines, link, product: bought[0], catalogue, quantity, title, price, image, description, category, available, checkout, send };
+    return { orders, lines, link, product, catalogue, quantity, title, price, image, description, category, available, checkout, send };
   }
   return null;
 }

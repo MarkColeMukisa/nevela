@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { ActivityIcon, CodeIcon, LayoutDashboardIcon, ShieldCheckIcon, Trash2Icon, UserCircleIcon, UserXIcon, UsersIcon } from "lucide-react";
+import { ActivityIcon, CodeIcon, LayoutDashboardIcon, ReceiptIcon, ShieldCheckIcon, TagsIcon, Trash2Icon, UserCircleIcon, UserXIcon, UsersIcon } from "lucide-react";
 import { ChevronsUpDownIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
@@ -86,6 +86,7 @@ const ADMIN_LINKS: typeof ACCOUNT_LINKS = [{ href: "/dashboard/api", label: "API
 export function DashboardSidebar({
   appName,
   resources,
+  tabs = [],
   links = [],
   isAdmin = false,
   access = { users: false, roles: false, deleted: false },
@@ -94,6 +95,8 @@ export function DashboardSidebar({
 }: {
   appName: string;
   resources: NavResource[];
+  /** The resources put first, under Home, as the phone app's tabs are (lib/layout.ts): a shop's orders and what it sells. */
+  tabs?: { name: string; title: string; role: "orders" | "catalogue" | "chosen" }[];
   /** Extra pages (see lib/dashboard-nav.ts), shown under "Platform". */
   links?: Array<{ label: string; href: string; icon: string }>;
   /** Whether to show the sections that manage the app itself. */
@@ -117,6 +120,36 @@ export function DashboardSidebar({
     ...(isAdmin ? ADMIN_LINKS : []),
   ];
 
+  const first = tabs.map((tab) => ({ tab, resource: resources.find((resource) => resource.name === tab.name) })).filter((entry): entry is { tab: (typeof tabs)[number]; resource: NavResource } => entry.resource !== undefined);
+  const rest = resources.filter((resource) => !first.some((entry) => entry.resource.name === resource.name));
+
+  const item = (resource: NavResource, label = resource.pluralLabel, Icon = resourceIcon(resource.icon)) => {
+    const href = `/dashboard/${resource.slug}`;
+    return (
+      <SidebarMenuItem key={resource.name}>
+        <SidebarMenuButton asChild isActive={pathname === href || pathname.startsWith(`${href}/`)} tooltip={label}>
+          <Link href={href}>
+            <Icon />
+            <span>{label}</span>
+          </Link>
+        </SidebarMenuButton>
+        {resource.views && resource.views.length > 0 && (
+          <SidebarMenuSub>
+            {resource.views.map((view) => (
+              <SidebarMenuSubItem key={view.id}>
+                <SidebarMenuSubButton asChild isActive={pathname === href && search === view.query}>
+                  <Link href={`${href}?${view.query}`}>
+                    <span>{view.name}</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            ))}
+          </SidebarMenuSub>
+        )}
+      </SidebarMenuItem>
+    );
+  };
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -139,50 +172,23 @@ export function DashboardSidebar({
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === "/dashboard"} tooltip="Overview">
+                <SidebarMenuButton asChild isActive={pathname === "/dashboard"} tooltip="Home">
                   <Link href="/dashboard">
                     <LayoutDashboardIcon />
-                    <span>Overview</span>
+                    <span>Home</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {first.map(({ tab, resource }) => item(resource, tab.title, tab.role === "orders" ? ReceiptIcon : tab.role === "catalogue" ? TagsIcon : resourceIcon(resource.icon)))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {byGroup(resources).map(([heading, group, isSystem]) => (
+        {byGroup(rest).map(([heading, group, isSystem]) => (
           <SidebarGroup key={heading} className={isSystem ? "mt-2 pt-2 border-t" : ""}>
             <SidebarGroupLabel className={isSystem ? "text-muted-foreground/70" : ""}>{heading}</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
-                {group.map((resource) => {
-                  const href = `/dashboard/${resource.slug}`;
-                  const Icon = resourceIcon(resource.icon);
-                  return (
-                    <SidebarMenuItem key={resource.name}>
-                      <SidebarMenuButton asChild isActive={pathname === href || pathname.startsWith(`${href}/`)} tooltip={resource.pluralLabel}>
-                        <Link href={href}>
-                          <Icon />
-                          <span>{resource.pluralLabel}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                      {resource.views && resource.views.length > 0 && (
-                        <SidebarMenuSub>
-                          {resource.views.map((view) => (
-                            <SidebarMenuSubItem key={view.id}>
-                              <SidebarMenuSubButton asChild isActive={pathname === href && search === view.query}>
-                                <Link href={`${href}?${view.query}`}>
-                                  <span>{view.name}</span>
-                                </Link>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
+              <SidebarMenu>{group.map((resource) => item(resource))}</SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         ))}

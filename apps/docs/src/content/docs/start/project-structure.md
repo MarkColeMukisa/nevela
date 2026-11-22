@@ -10,11 +10,28 @@ my-app/
 ├─ apps/
 │  ├─ api/      the Laravel app
 │  └─ web/      the Next.js dashboard
+├─ packages/
+│  └─ shared/   what the dashboard and the phone app share: the brand, the themes, the layout
 ├─ nevela       the app's own launcher: php nevela does what nevela does
 └─ package.json
 ```
 
 `nevela new my-app --mobile` (or `--tier both`) adds a third, `apps/mobile`: [the mobile app](/guides/mobile-app/). With `--tier mobile` there is `apps/mobile` and no `apps/web`.
+
+## packages/shared, what both apps share
+
+Plain TypeScript, with no build step. The dashboard and the phone app both import it, so the two say the same thing and are laid out the same way. In your own code, import it as `@shared/brand` and so on. Nevela's own dashboard files use a relative path instead, so an app whose `tsconfig.json` is its own still builds.
+
+| File | What it holds | Whose |
+|---|---|---|
+| `brand.ts` | The app's name and tagline. | Yours |
+| `layout.ts` | The tabs that come first, after Home and before More: a shop's orders and what it sells (`"shop"`), or the resources you name, such as `["Booking", "Service"]`. | Yours |
+| `themes.ts` | The phone app's colours, by theme, and the theme in use. | Yours to add to |
+| `shop.ts`, `tabs.ts` | How a shop is found in your resources, and which tabs that gives. The Laravel API finds a shop by the same rule. | Nevela's |
+
+`nevela upgrade` adds a file of these an app hasn't got, and never changes one it has. An older app's `brand.ts` starts with the name and tagline its `apps/web/lib/site.ts` had. That `site.ts` is one the installer wrote the name into, so an upgrade keeps it as it was, and it goes on naming the app itself. To make `brand.ts` the one place, set `name: brand.name` and `tagline: brand.tagline` there, importing `brand` from `../../../packages/shared/brand`.
+
+The dashboard reaches the folder because `apps/web/next.config.ts` builds with the project as its root (`turbopack.root`). The phone app reaches it through `apps/mobile/metro.config.js`. On a host that builds one app at a time, such as Laravel Cloud with a root directory of `apps/web`, the whole repository is there while it builds, and what is imported is bundled into the build.
 
 ## apps/api, the Laravel app
 

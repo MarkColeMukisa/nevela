@@ -285,6 +285,32 @@ What the dashboard's insights panel is drawn from.
 
 It takes the list's `q` and `filter[…]`, so the counts are of the same records a list request with those parameters returns. `page`, `perPage` and `sort` are accepted and change nothing. It takes the permission to view the resource. Days are counted in the app's timezone (`config/app.php`).
 
+## Shop figures
+
+```
+GET /_nevela/shop-figures
+```
+
+The shop at a glance: what the top of the dashboard's home and the phone's home show, in an app with a shop. A shop is what the mobile app looks for: an order resource whose [lines](/guides/line-items/) point at what is sold and have a quantity. Without one the answer is 404 with the code `NO_SHOP`.
+
+```json
+{
+  "orders": { "slug": "orders", "label": "Order", "pluralLabel": "Orders" },
+  "today": { "orders": 5, "sameTimeLastWeek": 4 },
+  "pending": 2, "pendingStatus": "pending", "statusField": "status",
+  "sales": { "total": 128400, "week": 41000, "lastWeek": 36000 },
+  "currency": "UGX"
+}
+```
+
+| Part of the answer | What it is |
+|---|---|
+| `today` | Orders since midnight, and how many there were last week on the same day up to the same time, not in that whole day. Days are the app's timezone (`config/app.php`). |
+| `pending` | Orders still in the status an order starts with: the status field's default, else `pending`, else its first option. The status field is the order's enum called `status`, `state` or `stage`. `null` when it has none. |
+| `sales` | The order's money field added up (`total`, `amount` or `grandTotal`, else the first). `week` is the last seven days and `lastWeek` the seven before. Orders whose status starts with "cancel" (`cancelled`, `canceled`) sold nothing and are left out. `null` when orders have no money field. |
+
+It counts the orders this person may see, as their list does, and takes the permission to view orders.
+
 ## The trash
 
 A deleted record is kept for 30 days (`trash.days`) and answers 404 everywhere above until it is restored. These are the same for every resource, by its slug:
