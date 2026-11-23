@@ -8,6 +8,8 @@ import { useColorScheme } from "react-native";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { CartProvider, useCatalogue } from "@/lib/cart";
 import { forgetComeBack, takeComeBack } from "@/lib/guest";
+import { screenFor } from "@/lib/links";
+import { followTaps, registerPush } from "@/lib/push";
 import { ResourcesProvider, useResources } from "@/lib/resources";
 import { loadAppearance, setAppearance, useColors } from "@/lib/theme";
 
@@ -69,6 +71,32 @@ function Screens() {
     const timer = setTimeout(() => router.push(path as never), 150);
     return () => clearTimeout(timer);
   }, [user, waiting]);
+
+  const userId = user === null ? null : String(user.id);
+  // Pushes: this phone is registered for whoever signs in, and a tap opens what it is about:
+  // a record's page, or else the bell. Signed out (away too long), a tap asks to sign in first.
+  useEffect(() => {
+    if (waiting) return;
+    if (userId !== null) void registerPush();
+    let stop: (() => void) | null = null;
+    let gone = false;
+    void followTaps(({ url }) => {
+      if (userId === null) {
+        router.navigate("/sign-in");
+        return false; // followed once signed in
+      }
+      const target = screenFor(url);
+      router.push(target ? { pathname: "/r/[slug]/[id]", params: target } : "/notifications");
+    }).then((unsubscribe) => {
+      if (gone) unsubscribe();
+      else stop = unsubscribe;
+    });
+    return () => {
+      gone = true;
+      stop?.();
+    };
+    // Once per person: the user object is replaced when their profile changes, and that is no new phone.
+  }, [userId, waiting]);
 
   if (waiting && !started) return null;
 

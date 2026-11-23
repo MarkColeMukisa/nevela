@@ -3,6 +3,7 @@ import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, 
 import { Platform } from "react-native";
 
 import { api, type TokenPair } from "./api";
+import { forgetPush } from "./push";
 import { shellFor, type Shell } from "./shell";
 import { authorize } from "./social";
 
@@ -188,6 +189,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await api.post("/auth/email/send", { email }, { auth: false });
       },
       signOut: async () => {
+        // First, while the sign-in still works: the next person on this phone doesn't get these pushes.
+        await forgetPush();
         try {
           await api.delete("/auth/token");
         } catch {

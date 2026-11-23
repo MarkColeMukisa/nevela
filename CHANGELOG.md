@@ -8,6 +8,19 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- **Every bell notice is also a push notification** to the phones of the people it is for. Tapping it in the phone app opens its record. A phone is registered when someone signs in on it, and gets pushes only while that sign-in lasts. It stops at once when the sign-in ends: signing out, being revoked from the Devices screen, a new password, a closed account, or lapsing. `Push::send` sends one with no notice. In an app that upgraded, run `php artisan migrate` first. See [Push notifications](https://nevela-docs.vercel.app/guides/mobile-app/#push-notifications).
+- **`nevela push <email>` sends a test push and shows its receipt.** A missing or wrong Firebase key shows only in the receipt, not in Expo's first answer.
+- **The phone app is ready for push and for updates without a new build:**
+  - `expo-notifications`, with an Android notification channel;
+  - an Android notification icon (a white silhouette, 96 by 96) and its colour;
+  - `expo-updates`, with `runtimeVersion` set to the app version;
+  - an `eas.json` whose `preview` and `production` builds each have an update channel;
+  - `npm run update:preview` and `update:production`.
+
+  What each app sets up for itself (its EAS project, Firebase and the FCM key) is in [What an Android build needs](https://nevela-docs.vercel.app/guides/mobile-app/#what-an-android-build-needs). An existing app's `apps/mobile` isn't upgraded.
+
 ## [0.37.0] - 2026-11-23
 
 _Home leads with the business, and both apps share one layout_

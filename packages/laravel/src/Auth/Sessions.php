@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Nevela\Laravel\Access\Access;
 use Nevela\Laravel\Access\ClosedAccounts;
+use Nevela\Laravel\Push\Push;
 use Nevela\Laravel\Support\SchemaFacts;
 
 /**
@@ -259,6 +260,8 @@ final class Sessions
     {
         DB::table(self::TABLE)->where('id', $id)->whereNull('revoked_at')->update(['revoked_at' => now()]);
         DB::table('personal_access_tokens')->where('name', self::TOKEN_PREFIX.$id)->delete();
+        // Its phone hears nothing more: a sign-out, or a device revoked from the Devices screen, is the end of its pushes.
+        Push::forgetSession($id);
     }
 
     /**
@@ -367,7 +370,11 @@ final class Sessions
         $gone = 0;
         DB::table(self::TABLE)->chunkById(500, function ($rows) use (&$gone, $dayAgo) {
             $ids = [];
+            $ended = [];
             foreach ($rows as $row) {
+                if (self::ended($row) !== null) {
+                    $ended[] = $row->id;
+                }
                 $endedAt = $row->revoked_at ? Carbon::parse((string) $row->revoked_at) : (self::ended($row) !== null ? self::endsAt($row) : null);
                 if ($endedAt !== null && $endedAt->lt($dayAgo)) {
                     $ids[] = $row->id;
@@ -377,7 +384,17 @@ final class Sessions
                 $gone += DB::table(self::TABLE)->whereIn('id', $ids)->delete();
                 DB::table('personal_access_tokens')->whereIn('name', array_map(fn ($id) => self::TOKEN_PREFIX.$id, $ids))->delete();
             }
+            // Every sign-in that has ended, however lately: its phone hears nothing more (Push::live
+            // already sends it nothing). The session itself is kept a day, for the Devices list.
+            if ($ended !== [] && Push::ready()) {
+                DB::table(Push::TABLE)->whereIn('session_id', $ended)->delete();
+            }
         });
+
+        // The phones of sessions that are gone: one that lapsed is still told, until it is removed here.
+        if (Push::ready()) {
+            DB::table(Push::TABLE)->whereNotExists(fn ($query) => $query->from(self::TABLE)->whereColumn(self::TABLE.'.id', Push::TABLE.'.session_id'))->delete();
+        }
 
         // The spent tokens of sessions that are gone, by this or by an account being deleted.
         if (SchemaFacts::hasTable(self::SPENT)) {
