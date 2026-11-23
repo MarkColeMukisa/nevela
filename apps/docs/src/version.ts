@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "Pick web, mobile or both, and how your app sends email";
+export const RELEASE_HEADLINE = "Home leads with the business, and both apps share one layout";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "New: nevela new asks which apps you want (a dashboard, a phone app with no dashboard, or both) and how the app sends email: Resend, Brevo or SMTP.",
-  href: "/start/quickstart/#options-for-nevela-new",
-  label: "The new options",
+  text: "New: in a shop, home starts with today's orders and sales, and the dashboard and the phone app share one layout (Home, Orders, Catalogue, More) from packages/shared.",
+  href: "/start/project-structure/#packagesshared-what-both-apps-share",
+  label: "The shared folder",
 };

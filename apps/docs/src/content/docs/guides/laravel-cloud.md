@@ -73,6 +73,8 @@ A password given this way is kept in the host's command history. Sign in with it
 
 Create a second application on the same repository, with **root directory `apps/web`**. Leave **"Run as a static website" off**: the dashboard, signing in and the forms need a server.
 
+The dashboard imports `packages/shared` from beside `apps/`, and that works with this root directory. Laravel's support confirmed that Cloud's build has the whole repository, and `next build` bundles what the dashboard imports into its output. So nothing outside `apps/web` is needed when it runs. Nothing has to be set for it.
+
 **Build with pnpm.** A Nevela web app has `pnpm-lock.yaml`. Set the build command, or Cloud uses npm and ignores the lock file:
 
 ```sh

@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.37.0] - 2026-11-23
+
+_Home leads with the business, and both apps share one layout_
+
 ### Added
 
 - **The home screen leads with the business, in an app with a shop.** Both the dashboard and the phone show today's orders against the same time last week, how many are waiting, and sales over the last seven days against the seven before. Cancelled orders are left out of sales. They come from a new endpoint, `GET /_nevela/shop-figures`, which counts the orders the person may see. See [Shop figures](https://nevela-docs.vercel.app/reference/api/#shop-figures).
@@ -950,7 +954,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.36.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.37.0...HEAD
+[0.37.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.36.0...v0.37.0
 [0.36.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.35.0...v0.36.0
 [0.35.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.34.1...v0.35.0
 [0.34.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.34.0...v0.34.1
