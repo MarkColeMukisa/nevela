@@ -67,8 +67,9 @@ export async function registerPush(): Promise<void> {
     if (status !== "granted") return;
 
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
-    await api.put("/_nevela/push-tokens", { token, platform: Platform.OS });
+    // Kept first: if the answer is lost after Laravel saved it, signing out can still take it back.
     await storage.setItem(KEY, token);
+    await api.put("/_nevela/push-tokens", { token, platform: Platform.OS });
   } catch {
     // No Firebase in this build, no permission, or no signal: the bell still works.
   }

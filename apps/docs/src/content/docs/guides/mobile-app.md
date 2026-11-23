@@ -302,7 +302,7 @@ Publish `dist/`, with `index.html` as both the index and the error page, so an a
 Every notice in the bell is also sent as a push notification to the phones of the people it is for. "Your order JM-0016 is now Ready" arrives with the app closed, and tapping it opens the order. There is nothing to write for it: Laravel sends each one through [Expo's push service](https://docs.expo.dev/push-notifications/overview/) once the request has been answered.
 
 - **When a phone is registered:** when someone signs in on it and allows notifications. The phone belongs to whoever signed in on it last.
-- **When it stops getting them:** when that sign-in ends. That is at once when they sign out, or when it is revoked from the Devices screen, by a new password or by a closed account. A sign-in that lapsed after a while unused still gets them until the nightly clean-up removes it, a day or two later, and a tap asks them to sign in again.
+- **When it stops getting them:** as soon as that sign-in ends: they sign out, it is revoked from the Devices screen, a new password or a closed account ends it, or it lapses after a while unused or at its time limit. A phone that was signed out with no connection, so the server never heard, stops once its sign-in lapses.
 - **Where there are none:** the web version, a simulator, and Expo Go on Android, which has had no remote push since SDK 53. Try them on a build.
 
 To send one with no notice in the bell, call `Push::send` from your own code:

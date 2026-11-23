@@ -379,7 +379,7 @@ Where a phone app gets the bell's notices as push notifications. See [Push notif
 
 | Request | What it does | Success |
 |---|---|---|
-| `PUT /_nevela/push-tokens` | Register this phone for the caller: `{ "token": "ExponentPushToken[…]", "platform": "android" }`. A phone belongs to whoever registered it last. It is tied to the caller's sign-in, and forgotten when that ends. 422 for something that isn't an Expo push token. Before `php nevela migrate`, 503 with `code: "NOT_MIGRATED"`. | `200 { registered: true }` |
+| `PUT /_nevela/push-tokens` | Register this phone for the caller: `{ "token": "ExponentPushToken[…]", "platform": "android" }`. A phone belongs to whoever registered it last. It is tied to the caller's sign-in, and gets pushes only while that lasts. 422 for something that isn't an Expo push token. 409 for a token that belongs to no sign-in of the app's own (`NO_SESSION`), or one that has ended. Before `php nevela migrate`, 503 with `code: "NOT_MIGRATED"`. | `200 { registered: true }` |
 | `DELETE /_nevela/push-tokens/{token}` | Forget this phone, before signing out. Another person's token is left alone. | `200 { registered: false }` |
 
 ## Relations

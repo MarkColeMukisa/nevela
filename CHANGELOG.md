@@ -10,7 +10,7 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ### Added
 
-- **Every bell notice is also a push notification** to the phones of the people it is for. Tapping it in the phone app opens its record. A phone is registered when someone signs in on it, and forgotten when that sign-in ends: signing out, being revoked from the Devices screen, a new password, a closed account. `Push::send` sends one with no notice. In an app that upgraded, run `php artisan migrate` first. See [Push notifications](https://nevela-docs.vercel.app/guides/mobile-app/#push-notifications).
+- **Every bell notice is also a push notification** to the phones of the people it is for. Tapping it in the phone app opens its record. A phone is registered when someone signs in on it, and gets pushes only while that sign-in lasts. It stops at once when the sign-in ends: signing out, being revoked from the Devices screen, a new password, a closed account, or lapsing. `Push::send` sends one with no notice. In an app that upgraded, run `php artisan migrate` first. See [Push notifications](https://nevela-docs.vercel.app/guides/mobile-app/#push-notifications).
 - **`nevela push <email>` sends a test push and shows its receipt.** A missing or wrong Firebase key shows only in the receipt, not in Expo's first answer.
 - **The phone app is ready for push and for updates without a new build:**
   - `expo-notifications`, with an Android notification channel;

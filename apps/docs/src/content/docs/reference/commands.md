@@ -496,7 +496,7 @@ A new app's scheduler runs these by itself, once Laravel's one cron line is on t
 | Every 5 minutes | A sign of life, so `nevela deploy:check` can tell the scheduler is running. |
 | Every hour | [`nevela digest`](#nevela-digest). |
 | 03:40 | [`nevela trash`](#nevela-trash). |
-| 03:50 | `nevela artisan nevela:prune-sessions`: removes sign-ins that have ended and access tokens that have expired, and stops push notifications to their phones. |
+| 03:50 | `nevela artisan nevela:prune-sessions`: removes sign-ins that have ended and access tokens that have expired, and the phones registered with them for push notifications. |
 | 03:55 | Removes notifications and activity older than they are kept. See [Notifications](/guides/notifications/). |
 | 04:10 | Looks up the latest release of Nevela, so the bell can say when there is a newer one. |
 

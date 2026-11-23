@@ -132,6 +132,37 @@ class PushTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_a_sign_in_that_lapsed_hears_nothing_and_is_forgotten_at_the_clean_up(): void
+    {
+        $ada = $this->user();
+        $session = $this->signIn($ada);
+        $this->register($session);
+
+        // Unused for longer than a sign-in lasts: ended, though its row is kept a day for the Devices list.
+        DB::table(Sessions::TABLE)->where('id', $session['id'])->update(['last_seen_at' => now()->subMinutes((int) Sessions::idleMinutes() + 5)]);
+        Notices::send($ada, new Notice('Your order is ready'));
+        Http::assertNothingSent();
+
+        Sessions::prune();
+        $this->assertSame(0, DB::table(Push::TABLE)->count());
+        $this->assertSame(1, DB::table(Sessions::TABLE)->where('id', $session['id'])->count());
+    }
+
+    public function test_only_a_live_sign_in_of_the_apps_own_registers_a_phone(): void
+    {
+        $ada = $this->user();
+        // A token that belongs to no sign-in (an app's own) has no end to be forgotten at.
+        \Laravel\Sanctum\Sanctum::actingAs($ada);
+        $this->putJson('/api/_nevela/push-tokens', ['token' => self::PHONE])->assertStatus(409)->assertJsonPath('code', 'NO_SESSION');
+        $this->app['auth']->forgetGuards();
+
+        // A sign-in that has ended, though its access token hasn't gone yet.
+        $session = $this->signIn($ada);
+        DB::table(Sessions::TABLE)->where('id', $session['id'])->update(['revoked_at' => now()]);
+        $this->putJson('/api/_nevela/push-tokens', ['token' => self::PHONE], $session['headers'])->assertStatus(409);
+        $this->assertSame(0, DB::table(Push::TABLE)->count());
+    }
+
     public function test_a_phone_expo_says_is_gone_is_forgotten(): void
     {
         $this->expo = fn () => Http::response(['data' => [['status' => 'error', 'message' => 'not registered', 'details' => ['error' => 'DeviceNotRegistered']]]]);
