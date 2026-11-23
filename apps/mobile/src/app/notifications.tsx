@@ -4,6 +4,7 @@ import { RefreshControl, View } from "react-native";
 
 import { Body, Button, Card, Heading, Loading, Notice, Row, Screen } from "@/components/ui";
 import { api, messageOf } from "@/lib/api";
+import { screenFor } from "@/lib/links";
 import { spacing } from "@/lib/theme";
 import { useLoaded } from "@/lib/use-loaded";
 import { ago } from "@/lib/when";
@@ -18,11 +19,6 @@ export interface Inbox {
 
 export const loadInbox = () => api.get<Inbox>("/_nevela/notifications");
 
-/** A dashboard address the app has a screen for: a record's page. */
-function screenFor(url: string | null): { slug: string; id: string } | null {
-  const match = /^\/dashboard\/([a-z0-9-]+)\/([^/?#]+)$/.exec(url ?? "");
-  return match && match[1] !== "account" && match[1] !== "access" ? { slug: match[1], id: decodeURIComponent(match[2]) } : null;
-}
 
 /** Everything the bell holds: what needs attention, and what has happened. */
 export default function Notifications() {

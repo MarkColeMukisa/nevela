@@ -466,6 +466,19 @@ It exits with an error when something is wrong, so a deploy script can stop on i
 
 The test job it sends to the queue does nothing but note that it ran, so one left waiting for a worker does no harm.
 
+## nevela push
+
+```sh
+php nevela push owner@example.com
+```
+
+Sends a test push notification to every phone the person is signed in on, then shows Expo's ticket for each and, a few seconds later, its receipt. A receipt says whether Firebase or Apple took the push, which is where a missing or wrong FCM key shows. It exits with an error when anything failed. See [Push notifications](/guides/mobile-app/#push-notifications).
+
+| Option | Meaning |
+|---|---|
+| `--title=` | What the push says. |
+| `--wait=` | Seconds to wait before asking for the receipts. Default 8. |
+
 ## nevela digest
 
 ```sh
@@ -483,7 +496,7 @@ A new app's scheduler runs these by itself, once Laravel's one cron line is on t
 | Every 5 minutes | A sign of life, so `nevela deploy:check` can tell the scheduler is running. |
 | Every hour | [`nevela digest`](#nevela-digest). |
 | 03:40 | [`nevela trash`](#nevela-trash). |
-| 03:50 | `nevela artisan nevela:prune-sessions`: removes sign-ins that have ended and access tokens that have expired. |
+| 03:50 | `nevela artisan nevela:prune-sessions`: removes sign-ins that have ended and access tokens that have expired, and stops push notifications to their phones. |
 | 03:55 | Removes notifications and activity older than they are kept. See [Notifications](/guides/notifications/). |
 | 04:10 | Looks up the latest release of Nevela, so the bell can say when there is a newer one. |
 

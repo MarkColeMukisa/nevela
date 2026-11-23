@@ -373,6 +373,15 @@ An activity entry is `{ id, action, resource, label, pluralLabel, slug, count, t
 
 `conditions` is always empty for someone who isn't an administrator.
 
+### Push tokens
+
+Where a phone app gets the bell's notices as push notifications. See [Push notifications](/guides/mobile-app/#push-notifications).
+
+| Request | What it does | Success |
+|---|---|---|
+| `PUT /_nevela/push-tokens` | Register this phone for the caller: `{ "token": "ExponentPushToken[…]", "platform": "android" }`. A phone belongs to whoever registered it last. It is tied to the caller's sign-in, and forgotten when that ends. 422 for something that isn't an Expo push token. Before `php nevela migrate`, 503 with `code: "NOT_MIGRATED"`. | `200 { registered: true }` |
+| `DELETE /_nevela/push-tokens/{token}` | Forget this phone, before signing out. Another person's token is left alone. | `200 { registered: false }` |
+
 ## Relations
 
 A `belongsTo` field is the related record's id, in what you send and in what comes back:

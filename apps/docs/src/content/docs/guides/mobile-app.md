@@ -297,6 +297,58 @@ EXPO_PUBLIC_API_URL=https://api.example.com/api npm run export:web
 
 Publish `dist/`, with `index.html` as both the index and the error page, so an address inside the app loads directly. `export:web` also moves the icon fonts out of `node_modules` folders inside `dist/`. Hosts that skip such folders when they upload, as Sevalla's static sites do, would otherwise leave every icon an empty box.
 
+## Push notifications
+
+Every notice in the bell is also sent as a push notification to the phones of the people it is for. "Your order JM-0016 is now Ready" arrives with the app closed, and tapping it opens the order. There is nothing to write for it: Laravel sends each one through [Expo's push service](https://docs.expo.dev/push-notifications/overview/) once the request has been answered.
+
+- **When a phone is registered:** when someone signs in on it and allows notifications. The phone belongs to whoever signed in on it last.
+- **When it stops getting them:** when that sign-in ends. That is at once when they sign out, or when it is revoked from the Devices screen, by a new password or by a closed account. A sign-in that lapsed after a while unused still gets them until the nightly clean-up removes it, a day or two later, and a tap asks them to sign in again.
+- **Where there are none:** the web version, a simulator, and Expo Go on Android, which has had no remote push since SDK 53. Try them on a build.
+
+To send one with no notice in the bell, call `Push::send` from your own code:
+
+```php
+use Nevela\Laravel\Push\Push;
+
+Push::send([$order->user_id], "Your order {$order->number} is ready", 'Collect it at the counter', "/dashboard/orders/{$order->id}");
+```
+
+The last argument is where a tap leads: a record's page, written as the dashboard's address. It never throws, and nothing is asked of Expo for people with no phone registered. In an app that upgraded, run `php artisan migrate` first, which makes the `nevela_push_tokens` table.
+
+### What an Android build needs
+
+1. **An EAS project:** `npx eas-cli@latest init` in `apps/mobile`. A push is addressed per project.
+2. **Firebase:** make a project at [console.firebase.google.com](https://console.firebase.google.com), add an Android app with your `android.package`, and download `google-services.json` into `apps/mobile`. Set `"googleServicesFile": "./google-services.json"` under `android` in `app.json`. The file holds no secret and is committed.
+3. **The FCM V1 key:** in Firebase, under Project settings, Service accounts, make a private key. Upload it with `npx eas-cli@latest credentials`. It is a secret: never commit it.
+4. **Your notification icon:** `assets/images/notification-icon.png` is a white silhouette on a transparent background, 96 by 96, and Android draws it in the status bar. The new app's one is Nevela's N. Make yours from your own icon's monochrome layer, and set `color` beside it under `expo-notifications` in `app.json`. It is part of the build, so changing it needs a new one.
+
+An iPhone build needs an Apple developer account. EAS sets up Apple's push key when it builds.
+
+### When a push doesn't arrive
+
+```sh
+php nevela push owner@example.com
+```
+
+That sends a test push to the person's phones and shows what became of it. Expo's first answer (a ticket) only says Expo took it. Whether Firebase or Apple took it in turn is in the receipt, a few seconds later: a missing or wrong FCM key shows there and nowhere else. If it says they have no phone registered, they may have signed out, which forgets the phone on purpose. Sign in on the phone again and stay signed in.
+
+## Updates without a new build
+
+The app takes over-the-air updates from [EAS Update](https://docs.expo.dev/eas-update/introduction/): new screens, wording and fixes reach phones that have it installed, with no new build to hand out. Set it up once, before the first build you give anyone. A build made without it can never take one.
+
+```sh
+cd apps/mobile
+npx eas-cli@latest update:configure
+```
+
+That adds the project's update address to `app.json`. `eas.json` already gives each build profile its channel: `preview` for builds you share, `production` for the stores. Then, after a change:
+
+```sh
+npm run update:preview        # or update:production
+```
+
+A phone takes the update after one or two launches. An update reaches only builds of the same `version` in `app.json` (`runtimeVersion` is `appVersion`). Anything native needs a new build and a new `version`: the icon, the splash screen, the notification icon, a permission, or a new package with native code.
+
 ## Add one to an app you already have
 
 There is no command for it yet. Create a throwaway app with `nevela new scratch --mobile --no-install`, copy its `apps/mobile` into your project, and run your package manager's install in it. The API needs nothing new, but `nevela dev` only opens the API to your network from 0.30, so [upgrade](/guides/updating/) first.

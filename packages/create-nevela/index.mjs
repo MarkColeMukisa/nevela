@@ -106,6 +106,7 @@ const HELP = `  Create a new Nevela app: a Laravel API, with a dashboard, a phon
     nevela publish             Write config/nevela.php, to change settings that have no .env variable
     nevela deploy:check        On the server: the scheduler, a queue worker, mail and the dashboard
     nevela openapi [--output=openapi.json]  The API as an OpenAPI document, from the resources
+    nevela push <email>        Send a test push to someone's phones, and show what became of it
     nevela seed | user | generate | migrate | trash | disposable | artisan <command>
 
   ${bold('Options')}
