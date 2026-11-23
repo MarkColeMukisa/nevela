@@ -72,15 +72,16 @@ function Screens() {
     return () => clearTimeout(timer);
   }, [user, waiting]);
 
+  const userId = user === null ? null : String(user.id);
   // Pushes: this phone is registered for whoever signs in, and a tap opens what it is about:
   // a record's page, or else the bell. Signed out (away too long), a tap asks to sign in first.
   useEffect(() => {
     if (waiting) return;
-    if (user !== null) void registerPush();
+    if (userId !== null) void registerPush();
     let stop: (() => void) | null = null;
     let gone = false;
     void followTaps(({ url }) => {
-      if (user === null) {
+      if (userId === null) {
         router.navigate("/sign-in");
         return false; // followed once signed in
       }
@@ -94,7 +95,8 @@ function Screens() {
       gone = true;
       stop?.();
     };
-  }, [user, waiting]);
+    // Once per person: the user object is replaced when their profile changes, and that is no new phone.
+  }, [userId, waiting]);
 
   if (waiting && !started) return null;
 

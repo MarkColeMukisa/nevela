@@ -282,7 +282,7 @@ Add `<Stack.Screen name="products" options={{ title: "Products" }} />` beside th
 
 Expo Go is for developing. To give the app to other people, build it:
 
-1. Tell the build where the deployed API is: `EXPO_PUBLIC_API_URL=https://api.example.com/api`, and it has to be `https`. Set it in the build's own environment, such as `env` under the build profile in `eas.json`. `.env.local` won't do: it is left out of git, so a build in the cloud never sees it, and the app would look for the API on your computer.
+1. Tell the app where the deployed API is: `EXPO_PUBLIC_API_URL=https://api.example.com/api`, and it has to be `https`. Store it as an EAS environment variable for the `preview` and `production` environments, on expo.dev under the project's Environment variables, or with `npx eas-cli@latest env:create`. Builds read it through `environment` in `eas.json`, and [updates](#updates-without-a-new-build) through `--environment`, so the two always agree. `.env.local` won't do: it is left out of git, a build in the cloud never sees it, and an update doesn't read it. An app built or updated without the address looks for the API on your computer.
 2. Set your own `ios.bundleIdentifier` and `android.package` in `app.json`, such as `com.example.myapp`.
 3. Build with [EAS](https://docs.expo.dev/build/introduction/): `npx eas-cli@latest build --platform android` (or `ios`).
 
@@ -341,7 +341,7 @@ cd apps/mobile
 npx eas-cli@latest update:configure
 ```
 
-That adds the project's update address to `app.json`. `eas.json` already gives each build profile its channel: `preview` for builds you share, `production` for the stores. Then, after a change:
+That adds the project's update address to `app.json`. `eas.json` already gives each build profile its channel: `preview` for builds you share, `production` for the stores. Before the first update, store `EXPO_PUBLIC_API_URL` as an EAS environment variable (step 1 of [Put it on a phone for real](#put-it-on-a-phone-for-real)). An update reads only those, and one published without it leaves every phone that takes it unable to reach the API. Then, after a change:
 
 ```sh
 npm run update:preview        # or update:production

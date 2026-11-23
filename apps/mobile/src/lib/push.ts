@@ -47,6 +47,10 @@ async function handleWhileOpen(): Promise<void> {
 /** Ask for permission (once), and tell Laravel where to reach this phone. Never throws. */
 export async function registerPush(): Promise<void> {
   if (!pushSupported || !Device.isDevice) return;
+  // The EAS project the build belongs to (`npx eas-cli@latest init` sets it): Expo's address for the
+  // phone is per project. Without one, nobody is asked for a permission that could come to nothing.
+  const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+  if (!projectId) return;
   try {
     const Notifications = await notifications();
     await handleWhileOpen();
@@ -62,9 +66,6 @@ export async function registerPush(): Promise<void> {
     if (status !== "granted") ({ status } = await Notifications.requestPermissionsAsync());
     if (status !== "granted") return;
 
-    // The EAS project the build belongs to (`npx eas-cli@latest init` sets it): Expo's address for the phone is per project.
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
-    if (!projectId) return;
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
     await api.put("/_nevela/push-tokens", { token, platform: Platform.OS });
     await storage.setItem(KEY, token);
@@ -104,7 +105,10 @@ export async function followTaps(onTap: (tap: PushTap) => boolean | void): Promi
     const id = response.notification.request.identifier;
     if (followed.has(id)) return;
     const url = response.notification.request.content.data?.url;
-    if (onTap({ id, url: typeof url === "string" ? url : null }) !== false) followed.add(id);
+    if (onTap({ id, url: typeof url === "string" ? url : null }) === false) return;
+    followed.add(id);
+    // Else the next launch finds the same push as the one that opened the app, and opens it again.
+    Notifications.clearLastNotificationResponse();
   };
   await Notifications.getLastNotificationResponseAsync().then(follow).catch(() => undefined);
   const listening = Notifications.addNotificationResponseReceivedListener(follow);
