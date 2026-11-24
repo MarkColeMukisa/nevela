@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { isNewer, satisfiesCaret } from './packagist.mjs';
+import { PHP_LINE, phpIsRecentEnough, phpVersionOf } from './requirements.mjs';
 import { spawnCommand } from './shell.mjs';
 
 /** What `nevela <name>` runs: these go to `php artisan nevela:<name>`. */
@@ -116,6 +117,12 @@ function inApp(project, command, args) {
  */
 export async function upgrade(project, args, { latest, say }) {
   const check = args.includes('--check');
+  // Nevela runs on the latest PHP. On an older one Composer would quietly stay on the last
+  // release that runs there, and the upgrade would seem to do nothing: say why first.
+  const php = phpVersionOf(`${spawnCommand('php', ['-v'], { cwd: project.api, stdio: 'pipe', encoding: 'utf8' }).stdout ?? ''}`);
+  if (php && !phpIsRecentEnough(php)) {
+    say(`this computer has PHP ${php.join('.')}, and Nevela now runs on PHP ${PHP_LINE}. Composer stays on the last release that runs on ${php.join('.')}: install PHP ${PHP_LINE} (https://nevela-docs.vercel.app/start/setup/), then run nevela upgrade again`);
+  }
   const manifestFile = path.join(project.api, 'composer.json');
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   const before = JSON.stringify(manifest);

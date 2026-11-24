@@ -87,7 +87,7 @@ Errors (only under the Nevela prefix):
 
 Every pull request runs all of this in CI, and a release is cut only when it is green:
 
-- **The package's unit tests**, on PHP 8.3 and 8.4: descriptor parsing, list queries, the generated-block writer, the generator's output (`php -l` on every generated PHP file), image optimisation, and more.
+- **The package's unit tests**, on PHP 8.5: descriptor parsing, list queries, the generated-block writer, the generator's output (`php -l` on every generated PHP file), image optimisation, and more.
 - **The Laravel app's feature tests**, on SQLite and again on Postgres: sign-in in every form, roles, the trash, public forms, the activity log, notifications and the rest, over HTTP.
 - **The generated code is up to date:** the app's resources are regenerated, and CI fails if that changes a file. Then a thousand products are seeded, and the images checked for their renditions.
 - **A new app, end to end:** `create-nevela` is packed as it would be published, creates an app, and in it every kind of resource is made with `php nevela` (relations, rich text, private files, public forms, actions, an adopted table), migrated, seeded and checked. Then the dashboard is type-checked and built.

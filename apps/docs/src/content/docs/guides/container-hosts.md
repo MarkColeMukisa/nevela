@@ -10,6 +10,8 @@ Many hosts build the Laravel app into a container and run it from a start comman
 
 So run everything the app needs in the one container, beside the web server, and keep what must last on the disk. Everything in [Deploying](/guides/deploying/) still applies. This page covers what is different.
 
+**PHP 8.5.** Nevela runs on the latest PHP. Most builders take the version from `"php": "^8.5"` in `apps/api/composer.json`, which a new app has. Sevalla's builder (Ingot) reads it from there and defaults to 8.5 anyway. `nevela deploy:check` says which PHP the server runs.
+
 ## The start command
 
 ```sh

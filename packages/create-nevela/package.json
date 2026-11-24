@@ -21,6 +21,7 @@
     "progress.mjs",
     "tool.mjs",
     "choices.mjs",
+    "requirements.mjs",
     "template",
     "LICENSE"
   ],

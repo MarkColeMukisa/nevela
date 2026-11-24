@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
 import { ATTEMPTS, worthRetrying } from './composer.mjs';
 import { choiceProblem, decide, MAILERS, setEnv, TIERS, withMail } from './choices.mjs';
+import { PHP_LINE, phpIsRecentEnough, phpVersionOf } from './requirements.mjs';
 import { banner, ROWS, TAGLINE, WIDTH } from './banner.mjs';
 import { get } from './net.mjs';
 import { artisanArguments, COMMANDS, findProject, repairManifest, repairScripts } from './project.mjs';
@@ -429,4 +430,12 @@ test('the chosen mailer is named for a server, and emails stay in the log on thi
 
   assert.equal(setEnv('A=1\nB=2\n', 'B', '3'), 'A=1\nB=3\n');
   assert.equal(setEnv('A=1', 'C', 'x'), 'A=1\nC=x\n');
+});
+
+test('Nevela runs on the latest PHP: 8.5 or newer, read from php -v', () => {
+  assert.equal(PHP_LINE, '8.5');
+  assert.deepEqual(phpVersionOf('PHP 8.5.12 (cli) (built: Oct 20 2026 04:19:56) (NTS)'), [8, 5]);
+  assert.equal(phpVersionOf('not php'), null);
+  for (const version of [[8, 5], [8, 6], [9, 0]]) assert.equal(phpIsRecentEnough(version), true, version.join('.'));
+  for (const version of [[8, 4], [8, 3], [7, 4], null]) assert.equal(phpIsRecentEnough(version), false, String(version));
 });

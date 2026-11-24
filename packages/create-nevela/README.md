@@ -15,7 +15,7 @@ pnpm create nevela my-app
 npm create nevela@latest my-app
 ```
 
-You need PHP 8.3 or newer, Composer, and Node.js 20 or newer.
+You need PHP 8.5 or newer, Composer, and Node.js 20 or newer.
 
 ## What you get
 

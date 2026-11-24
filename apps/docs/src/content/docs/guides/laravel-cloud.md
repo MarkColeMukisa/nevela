@@ -21,6 +21,8 @@ On Windows, run it in Git Bash. This is `NEVELA_PROXY_SECRET`, and both applicat
 
 Create an application on the repository with **root directory `apps/api`**. It is an ordinary Laravel app.
 
+**PHP 8.5.** Nevela runs on the latest PHP. It is the default for a new environment; for an older one, choose it under the environment's General Settings, Runtime, and deploy again. `nevela deploy:check` says which PHP the server runs.
+
 **The database.** Create one and attach it, or put a database's address in the environment. With Neon, keep both of its addresses:
 
 - the **pooled** one (its host has `-pooler` in it) for the app, and

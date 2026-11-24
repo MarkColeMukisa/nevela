@@ -15,6 +15,7 @@ import readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { banner } from './banner.mjs';
 import { choiceProblem, decide, MAILERS, TIERS, withMail } from './choices.mjs';
+import { PHP_LINE, phpIsRecentEnough, phpVersionOf } from './requirements.mjs';
 import { ATTEMPTS, worthRetrying } from './composer.mjs';
 import { isNewer, latestRelease, onPackagist } from './packagist.mjs';
 import { createProgress, took } from './progress.mjs';
@@ -130,7 +131,7 @@ const HELP = `  Create a new Nevela app: a Laravel API, with a dashboard, a phon
     -h, --help                 Show this.
     -v, --version              Show the version. Piped or captured, the number alone.
 
-  ${bold('Needs')}  PHP 8.3+, Composer, Node.js 20+. How to get them: ${DOCS}/start/setup/
+  ${bold('Needs')}  PHP ${PHP_LINE}+, Composer, Node.js 20+. How to get them: ${DOCS}/start/setup/
   ${bold('Docs')}   ${DOCS}
 `;
 
@@ -301,10 +302,10 @@ function checkRequirements() {
   if (node[0] < 20) fail(`Nevela needs Node.js 20 or newer. You have ${process.versions.node}. ${guide}`);
 
   const php = available('php', ['-v']);
-  if (!php) fail(`PHP isn't installed, or isn't on your PATH. Nevela needs PHP 8.3 or newer. If you have just installed it, open a new terminal. ${guide}`);
-  const version = /PHP (\d+)\.(\d+)/.exec(php);
-  if (!version || Number(version[1]) < 8 || (Number(version[1]) === 8 && Number(version[2]) < 3)) {
-    fail(`Nevela needs PHP 8.3 or newer. You have ${version ? `${version[1]}.${version[2]}` : 'a version I can\'t read'}. ${guide}`);
+  if (!php) fail(`PHP isn't installed, or isn't on your PATH. Nevela needs PHP ${PHP_LINE} or newer. If you have just installed it, open a new terminal. ${guide}`);
+  const version = phpVersionOf(php);
+  if (!phpIsRecentEnough(version)) {
+    fail(`Nevela runs on the latest PHP, ${PHP_LINE} or newer. You have ${version ? version.join('.') : 'a version I can\'t read'}. ${guide}`);
   }
 
   if (!available('composer')) fail(`Composer isn't installed, or isn't on your PATH. If you have just installed it, open a new terminal. ${guide}`);
@@ -859,7 +860,8 @@ async function main() {
     // everything. (`php artisan install:api` would add Sanctum in a Composer run of its own,
     // plus a routes/api.php this app doesn't use: Nevela registers its routes itself.)
     // Laravel's resend mailer talks to Resend through Resend's own PHP package.
-    manifest.require = { ...manifest.require, 'laravel/sanctum': '^4.0', 'nevela/laravel': nevela, ...(mail === 'resend' ? { 'resend/resend-php': '^1.0' } : {}) };
+    // The latest PHP, as Nevela needs: Sevalla's builder also takes the version from here.
+    manifest.require = { ...manifest.require, php: `^${PHP_LINE}`, 'laravel/sanctum': '^4.0', 'nevela/laravel': nevela, ...(mail === 'resend' ? { 'resend/resend-php': '^1.0' } : {}) };
     fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 4)}\n`);
 
     // A download Composer couldn't write or fetch is tried again: on Windows the first files

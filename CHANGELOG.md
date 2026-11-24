@@ -21,6 +21,18 @@ The first line under a version, in italics, is the release in a few words. The d
 
   What each app sets up for itself (its EAS project, Firebase and the FCM key) is in [What an Android build needs](https://nevela-docs.vercel.app/guides/mobile-app/#what-an-android-build-needs). An existing app's `apps/mobile` isn't upgraded.
 
+### Changed
+
+- **Breaking: Nevela runs on the latest PHP, 8.5 or newer.**
+  - **The package** (`nevela/laravel`) now requires `"php": "^8.5"`.
+  - **`nevela new`** refuses an older PHP, and a new app's `composer.json` asks for `^8.5`.
+  - **`nevela upgrade`** on an older PHP says why it can't reach this release: Composer stays on the last one that runs there.
+  - **`nevela status` and `deploy:check`** show the running PHP, and flag anything below 8.5.
+  - **CI** runs everything on 8.5.
+
+  Laravel Cloud and Sevalla both run 8.5 and default to it. To move an app: install PHP 8.5 (in Herd, choose it under PHP), set `"php": "^8.5"` in `apps/api/composer.json`, choose 8.5 for the server, then `nevela upgrade`. See [Set up your computer](https://nevela-docs.vercel.app/start/setup/).
+- **The repository's own app is on Laravel 13.44,** with its other Composer packages updated to their latest versions.
+
 ## [0.37.0] - 2026-11-23
 
 _Home leads with the business, and both apps share one layout_

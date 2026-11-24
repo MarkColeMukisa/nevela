@@ -9,7 +9,7 @@
 # the package as it is in this checkout:
 #
 #   docker build -f benchmarks/Dockerfile --build-arg APP=nevela .
-FROM php:8.4-fpm-alpine
+FROM php:8.5-fpm-alpine
 
 RUN apk add --no-cache nginx postgresql-dev \
     && docker-php-ext-install pdo_pgsql opcache bcmath \

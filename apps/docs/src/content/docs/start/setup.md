@@ -7,7 +7,7 @@ A Nevela app is a Laravel app and a Next.js app, so your computer needs what tho
 
 | | Needed for | Version |
 |---|---|---|
-| **PHP** | the Laravel app, the API | 8.3 or newer |
+| **PHP** | the Laravel app, the API | 8.5 or newer: Nevela runs on the latest PHP |
 | **Composer** | installing Laravel and Nevela's Laravel package | any recent |
 | **Node.js** | the dashboard and the `nevela` command | 20 or newer |
 
@@ -23,7 +23,7 @@ composer -V
 node -v
 ```
 
-Each should print a version: `PHP 8.4.…`, `Composer version 2.…`, `v22.…`. PHP needs to be 8.3 or newer, and Node.js 20 or newer.
+Each should print a version: `PHP 8.5.…`, `Composer version 2.…`, `v22.…`. PHP needs to be 8.5 or newer, and Node.js 20 or newer.
 
 Then check that PHP can use SQLite, the database a new app starts with:
 
@@ -39,7 +39,7 @@ If one says `command not found` (or, on Windows, `is not recognized`), install i
 
 ## macOS
 
-1. **Install [Laravel Herd](https://herd.laravel.com).** It is free, and it brings PHP, Composer and Node.js, with nothing else to set up. Open it once after installing, so it can finish.
+1. **Install [Laravel Herd](https://herd.laravel.com).** It is free, and it brings PHP, Composer and Node.js, with nothing else to set up. Open it once after installing, so it can finish, and check that PHP 8.5 is chosen under **PHP**.
 2. **Open a new terminal window.** One that was open before Herd was installed doesn't know about it yet.
 3. **Check:** `php -v`, `composer -V`, `node -v`. If `node -v` alone answers `command not found`, run `nvm install 22`, which Herd also brings, or install Node.js from [nodejs.org](https://nodejs.org).
 
@@ -47,7 +47,7 @@ If you use Homebrew and would rather not use Herd, `brew install php composer no
 
 ## Windows
 
-1. **Install [Laravel Herd](https://herd.laravel.com).** It brings PHP and Composer. Open it once after installing.
+1. **Install [Laravel Herd](https://herd.laravel.com).** It brings PHP and Composer. Open it once after installing, and check that PHP 8.5 is chosen under **PHP**.
 2. **Install Node.js**, the LTS version from [nodejs.org](https://nodejs.org), if `node -v` doesn't answer.
 3. **Open a new terminal window**, and check: `php -v`, `composer -V`, `node -v`.
 
@@ -64,7 +64,7 @@ Two things that surprise people on Windows:
    /bin/bash -c "$(curl -fsSL https://php.new/install/linux)"
    ```
 
-   On other distributions, install PHP 8.3 or newer and Composer from your package manager.
+   On other distributions, install PHP 8.5 or newer and Composer from your package manager. A distribution that doesn't have 8.5 yet often has a repository that does, such as Ondřej Surý's for Ubuntu and Debian.
 2. **Install Node.js** 20 or newer, from [nodejs.org](https://nodejs.org), your package manager, or [nvm](https://github.com/nvm-sh/nvm).
 3. **Open a new terminal**, and check: `php -v`, `composer -V`, `node -v`.
 
@@ -79,7 +79,7 @@ Go to the [Quickstart](/start/quickstart/). It installs the `nevela` command and
 | What you see | What to do |
 |---|---|
 | `php: command not found` right after installing Herd | Open a new terminal window. |
-| `Nevela needs PHP 8.3 or newer. You have 8.2.` | In Herd, choose PHP 8.4 under **PHP**. Elsewhere, install a newer PHP. |
+| `Nevela runs on the latest PHP, 8.5 or newer. You have 8.4.` | In Herd, choose PHP 8.5 under **PHP**, and open a new terminal. Elsewhere, install PHP 8.5. |
 | `Nevela needs Node.js 20 or newer.` | `nvm install 22`, or the LTS from nodejs.org. |
 | `npm install -g` fails with `EACCES` (macOS, Linux) | Your Node.js was installed for all users. Use Herd's or nvm's, or `npx create-nevela my-app`. |
 | "Composer couldn't download Laravel's packages" (Windows) | Delete the app's folder and run `nevela new` again. If it keeps happening, add the folder to your antivirus's exclusions. |
