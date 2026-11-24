@@ -11,7 +11,7 @@ next:
 
 You will build what a small business needs to bill its customers: customers, the products it sells, and invoices made of lines, each one numbered and ready to print. It takes about fifteen minutes. [Grit's invoice tutorial](https://gritframework.dev/blog/build-an-invoice-app-with-grit) builds the same app; this is the Nevela way, and [Coming from Grit](#coming-from-grit) maps one to the other.
 
-This tutorial pulls together things the others teach one at a time. In [the billing app](/tutorials/billing-app/), an invoice has a single amount and is paid by payments. Here it is made of lines, as in [the online shop](/tutorials/online-shop/), and it adds a field later, as in [Contacts](/tutorials/contacts/). You don't need to have done them, though it goes faster if you have. You need PHP 8.3 or newer with Composer, and Node.js 20 or newer: [Set up your computer](/start/setup/) says how to get them, if you haven't yet.
+This tutorial pulls together things the others teach one at a time. In [the billing app](/tutorials/billing-app/), an invoice has a single amount and is paid by payments. Here it is made of lines, as in [the online shop](/tutorials/online-shop/), and it adds a field later, as in [Contacts](/tutorials/contacts/). You don't need to have done them, though it goes faster if you have. You need PHP 8.5 or newer with Composer, and Node.js 20 or newer: [Set up your computer](/start/setup/) says how to get them, if you haven't yet.
 
 ## 1. Create the app
 

@@ -123,7 +123,7 @@ A new app's blog starts with a post for each tutorial in `apps/docs/src/tutorial
 
 - Add a line to `CHANGELOG.md` under "Unreleased" if a user would notice the change.
 - Run the app's tests (`php artisan test` in `apps/api`), and the package tests if you changed the package.
-- CI runs the package tests on PHP 8.3 and 8.4, the app's feature tests on SQLite and on Postgres, checks the generated code is up to date, builds the dashboard and the docs, and creates a new app with `create-nevela`, adds every kind of resource to it and builds it. See [How it is tested](/concepts/architecture/#how-it-is-tested).
+- CI runs the package tests on PHP 8.5, the app's feature tests on SQLite and on Postgres, checks the generated code is up to date, builds the dashboard and the docs, and creates a new app with `create-nevela`, adds every kind of resource to it and builds it. See [How it is tested](/concepts/architecture/#how-it-is-tested).
 
 `packages/laravel` is also published on its own, from a read-only copy at [MarkColeMukisa/nevela-laravel](https://github.com/MarkColeMukisa/nevela-laravel). Change it here, never there.
 

@@ -11,7 +11,7 @@ cd my-app
 nevela dev
 ```
 
-You need PHP 8.3+, Composer and Node.js 20+. Sign in at http://localhost:3000/sign-in as `admin@example.com` with the password `password`. Everything else is `nevela` and a word, from anywhere in the app: `nevela resource …`, `nevela seed …`, `nevela user`, `nevela upgrade`. `nevela --version` says which version you have, and `nevela update` brings the command up to date.
+You need PHP 8.5+ (Nevela runs on the latest PHP), Composer and Node.js 20+. Sign in at http://localhost:3000/sign-in as `admin@example.com` with the password `password`. Everything else is `nevela` and a word, from anywhere in the app: `nevela resource …`, `nevela seed …`, `nevela user`, `nevela upgrade`. `nevela --version` says which version you have, and `nevela update` brings the command up to date.
 
 Without installing anything, `pnpm create nevela my-app` creates an app, and inside it `php nevela dev` does what `nevela dev` does. The docs are at https://nevela-docs.vercel.app.
 

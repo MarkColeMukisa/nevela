@@ -8,9 +8,10 @@ import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
 import { ATTEMPTS, worthRetrying } from './composer.mjs';
 import { choiceProblem, decide, MAILERS, setEnv, TIERS, withMail } from './choices.mjs';
+import { PHP_LINE, phpIsRecentEnough, phpVersionOf } from './requirements.mjs';
 import { banner, ROWS, TAGLINE, WIDTH } from './banner.mjs';
 import { get } from './net.mjs';
-import { artisanArguments, COMMANDS, findProject, repairManifest, repairScripts } from './project.mjs';
+import { artisanArguments, COMMANDS, findProject, LARAVEL_MAJOR, laravelBehind, lowestOf, repairManifest, repairPhp, repairScripts } from './project.mjs';
 import { untar } from './selfupdate.mjs';
 import { quote } from './shell.mjs';
 import { copiesOnPath, globalInstall, removeCommand } from './tool.mjs';
@@ -429,4 +430,60 @@ test('the chosen mailer is named for a server, and emails stay in the log on thi
 
   assert.equal(setEnv('A=1\nB=2\n', 'B', '3'), 'A=1\nB=3\n');
   assert.equal(setEnv('A=1', 'C', 'x'), 'A=1\nC=x\n');
+});
+
+test('Nevela runs on the latest PHP: 8.5 or newer, read from php -v', () => {
+  assert.equal(PHP_LINE, '8.5');
+  assert.deepEqual(phpVersionOf('PHP 8.5.12 (cli) (built: Oct 20 2026 04:19:56) (NTS)'), [8, 5]);
+  assert.equal(phpVersionOf('not php'), null);
+  for (const version of [[8, 5], [8, 6], [9, 0]]) assert.equal(phpIsRecentEnough(version), true, version.join('.'));
+  for (const version of [[8, 4], [8, 3], [7, 4], null]) assert.equal(phpIsRecentEnough(version), false, String(version));
+});
+
+test("upgrading brings the app's own PHP requirement to 8.5, once this computer has it", () => {
+  const app = () => ({ require: { php: '^8.3', 'nevela/laravel': '^0.37' } });
+
+  const moved = app();
+  assert.match(repairPhp(moved, [8, 5]), /"\^8\.3".*"\^8\.5"/);
+  assert.equal(moved.require.php, '^8.5');
+
+  // On an older PHP Composer would refuse the app: left as it is.
+  const older = app();
+  assert.equal(repairPhp(older, [8, 4]), null);
+  assert.equal(older.require.php, '^8.3');
+  assert.equal(repairPhp(app(), null), null);
+
+  // Already there, or past it: nothing to do.
+  for (const php of ['^8.5', '>=8.5', '^8.6', '~8.5.0']) assert.equal(repairPhp({ require: { php } }, [8, 5]), null, php);
+  // No PHP requirement at all: not ours to add.
+  assert.equal(repairPhp({ require: {} }, [8, 5]), null);
+});
+
+test('every alternative of a constraint counts: "^8.5 || ^8.3" still allows 8.3', () => {
+  assert.deepEqual(lowestOf('^8.5 || ^8.3'), [8, 3]);
+  assert.deepEqual(lowestOf('^8.3|^8.5'), [8, 3]);
+  assert.deepEqual(lowestOf('>=8.5'), [8, 5]);
+  assert.deepEqual(lowestOf('^13.0'), [13, 0]);
+  assert.deepEqual(lowestOf('^12.0|^13.0'), [12, 0]);
+  assert.equal(lowestOf('*'), null);
+
+  const reversed = { require: { php: '^8.5 || ^8.3' } };
+  assert.match(repairPhp(reversed, [8, 5]), /"\^8\.5"$|is now "\^8\.5"/);
+  assert.equal(reversed.require.php, '^8.5');
+});
+
+test('an app on Laravel 12 or older is told it needs Laravel 13, and is not moved past what it can install', () => {
+  assert.equal(laravelBehind({ require: { 'laravel/framework': '^12.0' } }), true);
+  assert.equal(laravelBehind({ require: { 'laravel/framework': '^12.0|^13.0' } }), true);
+  assert.equal(laravelBehind({ require: { 'laravel/framework': '^13.0' } }), false);
+  assert.equal(laravelBehind({ require: {} }), false);
+  // An upper bound that stops before 13 can't install it either.
+  for (const behind of ['<13.0', '<13', '>=11 <13', '<=12.9', '^11.0 <13.0']) assert.equal(laravelBehind({ require: { 'laravel/framework': behind } }), true, behind);
+  for (const fine of ['^13.0', '>=13.0', '<14.0', '<=13.4']) assert.equal(laravelBehind({ require: { 'laravel/framework': fine } }), false, fine);
+  assert.equal(LARAVEL_MAJOR, 13);
+
+  // Held back, the range is left where Composer can still resolve it.
+  const held = { require: { 'nevela/laravel': '^0.37' } };
+  assert.deepEqual(repairManifest(held, null), []);
+  assert.equal(held.require['nevela/laravel'], '^0.37');
 });

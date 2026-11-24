@@ -7,7 +7,7 @@ This page takes you from an empty folder to a running dashboard with one resourc
 
 ## What you need
 
-- PHP 8.3 or newer, with [Composer](https://getcomposer.org/download/)
+- PHP 8.5 or newer, with [Composer](https://getcomposer.org/download/)
 - Node.js 20 or newer
 - Nothing else. The database is SQLite by default, which needs no setup.
 

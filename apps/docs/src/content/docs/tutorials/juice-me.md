@@ -9,7 +9,7 @@ next: false
 
 You will build the ordering app of a campus juice bar: customers sign up on their phones, choose drinks, check out and follow their order from Pending to Completed, and the bar's staff accept orders and move them along. There is no mobile code to write. The phone's shop is read from the same resources as the dashboard. It takes about forty minutes.
 
-It goes faster if you have done [An online shop with orders](/tutorials/online-shop/), which explains orders and their items. You need PHP 8.3 or newer with Composer, Node.js 20 or newer, and a phone with [Expo Go](https://expo.dev/go) on the same Wi-Fi as your computer: [Set up your computer](/start/setup/) says how to get the rest.
+It goes faster if you have done [An online shop with orders](/tutorials/online-shop/), which explains orders and their items. You need PHP 8.5 or newer with Composer, Node.js 20 or newer, and a phone with [Expo Go](https://expo.dev/go) on the same Wi-Fi as your computer: [Set up your computer](/start/setup/) says how to get the rest.
 
 ## 1. Create the app, with a mobile app
 

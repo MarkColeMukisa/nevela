@@ -13,7 +13,7 @@ A CRM is mostly ordinary data done right. A contact's phone number has to be rea
 
 You will build that CRM: companies, and a million contacts at them. [Grit's CRM tutorial](https://gritframework.dev/blog/build-a-crm-with-grit) builds the same app; this is the Nevela way, and [Coming from Grit](#coming-from-grit) maps one to the other. It takes about twenty minutes, and a quarter of an hour of that is the million contacts, which you can stop and start again.
 
-It goes faster if you have done [Contacts: your first app](/tutorials/contacts/), which explains `nevela resource` and the dashboard. You need PHP 8.3 or newer with Composer, and Node.js 20 or newer: [Set up your computer](/start/setup/) says how to get them. Then the `nevela` command, once: `npm install -g create-nevela`.
+It goes faster if you have done [Contacts: your first app](/tutorials/contacts/), which explains `nevela resource` and the dashboard. You need PHP 8.5 or newer with Composer, and Node.js 20 or newer: [Set up your computer](/start/setup/) says how to get them. Then the `nevela` command, once: `npm install -g create-nevela`.
 
 ## 1. Create the app, in Uganda
 

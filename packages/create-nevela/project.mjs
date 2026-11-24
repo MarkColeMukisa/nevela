@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { isNewer, satisfiesCaret } from './packagist.mjs';
+import { PHP_LINE, phpIsRecentEnough, phpVersionOf } from './requirements.mjs';
 import { spawnCommand } from './shell.mjs';
 
 /** What `nevela <name>` runs: these go to `php artisan nevela:<name>`. */
@@ -79,6 +80,60 @@ export function repairManifest(manifest, latest) {
   return repairs;
 }
 
+/**
+ * The lowest [major, minor] a Composer constraint allows, over all its alternatives:
+ * "^8.5 || ^8.3" and "^8.3|^8.5" are both 8.3. Null when there is no version in it ("*").
+ */
+export function lowestOf(constraint) {
+  const versions = String(constraint)
+    .split(/\|\|?/)
+    .map((alternative) => /(\d+)(?:\.(\d+))?/.exec(alternative))
+    .filter(Boolean)
+    .map((found) => [Number(found[1]), Number(found[2] ?? 0)]);
+  if (versions.length === 0) return null;
+  return versions.reduce((low, version) => (version[0] < low[0] || (version[0] === low[0] && version[1] < low[1]) ? version : low));
+}
+
+/** The Laravel this release of Nevela runs on. */
+export const LARAVEL_MAJOR = 13;
+
+/**
+ * Whether the app's `laravel/framework` may still be older than the Laravel Nevela needs. A
+ * major Laravel upgrade can need changes to the app's own code, so it is the developer's to
+ * make, with Laravel's guide: `nevela upgrade` only says so.
+ */
+export function laravelBehind(manifest) {
+  const constraint = manifest.require?.['laravel/framework'];
+  if (typeof constraint !== 'string') return false;
+  const lowest = lowestOf(constraint);
+  if (lowest !== null && lowest[0] < LARAVEL_MAJOR) return true;
+  // An upper bound that stops before it: "<13.0", "<=12.9", ">=11 <13".
+  for (const bound of constraint.matchAll(/<(=?)\s*(\d+)(?:\.(\d+))?/g)) {
+    const [major, minor] = [Number(bound[2]), Number(bound[3] ?? 0)];
+    if (bound[1] === '=' ? major < LARAVEL_MAJOR : major < LARAVEL_MAJOR || (major === LARAVEL_MAJOR && minor === 0)) return true;
+  }
+  return false;
+}
+
+/**
+ * The app's own `require.php` brought up to the PHP Nevela runs on, so a host that reads the
+ * version from it (Sevalla's builder does) builds on that one too. Only when this computer
+ * already has it: on an older PHP, Composer would refuse the app outright. Returns a line
+ * describing the repair, or null.
+ *
+ * @param {object} manifest apps/api/composer.json, changed in place
+ * @param {[number, number] | null} php This computer's PHP, from `php -v`
+ */
+export function repairPhp(manifest, php) {
+  const wanted = `^${PHP_LINE}`;
+  const current = manifest.require?.php;
+  if (typeof current !== 'string' || !phpIsRecentEnough(php)) return null;
+  const lowest = lowestOf(current);
+  if (lowest && phpIsRecentEnough(lowest)) return null;
+  manifest.require.php = wanted;
+  return `"php": "${current}" in apps/api/composer.json is now "${wanted}": Nevela runs on PHP ${PHP_LINE}, and a host that reads it from there builds on it`;
+}
+
 /** Make sure `pnpm nevela …` and a port-safe `dev` exist in the app's root package.json. */
 export function repairScripts(root) {
   const file = path.join(root, 'package.json');
@@ -114,12 +169,27 @@ function inApp(project, command, args) {
  * The artisan command is called by its older name, nevela:update, which every version of
  * the package answers to (from 0.3.0 it is an alias of nevela:upgrade).
  */
-export async function upgrade(project, args, { latest, say }) {
+export async function upgrade(project, args, { latest, say, warn = say }) {
   const check = args.includes('--check');
+  // Nevela runs on the latest PHP. On an older one Composer would quietly stay on the last
+  // release that runs there, and the upgrade would seem to do nothing: say why first.
+  const php = phpVersionOf(`${spawnCommand('php', ['-v'], { cwd: project.api, stdio: 'pipe', encoding: 'utf8' }).stdout ?? ''}`);
+  const oldPhp = php !== null && !phpIsRecentEnough(php);
+  if (oldPhp) {
+    warn(`this computer has PHP ${php.join('.')}, and Nevela now runs on PHP ${PHP_LINE}. Composer stays on the last release that runs on ${php.join('.')}: install PHP ${PHP_LINE} (https://nevela-docs.vercel.app/start/setup/), then run nevela upgrade again`);
+  }
   const manifestFile = path.join(project.api, 'composer.json');
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   const before = JSON.stringify(manifest);
-  const repairs = repairManifest(manifest, latest);
+  const oldLaravel = laravelBehind(manifest);
+  if (oldLaravel) {
+    warn(`this app requires laravel/framework "${manifest.require['laravel/framework']}", and Nevela now runs on Laravel ${LARAVEL_MAJOR}. Composer stays on the last release that runs on it: move the app to Laravel ${LARAVEL_MAJOR} with Laravel's guide (https://laravel.com/docs/${LARAVEL_MAJOR}.x/upgrade), then run nevela upgrade again`);
+  }
+  // Held back by PHP or Laravel: the range isn't moved to a release Composer can't install,
+  // so it stays on the last one that runs here, as the warning says.
+  const repairs = repairManifest(manifest, oldPhp || oldLaravel ? null : latest);
+  const phpRepair = repairPhp(manifest, php);
+  if (phpRepair) repairs.push(phpRepair);
 
   if (!check) {
     if (JSON.stringify(manifest) !== before) fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 4)}\n`);
@@ -128,7 +198,14 @@ export async function upgrade(project, args, { latest, say }) {
 
     // Composer first, from here: an app from before 0.1.2 has no update command of its own yet.
     const status = inApp(project, 'composer', ['update', 'nevela/laravel', '--no-interaction', '--no-progress']);
-    if (status !== 0) return status;
+    if (status !== 0) {
+      // composer.json as it was: a repair Composer couldn't install isn't left behind.
+      if (JSON.stringify(manifest) !== before) {
+        fs.writeFileSync(manifestFile, `${JSON.stringify(JSON.parse(before), null, 4)}\n`);
+        warn('Composer couldn\'t update, so apps/api/composer.json was put back as it was');
+      }
+      return status;
+    }
     return inApp(project, 'php', ['artisan', 'nevela:update', '--skip-package', ...args]);
   }
 

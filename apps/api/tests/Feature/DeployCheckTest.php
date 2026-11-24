@@ -64,6 +64,8 @@ class DeployCheckTest extends TestCase
         $this->wellSetUp();
 
         $this->artisan('nevela:deploy:check')
+            // The server's PHP, which Nevela needs to be the latest.
+            ->expectsOutputToContain(PHP_VERSION)
             ->expectsOutputToContain('owner@example.com')
             ->expectsOutputToContain('ran 2 min ago')
             ->expectsOutputToContain('the secret matches')

@@ -111,7 +111,7 @@ Copy `.env.example` to `.env.local` and change it there. The dev server reads th
 
 | | Version |
 |---|---|
-| PHP | 8.2 or newer for the package. The Laravel app in `apps/api` uses Laravel 13 and needs 8.3 or newer. |
-| Laravel | 11, 12 or 13 |
+| PHP | 8.5 or newer: Nevela runs on the latest PHP, for the package and the app alike. Laravel Cloud and Sevalla both run 8.5, and default to it. |
+| Laravel | 13, the latest |
 | Node.js | 20 or newer |
 | pnpm | The version in the root `package.json` under `packageManager` |
