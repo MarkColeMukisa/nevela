@@ -33,6 +33,8 @@ The first line under a version, in italics, is the release in a few words. The d
   Laravel Cloud and Sevalla both run 8.5 and default to it. To move an app: install PHP 8.5 (in Herd, choose it under PHP), run `nevela upgrade`, and choose 8.5 for the server. See [Set up your computer](https://nevela-docs.vercel.app/start/setup/).
 - **Breaking: Nevela needs Laravel 13.** The package required Laravel 11, 12 or 13; it now requires 13, the latest, and nothing older is tested. The repository's own app is on Laravel 13.44, with its other Composer packages updated to their latest versions, and the package's tests run on PHPUnit 12.
 
+  An app whose `apps/api/composer.json` still requires Laravel 12 or older moves to 13 first, with [Laravel's upgrade guide](https://laravel.com/docs/13.x/upgrade), then runs `nevela upgrade`. `nevela upgrade` says so when it sees one. It doesn't make that change itself, since a major Laravel upgrade can need changes to the app's own code. Until then, on an older PHP or Laravel, it leaves the app's Nevela range where Composer can still install it. See [When it finishes on an older version](https://nevela-docs.vercel.app/guides/updating/#when-it-finishes-on-an-older-version).
+
 ## [0.37.0] - 2026-11-23
 
 _Home leads with the business, and both apps share one layout_

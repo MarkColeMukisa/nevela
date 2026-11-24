@@ -81,6 +81,35 @@ export function repairManifest(manifest, latest) {
 }
 
 /**
+ * The lowest [major, minor] a Composer constraint allows, over all its alternatives:
+ * "^8.5 || ^8.3" and "^8.3|^8.5" are both 8.3. Null when there is no version in it ("*").
+ */
+export function lowestOf(constraint) {
+  const versions = String(constraint)
+    .split(/\|\|?/)
+    .map((alternative) => /(\d+)(?:\.(\d+))?/.exec(alternative))
+    .filter(Boolean)
+    .map((found) => [Number(found[1]), Number(found[2] ?? 0)]);
+  if (versions.length === 0) return null;
+  return versions.reduce((low, version) => (version[0] < low[0] || (version[0] === low[0] && version[1] < low[1]) ? version : low));
+}
+
+/** The Laravel this release of Nevela runs on. */
+export const LARAVEL_MAJOR = 13;
+
+/**
+ * Whether the app's `laravel/framework` may still be older than the Laravel Nevela needs. A
+ * major Laravel upgrade can need changes to the app's own code, so it is the developer's to
+ * make, with Laravel's guide: `nevela upgrade` only says so.
+ */
+export function laravelBehind(manifest) {
+  const constraint = manifest.require?.['laravel/framework'];
+  if (typeof constraint !== 'string') return false;
+  const lowest = lowestOf(constraint);
+  return lowest !== null && lowest[0] < LARAVEL_MAJOR;
+}
+
+/**
  * The app's own `require.php` brought up to the PHP Nevela runs on, so a host that reads the
  * version from it (Sevalla's builder does) builds on that one too. Only when this computer
  * already has it: on an older PHP, Composer would refuse the app outright. Returns a line
@@ -93,9 +122,8 @@ export function repairPhp(manifest, php) {
   const wanted = `^${PHP_LINE}`;
   const current = manifest.require?.php;
   if (typeof current !== 'string' || !phpIsRecentEnough(php)) return null;
-  // The lowest version the range allows: "^8.3", ">=8.2", "~8.4.0", "^8.2|^8.3" all start with one.
-  const lowest = /(\d+)\.(\d+)/.exec(current);
-  if (lowest && phpIsRecentEnough([Number(lowest[1]), Number(lowest[2])])) return null;
+  const lowest = lowestOf(current);
+  if (lowest && phpIsRecentEnough(lowest)) return null;
   manifest.require.php = wanted;
   return `"php": "${current}" in apps/api/composer.json is now "${wanted}": Nevela runs on PHP ${PHP_LINE}, and a host that reads it from there builds on it`;
 }
@@ -140,13 +168,20 @@ export async function upgrade(project, args, { latest, say, warn = say }) {
   // Nevela runs on the latest PHP. On an older one Composer would quietly stay on the last
   // release that runs there, and the upgrade would seem to do nothing: say why first.
   const php = phpVersionOf(`${spawnCommand('php', ['-v'], { cwd: project.api, stdio: 'pipe', encoding: 'utf8' }).stdout ?? ''}`);
-  if (php && !phpIsRecentEnough(php)) {
+  const oldPhp = php !== null && !phpIsRecentEnough(php);
+  if (oldPhp) {
     warn(`this computer has PHP ${php.join('.')}, and Nevela now runs on PHP ${PHP_LINE}. Composer stays on the last release that runs on ${php.join('.')}: install PHP ${PHP_LINE} (https://nevela-docs.vercel.app/start/setup/), then run nevela upgrade again`);
   }
   const manifestFile = path.join(project.api, 'composer.json');
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   const before = JSON.stringify(manifest);
-  const repairs = repairManifest(manifest, latest);
+  const oldLaravel = laravelBehind(manifest);
+  if (oldLaravel) {
+    warn(`this app requires laravel/framework "${manifest.require['laravel/framework']}", and Nevela now runs on Laravel ${LARAVEL_MAJOR}. Composer stays on the last release that runs on it: move the app to Laravel ${LARAVEL_MAJOR} with Laravel's guide (https://laravel.com/docs/${LARAVEL_MAJOR}.x/upgrade), then run nevela upgrade again`);
+  }
+  // Held back by PHP or Laravel: the range isn't moved to a release Composer can't install,
+  // so it stays on the last one that runs here, as the warning says.
+  const repairs = repairManifest(manifest, oldPhp || oldLaravel ? null : latest);
   const phpRepair = repairPhp(manifest, php);
   if (phpRepair) repairs.push(phpRepair);
 

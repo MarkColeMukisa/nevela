@@ -176,7 +176,10 @@ An upgrade can bring migrations with it. It says so when it has ("2 migration(s)
 
 A release reaches Composer a few minutes after it is published. Upgrade in that gap and Composer installs the release before it. The command tells you ("Nevela v0.7.0 is out, and Composer didn't bring it in"): run `nevela upgrade` again shortly.
 
-**An older PHP holds it back too.** From 0.38, Nevela runs on PHP 8.5 or newer. On an older PHP, Composer stays on the last release that runs there, and `nevela upgrade` says so before it starts. Install PHP 8.5 ([Set up your computer](/start/setup/)) and run it again. On PHP 8.5, it also raises `"php"` in `apps/api/composer.json` to `^8.5`, so a host that reads the version from there builds on it too.
+**An older PHP or Laravel holds it back too.** From 0.38, Nevela runs on PHP 8.5 or newer and on Laravel 13. On an older PHP, or in an app whose `apps/api/composer.json` still requires Laravel 12 or older, Composer stays on the last release that runs there. `nevela upgrade` says which before it starts, and leaves the app's Nevela range where Composer can still install it.
+
+- **PHP:** install PHP 8.5 ([Set up your computer](/start/setup/)) and run `nevela upgrade` again. On PHP 8.5, it also raises `"php"` in `apps/api/composer.json` to `^8.5`, so a host that reads the version from there builds on it too.
+- **Laravel:** move the app to Laravel 13 first, with [Laravel's upgrade guide](https://laravel.com/docs/13.x/upgrade). A major Laravel upgrade can need changes to your own code, so `nevela upgrade` doesn't make it for you. Then run `nevela upgrade` again.
 
 ## Older apps
 
