@@ -11,8 +11,9 @@
 #   docker build -f benchmarks/Dockerfile --build-arg APP=nevela .
 FROM php:8.5-fpm-alpine
 
+# OPcache is part of PHP itself from 8.5, not an extension to install: php.ini sets it up.
 RUN apk add --no-cache nginx postgresql-dev \
-    && docker-php-ext-install pdo_pgsql opcache bcmath \
+    && docker-php-ext-install pdo_pgsql bcmath \
     && rm -rf /var/cache/apk/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
