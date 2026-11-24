@@ -1,13 +1,13 @@
 # The same apps as Dockerfile, served by Laravel Octane on FrankenPHP instead of nginx and
 # PHP-FPM. Octane boots the app once per worker and keeps it between requests, where
-# PHP-FPM boots it for every request. Everything else is as in Dockerfile (which is on PHP 8.5;
-# this image stays on FrankenPHP's 8.4 build until the matching 8.5 tag is confirmed),
+# PHP-FPM boots it for every request. Everything else is as in Dockerfile: PHP 8.5,
 # OPcache with its JIT, Composer's production autoloader, Laravel's caches at start.
 #
 #   docker build -f benchmarks/Dockerfile.octane --build-arg APP=nevela .
-FROM dunglas/frankenphp:1.13.1-php8.4-alpine
+FROM dunglas/frankenphp:1.13.1-php8.5-alpine
 
-RUN install-php-extensions pdo_pgsql opcache bcmath pcntl
+# OPcache is part of PHP itself from 8.5, not an extension to install.
+RUN install-php-extensions pdo_pgsql bcmath pcntl
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY benchmarks/docker/php.ini /usr/local/etc/php/conf.d/zz-bench.ini
