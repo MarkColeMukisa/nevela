@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.38.0] - 2026-11-24
+
+_Push to every phone, on PHP 8.5 and Laravel 13_
+
 ### Added
 
 - **Every bell notice is also a push notification** to the phones of the people it is for. Tapping it in the phone app opens its record. A phone is registered when someone signs in on it, and gets pushes only while that sign-in lasts. It stops at once when the sign-in ends: signing out, being revoked from the Devices screen, a new password, a closed account, or lapsing. `Push::send` sends one with no notice. In an app that upgraded, run `php artisan migrate` first. See [Push notifications](https://nevela-docs.vercel.app/guides/mobile-app/#push-notifications).
@@ -981,7 +985,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.37.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.38.0...HEAD
+[0.38.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.37.0...v0.38.0
 [0.37.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.36.0...v0.37.0
 [0.36.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.35.0...v0.36.0
 [0.35.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.34.1...v0.35.0
