@@ -1,6 +1,7 @@
 # The same apps as Dockerfile, served by Laravel Octane on FrankenPHP instead of nginx and
 # PHP-FPM. Octane boots the app once per worker and keeps it between requests, where
-# PHP-FPM boots it for every request. Everything else is as in Dockerfile: PHP 8.4,
+# PHP-FPM boots it for every request. Everything else is as in Dockerfile (which is on PHP 8.5;
+# this image stays on FrankenPHP's 8.4 build until the matching 8.5 tag is confirmed),
 # OPcache with its JIT, Composer's production autoloader, Laravel's caches at start.
 #
 #   docker build -f benchmarks/Dockerfile.octane --build-arg APP=nevela .

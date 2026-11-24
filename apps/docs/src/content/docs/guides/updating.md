@@ -176,6 +176,8 @@ An upgrade can bring migrations with it. It says so when it has ("2 migration(s)
 
 A release reaches Composer a few minutes after it is published. Upgrade in that gap and Composer installs the release before it. The command tells you ("Nevela v0.7.0 is out, and Composer didn't bring it in"): run `nevela upgrade` again shortly.
 
+**An older PHP holds it back too.** From 0.38, Nevela runs on PHP 8.5 or newer. On an older PHP, Composer stays on the last release that runs there, and `nevela upgrade` says so before it starts. Install PHP 8.5 ([Set up your computer](/start/setup/)) and run it again. On PHP 8.5, it also raises `"php"` in `apps/api/composer.json` to `^8.5`, so a host that reads the version from there builds on it too.
+
 ## Older apps
 
 **An app from before the record existed** (created with 0.1.3 or earlier) has no fingerprints yet. On its first update, Nevela downloads the dashboard version the app started from and compares against that instead, then writes the record. From then on it works as described above.

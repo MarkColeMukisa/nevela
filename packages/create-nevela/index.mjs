@@ -449,7 +449,11 @@ async function inProject(name, args) {
   const looking = args.includes('--check') ? ' (checking only: nothing will be changed)' : '';
   console.log(`  ${indigo(`Nevela upgrade — this app: ${before ? `v${before}` : 'Nevela not installed in it yet'}`)}${dim(looking)}\n`);
   const releases = await latestRelease();
-  const status = await upgrade(project, args, { latest: releases, say: (line) => console.log(`  ${green('✔')} ${line}`) });
+  const status = await upgrade(project, args, {
+    latest: releases,
+    say: (line) => console.log(`  ${green('✔')} ${line}`),
+    warn: (line) => console.log(`  ${red('!')} ${line}`),
+  });
   // Where it ended up, read from the app itself and not from what was asked for.
   if (status === 0 && !args.includes('--check') && !args.includes('--undo')) {
     const now = appVersion(project);

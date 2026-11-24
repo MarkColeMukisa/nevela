@@ -11,7 +11,7 @@ import { choiceProblem, decide, MAILERS, setEnv, TIERS, withMail } from './choic
 import { PHP_LINE, phpIsRecentEnough, phpVersionOf } from './requirements.mjs';
 import { banner, ROWS, TAGLINE, WIDTH } from './banner.mjs';
 import { get } from './net.mjs';
-import { artisanArguments, COMMANDS, findProject, repairManifest, repairScripts } from './project.mjs';
+import { artisanArguments, COMMANDS, findProject, repairManifest, repairPhp, repairScripts } from './project.mjs';
 import { untar } from './selfupdate.mjs';
 import { quote } from './shell.mjs';
 import { copiesOnPath, globalInstall, removeCommand } from './tool.mjs';
@@ -438,4 +438,23 @@ test('Nevela runs on the latest PHP: 8.5 or newer, read from php -v', () => {
   assert.equal(phpVersionOf('not php'), null);
   for (const version of [[8, 5], [8, 6], [9, 0]]) assert.equal(phpIsRecentEnough(version), true, version.join('.'));
   for (const version of [[8, 4], [8, 3], [7, 4], null]) assert.equal(phpIsRecentEnough(version), false, String(version));
+});
+
+test("upgrading brings the app's own PHP requirement to 8.5, once this computer has it", () => {
+  const app = () => ({ require: { php: '^8.3', 'nevela/laravel': '^0.37' } });
+
+  const moved = app();
+  assert.match(repairPhp(moved, [8, 5]), /"\^8\.3".*"\^8\.5"/);
+  assert.equal(moved.require.php, '^8.5');
+
+  // On an older PHP Composer would refuse the app: left as it is.
+  const older = app();
+  assert.equal(repairPhp(older, [8, 4]), null);
+  assert.equal(older.require.php, '^8.3');
+  assert.equal(repairPhp(app(), null), null);
+
+  // Already there, or past it: nothing to do.
+  for (const php of ['^8.5', '>=8.5', '^8.6', '~8.5.0']) assert.equal(repairPhp({ require: { php } }, [8, 5]), null, php);
+  // No PHP requirement at all: not ours to add.
+  assert.equal(repairPhp({ require: {} }, [8, 5]), null);
 });

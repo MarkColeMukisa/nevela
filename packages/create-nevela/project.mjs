@@ -80,6 +80,26 @@ export function repairManifest(manifest, latest) {
   return repairs;
 }
 
+/**
+ * The app's own `require.php` brought up to the PHP Nevela runs on, so a host that reads the
+ * version from it (Sevalla's builder does) builds on that one too. Only when this computer
+ * already has it: on an older PHP, Composer would refuse the app outright. Returns a line
+ * describing the repair, or null.
+ *
+ * @param {object} manifest apps/api/composer.json, changed in place
+ * @param {[number, number] | null} php This computer's PHP, from `php -v`
+ */
+export function repairPhp(manifest, php) {
+  const wanted = `^${PHP_LINE}`;
+  const current = manifest.require?.php;
+  if (typeof current !== 'string' || !phpIsRecentEnough(php)) return null;
+  // The lowest version the range allows: "^8.3", ">=8.2", "~8.4.0", "^8.2|^8.3" all start with one.
+  const lowest = /(\d+)\.(\d+)/.exec(current);
+  if (lowest && phpIsRecentEnough([Number(lowest[1]), Number(lowest[2])])) return null;
+  manifest.require.php = wanted;
+  return `"php": "${current}" in apps/api/composer.json is now "${wanted}": Nevela runs on PHP ${PHP_LINE}, and a host that reads it from there builds on it`;
+}
+
 /** Make sure `pnpm nevela …` and a port-safe `dev` exist in the app's root package.json. */
 export function repairScripts(root) {
   const file = path.join(root, 'package.json');
@@ -115,18 +135,20 @@ function inApp(project, command, args) {
  * The artisan command is called by its older name, nevela:update, which every version of
  * the package answers to (from 0.3.0 it is an alias of nevela:upgrade).
  */
-export async function upgrade(project, args, { latest, say }) {
+export async function upgrade(project, args, { latest, say, warn = say }) {
   const check = args.includes('--check');
   // Nevela runs on the latest PHP. On an older one Composer would quietly stay on the last
   // release that runs there, and the upgrade would seem to do nothing: say why first.
   const php = phpVersionOf(`${spawnCommand('php', ['-v'], { cwd: project.api, stdio: 'pipe', encoding: 'utf8' }).stdout ?? ''}`);
   if (php && !phpIsRecentEnough(php)) {
-    say(`this computer has PHP ${php.join('.')}, and Nevela now runs on PHP ${PHP_LINE}. Composer stays on the last release that runs on ${php.join('.')}: install PHP ${PHP_LINE} (https://nevela-docs.vercel.app/start/setup/), then run nevela upgrade again`);
+    warn(`this computer has PHP ${php.join('.')}, and Nevela now runs on PHP ${PHP_LINE}. Composer stays on the last release that runs on ${php.join('.')}: install PHP ${PHP_LINE} (https://nevela-docs.vercel.app/start/setup/), then run nevela upgrade again`);
   }
   const manifestFile = path.join(project.api, 'composer.json');
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   const before = JSON.stringify(manifest);
   const repairs = repairManifest(manifest, latest);
+  const phpRepair = repairPhp(manifest, php);
+  if (phpRepair) repairs.push(phpRepair);
 
   if (!check) {
     if (JSON.stringify(manifest) !== before) fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 4)}\n`);

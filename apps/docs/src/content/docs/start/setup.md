@@ -61,7 +61,7 @@ Two things that surprise people on Windows:
 1. **Install PHP and Composer** with Laravel's one-line installer, on Ubuntu and Debian:
 
    ```sh
-   /bin/bash -c "$(curl -fsSL https://php.new/install/linux)"
+   /bin/bash -c "$(curl -fsSL https://php.new/install/linux/8.5)"
    ```
 
    On other distributions, install PHP 8.5 or newer and Composer from your package manager. A distribution that doesn't have 8.5 yet often has a repository that does, such as Ondřej Surý's for Ubuntu and Debian.
