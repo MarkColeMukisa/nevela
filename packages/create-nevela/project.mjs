@@ -106,7 +106,13 @@ export function laravelBehind(manifest) {
   const constraint = manifest.require?.['laravel/framework'];
   if (typeof constraint !== 'string') return false;
   const lowest = lowestOf(constraint);
-  return lowest !== null && lowest[0] < LARAVEL_MAJOR;
+  if (lowest !== null && lowest[0] < LARAVEL_MAJOR) return true;
+  // An upper bound that stops before it: "<13.0", "<=12.9", ">=11 <13".
+  for (const bound of constraint.matchAll(/<(=?)\s*(\d+)(?:\.(\d+))?/g)) {
+    const [major, minor] = [Number(bound[2]), Number(bound[3] ?? 0)];
+    if (bound[1] === '=' ? major < LARAVEL_MAJOR : major < LARAVEL_MAJOR || (major === LARAVEL_MAJOR && minor === 0)) return true;
+  }
+  return false;
 }
 
 /**
@@ -192,7 +198,14 @@ export async function upgrade(project, args, { latest, say, warn = say }) {
 
     // Composer first, from here: an app from before 0.1.2 has no update command of its own yet.
     const status = inApp(project, 'composer', ['update', 'nevela/laravel', '--no-interaction', '--no-progress']);
-    if (status !== 0) return status;
+    if (status !== 0) {
+      // composer.json as it was: a repair Composer couldn't install isn't left behind.
+      if (JSON.stringify(manifest) !== before) {
+        fs.writeFileSync(manifestFile, `${JSON.stringify(JSON.parse(before), null, 4)}\n`);
+        warn('Composer couldn\'t update, so apps/api/composer.json was put back as it was');
+      }
+      return status;
+    }
     return inApp(project, 'php', ['artisan', 'nevela:update', '--skip-package', ...args]);
   }
 

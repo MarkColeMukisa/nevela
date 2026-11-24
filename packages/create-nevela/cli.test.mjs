@@ -477,6 +477,9 @@ test('an app on Laravel 12 or older is told it needs Laravel 13, and is not move
   assert.equal(laravelBehind({ require: { 'laravel/framework': '^12.0|^13.0' } }), true);
   assert.equal(laravelBehind({ require: { 'laravel/framework': '^13.0' } }), false);
   assert.equal(laravelBehind({ require: {} }), false);
+  // An upper bound that stops before 13 can't install it either.
+  for (const behind of ['<13.0', '<13', '>=11 <13', '<=12.9', '^11.0 <13.0']) assert.equal(laravelBehind({ require: { 'laravel/framework': behind } }), true, behind);
+  for (const fine of ['^13.0', '>=13.0', '<14.0', '<=13.4']) assert.equal(laravelBehind({ require: { 'laravel/framework': fine } }), false, fine);
   assert.equal(LARAVEL_MAJOR, 13);
 
   // Held back, the range is left where Composer can still resolve it.
