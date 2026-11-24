@@ -2860,20 +2860,20 @@
             "dist": {
                 "type": "path",
                 "url": "../../packages/laravel",
-                "reference": "fff4690dd3588e8497af4780a14722b2fe02135d"
+                "reference": "25ea885b5338e0a70e1e07243a44061803a6965b"
             },
             "require": {
                 "giggsey/libphonenumber-for-php-lite": "^9.0",
-                "illuminate/console": "^11.0|^12.0|^13.0",
-                "illuminate/database": "^11.17|^12.0|^13.0",
-                "illuminate/http": "^11.0|^12.0|^13.0",
-                "illuminate/support": "^11.0|^12.0|^13.0",
+                "illuminate/console": "^13.0",
+                "illuminate/database": "^13.0",
+                "illuminate/http": "^13.0",
+                "illuminate/support": "^13.0",
                 "laravel/socialite": "^5.31",
                 "lbuchs/webauthn": "^2.2",
                 "php": "^8.5"
             },
             "require-dev": {
-                "phpunit/phpunit": "^11.0"
+                "phpunit/phpunit": "^12.0"
             },
             "suggest": {
                 "ext-exif": "Turns phone photos the right way up before their metadata is removed.",
