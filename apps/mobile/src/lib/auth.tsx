@@ -16,6 +16,8 @@ export interface User {
   /** Everything they may do, such as "products.create". Laravel still decides each request. */
   permissions: string[];
   isAdmin: boolean;
+  /** Staff or a customer, by the API's one rule. Missing from an API older than 0.41. */
+  staff?: boolean;
   emailVerified: boolean;
   twoFactorEnabled: boolean;
   /** A small picture, ready to show, or null. */

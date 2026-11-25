@@ -19,6 +19,7 @@ The file is yours, and an upgrade never changes it. A setting it doesn't have ta
 |---|---|---|
 | `descriptors_path` | `base_path('nevela/resources')` | Where the resource descriptors are kept. |
 | `web_path` | `base_path('../web')`, or `NEVELA_WEB_PATH` | The web app's folder. Generated web files are written here. If the folder does not exist, web files are skipped. Set to `null` to never write them. |
+| `admin_path` | `base_path('../admin')`, or `NEVELA_ADMIN_PATH` | The staff's admin app, in a project with the triple tier: the public site and customer area in `web_path`, the admin here. While it exists, the dashboard's pages are generated here instead of in `web_path`, the descriptors in both, and `nevela dev` runs it on port 3001. |
 | `mobile_path` | `base_path('../mobile')`, or `NEVELA_MOBILE_PATH` | [The mobile app](/guides/mobile-app/)'s folder. While it exists, `nevela dev` serves the API to your network so a phone can reach it. Set to `null` to keep the API on this computer. |
 | `root_path` | worked out, or `NEVELA_ROOT_PATH` | The top of the project, where the `php nevela` launcher is written. By default two folders up, when the app is at `<project>/apps/<name>`. Set to `false` for no launcher. |
 | `prefix` | `api` | The URL prefix for every Nevela route. |
@@ -35,6 +36,7 @@ The file is yours, and an upgrade never changes it. A setting it doesn't have ta
 | `auth.require_email_verification` | `false` | Refuse password sign-in until the address is verified. |
 | `auth.check_breached_passwords` | `true` | Refuse a new password found in a known breach. |
 | `auth.web_url` | `http://localhost:3000`, or `NEVELA_WEB_URL` | Where the dashboard is: for links in emails, and for passkeys. |
+| `auth.admin_url` | `null`, or `NEVELA_ADMIN_URL` | Where the staff's admin app is, when the project has one beside the public site, such as `https://admin.example.com`. Links to dashboard pages go there, and a passkey made there is tied to it. Each app says which it is, so a link in an email goes back to the one the person used. Register its Google or GitHub callback address as well. |
 | `auth.attempts_per_address` | `300` | Sign-in attempts a minute from one address, on top of ten per account. |
 | `auth.proxy_secret` | none, or `NEVELA_PROXY_SECRET` | Shared with the dashboard, so Laravel believes what it says about a visitor's browser. See [Devices](/guides/authentication/#devices). |
 | `auth.close_account` | `true` | Whether people can close their own account from the Account page. See [Deleted accounts](/guides/deleted-accounts/#switching-close-account-off). |
@@ -72,6 +74,7 @@ The file is yours, and an upgrade never changes it. A setting it doesn't have ta
 | Variable | Meaning |
 |---|---|
 | `NEVELA_WEB_PATH` | Overrides `web_path`. Use it when the web app is not at `../web`. |
+| `NEVELA_ADMIN_PATH` | Overrides `admin_path`. Use it when the admin app is not at `../admin`. |
 | `NEVELA_MOBILE_PATH` | Overrides `mobile_path`. Empty keeps `nevela dev` from opening the API to your network. |
 | `NEVELA_CURRENCY` | The currency money is shown in, as its ISO 4217 code: `UGX`. A money field can name its own. Run `nevela generate` after changing it. See [Money and its currency](/concepts/field-types/#money-and-its-currency). |
 | `NEVELA_PHONE_COUNTRY` | Where a phone number without a `+` is from, as a two-letter code: `UG`. See [Phone numbers](/concepts/field-types/#phone-numbers). Run `nevela generate` after changing it. |
