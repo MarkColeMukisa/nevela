@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.41.0] - 2026-11-25
+
+_A public site and a staff admin on one API, by default_
+
 ### Added
 
 - The API side of two web apps on one API (step 9 of the roadmap, the triple tier: a public site and customer area in `apps/web`, the staff's admin in `apps/admin`). Nothing changes for an app with one web app.
@@ -1046,7 +1050,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.40.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.41.0...HEAD
+[0.41.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.40.0...v0.41.0
 [0.40.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.39.0...v0.40.0
 [0.39.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.38.0...v0.39.0
 [0.38.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.37.0...v0.38.0

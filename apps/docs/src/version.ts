@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "The phone does what the dashboard does, and CI keeps it that way";
+export const RELEASE_HEADLINE = "A public site and a staff admin on one API, by default";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "New: closing an account, deleted accounts, connected accounts, files and rich text on the phone, and a check that every API route says which app uses it.",
-  href: "/reference/web-and-phone/",
-  label: "Web and phone",
+  text: "New: nevela new makes a public site with a customer area and a separate staff admin on one API, with two-step sign-in asked of staff.",
+  href: "/guides/site-and-admin/",
+  label: "The site and the admin",
 };
