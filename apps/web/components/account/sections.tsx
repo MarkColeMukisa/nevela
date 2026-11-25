@@ -8,13 +8,14 @@ import { AuthInput, AuthLabel, FormMessage, PrimaryButton, SecondaryButton, Text
 import { PasswordField, PasswordInput } from "@/components/auth/password-field";
 import { authErrorMessage } from "@/components/auth/sign-in-flow";
 import { PROVIDER_LABELS, ProviderIcon } from "@/components/auth/provider-icons";
-import { UserAvatar } from "@/components/dashboard/user-menu";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { closeAccountAction } from "@/app/auth-actions";
 import { authClient, uploadAvatar } from "@/lib/auth-client";
 import { fileUrl } from "@/lib/files";
 import { checkPassword } from "@/lib/password-rules";
 import type { SocialProvider } from "@/lib/auth-config";
 import { cn } from "@/lib/utils";
+import { ACCOUNT } from "@/lib/app";
 
 interface Props {
   user: { name: string; email: string; emailVerified: boolean; twoFactorEnabled: boolean; avatar: string | null };
@@ -131,7 +132,7 @@ export function Profile({ user }: { user: Props["user"] }) {
 
   const verify = async () => {
     setPending("verify");
-    const { error } = await authClient.sendVerificationEmail({ email: user.email, callbackURL: "/dashboard/account" });
+    const { error } = await authClient.sendVerificationEmail({ email: user.email, callbackURL: ACCOUNT });
     setPending(null);
     setMessage(error ? { tone: "error", text: authErrorMessage(error) } : { tone: "success", text: `We sent a verification link to ${user.email}.` });
   };
@@ -537,7 +538,7 @@ export function ConnectedAccounts({ providers, initialError = null }: { provider
   }, [load]);
 
   const connect = async (provider: SocialProvider) => {
-    const { error } = await authClient.linkSocial({ provider, callbackURL: "/dashboard/account/security" });
+    const { error } = await authClient.linkSocial({ provider, callbackURL: `${ACCOUNT}/security` });
     if (error) setError(authErrorMessage(error));
   };
   const disconnect = async (provider: SocialProvider) => {

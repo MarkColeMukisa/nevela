@@ -4,7 +4,7 @@ import Link from "next/link";
 import { KeyRoundIcon, LogOutIcon, MonitorSmartphoneIcon, ShieldCheckIcon, UserIcon } from "lucide-react";
 import { signOutAction } from "@/app/auth-actions";
 import { authConfig, twoFactorAvailable } from "@/lib/auth-config";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -12,27 +12,13 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
-export interface DashboardUser {
-  name?: string | null;
-  email: string;
-  image?: string | null;
-}
+import type { AvatarUser } from "@/components/ui/user-avatar";
 
-/** "Ada Lovelace" → "AL"; an address falls back to its first letter. */
-export function initials(user: DashboardUser): string {
-  const source = user.name?.trim() || user.email;
-  const parts = source.split(/[\s@._-]+/).filter(Boolean);
-  return (parts.length > 1 ? `${parts[0]![0]}${parts[1]![0]}` : source.slice(0, 2)).toUpperCase();
-}
+/** Who the menu is for. */
+export type DashboardUser = AvatarUser;
 
-export function UserAvatar({ user, className }: { user: DashboardUser; className?: string }) {
-  return (
-    <Avatar className={className}>
-      {user.image && <AvatarImage src={user.image} alt="" />}
-      <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">{initials(user)}</AvatarFallback>
-    </Avatar>
-  );
-}
+// It lives in components/ui now, where the customer area can have it too. Still here for code that imports it from here.
+export { UserAvatar };
 
 /**
  * What's inside the account menu, wherever it's opened from — the header's avatar and

@@ -1,4 +1,5 @@
 import { cookies, headers } from "next/headers";
+import { COOKIE_PREFIX } from "@/lib/app";
 
 /**
  * The one place the web app talks to Laravel.
@@ -7,14 +8,14 @@ import { cookies, headers } from "next/headers";
  * Sanctum token in an httpOnly cookie and sends it as a Bearer token from the server,
  * so the browser never sees it and never calls Laravel directly.
  */
-export const TOKEN_COOKIE = "nevela_token";
+export const TOKEN_COOKIE = `${COOKIE_PREFIX}_token`;
 
 /**
  * The refresh token, swapped for a new access token (and a new refresh token) before the
  * access token runs out: by proxy.ts, before any page or API call that needs one. See
  * lib/session-cookies.ts.
  */
-export const REFRESH_COOKIE = "nevela_refresh";
+export const REFRESH_COOKIE = `${COOKIE_PREFIX}_refresh`;
 
 /** Where Nevela's routes live in the Laravel app, e.g. http://127.0.0.1:8000/api. */
 export const API_URL = (process.env.NEVELA_API_URL ?? "http://127.0.0.1:8000/api").replace(/\/+$/, "");

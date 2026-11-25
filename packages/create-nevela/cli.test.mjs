@@ -15,6 +15,7 @@ import { artisanArguments, COMMANDS, findProject, LARAVEL_MAJOR, laravelBehind, 
 import { untar } from './selfupdate.mjs';
 import { quote } from './shell.mjs';
 import { copiesOnPath, globalInstall, removeCommand } from './tool.mjs';
+import { sources, splitFilter, templateRecord } from './template.mjs';
 
 const scratch = () => fs.mkdtempSync(path.join(os.tmpdir(), 'nevela-test-'));
 
@@ -401,9 +402,46 @@ test('which apps and which mailer: an option decides, else the answer, else web 
   assert.deepEqual(await decide({ tier: 'web' }, ask), { tier: 'web', mail: 'smtp' });
   assert.equal(asked.length, 1);
 
-  assert.equal(choiceProblem('tier', 'desktop', TIERS), '--tier must be one of: web, mobile, both. You gave "desktop".');
+  assert.equal(choiceProblem('tier', 'desktop', TIERS), '--tier must be one of: web, both, mobile, admin. You gave "desktop".');
   assert.equal(choiceProblem('mail', undefined, MAILERS), null);
-  assert.deepEqual(Object.keys(TIERS).map((key) => [TIERS[key].web, TIERS[key].mobile]), [[true, false], [false, true], [true, true]]);
+  // The triple tier by default: a site, an admin and the API. Web first, so it is what nobody being asked gets.
+  assert.deepEqual(Object.fromEntries(Object.entries(TIERS).map(([key, tier]) => [key, [tier.site, tier.admin, tier.mobile]])), {
+    web: [true, true, false],
+    both: [true, true, true],
+    mobile: [false, false, true],
+    admin: [false, true, false],
+  });
+});
+
+test('the site and the admin are one template, each without what the other has', () => {
+  const site = splitFilter(sources.web, 'site');
+  const admin = splitFilter(sources.web, 'admin');
+  const both = splitFilter(sources.web, undefined);
+  // The site has no dashboard: customers never download it.
+  assert.equal(site('app/dashboard'), true);
+  assert.equal(site('app/dashboard/products/page.tsx'), true);
+  assert.equal(site('components/dashboard/resource-table.tsx'), true);
+  assert.equal(site('app/account/page.tsx'), false);
+  assert.equal(site('app/sign-in/page.tsx'), false);
+  // The admin has no public pages, and nobody signs up there.
+  assert.equal(admin('app/page.tsx'), true);
+  assert.equal(admin('app/sign-up/page.tsx'), true);
+  assert.equal(admin('app/account'), true);
+  assert.equal(admin('app/dashboard/page.tsx'), false);
+  assert.equal(admin('app/sign-in/page.tsx'), false);
+  // Neither gets the list itself; an app doing both gets everything.
+  assert.equal(site('nevela-split.json'), true);
+  assert.equal(admin('nevela-split.json'), true);
+  assert.equal(both('app/dashboard/page.tsx'), false);
+  assert.equal(both('app/page.tsx'), false);
+
+  // The record upgrade goes by says which it is, and has only its own files.
+  const record = templateRecord('9.9.9', 'site');
+  assert.equal(record.app, 'site');
+  assert.ok(record.files['app/account/page.tsx']);
+  assert.equal(Object.keys(record.files).some((file) => file.startsWith('app/dashboard/')), false);
+  assert.equal(templateRecord('9.9.9', 'admin').files['app/page.tsx'], undefined);
+  assert.equal(templateRecord('9.9.9').app, undefined);
 });
 
 test('the chosen mailer is named for a server, and emails stay in the log on this computer', () => {

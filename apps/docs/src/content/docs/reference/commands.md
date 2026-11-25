@@ -54,15 +54,15 @@ Leave the name off and it asks for one. The [quickstart](/start/quickstart/) wal
 
 | Option | Meaning |
 |---|---|
-| `--tier <web\|mobile\|both>` | Which apps it has. `web`: the API and the dashboard. `mobile`: the API and [a phone app](/guides/mobile-app/) (Expo), with no dashboard. `both`: all three. Asked when left off; `web` with `--yes`. |
+| `--tier <web\|both\|mobile\|admin>` | Which apps it has. `web`: the triple tier, a public site with a customer area (`apps/web`), the staff's admin (`apps/admin`) and the API. `both`: those and [a phone app](/guides/mobile-app/) (Expo). `mobile`: the API and a phone app, with no web apps. `admin`: the API and the admin alone, for an internal tool. Asked when left off; `web` with `--yes`. |
 | `--mail <resend\|brevo\|smtp>` | How it [sends email](/guides/deploying/#mail) on a server. Asked when left off; `resend` with `--yes`. On your computer, emails go to the log until you set `MAIL_MAILER` and its settings in `apps/api/.env`. |
-| `--pm <pnpm\|npm\|yarn\|bun>` | Package manager for the dashboard and the phone app. Default: pnpm when you have it, and npm otherwise. |
-| `--no-install` | Don't install the dashboard's or the phone app's dependencies. |
+| `--pm <pnpm\|npm\|yarn\|bun>` | Package manager for the web apps and the phone app. Default: pnpm when you have it, and npm otherwise. |
+| `--no-install` | Don't install the web apps' or the phone app's dependencies. |
 | `--fast` | Leave out PHPUnit, Pint and Laravel's other development packages. About a third quicker. |
 | `--no-user` | Don't create the starter account, or the sample users. |
 | `--no-sample-users` | Create the administrator only, without the ten sample users. |
 | `--no-blog` | Leave out [the blog](/guides/blog/): the Post resource, its sample posts and `/blog`. |
-| `--mobile` | The same as `--tier both`: [a phone app](/guides/mobile-app/) beside the dashboard. |
+| `--mobile` | The same as `--tier both`: [a phone app](/guides/mobile-app/) beside the site and the admin. |
 | `--no-git` | Don't run `git init`. |
 | `--bundled-package` | Use the copy of `nevela/laravel` inside the installer instead of the release on Packagist. |
 | `-y`, `--yes` | Ask nothing: a web app that sends email with Resend, unless the options say otherwise. The name is asked for only when you leave it off. |

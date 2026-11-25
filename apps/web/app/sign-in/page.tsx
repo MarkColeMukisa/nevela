@@ -10,6 +10,7 @@ import { getSession, safeRedirectPath } from "@/lib/session";
 import { site } from "@/lib/site";
 import { theme } from "@/lib/theme";
 import { noIndex } from "@/lib/seo";
+import { APP } from "@/lib/app";
 
 export const metadata = { title: "Sign in", robots: noIndex };
 
@@ -54,8 +55,9 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
       title={copy.title}
       subtitle={(copy as { subtitle?: string }).subtitle}
       footer={
-        // Only where people may create their own account (config/nevela.php: auth.registration).
-        authConfig.registration ? (
+        // Only where people may create their own account (config/nevela.php: auth.registration),
+        // and never in the staff's admin app: staff are added by someone who manages people.
+        authConfig.registration && APP !== "admin" ? (
           <>
             Don&apos;t have an account?{" "}
             <Link href={`/sign-up?next=${encodeURIComponent(next)}`} className="font-medium text-link hover:underline">

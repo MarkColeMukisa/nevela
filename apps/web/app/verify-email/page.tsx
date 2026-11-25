@@ -4,6 +4,7 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { VerifyEmailForm } from "@/components/auth/verify-email-form";
 import { getSession, safeRedirectPath } from "@/lib/session";
 import { noIndex } from "@/lib/seo";
+import { ACCOUNT, APP, HOME } from "@/lib/app";
 
 export const metadata = { title: "Verify your email", robots: noIndex };
 
@@ -14,7 +15,7 @@ export const metadata = { title: "Verify your email", robots: noIndex };
 export default async function VerifyEmailPage({ searchParams }: { searchParams: Promise<{ email?: string; next?: string; code?: string }> }) {
   const { email, next, code } = await searchParams;
   const session = await getSession();
-  const to = safeRedirectPath(next, "/dashboard/account");
+  const to = safeRedirectPath(next, ACCOUNT);
   if (session?.user.emailVerified) redirect(to);
 
   return (
@@ -22,8 +23,8 @@ export default async function VerifyEmailPage({ searchParams }: { searchParams: 
       title="Verify your email"
       subtitle="One step, so we know we can reach you."
       footer={
-        <Link href={session ? "/dashboard" : "/sign-in"} className="font-medium text-link hover:underline">
-          {session ? "Back to the dashboard" : "Back to sign in"}
+        <Link href={session ? HOME : "/sign-in"} className="font-medium text-link hover:underline">
+          {session ? (APP === "site" ? "Back to your account" : "Back to the dashboard") : "Back to sign in"}
         </Link>
       }
     >

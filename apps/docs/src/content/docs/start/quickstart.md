@@ -3,7 +3,7 @@ title: "Quickstart"
 description: "Install the nevela command, create an app, sign in, and add your first resource."
 ---
 
-This page takes you from an empty folder to a running dashboard with one resource in it.
+This page takes you from an empty folder to a running app, a public site and a staff admin on one API, with one resource in it.
 
 ## What you need
 
@@ -41,18 +41,19 @@ Leave the name off and it asks for one. It asks nothing else, and does the setup
   ✔ Administrator            admin@example.com
   ✔ Sample users             2 editors · 8 users
   ✔ Blog                     Post resource · 3 posts · /blog
-  ✔ Dashboard packages       pnpm · 140 packages                         36.0s
+  ✔ Site packages            pnpm · 140 packages                         36.0s
+  ✔ Admin packages           pnpm · 140 packages                         31.2s
   ✔ Git repository           git init                                    412ms
 
-  Created my-app  Laravel API · dashboard · blog · 2m 26s
+  Created my-app  Laravel API · site · admin · blog · 3m 02s
 
-  Then open http://localhost:3000/sign-in and sign in with:
+  Then open the admin at http://localhost:3001/sign-in and sign in with:
 
     Email      admin@example.com
     Password   password
 ```
 
-That timing is from a Windows laptop with antivirus running, which is the slow case. Most of it is unpacking Laravel's packages; the dashboard's packages download at the same time. On Linux and macOS it is usually under a minute.
+That timing is from a Windows laptop with antivirus running, which is the slow case. Most of it is unpacking Laravel's packages; the web apps' packages download at the same time. On Linux and macOS it is usually under a minute.
 
 To make it quicker still, leave out the development packages (PHPUnit, Pint and the like) and add them when you need them:
 
@@ -64,14 +65,15 @@ About a third quicker. Add them later with `composer install` in `apps/api`.
 
 A new app is always created by the newest installer. If the `nevela` command you have is older, it fetches the latest itself before doing anything.
 
-The dashboard's packages are installed with pnpm when you have it, and npm otherwise. `--pm` picks another.
+The web apps' packages are installed with pnpm when you have it, and npm otherwise. `--pm` picks another.
 
 You get this:
 
 ```
 my-app/
 ├─ apps/api/    a Laravel app with Sanctum and Nevela installed
-├─ apps/web/    the Next.js dashboard, pointed at the API
+├─ apps/web/    the public site and the customer area (Next.js)
+├─ apps/admin/  the staff's admin: the dashboard (Next.js)
 └─ nevela       the app's own launcher: php nevela does what nevela does
 ```
 
@@ -84,18 +86,20 @@ cd my-app
 nevela dev
 ```
 
-That starts the Laravel API and the dashboard together and prints where each one is: normally http://127.0.0.1:8000 and http://localhost:3000. If another program is already using a port, it takes the next free one and tells the dashboard, so the two always find each other.
+That starts the Laravel API, the site and the admin together and prints where each one is: normally http://127.0.0.1:8000, http://localhost:3000 and http://localhost:3001. If another program is already using the API's port, it takes the next free one and tells the web apps, so they always find it.
 
-Open http://localhost:3000/sign-in and sign in with the starter account:
+The two web apps are one template, each without what the other has. The site is what customers see: the public pages, and their own account at `/account`. The admin is where staff work: the dashboard, with no public pages. A customer who signs in to the admin is kept to their own account there. To let people sign up on the site, set `NEVELA_REGISTRATION=true` in `apps/api/.env`.
+
+Open the admin at http://localhost:3001/sign-in and sign in with the starter account:
 
 | | |
 |---|---|
 | Email | `admin@example.com` |
 | Password | `password` |
 
-That account is the administrator. Ten sample users are there too, with the same password: two editors and eight users. Open **Users** in the sidebar to see them and **Roles** to see what each may do, or sign in as `amara.okafor@example.com` (an editor) or `sofia.martinez@example.com` (a user) to see the dashboard as they do. [Users, roles and permissions](/guides/policies/) has the rest.
+That account is the administrator. Ten sample users are there too, with the same password: two editors and eight users. Open **Users** in the sidebar to see them and **Roles** to see what each may do, or sign in as `amara.okafor@example.com` (an editor) to see the dashboard as they do. `sofia.martinez@example.com` holds only the role people sign up with, so she is a customer: sign in as her on the site, http://localhost:3000/sign-in, to see her account. [Users, roles and permissions](/guides/policies/) has the rest.
 
-The app also has a blog. Open http://localhost:3000/blog: a post for each of Nevela's tutorials is on it, and the newest three are on the home page, and **Posts** in the dashboard is where they are written. [The blog](/guides/blog/) says how it works and how to change it, and `nevela new my-app --no-blog` leaves it out.
+The app also has a blog. Open http://localhost:3000/blog: a post for each of Nevela's tutorials is on it, and the newest three are on the home page, and **Posts** in the admin is where they are written. [The blog](/guides/blog/) says how it works and how to change it, and `nevela new my-app --no-blog` leaves it out.
 
 :::caution[These accounts are for your machine]
 They exist only in your local database. They are not in the code or in a migration, so they do not follow the app to a server. Still, don't keep a password everyone knows: add your own account and delete these before anyone else can reach the app.
@@ -113,7 +117,7 @@ From anywhere inside `my-app`:
 nevela resource Contact --fields="name:string, email:email!, company:string?, status:enum(lead|customer)" --icon=users
 ```
 
-That one command writes the Laravel code and the dashboard pages, and creates the table. Reload the dashboard. Contacts is in the sidebar, with a table, a form and a detail page.
+That one command writes the Laravel code and the dashboard pages (in the admin), and creates the table. Reload the admin. Contacts is in the sidebar, with a table, a form and a detail page.
 
 To have something to look at:
 
@@ -157,15 +161,15 @@ It lists the Nevela version, which migrations have run and which are pending, ho
 
 | Option | Meaning |
 |---|---|
-| `--tier <web\|mobile\|both>` | Which apps it has. `web`: the API and the dashboard. `mobile`: the API and [a phone app](/guides/mobile-app/) (Expo), with no dashboard. `both`: all three. Asked when left off; `web` with `--yes`. |
+| `--tier <web\|both\|mobile\|admin>` | Which apps it has. `web`: the triple tier, a public site with a customer area (`apps/web`), the staff's admin (`apps/admin`) and the API. `both`: those and [a phone app](/guides/mobile-app/) (Expo). `mobile`: the API and a phone app, with no web apps. `admin`: the API and the admin alone, for an internal tool. Asked when left off; `web` with `--yes`. |
 | `--mail <resend\|brevo\|smtp>` | How it [sends email](/guides/deploying/#mail) on a server. Asked when left off; `resend` with `--yes`. On your computer, emails go to the log until you set `MAIL_MAILER` and its settings in `apps/api/.env`. |
-| `--pm <pnpm\|npm\|yarn\|bun>` | Package manager for the dashboard and the phone app. Default: pnpm when you have it, and npm otherwise. |
-| `--no-install` | Don't install the dashboard's or the phone app's dependencies. |
+| `--pm <pnpm\|npm\|yarn\|bun>` | Package manager for the web apps and the phone app. Default: pnpm when you have it, and npm otherwise. |
+| `--no-install` | Don't install the web apps' or the phone app's dependencies. |
 | `--fast` | Leave out PHPUnit, Pint and Laravel's other development packages. About a third quicker. |
 | `--no-user` | Don't create the starter account, or the sample users. |
 | `--no-sample-users` | Create the administrator only, without the ten sample users. |
 | `--no-blog` | Leave out [the blog](/guides/blog/): the Post resource, its sample posts and `/blog`. |
-| `--mobile` | The same as `--tier both`: [a phone app](/guides/mobile-app/) beside the dashboard. |
+| `--mobile` | The same as `--tier both`: [a phone app](/guides/mobile-app/) beside the site and the admin. |
 | `--no-git` | Don't run `git init`. |
 | `--bundled-package` | Use the copy of `nevela/laravel` inside the installer instead of the release on Packagist. |
 | `-y`, `--yes` | Ask nothing: a web app that sends email with Resend, unless the options say otherwise. The name is asked for only when you leave it off. |

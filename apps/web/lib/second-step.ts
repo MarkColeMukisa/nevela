@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { COOKIE_PREFIX } from "@/lib/app";
 
 /**
  * A sign-in that is waiting for its second step.
@@ -8,7 +9,7 @@ import { cookies } from "next/headers";
  * cookie, until the code arrives: the browser only ever sends the code, never the
  * challenge. Laravel forgets the challenge after the same ten minutes.
  */
-export const PENDING_COOKIE = "nevela_2fa";
+export const PENDING_COOKIE = `${COOKIE_PREFIX}_2fa`;
 export const PENDING_MAX_AGE = 60 * 10;
 
 /** The ways this sign-in can be finished, as Laravel names them. */

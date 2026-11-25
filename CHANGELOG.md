@@ -15,6 +15,14 @@ The first line under a version, in italics, is the release in a few words. The d
   - `NEVELA_ADMIN_URL` (`auth.admin_url`): the admin app's address. Each web app says which it is, so a sign-in, verification or reset link goes to the app it was asked from, and a passkey is tied to it. A link to a dashboard page always goes to the admin. `deploy:check` checks it in production.
   - `nevela dev` runs the admin app on port 3001, beside the site on 3000.
   - `staff` on the signed-in user (`GET /auth/me`): false for a customer, an account that holds only the role people sign up with. One rule for every app. The phone app goes by it.
+- The web apps of the triple tier, from one template (`apps/web/nevela-split.json` says what each leaves out):
+  - **The site** (`apps/web`): the public pages, sign-in (and sign-up, where `NEVELA_REGISTRATION` is on), and the customer area at `/account`: profile, password, two-step sign-in, passkeys, connected accounts, devices and closing the account. No dashboard: customers never download its code. Staff who sign in there are offered the way to the admin.
+  - **The admin** (`apps/admin`): the dashboard, and no public pages or sign-up. `/` is the dashboard. A customer who signs in is kept to their own account's pages, with a link to the site, as in Grit: the door isn't slammed, and Laravel checks every request whatever is shown. Its sign-in cookies have names of their own, so on localhost signing in to one app doesn't sign the other out.
+  - Each app's `.nevela.json` says which it is, and `next.config.ts` builds it so (`NEVELA_APP`). `nevela upgrade` and `--undo` work on both, leaving out of each what it leaves out, as the version it upgrades to lists it. `nevela status` shows both.
+
+### Changed
+
+- **Breaking** for scripts that run `nevela new`: the default tier, `--tier web` (and `both`, and `--mobile`), makes two web apps: the site in `apps/web` and the admin in `apps/admin`, on ports 3000 and 3001. Staff sign in to the admin. `--tier admin` is new: the API and the admin alone, for an internal tool, with the admin on port 3000. `--tier mobile` is as it was. Existing apps keep their one web app, and `nevela upgrade` never splits one.
 
 ## [0.40.0] - 2026-11-25
 
