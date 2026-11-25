@@ -29,3 +29,9 @@ test("when the API doesn't say, or nobody is signed in, everyone is staff, as th
   assert.equal(shellFor(user(["USER"]), ""), "staff");
   assert.equal(shellFor(null, "USER"), "staff");
 });
+
+test("what the API says about someone wins over working it out here", () => {
+  assert.equal(shellFor({ roles: ["USER"], isAdmin: false, staff: true }, "USER"), "staff");
+  assert.equal(shellFor({ roles: ["EDITOR"], isAdmin: false, staff: false }, "USER"), "customer");
+  assert.equal(shellFor({ roles: ["USER"], isAdmin: false, staff: false }, null), "customer");
+});

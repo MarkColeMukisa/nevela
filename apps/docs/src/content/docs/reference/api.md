@@ -119,7 +119,7 @@ An error has a `code` beside its message, such as `INVALID_EMAIL_OR_PASSWORD`, `
 
 | Request | Response |
 |---|---|
-| `GET /auth/me` | `200 { "user": { id, name, email, role, roles, permissions, isAdmin, emailVerified, twoFactorEnabled, avatar, avatarFile, image }, "session": { id } }`. `role` is the first of `roles`, for code written when an account had one. |
+| `GET /auth/me` | `200 { "user": { id, name, email, role, roles, permissions, isAdmin, staff, emailVerified, twoFactorEnabled, avatar, avatarFile, image }, "session": { id } }`. `role` is the first of `roles`, for code written when an account had one. `staff` is false for a customer: an account that holds only the role people sign up with (`NEVELA_DEFAULT_ROLE`). Every app goes by it: the phone's two shapes, and the admin app that lets staff alone in. |
 | `DELETE /auth/token` | `204`. The token used for the request stops working. |
 
 ## Resource endpoints

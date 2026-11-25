@@ -14,10 +14,13 @@ export type Shell = "customer" | "staff";
  * customer. Anyone who holds another as well, such as an editor or a role of your own for
  * staff, and every administrator, is staff.
  *
- * When the API doesn't say (an older one, or none was reachable), everyone is staff: what
+ * The API says which someone is (`staff` on the user), by the same rule, so the phone, the
+ * admin app and the public site agree. Worked out here only for an API older than that.
+ * When it doesn't say the default role either (none was reachable), everyone is staff: what
  * the app did before it had customers.
  */
-export function shellFor(user: Pick<User, "isAdmin" | "roles"> | null, defaultRole: string | null | undefined): Shell {
+export function shellFor(user: Pick<User, "isAdmin" | "roles" | "staff"> | null, defaultRole: string | null | undefined): Shell {
+  if (user && typeof user.staff === "boolean") return user.staff ? "staff" : "customer";
   if (!user || !defaultRole || user.isAdmin) return "staff";
   const customer = defaultRole.toLowerCase();
   return user.roles.every((role) => role.toLowerCase() === customer) ? "customer" : "staff";

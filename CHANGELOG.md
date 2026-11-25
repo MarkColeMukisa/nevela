@@ -8,6 +8,14 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- The API side of two web apps on one API (step 9 of the roadmap, the triple tier: a public site and customer area in `apps/web`, the staff's admin in `apps/admin`). Nothing changes for an app with one web app.
+  - `NEVELA_ADMIN_PATH` (`admin_path`, `../admin`): where a project has an admin app (a Next.js app in that folder), the dashboard's pages are generated there, the descriptors and sign-in settings in both apps, and the blog in the site. `nevela resource:remove` and `nevela adopt` look in both.
+  - `NEVELA_ADMIN_URL` (`auth.admin_url`): the admin app's address. Each web app says which it is, so a sign-in, verification or reset link goes to the app it was asked from, and a passkey is tied to it. A link to a dashboard page always goes to the admin. `deploy:check` checks it in production.
+  - `nevela dev` runs the admin app on port 3001, beside the site on 3000.
+  - `staff` on the signed-in user (`GET /auth/me`): false for a customer, an account that holds only the role people sign up with. One rule for every app. The phone app goes by it.
+
 ## [0.40.0] - 2026-11-25
 
 _The phone does what the dashboard does, and CI keeps it that way_
