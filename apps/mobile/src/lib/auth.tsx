@@ -41,6 +41,8 @@ export interface SignInMethods {
   social: string[];
   /** The role someone who signs up starts with: what tells a customer from staff. */
   defaultRole: string | null;
+  /** Whether people may close their own account. */
+  closeAccount: boolean;
 }
 
 type SignedIn = TokenPair & { user: User };
@@ -235,5 +237,6 @@ export async function signInMethods(): Promise<SignInMethods> {
     requireEmailVerification: config.requireEmailVerification ?? false,
     social: Array.isArray(config.social) ? config.social : [],
     defaultRole: typeof config.defaultRole === "string" ? config.defaultRole : null,
+    closeAccount: config.closeAccount ?? true,
   };
 }

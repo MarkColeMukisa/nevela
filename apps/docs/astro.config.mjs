@@ -84,6 +84,7 @@ export default defineConfig({
           items: [
             { label: "Commands", slug: "reference/commands" },
             { label: "REST API", slug: "reference/api" },
+            { label: "Web and phone", slug: "reference/web-and-phone" },
             { label: "Benchmarks", slug: "benchmarks" },
             { label: "Changelog", slug: "reference/changelog" },
           ],

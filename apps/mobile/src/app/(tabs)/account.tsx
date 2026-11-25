@@ -6,9 +6,10 @@ import { AddPicture } from "@/components/pictures";
 import { Body, Button, Card, Field, Heading, Notice, Row, Screen, Title } from "@/components/ui";
 import { api, ApiError, messageOf } from "@/lib/api";
 import { can } from "@/lib/access";
-import { useAuth } from "@/lib/auth";
+import { signInMethods, useAuth } from "@/lib/auth";
 import { spacing, text, useColors } from "@/lib/theme";
 import { uploadAvatar, type Picked } from "@/lib/upload";
+import { useLoaded } from "@/lib/use-loaded";
 import { Image } from "expo-image";
 
 /** Your account: who you are here, your name, and how you sign in. */
@@ -20,6 +21,7 @@ export default function Account() {
   const [error, setError] = useState<unknown>(null);
   const [saved, setSaved] = useState(false);
   const [sending, setSending] = useState(false);
+  const methods = useLoaded(signInMethods);
 
   // Browsing before signing in: what an account is for, and the way to one.
   if (!user) {
@@ -66,6 +68,8 @@ export default function Account() {
   const manages = can(user, "users.view") || can(user, "roles.view");
   // The trash is for those who may delete something: Laravel narrows it to what they may deal with.
   const mayDelete = user.isAdmin || user.permissions.some((key) => key.endsWith(".delete"));
+  // Asked of the API, which may have it switched off. Until it answers, the row waits.
+  const closable = methods.data?.closeAccount === true;
   const changed = name.trim() !== (user.name ?? "") && name.trim() !== "";
 
   return (
@@ -120,7 +124,8 @@ export default function Account() {
         <Heading>Sign-in</Heading>
         <Card>
           <Row icon="lock-closed-outline" label="Change password" onPress={() => router.push("/change-password")} />
-          <Row icon="key-outline" label="Two-step sign-in" detail={user.twoFactorEnabled ? "Two-step sign-in is on" : "Two-step sign-in is off"} onPress={() => router.push("/security")} last />
+          <Row icon="key-outline" label="Two-step sign-in" detail={user.twoFactorEnabled ? "Two-step sign-in is on" : "Two-step sign-in is off"} onPress={() => router.push("/security")} last={!closable} />
+          {closable ? <Row icon="exit-outline" label="Close account" detail="Stop using this account, and sign out everywhere" onPress={() => router.push("/close-account")} danger last /> : null}
         </Card>
       </View>
     </Screen>

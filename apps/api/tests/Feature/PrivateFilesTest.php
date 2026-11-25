@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Nevela\Laravel\Access\Access;
 use Nevela\Laravel\Access\Permissions;
+use Nevela\Laravel\Http\UploadController;
 use Nevela\Laravel\Media\Uploads;
 use Nevela\Laravel\Models\Role;
 use Nevela\Laravel\Models\Upload;
@@ -147,6 +148,50 @@ class PrivateFilesTest extends TestCase
         $this->app['auth']->forgetGuards();
 
         $this->getJson($url)->assertUnauthorized();
+    }
+
+    public function test_a_phone_is_given_a_link_that_opens_the_file_for_a_few_minutes(): void
+    {
+        $candidate = $this->candidate();
+        $id = $candidate['id'];
+
+        $link = $this->postJson("/api/_nevela/private/candidates/{$id}/cv/link")->assertOk()->json();
+        $this->assertStringStartsWith("/api/_nevela/private-link/candidates/{$id}/cv?", $link['path']);
+        $this->assertStringNotContainsString($candidate['cv'], $link['path']);
+
+        // A browser opens it, with no token.
+        $this->app['auth']->forgetGuards();
+        $response = $this->get($link['path'])->assertOk();
+        $this->assertSame(self::PDF, $response->streamedContent());
+        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+
+        // Changed by a letter, or once the minutes are up, it opens nothing.
+        $this->get(substr($link['path'], 0, -1).'x')->assertForbidden();
+        $this->travel(UploadController::LINK_SECONDS + 1)->seconds();
+        $this->get($link['path'])->assertForbidden();
+    }
+
+    public function test_a_link_is_only_for_someone_who_may_view_the_record_and_only_for_that_file(): void
+    {
+        $candidate = $this->candidate();
+        $id = $candidate['id'];
+
+        $this->actingAsRole('USER');
+        $this->postJson("/api/_nevela/private/candidates/{$id}/cv/link")->assertForbidden();
+        $this->postJson("/api/_nevela/private/candidates/{$id}/brochure/link")->assertNotFound();
+
+        $this->actingAsRole('ADMIN');
+        $path = $this->postJson("/api/_nevela/private/candidates/{$id}/cv/link")->assertOk()->json('path');
+
+        // Another file put in its place: the link was for the one before.
+        $other = $this->upload('cv', 'other.pdf', 'application/pdf', self::PDF.'%other')->assertCreated()->json('key');
+        $this->patchJson("/api/candidates/{$id}", ['cv' => $other])->assertOk();
+        $this->get($path)->assertNotFound();
+
+        // Trashed: nothing.
+        $path = $this->postJson("/api/_nevela/private/candidates/{$id}/cv/link")->assertOk()->json('path');
+        $this->deleteJson("/api/candidates/{$id}")->assertNoContent();
+        $this->get($path)->assertNotFound();
     }
 
     public function test_addresses_that_name_no_private_file_are_not_found(): void

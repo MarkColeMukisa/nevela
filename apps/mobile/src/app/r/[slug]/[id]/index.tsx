@@ -9,6 +9,7 @@ import { StatusTrail } from "@/components/status-trail";
 import { Body, Button, Card, Heading, Loading, Notice, Row, Screen } from "@/components/ui";
 import { api, ApiError, messageOf } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { openFile } from "@/lib/files";
 import { display, filesOf, thumb } from "@/lib/format";
 import { applies, fieldLabel, forgetTitle, may, relatedTitles, titleOf, useResources, type Resource, type ResourceRecord } from "@/lib/resources";
 import { spacing, text, useColors } from "@/lib/theme";
@@ -178,7 +179,17 @@ export default function RecordDetail() {
           <Heading>Files</Heading>
           <Card>
             {pictures.filter(({ file }) => !thumb(file)).map(({ name, file }, index, all) => (
-              <Row key={`${name}-${index}`} icon="document-outline" label={file.name} detail={fieldLabel(name, resource.fields[name])} last={index === all.length - 1} />
+              <Row
+                key={`${name}-${index}`}
+                icon="document-outline"
+                label={file.name}
+                detail={fieldLabel(name, resource.fields[name])}
+                last={index === all.length - 1}
+                onPress={() => {
+                  setFailed(null);
+                  openFile(resource.slug, data.id, name, file).catch(setFailed);
+                }}
+              />
             ))}
           </Card>
         </View>
@@ -193,7 +204,7 @@ export default function RecordDetail() {
       {may(user, resource, "delete") ? (
         confirming ? (
           <View style={{ gap: spacing.sm }}>
-            <Body muted small>It goes to the trash, where it can be restored from the dashboard.</Body>
+            <Body muted small>It goes to the trash, where it can be restored: Account → Trash.</Body>
             <Button variant="danger" label={`Yes, delete this ${resource.label.toLowerCase()}`} busy={deleting} onPress={remove} />
             <Button variant="secondary" label="Keep it" disabled={deleting} onPress={() => setConfirming(false)} />
           </View>

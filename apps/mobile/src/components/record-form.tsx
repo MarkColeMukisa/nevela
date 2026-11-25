@@ -7,6 +7,7 @@ import { PictureField } from "@/components/pictures";
 import { Body, Button, Field, Notice } from "@/components/ui";
 import { api, ApiError, messageOf } from "@/lib/api";
 import { filesOf, fromLocalInput, toLocalInput, type StoredFile } from "@/lib/format";
+import { isPlainRich, richToText, textToRich } from "@/lib/rich";
 import { applies, fieldLabel, optionLabel, relatedTitles, titleOf, useResources, type FieldSpec, type Resource, type ResourceRecord } from "@/lib/resources";
 import { radius, spacing, text, useColors } from "@/lib/theme";
 
@@ -16,8 +17,8 @@ import { radius, spacing, text, useColors } from "@/lib/theme";
  *
  * Laravel checks everything again when it is saved, and its complaint about a field is
  * shown under that field. Pictures are chosen or taken on the phone and sent as they are
- * picked. Other files and JSON are the dashboard's to edit for now: they are left exactly
- * as they are when a record is saved from here.
+ * picked. Rich text is typed as paragraphs (lib/rich.ts). Other files and JSON are the
+ * dashboard's to edit for now: they are left exactly as they are when a record is saved from here.
  */
 
 type Values = Record<string, unknown>;
@@ -41,14 +42,34 @@ export function toControl(field: FieldSpec, value: unknown): unknown {
   if (field.kind === "enum" || field.kind === "belongsTo") return value === null || value === undefined || value === "" ? null : String(value);
   if (field.kind === "datetime") return toLocalInput(value);
   if (field.kind === "date") return value ? String(value).slice(0, 10) : "";
+  if (isRich(field)) {
+    // Formatting the phone can't keep is kept as it is, until the person chooses to drop it.
+    const html = value === null || value === undefined ? "" : String(value);
+    return isPlainRich(html) ? richToText(html) : ({ kept: html } satisfies Kept);
+  }
   return value === null || value === undefined ? "" : String(value);
 }
+
+/** Rich text with formatting a phone can't edit, held as it came. */
+interface Kept {
+  kept: string;
+}
+
+const isKept = (held: unknown): held is Kept => typeof held === "object" && held !== null && "kept" in held;
+
+/** A text field whose value is HTML, written in the dashboard's editor. */
+const isRich = (field: FieldSpec): boolean => field.kind === "text" && field.format === "rich";
 
 /** What a control holds, as the API takes it. `problem` when it can't be: letters in a number. */
 export function fromControl(field: FieldSpec, held: unknown): { value?: unknown; problem?: string } {
   if (field.kind === "file") return { value: field.multiple ? (Array.isArray(held) ? held : []) : held || null };
   if (field.kind === "boolean") return { value: Boolean(held) };
   if (field.kind === "enum" || field.kind === "belongsTo") return { value: held ?? null };
+  if (isKept(held)) return { value: held.kept === "" ? null : held.kept };
+  if (isRich(field)) {
+    const html = textToRich(String(held ?? ""));
+    return { value: html === "" ? null : html };
+  }
   const typed = String(held ?? "").trim();
   if (typed === "") return { value: null };
   if (field.kind === "int" || field.kind === "float") {
@@ -175,6 +196,17 @@ export function Control({ name, field, resource, record, value, problem, creatin
   }
   if (field.kind === "belongsTo") {
     return <Related label={label} field={field} problem={problem} value={value as string | null} clearable={optional} onChange={onChange} />;
+  }
+  if (isKept(value)) {
+    return (
+      <View style={{ gap: spacing.xs }}>
+        <Text style={{ color: colors.text, fontSize: text.small, fontWeight: "600" }}>{label}</Text>
+        <Text numberOfLines={4} style={{ color: colors.muted, fontSize: text.body }}>{richToText(value.kept)}</Text>
+        <Body muted small>It has formatting, such as bold, links or lists, that the app can't edit, so it is kept as it is.</Body>
+        <Button variant="link" label="Edit as plain text, without the formatting" onPress={() => onChange(richToText(value.kept))} />
+        {problem ? <Text style={{ color: colors.danger, fontSize: text.small }}>{problem}</Text> : null}
+      </View>
+    );
   }
 
   const numeric = field.kind === "int" || field.kind === "float";
