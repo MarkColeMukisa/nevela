@@ -10,10 +10,11 @@ import { filesOf } from "@/lib/gallery";
 import { laravel } from "@/lib/laravel";
 import { allResources, resourcePath, dashboardSession, dashboardStore, mayDo } from "@/lib/dashboard";
 import { actionsOf, formOf, publishFieldOf } from "@/lib/extras";
+import { confirmAskedOf, type ConfirmAsked } from "@/lib/confirm";
 
 export type ActionResult<T = unknown> =
   | { ok: true; data: T }
-  | { ok: false; status: number; error: string; issues?: FieldIssue[]; field?: string; code?: string; current?: Record<string, unknown> };
+  | { ok: false; status: number; error: string; issues?: FieldIssue[]; field?: string; code?: string; current?: Record<string, unknown>; confirm?: ConfirmAsked };
 
 const forbidden = (message = "You don't have access to this."): ActionResult<never> => ({ ok: false, status: 403, error: message });
 
@@ -63,7 +64,9 @@ export async function runResourceAction(
   const body = (response.body ?? {}) as { message?: string; done?: number; skipped?: number; error?: string; detail?: string; issues?: FieldIssue[] };
   if (!response.ok) {
     // `detail` is only sent while the Laravel app is in debug mode: the reason, for whoever is building it.
-    return { ok: false, status: response.status, error: body.detail ? `${body.error ?? "It didn't work."} ${body.detail}` : (body.error ?? "It didn't work."), issues: body.issues };
+    // Laravel wants the person to confirm it's them first (a sensitive action): the page asks, and calls this again.
+    const confirm = confirmAskedOf(response);
+    return { ok: false, status: response.status, error: body.detail ? `${body.error ?? "It didn't work."} ${body.detail}` : (body.error ?? "It didn't work."), issues: body.issues, ...(confirm ? { confirm } : {}) };
   }
   // What it changed could be anything of this resource's, so everything of it is read again.
   revalidateResource({ resource: resourceName, action: "update", id: target.id ?? "" });

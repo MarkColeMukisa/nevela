@@ -243,6 +243,17 @@ Each sign-in is a device in **Account → Devices**, with its browser, its addre
 
 At the foot of **Account → Profile**, **Close account** lets someone close their own. It takes their password, signs them out everywhere, and keeps the account for an administrator to restore or remove for good. Their email can't sign up again meanwhile. See [Deleted accounts](/guides/deleted-accounts/), which also says how to switch this off.
 
+## Confirming it's you again
+
+Before something that matters, Nevela asks the person to confirm it's them, even though they are signed in: someone who finds a laptop left open can't refund an order or make themselves an administrator.
+
+- **A resource action marked [`sensitive`](/guides/actions/#confirming-its-you)** asks every time, for that one request.
+- **Changing who can sign in** asks once, and then not again for 5 minutes on that sign-in, so going through ten people is one confirmation. That is adding, changing (their email, password, roles, or switching them off), deleting and signing out people; making, changing and deleting roles; restoring and removing [deleted accounts](/guides/deleted-accounts/); and letting a blocked email sign up again. A new app asks (`NEVELA_CONFIRM_ACCESS=true` in `apps/api/.env`). An app made before 0.42 doesn't until you set it, once its dashboard and phone app are up to date, because older ones can't answer the question.
+
+They confirm with their password, a 6-digit code emailed to them (for an account that never chose a password), their authenticator app's code, or on the web a passkey. Five wrong tries end the question, and they start what they were doing again.
+
+Over the API it is a `428` with a challenge, then [`POST /auth/confirm`](/reference/api/#confirming-its-you), then the request again. The dashboard and the phone app do it for you.
+
 ## Switching methods on and off
 
 The choices are in the `auth` section of `config/nevela.php` in the Laravel app. Two of them need no file, because they come from `apps/api/.env`: `NEVELA_REGISTRATION` and `SOCIAL_AUTH_ENABLED`. For the rest, write the file:

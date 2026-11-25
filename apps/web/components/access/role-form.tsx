@@ -23,6 +23,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { ManagedRole, PermissionCatalog, PermissionFeature } from "@/lib/access";
+import { useConfirm } from "@/components/confirm-dialog";
 
 const LIST = "/dashboard/access/roles";
 const ACTIONS = ["create", "view", "edit", "delete"] as const;
@@ -61,6 +62,7 @@ export function RoleForm({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const confirmed = useConfirm();
   const [confirming, setConfirming] = useState(false);
   const [name, setName] = useState(role?.name ?? "");
   const [description, setDescription] = useState(role?.description ?? "");
@@ -127,7 +129,7 @@ export function RoleForm({
     const input = { name: name.trim(), description: description.trim() || null, grants };
 
     startTransition(async () => {
-      const result = role ? await updateRoleAction(role.id, role.isSystem ? { description: input.description, grants } : input) : await createRoleAction(input);
+      const result = await confirmed(() => (role ? updateRoleAction(role.id, role.isSystem ? { description: input.description, grants } : input) : createRoleAction(input)));
       if (result.ok) {
         toast.success(role ? "Saved. It applies from each person's next request." : `${result.data.name} is ready to give to people.`);
         router.push(LIST);
@@ -144,7 +146,7 @@ export function RoleForm({
   function remove() {
     if (!role) return;
     startTransition(async () => {
-      const result = await deleteRoleAction(role.id);
+      const result = await confirmed(() => deleteRoleAction(role.id));
       if (result.ok) {
         toast.success(`${role.name} is deleted.`);
         router.push(LIST);

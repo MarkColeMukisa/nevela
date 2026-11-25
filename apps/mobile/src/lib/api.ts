@@ -102,6 +102,19 @@ let cached: { access: string | null; expires: number | null; refresh: string | n
 let refreshing: Promise<Renewal> | null = null;
 let onSignedOut: (() => void) | null = null;
 
+/** What a request that needs confirming answered (428): the challenge, and the ways to confirm it. */
+export interface ConfirmAsked {
+  error: string;
+  challenge: string;
+  methods: ("password" | "email" | "totp" | "passkey")[];
+  /** A few minutes' window for this sign-in (changing who can sign in), rather than this one request. */
+  window: boolean;
+}
+
+/** Asks the person to confirm it's them, and answers with what POST auth/confirm gave, or null when they didn't. */
+type Confirmer = (asked: ConfirmAsked) => Promise<{ confirmation?: string } | null>;
+let onConfirm: Confirmer | null = null;
+
 async function tokens() {
   if (cached === null) {
     const [access, expires, refresh] = await Promise.all([storage.getItem(KEYS.access), storage.getItem(KEYS.expires), storage.getItem(KEYS.refresh)]);
@@ -194,8 +207,8 @@ async function request<T>(path: string, { method = "GET", body, file, form, quer
     .join("&");
   const target = search ? `${path}?${search}` : path;
 
-  const attempt = async (): Promise<Response> => {
-    const headers: Record<string, string> = { Accept: "application/json" };
+  const attempt = async (extra: Record<string, string> = {}): Promise<Response> => {
+    const headers: Record<string, string> = { Accept: "application/json", ...extra };
     if (file) headers["Content-Type"] = file.type;
     else if (body !== undefined && !form) headers["Content-Type"] = "application/json";
     if (auth) {
@@ -219,7 +232,15 @@ async function request<T>(path: string, { method = "GET", body, file, form, quer
     else if (renewal === "failed") throw new ApiError("Couldn't confirm your sign-in with the server just now. Try again in a moment.", 503, "RENEWAL_FAILED");
   }
 
-  const data = await parse(response);
+  let data = await parse(response);
+  // Something that matters, which the API wants confirmed (Laravel's Auth\Confirmation): ask, then
+  // send the same request again, once, with what the confirmation gave.
+  if (response.status === 428 && onConfirm && (data as { code?: unknown } | null)?.code === "CONFIRMATION_REQUIRED") {
+    const confirmed = await onConfirm(data as ConfirmAsked);
+    if (confirmed === null) throw new ApiError("Not done: it wasn't confirmed.", 428, "CONFIRMATION_CANCELLED");
+    response = await attempt(confirmed.confirmation ? { "X-Nevela-Confirmation": confirmed.confirmation } : {});
+    data = await parse(response);
+  }
   if (!response.ok) {
     if (response.status === 401 && auth) {
       await api.clearTokens();
@@ -264,6 +285,11 @@ export const api = {
   async clearTokens(): Promise<void> {
     cached = { access: null, expires: null, refresh: null };
     await Promise.all([storage.removeItem(KEYS.access), storage.removeItem(KEYS.expires), storage.removeItem(KEYS.refresh)]);
+  },
+
+  /** Called when a request needs the person to confirm it's them (see ConfirmProvider). */
+  onConfirm(handler: Confirmer | null): void {
+    onConfirm = handler;
   },
 
   /** Called when a request finds the sign-in has ended, so the app can show the sign-in screen. */

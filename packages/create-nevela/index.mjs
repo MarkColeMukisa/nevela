@@ -945,6 +945,13 @@ async function main() {
     if (hasWeb && fs.existsSync(env) && !/^NEVELA_PROXY_SECRET=/m.test(fs.readFileSync(env, 'utf8'))) {
       fs.appendFileSync(env, `\n# The same value as in ${webApps.map(({ dir }) => `apps/${path.basename(dir)}/.env.local`).join(' and ')}.\nNEVELA_PROXY_SECRET=${proxySecret}\n`);
     }
+    // Changing who can sign in asks the person to confirm it's them first: on for every new app.
+    // An app made before it turns it on once its dashboard and phone app can answer the question.
+    for (const file of [env, `${env}.example`]) {
+      if (fs.existsSync(file) && !/^NEVELA_CONFIRM_ACCESS=/m.test(fs.readFileSync(file, 'utf8'))) {
+        fs.appendFileSync(file, '\n# Changing who can sign in (people, roles) asks for the password again, once every few minutes.\nNEVELA_CONFIRM_ACCESS=true\n');
+      }
+    }
     // The staff's admin app beside the site: links to dashboard pages go there, and its sign-in links come back to it.
     if (hasSite && hasAdmin) {
       for (const file of [env, `${env}.example`]) {

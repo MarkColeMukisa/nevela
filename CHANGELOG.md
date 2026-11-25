@@ -8,6 +8,13 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- Confirming it's you again, before something that matters. Such a request answers `428` with a challenge until the person confirms with their password, a code emailed to them, their authenticator app's code, or on the web a passkey (`POST /api/auth/confirm`). It is asked only once the request is allowed and valid. The API asks, so a script can't skip what the dashboard's dialog asks.
+  - **A resource action marked `"sensitive": true`** (a transfer, a refund) asks every time. The confirmation is a token for that one request: by the same person on the same sign-in, with the same body, once, within 5 minutes. A token for refunding 10 doesn't refund 10,000.
+  - **Changing who can sign in** asks once for 5 minutes on that sign-in (`NEVELA_CONFIRM_WINDOW`): adding, changing (email, password, roles, switching off), deleting and signing out people; making, changing and deleting roles; restoring and removing deleted accounts; unblocking an email. On for new apps (`NEVELA_CONFIRM_ACCESS=true`). An app made before it turns it on once its dashboard and phone app are up to date: older ones can't answer the question.
+  - The dashboard and the phone app ask, in one dialog, and send what the person was doing again. The dashboard keeps the confirmation in a cookie the page can't read.
+
 ## [0.41.0] - 2026-11-25
 
 _A public site and a staff admin on one API, by default_

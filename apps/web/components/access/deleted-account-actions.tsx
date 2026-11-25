@@ -16,16 +16,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { useConfirm } from "@/components/confirm-dialog";
 
 /** Restore a closed account, or remove it for good. Laravel has the last word on both. */
 export function DeletedAccountActions({ id, who, email }: { id: string; who: string; email: string }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
+  const confirmed = useConfirm();
 
   function restore() {
     startTransition(async () => {
-      const result = await restoreAccountAction(id);
+      const result = await confirmed(() => restoreAccountAction(id));
       if (result.ok) {
         toast.success(`${who} can sign in again, with everything the account had.`);
         router.refresh();
@@ -37,7 +39,7 @@ export function DeletedAccountActions({ id, who, email }: { id: string; who: str
 
   function remove() {
     startTransition(async () => {
-      const result = await removeAccountAction(id);
+      const result = await confirmed(() => removeAccountAction(id));
       setConfirming(false);
       if (result.ok) {
         toast.success(`${who} is removed for good. Their email stays blocked.`);
@@ -84,10 +86,11 @@ export function DeletedAccountActions({ id, who, email }: { id: string; who: str
 export function AllowEmailButton({ id, hint }: { id: string; hint: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const confirmed = useConfirm();
 
   function allow() {
     startTransition(async () => {
-      const result = await allowEmailAction(id);
+      const result = await confirmed(() => allowEmailAction(id));
       if (result.ok) {
         toast.success(`${hint} can sign up again.`);
         router.refresh();

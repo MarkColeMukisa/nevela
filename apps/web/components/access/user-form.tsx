@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import type { ManagedRole, ManagedUser } from "@/lib/access";
+import { useConfirm } from "@/components/confirm-dialog";
 
 const LIST = "/dashboard/access/users";
 
@@ -25,6 +26,7 @@ const LIST = "/dashboard/access/users";
 export function UserForm({ user, roles }: { user?: ManagedUser; roles: ManagedRole[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const confirmed = useConfirm();
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
@@ -50,7 +52,7 @@ export function UserForm({ user, roles }: { user?: ManagedUser; roles: ManagedRo
     if (password) input.password = password;
 
     startTransition(async () => {
-      const result = user ? await updateUserAction(user.id, input) : await createUserAction(input);
+      const result = await confirmed(() => (user ? updateUserAction(user.id, input) : createUserAction(input)));
       if (result.ok) {
         toast.success(user ? "Saved." : `${result.data.name ?? result.data.email} can sign in now.`);
         router.push(LIST);

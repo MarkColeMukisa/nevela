@@ -42,6 +42,7 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionField, ResourceAction } from "@/lib/extras";
 import { FieldWidget } from "./fields/field-widget";
+import { useConfirm } from "@/components/confirm-dialog";
 
 const ICONS: Record<string, LucideIcon> = {
   archive: ArchiveIcon,
@@ -140,10 +141,11 @@ export function useResourceActions(resourceName: string, nouns: { one: string; m
   const [values, setValues] = useState<Record<string, string | boolean>>({});
   const [issues, setIssues] = useState<Record<string, string>>({});
   const [pending, startTransition] = useTransition();
+  const confirmed = useConfirm();
 
   function run(action: ResourceAction, target: ActionTarget, input: Record<string, unknown>) {
     startTransition(async () => {
-      const result = await runResourceAction(resourceName, action.key, target, input);
+      const result = await confirmed(() => runResourceAction(resourceName, action.key, target, input));
       if (result.ok) {
         toast.success(result.data.message);
         setCurrent(null);
