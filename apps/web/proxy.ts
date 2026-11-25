@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { APP, PATH_HEADER } from "@/lib/app";
+import { APP, onSite, PATH_HEADER } from "@/lib/app";
 import { REFRESH_COOKIE, TOKEN_COOKIE } from "@/lib/laravel";
 import { forgetSignIn, keepSignIn, refreshSignIn, signedOutReason } from "@/lib/session-cookies";
 
@@ -24,8 +24,7 @@ export async function proxy(request: NextRequest) {
   if (pathname === "/") return APP === "admin" ? NextResponse.redirect(new URL("/dashboard", request.url)) : NextResponse.next();
   // The site has no dashboard: a link to one (an older email, a bookmark) goes to the customer area.
   if (APP === "site" && (pathname === "/dashboard" || pathname.startsWith("/dashboard/"))) {
-    const account = pathname.startsWith("/dashboard/account") ? pathname.replace("/dashboard/account", "/account") : "/account";
-    return NextResponse.redirect(new URL(account + request.nextUrl.search, request.url));
+    return NextResponse.redirect(new URL(onSite(pathname) + request.nextUrl.search, request.url));
   }
   const page = pathname === "/dashboard" || pathname.startsWith("/dashboard/") || pathname === "/account" || pathname.startsWith("/account/");
   // Which page this is, for the dashboard's layout: a customer in the admin is kept to their own account.

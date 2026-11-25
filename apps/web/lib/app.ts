@@ -28,3 +28,23 @@ export const COOKIE_PREFIX = APP === "admin" ? "nevela_admin" : "nevela";
 
 /** The page a request is for, as proxy.ts passes it on to layouts, which can't read it themselves. */
 export const PATH_HEADER = "x-nevela-path";
+
+/**
+ * Where a link Laravel stored leads on the site, which has no dashboard. Notices, pushes and
+ * an app's own code all write dashboard addresses ("/dashboard/orders/7"); the site reads them
+ * as its customer area's:
+ *
+ *   /dashboard/account/security → /account/security
+ *   /dashboard/orders/7         → /account/records/orders/7
+ *   /dashboard/orders, …        → /account
+ *
+ * Anything that isn't a dashboard address is left as it is. Pure, so it can be tested on its own.
+ */
+export function onSite(url: string): string {
+  const [path, rest = ""] = url.split(/(?=[?#])/, 2);
+  if (path !== "/dashboard" && !path.startsWith("/dashboard/")) return url;
+  if (path === "/dashboard/account" || path.startsWith("/dashboard/account/")) return path.replace("/dashboard/account", "/account") + rest;
+  const record = /^\/dashboard\/([a-z0-9-]+)\/([^/]+)$/.exec(path);
+  if (record && record[1] !== "access" && record[1] !== "trash" && record[2] !== "new") return `/account/records/${record[1]}/${record[2]}`;
+  return "/account";
+}

@@ -20,6 +20,12 @@ The first line under a version, in italics, is the release in a few words. The d
   - **The admin** (`apps/admin`): the dashboard, and no public pages or sign-up. `/` is the dashboard. A customer who signs in is kept to their own account's pages, with a link to the site, as in Grit: the door isn't slammed, and Laravel checks every request whatever is shown. Its sign-in cookies have names of their own, so on localhost signing in to one app doesn't sign the other out.
   - Each app's `.nevela.json` says which it is, and `next.config.ts` builds it so (`NEVELA_APP`). `nevela upgrade` and `--undo` work on both, leaving out of each what it leaves out, as the version it upgrades to lists it. `nevela status` shows both.
 
+- The site's customer area (the triple tier) has what the phone's customer app has, beside the account:
+  - **Records**, at `/account/records`: each resource the customer's role may view, its records and each record, read only. Which records are theirs is Laravel's to say: where a resource has an `owner`, a customer sees their own and nobody else's.
+  - **Notifications**, at `/account/notifications`: what the phone's bell shows, marked read one at a time or all at once.
+  - A link Laravel stored for the dashboard (`/dashboard/orders/7`, in a notice or an old email) leads to the same thing in the customer area (`/account/records/orders/7`).
+- Links follow who reads them. With an admin app beside the site, a customer's sign-in and verification links land on their account on the site, and staff's on the dashboard. `nevela user --link` prints a link to the admin for staff and to the site for a customer.
+
 ### Changed
 
 - **Breaking** for scripts that run `nevela new`: the default tier, `--tier web` (and `both`, and `--mobile`), makes two web apps: the site in `apps/web` and the admin in `apps/admin`, on ports 3000 and 3001. Staff sign in to the admin. `--tier admin` is new: the API and the admin alone, for an internal tool, with the admin on port 3000. `--tier mobile` is as it was. Existing apps keep their one web app, and `nevela upgrade` never splits one.

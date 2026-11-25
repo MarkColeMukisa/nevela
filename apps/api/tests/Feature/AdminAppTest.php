@@ -70,6 +70,52 @@ class AdminAppTest extends TestCase
         $this->assertFalse(Web::allowed(self::ADMIN));
     }
 
+    /** Someone with roles, and their emailed sign-in link asked for from `$origin` (or from no app). */
+    private function signInLink(string $email, string $role, ?string $origin): string
+    {
+        $user = User::query()->firstOrCreate(['email' => $email], ['name' => 'Someone', 'password' => Hash::make('a long passphrase')]);
+        Access::grant($user, $role);
+        AuthMail::$outbox = [];
+        $this->postJson('/api/auth/magic-link', ['email' => $email], $origin ? ['X-Nevela-Origin' => $origin] : [])->assertOk();
+
+        return end(AuthMail::$outbox)['action'][1];
+    }
+
+    /** @return array<string, string> the query of a link */
+    private static function queryOf(string $url): array
+    {
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+
+        return $query;
+    }
+
+    public function test_links_follow_who_reads_them(): void
+    {
+        // The person who asked reads it: the app they asked from, and their own home there.
+        $customer = $this->signInLink('cleo@example.com', 'USER', self::SITE);
+        $this->assertStringStartsWith(self::SITE.'/api/auth/magic-link?', $customer);
+        $this->assertSame('/account', self::queryOf($customer)['next']);
+
+        $staff = $this->signInLink('eve@example.com', 'EDITOR', self::ADMIN);
+        $this->assertStringStartsWith(self::ADMIN.'/api/auth/magic-link?', $staff);
+        $this->assertSame('/dashboard', self::queryOf($staff)['next']);
+
+        // A verification email takes a customer to their account on the site.
+        $this->postJson('/api/auth/email/send', ['email' => 'cleo@example.com'], ['X-Nevela-Origin' => self::SITE])->assertOk();
+        $verify = end(AuthMail::$outbox)['action'][1] ?? '';
+        $this->assertStringStartsWith(self::SITE.'/verify-email?', $verify);
+        $this->assertSame('/account', self::queryOf($verify)['next']);
+
+        // No request speaks for the reader (`nevela user --link`): by who they are. Its link needs a cache the web server shares.
+        config(['cache.default' => 'file']);
+        $this->artisan('nevela:user', ['account' => 'eve@example.com', '--link' => true])->expectsOutputToContain(self::ADMIN.'/api/auth/magic-link?')->assertSuccessful();
+        $this->artisan('nevela:user', ['account' => 'cleo@example.com', '--link' => true])->expectsOutputToContain(self::SITE.'/api/auth/magic-link?')->assertSuccessful();
+
+        // Without an admin app, everyone's home is the dashboard, as before.
+        config(['nevela.auth.admin_url' => null]);
+        $this->assertSame('/dashboard', self::queryOf($this->signInLink('cleo@example.com', 'USER', self::SITE))['next']);
+    }
+
     public function test_a_passkey_made_on_the_admin_is_tied_to_the_admin(): void
     {
         $request = Request::create('/');
