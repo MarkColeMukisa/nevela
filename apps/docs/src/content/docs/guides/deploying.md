@@ -62,9 +62,7 @@ Set `MAIL_FROM_ADDRESS` to an address on a domain the provider has verified for 
 
 ## An app with no dashboard
 
-An app made with `--tier mobile` is the API and a phone app. Its `.env` has `NEVELA_DASHBOARD=false`. Nothing then emails a link to a dashboard page: the verification email carries its code alone, sign-in links are switched off, and asking for a forgotten-password email answers 404 with the code `NO_DASHBOARD`. `deploy:check` doesn't ask for `NEVELA_WEB_URL` or `NEVELA_PROXY_SECRET`. Google and GitHub sign-in from the phone come back to the API's own address, as they do in every app.
-
-The phone app has no screen yet for a forgotten password: someone who forgets theirs signs in with an emailed code. On the server, `php artisan nevela:user their@example.com --reset` gives them a new password.
+An app made with `--tier mobile` is the API and a phone app. Its `.env` has `NEVELA_DASHBOARD=false`. Nothing then emails a link to a dashboard page: the verification email carries its code alone, sign-in links are switched off, and a forgotten password gets a 6-digit code to type into the phone app with the new one. `deploy:check` doesn't ask for `NEVELA_WEB_URL` or `NEVELA_PROXY_SECRET`. Google and GitHub sign-in from the phone come back to the API's own address, as they do in every app.
 
 ## Checklist
 
