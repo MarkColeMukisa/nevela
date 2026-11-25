@@ -1,0 +1,22 @@
+{
+  "about": "What each of a project's two web apps leaves out of this template, for the triple tier: the public site and customer area (apps/web) and the staff's admin (apps/admin). nevela new copies the template once for each, without these; nevela upgrade leaves them out the same way, reading this file from the version it upgrades to. A path ending in / is a folder and everything in it. An app with one web app has everything.",
+  "site": [
+    "app/dashboard/",
+    "components/dashboard/",
+    "components/access/",
+    "lib/dashboard-nav.ts",
+    "lib/line-items.ts",
+    "nevela-split.json"
+  ],
+  "admin": [
+    "app/page.tsx",
+    "app/account/",
+    "app/sign-up/",
+    "app/confirm/",
+    "app/blog/",
+    "app/sitemap.ts",
+    "components/marketing/product-preview.tsx",
+    "resources/latest-posts.tsx",
+    "nevela-split.json"
+  ]
+}

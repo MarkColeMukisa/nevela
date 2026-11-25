@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { DashboardHeader, type Theme } from "@/components/dashboard/dashboard-header";
@@ -14,6 +15,8 @@ import { loadInbox } from "@/lib/notifications";
 import { noIndex } from "@/lib/seo";
 import { requireSession } from "@/lib/session";
 import { site } from "@/lib/site";
+import { APP, PATH_HEADER } from "@/lib/app";
+import { CustomerInAdmin } from "@/components/dashboard/customer-in-admin";
 import { listViews } from "@/lib/views";
 
 /** Behind a sign-in, so nothing here belongs in search results. */
@@ -25,6 +28,13 @@ export const metadata: Metadata = { robots: noIndex };
  */
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user } = await requireSession("/dashboard");
+  // The staff's admin app keeps a customer to their own account: as Grit does, not a door
+  // shut in their face. Laravel still checks every request whatever is shown here.
+  if (APP === "admin" && user.staff === false) {
+    const page = (await headers()).get(PATH_HEADER) ?? "";
+    if (page !== "/dashboard/account" && !page.startsWith("/dashboard/account/")) redirect("/dashboard/account");
+    return <CustomerInAdmin>{children}</CustomerInAdmin>;
+  }
   const jar = await cookies();
   const theme = (jar.get("flare-theme")?.value ?? "system") as Theme;
   const collapsed = jar.get("sidebar_state")?.value === "false";

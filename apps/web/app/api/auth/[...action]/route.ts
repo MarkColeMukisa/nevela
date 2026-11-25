@@ -4,6 +4,7 @@ import { API_URL, callerHeaders, REFRESH_COOKIE, sessionToken } from "@/lib/lara
 import { encodePending, PENDING_COOKIE, PENDING_MAX_AGE, pendingSecondStep, type SecondStepMethod } from "@/lib/second-step";
 import { safeRedirectPath } from "@/lib/session";
 import { cookieOptions, forgetSignIn, keepSignIn, refreshSignIn, SIGN_IN_FIELDS } from "@/lib/session-cookies";
+import { ACCOUNT, COOKIE_PREFIX, HOME } from "@/lib/app";
 
 /**
  * Signing in and looking after an account, for the browser.
@@ -89,7 +90,7 @@ async function callLaravel(request: NextRequest, method: string, path: string, b
  * only in the browser that asked for it, so nobody can sign someone else in to their own
  * account by sending them a link.
  */
-const OAUTH_COOKIE = "nevela_oauth";
+const OAUTH_COOKIE = `${COOKIE_PREFIX}_oauth`;
 const OAUTH_PATH = "/api/auth/oauth";
 
 const redirectTo = (request: NextRequest, path: string) => Response.redirect(new URL(path, request.url), 303);
@@ -103,7 +104,7 @@ function withQuery(path: string, name: string, value: string): string {
 async function oauthStart(request: NextRequest, provider: string): Promise<Response> {
   const params = request.nextUrl.searchParams;
   const linking = params.get("link") === "1";
-  const next = safeRedirectPath(params.get("next"), linking ? "/dashboard/account/security" : "/dashboard");
+  const next = safeRedirectPath(params.get("next"), linking ? `${ACCOUNT}/security` : HOME);
   const result = await callLaravel(request, "POST", `oauth/${provider}/start`, { next, link: linking });
   const { url, state } = result.body;
   if (result.status !== 200 || typeof url !== "string" || typeof state !== "string") {
@@ -139,7 +140,7 @@ async function oauthCallback(request: NextRequest, provider: string): Promise<Re
   }
   if (result.status >= 400 || !keepSignIn(jar, result.body)) {
     const code = typeof result.body.code === "string" ? result.body.code : "OAUTH_FAILED";
-    return redirectTo(request, next.startsWith("/dashboard/account") ? withQuery(next, "social", code) : `/sign-in?error=oauth&reason=${code}&next=${encodeURIComponent(next)}`);
+    return redirectTo(request, next.startsWith(ACCOUNT) ? withQuery(next, "social", code) : `/sign-in?error=oauth&reason=${code}&next=${encodeURIComponent(next)}`);
   }
   jar.set(PENDING_COOKIE, "", cookieOptions(0));
   return redirectTo(request, next);
@@ -188,7 +189,7 @@ async function handle(request: NextRequest, context: Context, method: string): P
     if (result.status >= 400 || !keepSignIn(jar, result.body)) return Response.redirect(new URL("/sign-in?error=link", request.url), 303);
     const destination = new URL(safe, request.url);
     // Belt and braces: whatever the path was, the destination is this site.
-    return Response.redirect(destination.origin === new URL(request.url).origin ? destination : new URL("/dashboard", request.url), 303);
+    return Response.redirect(destination.origin === new URL(request.url).origin ? destination : new URL(HOME, request.url), 303);
   }
 
   // Google and GitHub: the button opens the first, and the provider sends the browser back to the second.

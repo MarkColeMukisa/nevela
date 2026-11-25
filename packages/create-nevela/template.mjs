@@ -64,13 +64,36 @@ export function exampleResourceFilter(webRoot) {
     || [...slugs].some((slug) => inside === `app/dashboard/${slug}`);
 }
 
-/** The dashboard, without the repository's example resources, named for the new app. */
-export function copyWebTemplate(to, { name, title }) {
-  copyTree(sources.web, to, exampleResourceFilter(sources.web));
+/**
+ * What one of the triple tier's two web apps leaves out: "site" (the public site and
+ * customer area) or "admin" (the staff's app), as apps/web/nevela-split.json lists it. An
+ * app doing both (no `app`) leaves out nothing.
+ */
+export function splitFilter(webRoot, app) {
+  if (!app) return () => false;
+  const split = JSON.parse(fs.readFileSync(path.join(webRoot, 'nevela-split.json'), 'utf8'));
+  const drops = split[app];
+  if (!Array.isArray(drops)) throw new Error(`nevela-split.json says nothing of "${app}".`);
+  return (inside) => drops.some((drop) => (drop.endsWith('/') ? inside === drop.slice(0, -1) || inside.startsWith(drop) : inside === drop));
+}
+
+/** Both filters: the repository's examples, and what this app of the triple tier leaves out. */
+function webFilter(webRoot, app) {
+  const examples = exampleResourceFilter(webRoot);
+  const split = splitFilter(webRoot, app);
+  return (inside, entry) => examples(inside, entry) || split(inside);
+}
+
+/**
+ * The dashboard, without the repository's example resources, named for the new app. With
+ * `app`, one of the triple tier's two: "site" in apps/web, "admin" in apps/admin.
+ */
+export function copyWebTemplate(to, { name, title, app }) {
+  copyTree(sources.web, to, webFilter(sources.web, app));
 
   const packageFile = path.join(to, 'package.json');
   const manifest = JSON.parse(fs.readFileSync(packageFile, 'utf8'));
-  manifest.name = `${name}-web`;
+  manifest.name = app === 'admin' ? `${name}-admin` : `${name}-web`;
   fs.writeFileSync(packageFile, `${JSON.stringify(manifest, null, 2)}\n`);
 
   // The name itself is the brand's, in packages/shared/brand.ts (copySharedTemplate).
@@ -88,8 +111,8 @@ export function copyWebTemplate(to, { name, title }) {
  * files the developer changed. The same fingerprint the Laravel package computes: SHA-1
  * with line endings ignored.
  */
-export function templateRecord(version) {
-  const skip = exampleResourceFilter(sources.web);
+export function templateRecord(version, app) {
+  const skip = webFilter(sources.web, app);
   const files = {};
   const walk = (dir, relative = '') => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -106,7 +129,8 @@ export function templateRecord(version) {
   const manifest = JSON.parse(fs.readFileSync(path.join(sources.web, 'package.json'), 'utf8'));
   const dependencies = {};
   for (const section of ['dependencies', 'devDependencies']) if (manifest[section]) dependencies[section] = manifest[section];
-  return { template: version, files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => a.localeCompare(b))), dependencies };
+  // Which of the triple tier's apps this is: upgrade leaves out the same files (nevela-split.json).
+  return { template: version, ...(app ? { app } : {}), files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => a.localeCompare(b))), dependencies };
 }
 
 /** Never part of a new mobile app: what Expo builds, and the lock file of whoever installed it here. */

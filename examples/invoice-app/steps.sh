@@ -34,8 +34,8 @@ grep -q '"items": "InvoiceItem"' apps/api/nevela/resources/invoice.json
 ls apps/api/database/migrations | grep -q 'add_due_date_to_invoices_table'
 grep -q 'dueDate: field.date()' apps/web/resources/invoice.resource.ts
 # Every record's page can be printed.
-grep -q '<PrintButton' apps/web/components/dashboard/record-detail.tsx
-test -f apps/web/components/dashboard/print-record.css
+grep -q "<PrintButton" apps/admin/components/dashboard/record-detail.tsx
+test -f apps/admin/components/dashboard/print-record.css
 # An invoice made over the API is numbered and priced by Laravel, and asks for its due date.
 check="$here/check.php"
 command -v cygpath > /dev/null && check="$(cygpath -w "$check")" # a Windows PHP reads Windows paths

@@ -1,3 +1,4 @@
+import { ACCOUNT, HOME } from "@/lib/app";
 /**
  * The browser's side of signing in, with the method names Flare's screens call.
  *
@@ -255,7 +256,7 @@ export const authClient = {
     return { data: (result.data?.data ?? []).map((row) => ({ id: row.id, providerId: row.provider, accountId: row.id })), error: null };
   },
   /** Off to the provider's page, to come back connected to this account. */
-  linkSocial: ({ provider, callbackURL }: { provider: string; callbackURL?: string }) => toProvider(provider, callbackURL ?? "/dashboard/account/security", true),
+  linkSocial: ({ provider, callbackURL }: { provider: string; callbackURL?: string }) => toProvider(provider, callbackURL ?? `${ACCOUNT}/security`, true),
   unlinkAccount: ({ accountId }: { providerId?: string; accountId?: string }) => call("DELETE", `social/${encodeURIComponent(accountId ?? "")}`),
 };
 
@@ -264,7 +265,7 @@ export const authClient = {
  * where the provider's page is: nothing about the sign-in passes through the page's script.
  */
 async function toProvider(provider: string, next?: string, link = false): Promise<AuthResult<never>> {
-  const query = new URLSearchParams({ next: next ?? "/dashboard", ...(link ? { link: "1" } : {}) });
+  const query = new URLSearchParams({ next: next ?? HOME, ...(link ? { link: "1" } : {}) });
   window.location.assign(`/api/auth/oauth/${encodeURIComponent(provider)}?${query}`);
   // The page is going; nothing more happens here.
   return new Promise(() => {});

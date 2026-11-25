@@ -178,6 +178,8 @@ jobs:
           mkdir "$RUNNER_TEMP/create-nevela"
           tar -xzf create-nevela-*.tgz -C "$RUNNER_TEMP/create-nevela"
           test -f "$RUNNER_TEMP/create-nevela/package/template/web/_gitignore"
+          # What the site and the admin each leave out of the one template.
+          test -f "$RUNNER_TEMP/create-nevela/package/template/web/nevela-split.json"
           test -f "$RUNNER_TEMP/create-nevela/package/template/mobile/app.json"
           test -f "$RUNNER_TEMP/create-nevela/package/template/mobile/_gitignore"
           test ! -e "$RUNNER_TEMP/create-nevela/package/template/mobile/node_modules"
@@ -204,6 +206,26 @@ jobs:
           grep -q "HasApiTokens, HasFactory" apps/api/app/Models/User.php
           test ! -e apps/web/app/dashboard/products
           test ! -e apps/web/resources/product.resource.ts
+          # The triple tier: the site has no dashboard, the admin no public pages, each knows which it is.
+          test ! -e apps/web/app/dashboard
+          test ! -e apps/web/components/dashboard
+          test -f apps/web/app/account/page.tsx
+          test -f apps/admin/app/dashboard/page.tsx
+          test ! -e apps/admin/app/page.tsx
+          test ! -e apps/admin/app/sign-up
+          test ! -e apps/admin/nevela-split.json
+          grep -q '"app": "site"' apps/web/.nevela.json
+          grep -q '"app": "admin"' apps/admin/.nevela.json
+          if grep -q '"app/dashboard/' apps/web/.nevela.json; then echo "the site's record lists dashboard files"; exit 1; fi
+          grep -q '"name": "demo-app-admin"' apps/admin/package.json
+          grep -q '^NEVELA_ADMIN_URL=http://localhost:3001$' apps/api/.env
+          grep -q '^NEVELA_ADMIN_URL=' apps/api/.env.example
+          grep -q '^NEVELA_ADMIN_URL=http://localhost:3001$' apps/web/.env.local
+          grep -q '^NEXT_PUBLIC_SITE_URL=http://localhost:3000$' apps/admin/.env.local
+          test "$(grep '^NEVELA_PROXY_SECRET=' apps/web/.env.local)" = "$(grep '^NEVELA_PROXY_SECRET=' apps/admin/.env.local)"
+          test -d apps/admin/node_modules
+          grep -q '"dev:admin"' package.json
+          grep -q "export const resources = \[\] as const;" apps/admin/resources/index.ts
           # Asked for no blog: no Post resource, no pages, and nothing for the site's header to link to.
           test ! -e apps/api/nevela/resources/post.json
           test ! -e apps/web/app/blog
@@ -216,9 +238,11 @@ jobs:
           grep -q '"nevela/laravel"' apps/api/composer.json
           grep -q '"laravel/sanctum"' apps/api/composer.json
           grep -q 'admin@example.com' README.md
-      - name: Build the dashboard before any resource exists
-        working-directory: ${{ runner.temp }}/demo-app/apps/web
-        run: pnpm exec tsc --noEmit
+      - name: Build the site and the admin before any resource exists
+        working-directory: ${{ runner.temp }}/demo-app/apps
+        run: |
+          (cd web && pnpm exec tsc --noEmit)
+          (cd admin && pnpm exec tsc --noEmit)
       - name: The mobile app is named for the new app, type-checks and bundles
         working-directory: ${{ runner.temp }}/demo-app/apps/mobile
         env:
@@ -397,11 +421,16 @@ jobs:
           php nevela user --name="CI" --email=ci@example.test --password=ci-password-123 --role=editor | tee user.log
           grep -q 'as EDITOR' user.log
           php nevela artisan test
-      - name: Build the dashboard with the resource
-        working-directory: ${{ runner.temp }}/demo-app/apps/web
+      - name: Build the site and the admin with the resources
+        working-directory: ${{ runner.temp }}/demo-app/apps
         run: |
-          pnpm exec tsc --noEmit
-          pnpm run build
+          # The dashboard's pages went to the admin, and the descriptors to both.
+          test -f admin/resources/product.resource.ts
+          test -f web/resources/product.resource.ts
+          test -d admin/app/dashboard/products
+          test ! -e web/app/dashboard
+          (cd web && pnpm exec tsc --noEmit && pnpm run build)
+          (cd admin && pnpm exec tsc --noEmit && pnpm run build)
       - name: An update keeps the app's changes, backs up what it replaces, and can be undone
         working-directory: ${{ runner.temp }}/demo-app/apps/api
         env:
@@ -729,5 +758,6 @@ jobs:
             node create-nevela/package/index.mjs "$name" --yes --pm pnpm --bundled-package $extra
             (cd "$name" && bash "$steps")
             (cd "$name/apps/web" && pnpm exec tsc --noEmit && pnpm run build)
+            (cd "$name/apps/admin" && pnpm exec tsc --noEmit && pnpm run build)
             echo "::endgroup::"
           done

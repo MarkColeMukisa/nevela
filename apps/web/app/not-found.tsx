@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeftIcon, SearchXIcon } from "lucide-react";
 import { SiteHeader } from "@/components/marketing/site-header";
+import { APP, HOME } from "@/lib/app";
 
 export const metadata = { title: "Page not found" };
 
@@ -15,7 +16,8 @@ export const metadata = { title: "Page not found" };
 export default function NotFound() {
   return (
     <>
-      <SiteHeader />
+      {/* The staff's admin app has no public site to lead back to. */}
+      {APP !== "admin" && <SiteHeader />}
       <main className="mx-auto flex min-h-[70vh] max-w-2xl flex-col items-center justify-center gap-6 px-6 py-20 text-center">
         <div className="flex size-14 items-center justify-center rounded-2xl border border-border bg-surface">
           <SearchXIcon className="size-6 text-foreground-muted" aria-hidden="true" />
@@ -29,17 +31,17 @@ export default function NotFound() {
         </div>
         <div className="flex flex-wrap justify-center gap-3">
           <Link
-            href="/"
+            href={APP === "admin" ? HOME : "/"}
             className="inline-flex h-11 items-center gap-2 rounded-[var(--button-radius)] bg-brand px-5 font-medium text-brand-foreground [background-image:var(--brand-gradient,none)] hover:brightness-95"
           >
             <ArrowLeftIcon className="size-4" aria-hidden="true" />
             Back home
           </Link>
           <Link
-            href="/dashboard"
+            href={HOME}
             className="inline-flex h-11 items-center rounded-[var(--button-radius)] border border-border px-5 font-medium hover:bg-accent"
           >
-            Go to the dashboard
+            {APP === "site" ? "Go to your account" : "Go to the dashboard"}
           </Link>
         </div>
       </main>

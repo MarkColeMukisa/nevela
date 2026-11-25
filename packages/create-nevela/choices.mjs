@@ -2,11 +2,16 @@
 //
 // Pure on purpose, so the tests can reach it: index.mjs runs as soon as it is loaded.
 
-/** Which apps a new project has. The API is in every one. */
+/**
+ * Which apps a new project has. The API is in every one. The web side is two apps by
+ * default, the triple tier: the public site and customer area (apps/web) and the staff's
+ * admin (apps/admin), each on its own address.
+ */
 export const TIERS = {
-  web: { label: 'Web', detail: 'the API and a dashboard (Next.js)', web: true, mobile: false },
-  mobile: { label: 'Mobile', detail: 'the API and a phone app (Expo), with no dashboard', web: false, mobile: true },
-  both: { label: 'Web and mobile', detail: 'the API, a dashboard and a phone app', web: true, mobile: true },
+  web: { label: 'Web', detail: 'a public site with a customer area, a staff admin (Next.js) and the API', site: true, admin: true, mobile: false },
+  both: { label: 'Web and mobile', detail: 'the site, the admin, the API and a phone app (Expo)', site: true, admin: true, mobile: true },
+  mobile: { label: 'Mobile', detail: 'the API and a phone app (Expo), with no web apps', site: false, admin: false, mobile: true },
+  admin: { label: 'Admin only', detail: 'the API and a staff admin, for an internal tool with no public site', site: false, admin: true, mobile: false },
 };
 
 /** How the app sends email once it is on a server. Resend first: Laravel has a driver for it. */

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { APP, PATH_HEADER } from "@/lib/app";
 import { REFRESH_COOKIE, TOKEN_COOKIE } from "@/lib/laravel";
 import { forgetSignIn, keepSignIn, refreshSignIn, signedOutReason } from "@/lib/session-cookies";
 
@@ -19,13 +20,22 @@ import { forgetSignIn, keepSignIn, refreshSignIn, signedOutReason } from "@/lib/
  */
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const page = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+  // The staff's admin app has no home page of its own: it is the dashboard.
+  if (pathname === "/") return APP === "admin" ? NextResponse.redirect(new URL("/dashboard", request.url)) : NextResponse.next();
+  // The site has no dashboard: a link to one (an older email, a bookmark) goes to the customer area.
+  if (APP === "site" && (pathname === "/dashboard" || pathname.startsWith("/dashboard/"))) {
+    const account = pathname.startsWith("/dashboard/account") ? pathname.replace("/dashboard/account", "/account") : "/account";
+    return NextResponse.redirect(new URL(account + request.nextUrl.search, request.url));
+  }
+  const page = pathname === "/dashboard" || pathname.startsWith("/dashboard/") || pathname === "/account" || pathname.startsWith("/account/");
+  // Which page this is, for the dashboard's layout: a customer in the admin is kept to their own account.
+  if (page) request.headers.set(PATH_HEADER, pathname);
   // What never carries a token: a site's public data, and stored files.
   if (!page && (pathname.startsWith("/api/public/") || pathname.startsWith("/api/_nevela/files/"))) return NextResponse.next();
 
   const signedIn = Boolean(request.cookies.get(TOKEN_COOKIE)?.value);
   const refresh = request.cookies.get(REFRESH_COOKIE)?.value;
-  if (signedIn) return NextResponse.next();
+  if (signedIn) return NextResponse.next({ request: { headers: request.headers } });
   if (!refresh) return page ? toSignIn(request) : NextResponse.next();
 
   const result = await refreshSignIn(refresh, request.headers);
@@ -54,5 +64,5 @@ function toSignIn(request: NextRequest, reason?: string) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/api/:path*"],
+  matcher: ["/", "/dashboard/:path*", "/account/:path*", "/api/:path*"],
 };

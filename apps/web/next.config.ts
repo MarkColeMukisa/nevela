@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { NextConfig } from "next";
 
@@ -7,11 +8,24 @@ import type { NextConfig } from "next";
 // these two lines, importing from it fails with "Can't resolve".
 const project = path.join(__dirname, "..", "..");
 
+// Which of the project's web apps this is ("site", "admin", or neither: one app doing both),
+// as `nevela new` recorded it in .nevela.json, which is committed. See lib/app.ts.
+function whichApp(): string {
+  if (process.env.NEVELA_APP) return process.env.NEVELA_APP;
+  try {
+    const recorded = JSON.parse(readFileSync(path.join(__dirname, ".nevela.json"), "utf8")) as { app?: unknown };
+    return typeof recorded.app === "string" ? recorded.app : "";
+  } catch {
+    return "";
+  }
+}
+
 const config: NextConfig = {
   // Compile @flaredev/core from source rather than resolving it as an opaque package.
   transpilePackages: ["@flaredev/core"],
   turbopack: { root: project },
   outputFileTracingRoot: project,
+  env: { NEVELA_APP: whichApp() },
 };
 
 export default config;

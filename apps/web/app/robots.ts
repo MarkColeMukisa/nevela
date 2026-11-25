@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { siteLinks } from "@/lib/extras";
 import { siteUrl } from "@/lib/seo";
+import { APP } from "@/lib/app";
 
 /**
  * robots.txt. Search engines may read the site, and not the dashboard or the API, except
@@ -12,8 +13,10 @@ import { siteUrl } from "@/lib/seo";
  * The sitemap is the blog's (`nevela blog` writes app/sitemap.ts), so it is named when there is one.
  */
 export default function robots(): MetadataRoute.Robots {
+  // The staff's admin app has nothing for search engines at all.
+  if (APP === "admin") return { rules: [{ userAgent: "*", disallow: ["/"] }] };
   return {
-    rules: [{ userAgent: "*", allow: ["/", "/api/_nevela/files/"], disallow: ["/dashboard", "/api/"] }],
+    rules: [{ userAgent: "*", allow: ["/", "/api/_nevela/files/"], disallow: ["/dashboard", "/account", "/api/"] }],
     ...(siteLinks().length > 0 ? { sitemap: `${siteUrl()}/sitemap.xml` } : {}),
   };
 }

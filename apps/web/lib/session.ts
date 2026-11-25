@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { laravel, sessionToken } from "./laravel";
+import { HOME } from "@/lib/app";
 
 export interface SessionUser {
   id: string;
@@ -18,6 +19,11 @@ export interface SessionUser {
   permissions?: string[];
   /** Whether their roles come to everything. */
   isAdmin?: boolean;
+  /**
+   * Staff, or a customer: someone who holds only the role people sign up with. Laravel's one
+   * rule, the same for every app. Missing from an API older than 0.41: taken as staff.
+   */
+  staff?: boolean;
   emailVerified: boolean;
   twoFactorEnabled: boolean;
   /** The key of the profile picture (an optimised upload), or null. Show it with fileUrl(). */
@@ -53,7 +59,7 @@ export async function requireSession(returnTo?: string) {
 }
 
 /** Only allow same-site relative redirect targets, to avoid open redirects via `?next=`. */
-export function safeRedirectPath(value: unknown, fallback = "/dashboard"): string {
+export function safeRedirectPath(value: unknown, fallback = HOME): string {
   // One leading slash, and no backslash or control character anywhere. Browsers drop tabs
   // and newlines from an address, which would turn "/<tab>/evil.example" into "//evil.example".
   // eslint-disable-next-line no-control-regex -- control characters are exactly what is refused
