@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "A forgotten password reset from the phone, by emailed code";
+export const RELEASE_HEADLINE = "The phone does what the dashboard does, and CI keeps it that way";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "New: \"Forgot your password?\" on the phone emails a 6-digit code to choose a new one with, in every app, with a dashboard or without.",
-  href: "/guides/mobile-app/#what-is-in-it",
-  label: "The phone app's screens",
+  text: "New: closing an account, deleted accounts, connected accounts, files and rich text on the phone, and a check that every API route says which app uses it.",
+  href: "/reference/web-and-phone/",
+  label: "Web and phone",
 };
