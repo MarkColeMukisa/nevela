@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { View } from "react-native";
 
 import { SecondStep } from "@/components/second-step";
@@ -28,11 +28,24 @@ export default function ForgotPassword() {
   const [resent, setResent] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [challenge, setChallenge] = useState<Challenge | null>(null);
+  // The new password is set: a retry only signs in, since the code is used up.
+  const [resetDone, setResetDone] = useState(false);
+  // One request at a time, however it is started: a button, or Enter on the keyboard.
+  const inFlight = useRef(false);
+  const once = async (step: () => Promise<void>) => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    try {
+      await step();
+    } finally {
+      inFlight.current = false;
+    }
+  };
 
   const address = email.trim();
   const issue = (path: string) => (error instanceof ApiError ? error.issue(path) : undefined);
 
-  const send = async () => {
+  const send = () => once(async () => {
     setBusy(true);
     setError(null);
     try {
@@ -43,14 +56,17 @@ export default function ForgotPassword() {
     } finally {
       setBusy(false);
     }
-  };
+  });
 
-  const reset = async () => {
+  const reset = () => once(async () => {
     if (!sent) return;
     setBusy(true);
     setError(null);
     try {
-      await auth.resetPassword(sent, code, password);
+      if (!resetDone) {
+        await auth.resetPassword(sent, code, password);
+        setResetDone(true);
+      }
       // Signed in here with the new password; the layout takes the app from there.
       setChallenge(await auth.signIn(sent, password));
     } catch (caught) {
@@ -58,9 +74,9 @@ export default function ForgotPassword() {
     } finally {
       setBusy(false);
     }
-  };
+  });
 
-  const sendAgain = async () => {
+  const sendAgain = () => once(async () => {
     if (!sent) return;
     setAgain(true);
     setError(null);
@@ -72,7 +88,7 @@ export default function ForgotPassword() {
     } finally {
       setAgain(false);
     }
-  };
+  });
 
   if (challenge) {
     return <SecondStep challenge={challenge} onCancel={() => router.replace("/sign-in")} />;
@@ -91,9 +107,9 @@ export default function ForgotPassword() {
         <>
           <Field label="Code" value={code} onChangeText={setCode} error={issue("code")} keyboardType="number-pad" autoComplete="one-time-code" textContentType="oneTimeCode" autoFocus returnKeyType="next" />
           <Field label="New password" value={password} onChangeText={setPassword} error={issue("newPassword")} secureTextEntry autoComplete="new-password" textContentType="newPassword" returnKeyType="go" onSubmitEditing={reset} />
-          <Button label="Set the new password" busy={busy} disabled={code.trim() === "" || password === ""} onPress={reset} />
+          <Button label={resetDone ? "Sign in" : "Set the new password"} busy={busy} disabled={code.trim() === "" || password === ""} onPress={reset} />
           <Button variant="link" label="Send the code again" busy={again} disabled={busy} onPress={sendAgain} />
-          <Button variant="link" label="Use a different email" disabled={busy} onPress={() => { setSent(null); setCode(""); setPassword(""); setResent(false); setError(null); }} />
+          <Button variant="link" label="Use a different email" disabled={busy} onPress={() => { setSent(null); setCode(""); setPassword(""); setResent(false); setResetDone(false); setError(null); }} />
         </>
       ) : (
         <>

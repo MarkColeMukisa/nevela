@@ -122,6 +122,19 @@ class PasswordResetCodeTest extends TestCase
         $this->assertSame($real, $unknown);
     }
 
+    public function test_the_email_is_sent_after_the_answer_and_is_sent(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+        $this->user();
+
+        $this->postJson('/api/auth/password/forgot', ['email' => 'ada@example.com', 'method' => 'code'])->assertOk();
+
+        // Deferred to after the answer (so its time can't give the account away), and still delivered.
+        $sent = \Illuminate\Support\Facades\Notification::sentNotifications();
+        $this->assertCount(1, $sent, 'one email, to the account');
+        $this->assertSame([\Illuminate\Notifications\AnonymousNotifiable::class], array_keys($sent));
+    }
+
     public function test_the_dashboard_still_gets_a_link_unless_a_code_is_asked_for(): void
     {
         $this->user();

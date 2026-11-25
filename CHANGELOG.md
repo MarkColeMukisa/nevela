@@ -15,6 +15,7 @@ The first line under a version, in italics, is the release in a few words. The d
 ### Changed
 
 - **An app with no dashboard no longer answers a forgotten password with 404 `NO_DASHBOARD`:** it emails a code instead.
+- **Sign-in emails go out after the answer, not before it:** codes, links, verification and password resets. Before, a request for a real account waited for the mail server and one for an unknown address didn't, so how long the answer took could say which addresses have an account.
 
 ## [0.38.0] - 2026-11-24
 
