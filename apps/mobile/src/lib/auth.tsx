@@ -76,6 +76,10 @@ interface AuthContextValue {
   verifyEmail: (email: string, code: string) => Promise<Challenge | null>;
   /** Send the verification code again. */
   resendVerification: (email: string) => Promise<void>;
+  /** Email a code to choose a new password with. Answers the same whether or not the address has an account. */
+  forgotPassword: (email: string) => Promise<void>;
+  /** Choose a new password with the emailed code. Every sign-in the account had is ended. */
+  resetPassword: (email: string, code: string, newPassword: string) => Promise<void>;
   signOut: () => Promise<void>;
   /** Read the user again, after a change to the profile. */
   reload: () => Promise<void>;
@@ -187,6 +191,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       verifyEmail: async (email, code) => finish(await api.post<Answer>("/auth/email/verify", { email, code: code.trim(), deviceName: deviceName() }, { auth: false })),
       resendVerification: async (email) => {
         await api.post("/auth/email/send", { email }, { auth: false });
+      },
+      forgotPassword: async (email) => {
+        await api.post("/auth/password/forgot", { email, method: "code" }, { auth: false });
+      },
+      resetPassword: async (email, code, newPassword) => {
+        await api.post("/auth/password/reset", { email, code: code.trim(), newPassword }, { auth: false });
       },
       signOut: async () => {
         // First, while the sign-in still works: the next person on this phone doesn't get these pushes.

@@ -100,7 +100,8 @@ All are under `/api/auth`. The ones marked 🔒 need a token.
 | | `POST /email-code`, `/email-code/verify` | Email a sign-in code; sign in with `email` and `code`. |
 | | `POST /register` | Create an account, when registration is on. |
 | | `POST /email/send`, `/email/verify` | Send the verification email; verify with `email` and `code`. |
-| | `POST /password/forgot`, `/password/reset` | Email a reset link; set `newPassword` with its `token`. |
+| | `POST /password/forgot` | Email a way to choose a new password: a link to the dashboard's page, or a 6-digit code with `"method": "code"` (and always where there is no dashboard). Answers `{ sent: true, method }`, the same whether or not the address has an account. |
+| | `POST /password/reset` | Set `newPassword`, with the link's `token`, or with `email` and the emailed `code`. A wrong code is `INVALID_OTP`; after a few, `TOO_MANY_ATTEMPTS` (429) and a new one has to be asked for. Every sign-in the account had is ended, and the address counts as proved. |
 | | `POST /oauth/{provider}/start`, `/oauth/{provider}/callback` | Sign in with `google` or `github`: where to send the browser, then the code it came back with. See [how it works](/guides/authentication/#google-and-github). |
 | 🔒 | `GET /me`, `PATCH /me` | The signed-in user; change `name` or `avatar`. |
 | 🔒 | `PUT /avatar?name=me.jpg` | Upload a profile picture. The body is the file, or a form's `file` part, as for any upload. |

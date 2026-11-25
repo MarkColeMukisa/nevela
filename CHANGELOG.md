@@ -8,6 +8,14 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- **A forgotten password can be reset from the phone.** "Forgot your password?" on the sign-in screen emails a 6-digit code. The person enters it with a new password, and the phone signs in with it, through the second step where the account has one. Every other sign-in the account had ends. `POST /auth/password/forgot` sends a code with `"method": "code"`, and always in an app with no dashboard; `POST /auth/password/reset` takes the `email` and `code` as well as the link's `token`. A wrong code counts against a few tries. See [the API reference](https://nevela-docs.vercel.app/reference/api/#every-auth-endpoint).
+
+### Changed
+
+- **An app with no dashboard no longer answers a forgotten password with 404 `NO_DASHBOARD`:** it emails a code instead.
+
 ## [0.38.0] - 2026-11-24
 
 _Push to every phone, on PHP 8.5 and Laravel 13_

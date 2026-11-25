@@ -49,10 +49,11 @@ class NoDashboardTest extends TestCase
         // A sign-in link and a reset link would open dashboard pages: neither is sent.
         $this->getJson('/api/auth/config')->assertOk()->assertJsonPath('magicLink', false)->assertJsonPath('emailCode', true);
         $this->postJson('/api/auth/magic-link', ['email' => 'ada@example.com'])->assertNotFound();
-        $this->postJson('/api/auth/password/forgot', ['email' => 'ada@example.com'])->assertNotFound()->assertJsonPath('code', 'NO_DASHBOARD');
-        // The same answer for an address with no account: it gives nothing away.
-        $this->postJson('/api/auth/password/forgot', ['email' => 'nobody@example.com'])->assertNotFound()->assertJsonPath('code', 'NO_DASHBOARD');
         $this->assertSame([], AuthMail::$outbox);
+        // A forgotten password gets a code to type into the app, never a link: there's no page for one.
+        $this->postJson('/api/auth/password/forgot', ['email' => 'ada@example.com', 'method' => 'link'])->assertOk()->assertJsonPath('method', 'code');
+        $this->assertNull(end(AuthMail::$outbox)['action']);
+        AuthMail::$outbox = [];
 
         // A code is typed into the app, so it still comes.
         $this->postJson('/api/auth/email-code', ['email' => 'ada@example.com'])->assertOk();

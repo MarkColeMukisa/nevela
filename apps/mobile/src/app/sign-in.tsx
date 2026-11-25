@@ -93,6 +93,7 @@ export default function SignIn() {
         <>
           <Field label="Password" value={password} onChangeText={setPassword} error={issue("password")} secureTextEntry autoComplete="current-password" textContentType="password" returnKeyType="go" onSubmitEditing={() => run(async () => setChallenge(await auth.signIn(address, password)))} />
           <Button label="Sign in" busy={busy} disabled={address === "" || password === "" || provider !== null} onPress={() => run(async () => setChallenge(await auth.signIn(address, password)))} />
+          <Button variant="link" label="Forgot your password?" disabled={busy} onPress={() => router.push({ pathname: "/forgot-password", params: address ? { email: address } : {} })} />
         </>
       ) : codeSent ? (
         <>
