@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
-import { API_URL, callerHeaders, REFRESH_COOKIE, sessionToken } from "@/lib/laravel";
+import { API_URL, callerHeaders, CONFIRM_COOKIE, REFRESH_COOKIE, sessionToken } from "@/lib/laravel";
 import { encodePending, PENDING_COOKIE, PENDING_MAX_AGE, pendingSecondStep, type SecondStepMethod } from "@/lib/second-step";
 import { safeRedirectPath } from "@/lib/session";
 import { cookieOptions, forgetSignIn, keepSignIn, refreshSignIn, SIGN_IN_FIELDS } from "@/lib/session-cookies";
@@ -253,6 +253,15 @@ async function handle(request: NextRequest, context: Context, method: string): P
   }
 
   // Whether a sign-in is waiting for its second step, and how it can be completed.
+  // Confirming it's you (a 428 from Laravel): the confirmation for one request is kept in a
+  // cookie the page can't read, and sent with that request when it is made again (lib/laravel.ts).
+  if (method === "POST" && action === "confirm") {
+    const result = await callLaravel(request, "POST", "confirm", body);
+    const { confirmation, ...rest } = result.body as Body & { confirmation?: unknown };
+    if (result.status === 200 && typeof confirmation === "string") jar.set(CONFIRM_COOKIE, confirmation, cookieOptions(5 * 60));
+    return Response.json(rest, { status: result.status });
+  }
+
   if (method === "GET" && action === "two-factor/pending") {
     const waiting = await pendingSecondStep();
     return Response.json({ pending: waiting !== null, methods: waiting?.methods ?? [] });

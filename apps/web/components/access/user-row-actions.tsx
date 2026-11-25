@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import type { ManagedUser } from "@/lib/access";
+import { useConfirm } from "@/components/confirm-dialog";
+import type { ConfirmAsked } from "@/lib/confirm";
 
 /**
  * What can be done to one user from the list. Laravel has the last word on each: it
@@ -39,11 +41,12 @@ export function UserRowActions({
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
+  const confirmed = useConfirm();
   const who = user.name || user.email;
 
-  function run(work: () => Promise<{ ok: true } | { ok: false; error: string }>, done: string) {
+  function run(work: () => Promise<{ ok: true } | { ok: false; error: string; confirm?: ConfirmAsked }>, done: string) {
     startTransition(async () => {
-      const result = await work();
+      const result = await confirmed(work);
       if (result.ok) {
         toast.success(done);
         setConfirming(false);

@@ -160,6 +160,18 @@ Without the permission the button isn't shown and the address answers 403.
 
 In your own code it is checked like any other: `$user->can('internship_applications.accept')`.
 
+## Confirming it's you
+
+Some actions matter enough to ask whoever does them to confirm it's them, every time: a transfer, a refund, closing a loan. Mark them `"sensitive": true`:
+
+```json
+"actions": {
+  "refund": { "label": "Refund", "set": { "status": "refunded" }, "when": { "status": "paid" }, "sensitive": true }
+}
+```
+
+The dashboard and the phone then ask for the password (or a code emailed to them, the authenticator app's code, or a passkey on the web) before it runs, and once for each time it runs. The API asks, not the button, so a script can't skip it: see [Confirming it's you again](/guides/authentication/#confirming-its-you-again). The person is asked only once the action is allowed and what they filled in is valid.
+
 ## On a selection
 
 With `"many": true`, a record action is also offered in the bar that appears when rows are ticked. It runs for each selected record it applies to and passes over the rest, and says how many of each. It is one transaction: if it fails for one, none are changed.
@@ -177,4 +189,5 @@ With `"many": true`, a record action is also offered in the bar that appears whe
 | 404 | No such action, or no such record, or one they may not see. |
 | 409 | The record doesn't match `when`. `code` is `NOT_APPLICABLE`. Also an edit or a deletion of a [fixed](#records-fixed-once-made) record, by any address. |
 | 422 | Something in `input` is not valid. `issues` says what, by field. |
+| 428 | A [sensitive](#confirming-its-you) action, not yet confirmed. `code` is `CONFIRMATION_REQUIRED`, with a `challenge` to confirm. |
 | 500 | The class threw. Nothing was changed. |

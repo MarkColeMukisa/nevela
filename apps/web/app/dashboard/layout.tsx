@@ -20,6 +20,7 @@ import { CustomerInAdmin } from "@/components/dashboard/customer-in-admin";
 import { staffTwoFactorRequired } from "@/lib/social";
 import { twoFactorAvailable } from "@/lib/auth-config";
 import { listViews } from "@/lib/views";
+import { ConfirmProvider } from "@/components/confirm-dialog";
 
 /** Behind a sign-in, so nothing here belongs in search results. */
 export const metadata: Metadata = { robots: noIndex };
@@ -70,15 +71,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const tabs = await sidebarTabs();
 
   return (
-    <SidebarProvider defaultOpen={!collapsed}>
-      <DashboardSidebar appName={site.name} resources={resources} tabs={tabs} links={dashboardLinks} isAdmin={isAdmin} access={access} trash={trash} user={account} />
-      {/* min-w-0: a flex item is at least as wide as what is in it, so a wide table widened the page. Now it scrolls in its own box. */}
-      <SidebarInset className="min-w-0">
-        <DashboardHeader user={account} initialTheme={theme} inbox={inbox} />
-        <main className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">{children}</main>
-      </SidebarInset>
-      <Toaster theme={theme} />
-      <SessionWatchdog />
-    </SidebarProvider>
+    <ConfirmProvider>
+      <SidebarProvider defaultOpen={!collapsed}>
+        <DashboardSidebar appName={site.name} resources={resources} tabs={tabs} links={dashboardLinks} isAdmin={isAdmin} access={access} trash={trash} user={account} />
+        {/* min-w-0: a flex item is at least as wide as what is in it, so a wide table widened the page. Now it scrolls in its own box. */}
+        <SidebarInset className="min-w-0">
+          <DashboardHeader user={account} initialTheme={theme} inbox={inbox} />
+          <main className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">{children}</main>
+        </SidebarInset>
+        <Toaster theme={theme} />
+        <SessionWatchdog />
+      </SidebarProvider>
+    </ConfirmProvider>
   );
 }

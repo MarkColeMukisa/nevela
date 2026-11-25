@@ -295,3 +295,41 @@ export function uploadAvatar(file: File, onProgress?: (fraction: number) => void
     request.send(file);
   });
 }
+
+/* --- Confirming it's you, for a request Laravel answered with 428 (see lib/confirm.ts). --- */
+
+/** Confirm with the password, an emailed code or the authenticator app's code. */
+export const confirmIt = (challenge: string, method: "password" | "email" | "totp", value: string) =>
+  post<{ confirmed: true }>("confirm", { challenge, method, ...(method === "password" ? { password: value } : { code: value.trim() }) });
+
+/** Email a code to confirm with. */
+export const sendConfirmCode = (challenge: string) => post<{ sent: true }>("confirm/send", { challenge });
+
+/** Confirm with a passkey. */
+export async function confirmWithPasskey(challenge: string): Promise<AuthResult<{ confirmed: true }>> {
+  if (typeof PublicKeyCredential === "undefined") return { data: null, error: { message: "This browser doesn't support passkeys.", code: "PASSKEY_UNAVAILABLE", status: 0 } };
+  const start = await post<{ passkeyChallenge: string; options: RequestOptions }>("confirm/passkey/options", { challenge });
+  if (start.error) return start;
+  let credential: PublicKeyCredential | null;
+  try {
+    credential = (await navigator.credentials.get({
+      publicKey: { ...start.data.options, challenge: toBytes(start.data.options.challenge), allowCredentials: descriptors(start.data.options.allowCredentials) } as PublicKeyCredentialRequestOptions,
+    })) as PublicKeyCredential | null;
+  } catch (cause) {
+    return { data: null, error: passkeyError(cause, "That passkey didn't confirm it. Try again, or use your password.") };
+  }
+  if (!credential) return { data: null, error: passkeyError(null, "No passkey was chosen.") };
+  const answer = credential.response as AuthenticatorAssertionResponse;
+  return post("confirm", {
+    challenge,
+    method: "passkey",
+    passkeyChallenge: start.data.passkeyChallenge,
+    passkey: {
+      id: credential.id,
+      clientDataJSON: toText(answer.clientDataJSON),
+      authenticatorData: toText(answer.authenticatorData),
+      signature: toText(answer.signature),
+      userHandle: toText(answer.userHandle),
+    },
+  });
+}

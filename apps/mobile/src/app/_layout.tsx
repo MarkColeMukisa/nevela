@@ -12,6 +12,7 @@ import { screenFor } from "@/lib/links";
 import { followTaps, registerPush } from "@/lib/push";
 import { ResourcesProvider, useResources } from "@/lib/resources";
 import { loadAppearance, setAppearance, useColors } from "@/lib/theme";
+import { ConfirmProvider } from "@/components/confirm";
 
 // The splash screen stays up until the stored sign-in has been checked, so the app opens
 // on the right screen rather than flashing the sign-in form at someone who is signed in.
@@ -105,43 +106,45 @@ function Screens() {
 
   return (
     <ThemeProvider value={theme}>
-      <StatusBar style={dark ? "light" : "dark"} />
-      <Stack screenOptions={{ headerBackButtonDisplayMode: "minimal", headerShadowVisible: false, contentStyle: { backgroundColor: colors.background } }}>
-        {/* The shop, for someone signed in, and for anyone at all when what it sells is public.
-            Kept while the shop is described again after signing out, so the screen in front stays. */}
-        <Stack.Protected guard={user !== null || browsing || (user === null && describing)}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="shop/[id]" options={{ title: "" }} />
-        </Stack.Protected>
-        {/* Signed in: the app. Signed out: only the sign-in screens, so no link can reach past them. */}
-        <Stack.Protected guard={user !== null}>
-          <Stack.Screen name="devices" options={{ title: "Devices" }} />
-          <Stack.Screen name="change-password" options={{ title: "Change password" }} />
-          <Stack.Screen name="close-account" options={{ title: "Close account" }} />
-          <Stack.Screen name="security" options={{ title: "Sign-in security" }} />
-          <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
-          <Stack.Screen name="activity" options={{ title: "Activity" }} />
-          <Stack.Screen name="trash/index" options={{ title: "Trash" }} />
-          <Stack.Screen name="trash/[slug]" options={{ title: "Trash" }} />
-          <Stack.Screen name="access/users/index" options={{ title: "People" }} />
-          <Stack.Screen name="access/users/[id]" options={{ title: "" }} />
-          <Stack.Screen name="access/deleted" options={{ title: "Deleted accounts" }} />
-          <Stack.Screen name="access/roles/index" options={{ title: "Roles and permissions" }} />
-          <Stack.Screen name="access/roles/[id]" options={{ title: "" }} />
-          <Stack.Screen name="shop/checkout" options={{ title: "Checkout" }} />
-          <Stack.Screen name="shop/placed" options={{ headerShown: false }} />
-          {/* One set of screens for every resource. Each sets its own title once it knows which. */}
-          <Stack.Screen name="r/[slug]/index" options={{ title: "" }} />
-          <Stack.Screen name="r/[slug]/new" options={{ title: "" }} />
-          <Stack.Screen name="r/[slug]/[id]/index" options={{ title: "" }} />
-          <Stack.Screen name="r/[slug]/[id]/edit" options={{ title: "" }} />
-        </Stack.Protected>
-        <Stack.Protected guard={user === null}>
-          <Stack.Screen name="sign-in" options={{ headerShown: false }} />
-          <Stack.Screen name="sign-up" options={{ headerShown: false }} />
-          <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
-        </Stack.Protected>
-      </Stack>
+      <ConfirmProvider>
+        <StatusBar style={dark ? "light" : "dark"} />
+        <Stack screenOptions={{ headerBackButtonDisplayMode: "minimal", headerShadowVisible: false, contentStyle: { backgroundColor: colors.background } }}>
+          {/* The shop, for someone signed in, and for anyone at all when what it sells is public.
+              Kept while the shop is described again after signing out, so the screen in front stays. */}
+          <Stack.Protected guard={user !== null || browsing || (user === null && describing)}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="shop/[id]" options={{ title: "" }} />
+          </Stack.Protected>
+          {/* Signed in: the app. Signed out: only the sign-in screens, so no link can reach past them. */}
+          <Stack.Protected guard={user !== null}>
+            <Stack.Screen name="devices" options={{ title: "Devices" }} />
+            <Stack.Screen name="change-password" options={{ title: "Change password" }} />
+            <Stack.Screen name="close-account" options={{ title: "Close account" }} />
+            <Stack.Screen name="security" options={{ title: "Sign-in security" }} />
+            <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
+            <Stack.Screen name="activity" options={{ title: "Activity" }} />
+            <Stack.Screen name="trash/index" options={{ title: "Trash" }} />
+            <Stack.Screen name="trash/[slug]" options={{ title: "Trash" }} />
+            <Stack.Screen name="access/users/index" options={{ title: "People" }} />
+            <Stack.Screen name="access/users/[id]" options={{ title: "" }} />
+            <Stack.Screen name="access/deleted" options={{ title: "Deleted accounts" }} />
+            <Stack.Screen name="access/roles/index" options={{ title: "Roles and permissions" }} />
+            <Stack.Screen name="access/roles/[id]" options={{ title: "" }} />
+            <Stack.Screen name="shop/checkout" options={{ title: "Checkout" }} />
+            <Stack.Screen name="shop/placed" options={{ headerShown: false }} />
+            {/* One set of screens for every resource. Each sets its own title once it knows which. */}
+            <Stack.Screen name="r/[slug]/index" options={{ title: "" }} />
+            <Stack.Screen name="r/[slug]/new" options={{ title: "" }} />
+            <Stack.Screen name="r/[slug]/[id]/index" options={{ title: "" }} />
+            <Stack.Screen name="r/[slug]/[id]/edit" options={{ title: "" }} />
+          </Stack.Protected>
+          <Stack.Protected guard={user === null}>
+            <Stack.Screen name="sign-in" options={{ headerShown: false }} />
+            <Stack.Screen name="sign-up" options={{ headerShown: false }} />
+            <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+          </Stack.Protected>
+        </Stack>
+      </ConfirmProvider>
     </ThemeProvider>
   );
 }

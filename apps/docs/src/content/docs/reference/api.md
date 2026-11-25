@@ -107,6 +107,9 @@ All are under `/api/auth`. The ones marked 🔒 need a token.
 | 🔒 | `PUT /avatar?name=me.jpg` | Upload a profile picture. The body is the file, or a form's `file` part, as for any upload. |
 | 🔒 | `POST /password` | Change the password: `currentPassword`, `newPassword`. |
 | 🔒 | `POST /close` | Close your own account, with `password`. It is kept, and can be [restored](/guides/deleted-accounts/). |
+| 🔒 | `POST /confirm` | Confirm it's you, for a request that answered 428. See [Confirming it's you](#confirming-its-you). |
+| 🔒 | `POST /confirm/send` | Email a code to confirm with: `{ challenge }`. |
+| 🔒 | `POST /confirm/passkey/options` | What the browser needs to confirm with a passkey: `{ challenge }` answers `{ passkeyChallenge, options }`. |
 | 🔒 | `GET /sessions`, `DELETE /sessions`, `DELETE /sessions/{id}` | List devices; sign out the others, or one. |
 | 🔒 | `POST /two-factor/enable`, `/confirm`, `/disable`, `/backup-codes` | Set up and manage the second step. |
 | 🔒 | `GET /passkeys`, `POST /passkeys/options`, `POST /passkeys`, `PATCH`/`DELETE /passkeys/{id}` | List, add, rename and remove passkeys. |
@@ -452,7 +455,21 @@ Every error is JSON with an `error` message.
 | 409 | A unique value was taken between validation and saving | `{ error, field }` |
 | 409 | Someone else saved the record after the `updatedAt` you sent | `{ error, code: "CHANGED_SINCE_READ", current }` |
 | 422 | Validation failed | `{ error, issues: [{ path, message }] }` |
+| 428 | The person has to confirm it's them first | `{ error, code: "CONFIRMATION_REQUIRED", challenge, methods, window }` |
 | 429 | Too many requests | `{ error }` |
+
+### Confirming it's you
+
+A [sensitive action](/guides/actions/#confirming-its-you), and where the app asks for it, a change to who can sign in, answers `428` until the person confirms it's them ([Confirming it's you again](/guides/authentication/#confirming-its-you-again)). It is asked only once the request is allowed and valid.
+
+```json
+{ "error": "Confirm it's you: this needs your password again, or a code.", "code": "CONFIRMATION_REQUIRED",
+  "challenge": "8vK…", "methods": ["password", "email", "totp"], "window": false }
+```
+
+1. Confirm: `POST /api/auth/confirm` with `{ "challenge", "method": "password", "password" }`, or `"method": "email"` with the `code` from `POST /api/auth/confirm/send`, or `"method": "totp"` with the authenticator's `code`, or `"method": "passkey"`. A wrong one answers 422 and counts; after five the challenge is gone (429), and a challenge too old answers 410.
+2. With `"window": false`, the answer has a `confirmation`. Send the same request again, with the same body, and the header `X-Nevela-Confirmation: <confirmation>`. It works once, for 5 minutes, for that request by that person on that sign-in: with another body, or another sign-in, it answers 428 again.
+3. With `"window": true`, the answer has no `confirmation`: that sign-in may change who can sign in for the next few minutes (`NEVELA_CONFIRM_WINDOW`, 5). Send the request again as it was.
 
 A validation error names each field:
 

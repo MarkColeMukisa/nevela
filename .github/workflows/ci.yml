@@ -687,6 +687,15 @@ jobs:
           as_admin() { curl -s -g -o account.json -w '%{http_code}' -X "$1" "http://127.0.0.1:8000/api/$2" -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: Bearer $admin" ${3:+-d "$3"}; }
           person='{"name":"Closing Soon","email":"closing.soon@gmail.com","password":"harbour-lantern-quartz-4821","roles":[]}'
           closing_signin() { curl -s -X POST http://127.0.0.1:8000/api/auth/token -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{"email":"closing.soon@gmail.com","password":"harbour-lantern-quartz-4821"}'; }
+          # Changing who can sign in asks the admin to confirm it's them first (NEVELA_CONFIRM_ACCESS, on in
+          # a new app): a 428 with a challenge, the password again, and then not again for a few minutes.
+          grep -q '^NEVELA_CONFIRM_ACCESS=true' .env
+          test "$(as_admin POST _nevela/users "$person")" = 428
+          grep -q '"code":"CONFIRMATION_REQUIRED"' account.json
+          if grep -q 'Closing Soon' <(curl -s "http://127.0.0.1:8000/api/_nevela/users?q=closing" -H 'Accept: application/json' -H "Authorization: Bearer $admin"); then echo "made before it was confirmed"; exit 1; fi
+          challenge="$(sed -E 's/.*"challenge":"([^"]+)".*/\1/' account.json)"
+          test "$(as_admin POST auth/confirm "{\"challenge\":\"$challenge\",\"method\":\"password\",\"password\":\"wrong\"}")" = 422
+          test "$(as_admin POST auth/confirm "{\"challenge\":\"$challenge\",\"method\":\"password\",\"password\":\"password\"}")" = 200
           test "$(as_admin POST _nevela/users "$person")" = 201
           closing="$(sed -E 's/^\{"id":"([^"]+)".*/\1/' account.json)"
           test "$(as_admin DELETE "_nevela/users/$closing")" = 204

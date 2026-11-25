@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { accessError, type ManagedRole, type ManagedUser } from "@/lib/access";
 import { laravel } from "@/lib/laravel";
 import { getSession } from "@/lib/session";
+import { confirmAskedOf, type ConfirmAsked } from "@/lib/confirm";
 
 /**
  * Changes to users and roles. Each one is a call to Laravel, which checks the person's
@@ -11,14 +12,16 @@ import { getSession } from "@/lib/session";
  * last administrator stays), and whose answer is passed back as it is.
  */
 
-export type AccessResult<T = unknown> = { ok: true; data: T } | { ok: false; error: string; issues?: { path: string; message: string }[] };
+export type AccessResult<T = unknown> = { ok: true; data: T } | { ok: false; error: string; issues?: { path: string; message: string }[]; confirm?: ConfirmAsked };
 
 async function send<T>(path: string, method: "POST" | "PATCH" | "DELETE", body?: unknown): Promise<AccessResult<T>> {
   if (!(await getSession())) return { ok: false, error: "Sign in to continue." };
   const response = await laravel(path, { method, body });
   if (!response.ok) {
     const issues = (response.body as { issues?: { path: string; message: string }[] } | null)?.issues;
-    return { ok: false, error: accessError(response), ...(issues ? { issues } : {}) };
+    // Laravel wants the person to confirm it's them first: the page asks, and calls this again.
+    const confirm = confirmAskedOf(response);
+    return { ok: false, error: accessError(response), ...(issues ? { issues } : {}), ...(confirm ? { confirm } : {}) };
   }
   revalidatePath("/dashboard/access", "layout");
   return { ok: true, data: response.body as T };

@@ -17,6 +17,13 @@ export const TOKEN_COOKIE = `${COOKIE_PREFIX}_token`;
  */
 export const REFRESH_COOKIE = `${COOKIE_PREFIX}_refresh`;
 
+/**
+ * A confirmation for one request that needed the person to confirm it's them (Laravel's
+ * Auth\Confirmation): set by /api/auth/confirm, for 5 minutes, and sent with the request
+ * again. It names the request it is for, so sent with any other it opens nothing.
+ */
+export const CONFIRM_COOKIE = `${COOKIE_PREFIX}_confirm`;
+
 /** Where Nevela's routes live in the Laravel app, e.g. http://127.0.0.1:8000/api. */
 export const API_URL = (process.env.NEVELA_API_URL ?? "http://127.0.0.1:8000/api").replace(/\/+$/, "");
 
@@ -80,11 +87,13 @@ export interface LaravelResponse {
 /** Call Laravel. Never throws for an HTTP error: the status and body come back to the caller. */
 export async function laravel(path: string, { method = "GET", body, token }: LaravelRequest = {}): Promise<LaravelResponse> {
   const bearer = token === undefined ? await sessionToken() : token;
+  const confirmation = method !== "GET" && bearer ? (await cookies()).get(CONFIRM_COOKIE)?.value : undefined;
   const response = await fetch(`${API_URL}/${path.replace(/^\/+/, "")}`, {
     method,
     headers: {
       Accept: "application/json",
       ...(await callerHeaders()),
+      ...(confirmation ? { "X-Nevela-Confirmation": confirmation } : {}),
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
       ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
