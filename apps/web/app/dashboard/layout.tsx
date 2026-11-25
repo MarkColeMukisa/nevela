@@ -17,6 +17,8 @@ import { requireSession } from "@/lib/session";
 import { site } from "@/lib/site";
 import { APP, PATH_HEADER } from "@/lib/app";
 import { CustomerInAdmin } from "@/components/dashboard/customer-in-admin";
+import { staffTwoFactorRequired } from "@/lib/social";
+import { twoFactorAvailable } from "@/lib/auth-config";
 import { listViews } from "@/lib/views";
 
 /** Behind a sign-in, so nothing here belongs in search results. */
@@ -34,6 +36,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
     const page = (await headers()).get(PATH_HEADER) ?? "";
     if (page !== "/dashboard/account" && !page.startsWith("/dashboard/account/")) redirect("/dashboard/account");
     return <CustomerInAdmin>{children}</CustomerInAdmin>;
+  }
+  // Staff in the admin with two-step sign-in off, where the app asks for it: their account's
+  // security page, to turn it on, and nothing else until they have.
+  if (APP === "admin" && twoFactorAvailable && !user.twoFactorEnabled && (await staffTwoFactorRequired())) {
+    const page = (await headers()).get(PATH_HEADER) ?? "";
+    if (page !== "/dashboard/account/security") redirect("/dashboard/account/security?required=1");
   }
   const jar = await cookies();
   const theme = (jar.get("flare-theme")?.value ?? "system") as Theme;

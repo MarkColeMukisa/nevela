@@ -155,7 +155,9 @@ https://app.example.com/api/auth/oauth/google/callback
 https://app.example.com/api/auth/oauth/github/callback
 ```
 
-In development, register `http://localhost:3000/api/auth/oauth/google/callback` as well (and the same for GitHub). If the dashboard moves to another port because 3000 is taken, the address moves with it, so keep 3000 free or register that port too.
+With [the admin app](/guides/site-and-admin/) beside the site, register its address as well, `https://admin.example.com/api/auth/oauth/google/callback`: each app's sign-in comes back to the app it began on.
+
+In development, register `http://localhost:3000/api/auth/oauth/google/callback` as well (and the same for GitHub), and `http://localhost:3001/…` for the admin. If the dashboard moves to another port because 3000 is taken, the address moves with it, so keep 3000 free or register that port too.
 
 **Google.** In the [Google Cloud console](https://console.cloud.google.com/apis/credentials), choose **Create credentials → OAuth client ID**, application type **Web application**. Add the address above under **Authorised redirect URIs**. Copy the client ID and secret. The consent screen asks for an app name and a support address the first time.
 

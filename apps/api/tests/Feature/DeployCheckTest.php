@@ -27,6 +27,9 @@ class DeployCheckTest extends TestCase
     /** What the dashboard answers, made fresh for each request. Http::fake keeps its first stub for an address, so one stub reads this. */
     private \Closure $dashboard;
 
+    /** The same for the admin app, in the triple tier. */
+    private \Closure $admin;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -145,6 +148,37 @@ class DeployCheckTest extends TestCase
         }
         config(['queue.connections.later' => ['driver' => 'null']]);
         $this->artisan('nevela:deploy:check', ['--no-dashboard' => true])->expectsOutputToContain('throws every job away')->assertFailed();
+    }
+
+    public function test_the_site_and_the_admin_are_each_checked(): void
+    {
+        $this->wellSetUp();
+        config(['nevela.auth.admin_url' => 'https://admin.example.com']);
+        $site = fn () => Http::response(['nevela' => 'dashboard', 'app' => 'site', 'problems' => [], 'siteUrl' => 'https://app.example.com']);
+        $admin = fn () => Http::response(['nevela' => 'dashboard', 'app' => 'admin', 'problems' => [], 'siteUrl' => 'https://app.example.com']);
+        $this->dashboard = $site;
+        $this->admin = $admin;
+        Http::fake(['https://admin.example.com/api/nevela/health' => fn () => ($this->admin)()]);
+
+        $this->artisan('nevela:deploy:check')
+            ->expectsOutputToContain('The site')
+            ->expectsOutputToContain('The admin')
+            ->expectsOutputToContain('required in the admin')
+            ->expectsOutputToContain('end after 12 hours in the admin')
+            ->expectsOutputToContain('Ready')
+            ->assertSuccessful();
+        Http::assertSent(fn ($request) => $request->url() === 'https://admin.example.com/api/nevela/health' && $request->hasHeader('X-Nevela-Proxy-Secret', 'the-shared-secret'));
+
+        // The admin built without the site's address sends customers to localhost.
+        $this->admin = fn () => Http::response(['nevela' => 'dashboard', 'app' => 'admin', 'problems' => [], 'siteUrl' => null]);
+        $this->artisan('nevela:deploy:check')->expectsOutputToContain("NEXT_PUBLIC_SITE_URL isn't set where the admin was built")->assertFailed();
+
+        // The two addresses swapped: each says which app it is.
+        $this->admin = $site;
+        $this->artisan('nevela:deploy:check')->expectsOutputToContain('is not the admin app')->assertFailed();
+        $this->admin = $admin;
+        $this->dashboard = $admin;
+        $this->artisan('nevela:deploy:check')->expectsOutputToContain('NEVELA_WEB_URL has to be the site')->assertFailed();
     }
 
     public function test_the_dashboard_says_what_it_sees(): void

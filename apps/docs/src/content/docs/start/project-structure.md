@@ -3,20 +3,23 @@ title: "Project structure"
 description: "What is in a new Nevela app, and where your own code goes."
 ---
 
-`nevela new my-app` gives you two apps in one folder.
+`nevela new my-app` gives you three apps in one folder: the API, the public site and the staff's admin (the triple tier).
 
 ```
 my-app/
 ├─ apps/
 │  ├─ api/      the Laravel app
-│  └─ web/      the Next.js dashboard
+│  ├─ web/      the public site and the customer area (Next.js)
+│  └─ admin/    the staff's admin: the dashboard (Next.js)
 ├─ packages/
-│  └─ shared/   what the dashboard and the phone app share: the brand, the themes, the layout
+│  └─ shared/   what the web apps and the phone app share: the brand, the themes, the layout
 ├─ nevela       the app's own launcher: php nevela does what nevela does
 └─ package.json
 ```
 
-`nevela new my-app --mobile` (or `--tier both`) adds a third, `apps/mobile`: [the mobile app](/guides/mobile-app/). With `--tier mobile` there is `apps/mobile` and no `apps/web`.
+`nevela new my-app --mobile` (or `--tier both`) adds `apps/mobile`: [the mobile app](/guides/mobile-app/). With `--tier mobile` there is `apps/mobile` and no web apps, and with `--tier admin` the admin and no site. [The site and the admin](/guides/site-and-admin/) says what each web app is for.
+
+An app made before 0.41 has one web app in `apps/web` that is both the site and the dashboard. Everything below about `apps/web` and `apps/admin` is in that one app.
 
 ## packages/shared, what both apps share
 
@@ -50,21 +53,24 @@ An ordinary Laravel app. These are the parts Nevela adds to it:
 | `app/Nevela/Actions/<Resource>/` | A class per [action](/guides/actions/), where you write what it does. Written once, then yours. |
 | `database/migrations/` | The create-table migration per resource. Written once, then yours. |
 
-## apps/web, the dashboard
+## apps/web and apps/admin, the web apps
+
+Both are made from one template. The site leaves out `app/dashboard/` and the components only the dashboard uses; the admin leaves out the public pages and sign-up. What is below is in whichever has it.
 
 | Path | What it holds |
 |---|---|
 | `resources/` | The dashboard's description of each resource, generated from Laravel. |
-| `app/dashboard/<slug>/` | The list, new, detail and edit pages per resource. Written once, then yours. |
+| `app/dashboard/<slug>/` | In the admin: the list, new, detail and edit pages per resource. Written once, then yours. |
 | `app/dashboard/` | Also the pages every app has: the home page, your account, users and roles, the trash and the activity log. |
 | `app/sign-in/`, `app/sign-up/`, … | Signing in, signing up, a forgotten password, two-factor and verifying an address. |
-| `app/page.tsx`, `app/blog/` | The public site: its home page and [the blog](/guides/blog/). |
+| `app/page.tsx`, `app/blog/` | In the site: its home page and [the blog](/guides/blog/). |
+| `app/account/` | In the site: the customer area, with their account, their records and their notifications. |
 | `lib/laravel.ts` | The one place that calls Laravel. |
 | `lib/site.ts` | The app's name, text and theme. |
 | `components/` | The tables, forms and fields. |
 | `policies/` | Optional: hide buttons by role. |
 | `.env.local` | `NEVELA_API_URL`, the address of the Laravel API, and the [other settings](/guides/configuration/#web-app-envlocal). |
-| `.nevela.json` | The dashboard version the app is on, a fingerprint of every file in it, and the history of updates. It is how an update knows which files you changed. Commit it. |
+| `.nevela.json` | The template version the app is on, which app it is (`site` or `admin`), a fingerprint of every file in it, and the history of updates. It is how an update knows which files you changed, and which to leave out. Commit it. |
 | `.nevela/` | Backups of files an update replaced, and new versions of files you had changed. It ignores itself in git. Appears after the first update. |
 
 See [The web app](/guides/web-app/) for how these fit together.

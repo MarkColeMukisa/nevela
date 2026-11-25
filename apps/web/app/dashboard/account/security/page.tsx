@@ -15,14 +15,19 @@ const CONNECTING: Record<string, string> = {
 export const metadata = { title: "Security" };
 
 /** Two-factor, passkeys and the accounts you can sign in with. */
-export default async function SecurityPage({ searchParams }: { searchParams: Promise<{ social?: string }> }) {
+export default async function SecurityPage({ searchParams }: { searchParams: Promise<{ social?: string; required?: string }> }) {
   const { user } = await requireSession("/dashboard/account/security");
   const providers = await enabledSocialProviders();
-  const { social } = await searchParams;
+  const { social, required } = await searchParams;
   const connecting = social === undefined || social === "linked" ? null : (CONNECTING[social] ?? "Connecting it didn't finish. Try again.");
 
   return (
     <>
+      {required === "1" && !user.twoFactorEnabled ? (
+        <div role="status" className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+          Staff need two-step sign-in to use the admin. Turn it on below, and the rest of the admin opens.
+        </div>
+      ) : null}
       {twoFactorAvailable && <TwoFactor enabled={user.twoFactorEnabled} hasPassword methods={authConfig.twoFactor} />}
       {authConfig.passkeys && <Passkeys />}
       {providers.length > 0 && <ConnectedAccounts providers={providers} initialError={connecting} />}

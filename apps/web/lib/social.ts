@@ -5,10 +5,10 @@ import { laravel } from "@/lib/laravel";
 const KNOWN: SocialProvider[] = ["google", "github", "apple", "microsoft"];
 
 /** Laravel's answer to auth/config, asked once per request however many parts of a page need it. */
-const signInSettings = cache(async (): Promise<{ social?: unknown; socialNeedsKeys?: unknown }> => {
+const signInSettings = cache(async (): Promise<{ social?: unknown; socialNeedsKeys?: unknown; staffTwoFactor?: unknown }> => {
   try {
     const { ok, body } = await laravel("auth/config", { token: null });
-    return ok && body && typeof body === "object" ? (body as { social?: unknown; socialNeedsKeys?: unknown }) : {};
+    return ok && body && typeof body === "object" ? (body as { social?: unknown; socialNeedsKeys?: unknown; staffTwoFactor?: unknown }) : {};
   } catch {
     return {};
   }
@@ -33,4 +33,13 @@ export async function enabledSocialProviders(): Promise<SocialProvider[]> {
  */
 export async function socialNeedsKeys(): Promise<boolean> {
   return (await signInSettings()).socialNeedsKeys === true;
+}
+
+/**
+ * Whether staff must have two-step sign-in on to use the admin app (NEVELA_STAFF_TWO_FACTOR
+ * in the Laravel app; unset, in production only). Asked of Laravel, so it takes effect with
+ * no rebuild.
+ */
+export async function staffTwoFactorRequired(): Promise<boolean> {
+  return (await signInSettings()).staffTwoFactor === true;
 }

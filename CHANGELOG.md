@@ -26,6 +26,13 @@ The first line under a version, in italics, is the release in a few words. The d
   - A link Laravel stored for the dashboard (`/dashboard/orders/7`, in a notice or an old email) leads to the same thing in the customer area (`/account/records/orders/7`).
 - Links follow who reads them. With an admin app beside the site, a customer's sign-in and verification links land on their account on the site, and staff's on the dashboard. `nevela user --link` prints a link to the admin for staff and to the site for a customer.
 
+- What the admin asks of staff, none of it of customers:
+  - **Two-step sign-in**: staff without it on see only their account's security page in the admin until they turn it on. Required in production by default (`NEVELA_STAFF_TWO_FACTOR`: `true` asks for it on your computer too, `false` never).
+  - **Shorter sign-ins**: a sign-in to the admin ends 12 hours after it began (`NEVELA_SESSION_ADMIN_ABSOLUTE`, in minutes). The site and the phone keep the app's own limits.
+  - **Stricter headers**: never shown inside another site's frame, forms posted only to itself, no plugins, and the address of the page someone came from kept to itself.
+- `nevela deploy:check` checks the site and the admin each: that each answers at its address as the app it should be, shares the secret and reaches the API, and that the admin sends customers to the site (`NEXT_PUBLIC_SITE_URL`, set where it is built). It says what the admin asks of staff, and with Google or GitHub on, the two callback addresses to register.
+- [The site and the admin](apps/docs/src/content/docs/guides/site-and-admin.md) in the docs: who goes where, the customer area, what the admin asks of staff, deploying both, closing the admin off with an allow-list, a VPN or Cloudflare Access, and splitting an app you already have. Laravel Cloud, deploying, project structure, configuration and Google and GitHub sign-in are written for three apps.
+
 ### Changed
 
 - **Breaking** for scripts that run `nevela new`: the default tier, `--tier web` (and `both`, and `--mobile`), makes two web apps: the site in `apps/web` and the admin in `apps/admin`, on ports 3000 and 3001. Staff sign in to the admin. `--tier admin` is new: the API and the admin alone, for an internal tool, with the admin on port 3000. `--tier mobile` is as it was. Existing apps keep their one web app, and `nevela upgrade` never splits one.

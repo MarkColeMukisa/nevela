@@ -11,7 +11,7 @@ description: "An Expo app for iOS and Android that signs in to the same API with
 nevela new my-app --mobile
 ```
 
-That is `nevela new` with one more folder: the API in `apps/api`, the dashboard in `apps/web`, and the mobile app in `apps/mobile`, named for your app and with its packages installed. `--mobile` is short for `--tier both`, and `nevela new` asks which you want when you leave it off.
+That is `nevela new` with one more folder: the API in `apps/api`, the site in `apps/web`, the admin in `apps/admin`, and the mobile app in `apps/mobile`, named for your app and with its packages installed. `--mobile` is short for `--tier both`, and `nevela new` asks which you want when you leave it off.
 
 For the API and the phone app alone, with no dashboard:
 
@@ -37,7 +37,8 @@ nevela dev
 
 ```
   API ............................................. http://127.0.0.1:8000
-  Dashboard ............................... http://localhost:3000/sign-in
+  Site ..................................... http://localhost:3000
+  Admin ................................. http://localhost:3001/sign-in
   Mobile app ........... in another terminal: cd apps/mobile && npx expo start
 ```
 

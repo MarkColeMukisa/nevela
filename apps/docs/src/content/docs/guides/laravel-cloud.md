@@ -3,7 +3,7 @@ title: "Deploying to Laravel Cloud"
 description: "Both halves of a Nevela app on Laravel Cloud: the two applications, every variable and which must match, the scheduler and worker, Neon, and checking it all with one command."
 ---
 
-A Nevela app is two Laravel Cloud applications made from the same repository: the API from `apps/api`, and the dashboard and site from `apps/web`. This page goes through both, in the order that works. It is how Kian Rover went to production, with what went wrong at each step turned into what to do. For what any host needs, see [Deploying](/guides/deploying/).
+A Nevela app is three Laravel Cloud applications made from the same repository: the API from `apps/api`, the public site from `apps/web`, and the staff's admin from `apps/admin` ([The site and the admin](/guides/site-and-admin/)). An app made before 0.41 has no `apps/admin`: its `apps/web` is the dashboard and the site, and step 3 doesn't apply. This page goes through both, in the order that works. It is how Kian Rover went to production, with what went wrong at each step turned into what to do. For what any host needs, see [Deploying](/guides/deploying/).
 
 Put both applications and the database in the same region. Every page the dashboard serves asks the API at least once, so the distance between them is paid on every request.
 
@@ -98,7 +98,19 @@ When it starts, the web app checks the address and the secret, and writes what i
 
 **Run one replica.** When you save a post, the dashboard tells the web app to forget the blog pages it has kept. On Laravel Cloud each replica keeps its own, so with two or more, only the one that handled the save forgets. The others show the old post for up to a minute. One replica serves a lot of visitors; keep it at one.
 
-## 3. Check both
+## 3. The admin
+
+Create a third application on the same repository, with **root directory `apps/admin`**, set up as the site is: the same build command, one replica, not a static website.
+
+| Variable | Value |
+|---|---|
+| `NEVELA_API_URL` | The API's address with `/api`, as for the site |
+| `NEVELA_PROXY_SECRET` | The same secret as the API's |
+| `NEXT_PUBLIC_SITE_URL` | **The site's** address: where a customer who signs in to the admin is sent. Set it before the admin's first build, and build again after changing it |
+
+In the API, set `NEVELA_ADMIN_URL` to the admin's address, and in the site, `NEVELA_ADMIN_URL` as well, for staff's link to it. Staff need two-step sign-in to use the admin in production, and their sign-ins there end after 12 hours: see [What the admin asks of staff](/guides/site-and-admin/#what-the-admin-asks-of-staff).
+
+## 4. Check them all
 
 Run this on the API application, as a command:
 
@@ -106,7 +118,7 @@ Run this on the API application, as a command:
 php artisan nevela:deploy:check
 ```
 
-It checks the API app: the environment, migrations, cache, scheduler, worker, mail, the secret and an administrator. Then it asks the dashboard whether it reaches the API, whether the two secrets match, and what address it puts in links. Each problem is in red with what to change, and it exits with an error until there are none. See [nevela deploy:check](/reference/commands/#nevela-deploycheck).
+It checks the API app: the environment, migrations, cache, scheduler, worker, mail, the secret and an administrator. Then it asks the site, and the admin, whether each reaches the API, whether the secrets match, what address it puts in links, and whether the admin sends customers to the site. Each problem is in red with what to change, and it exits with an error until there are none. See [nevela deploy:check](/reference/commands/#nevela-deploycheck).
 
 The scheduler leaves a sign every 5 minutes, so straight after switching it on, give it 5 minutes before checking.
 
@@ -117,8 +129,10 @@ The browser only ever talks to the web app's address. The web app's server calls
 When the site gets its domain, change these:
 
 - `NEVELA_WEB_URL` in the API, to the new address.
-- `NEXT_PUBLIC_SITE_URL` in the web app, then redeploy it.
+- `NEXT_PUBLIC_SITE_URL` in the site, and in the admin, then redeploy both.
 - The callback address registered with Google or GitHub, if people sign in with them.
+
+When the admin gets its domain (`admin.example.com`), change `NEVELA_ADMIN_URL` in the API and the site, and register its callback address with Google or GitHub too. To close the admin to everyone but staff, see [Closing the admin off](/guides/site-and-admin/#closing-the-admin-off).
 - The Turnstile widget's hostnames, if a form is protected.
 
 **Passkeys are tied to an address.** Those made on the Cloud address don't work on the domain, so their owners sign in another way and add a new one.

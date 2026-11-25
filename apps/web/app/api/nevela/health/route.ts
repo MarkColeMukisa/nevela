@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { apiProblems } from "@/lib/api-check";
+import { APP } from "@/lib/app";
 
 /**
  * What the dashboard can tell about its own setup, for `nevela deploy:check` on the Laravel
@@ -18,6 +19,8 @@ export async function GET(request: Request): Promise<Response> {
 
   return Response.json({
     nevela: "dashboard",
+    // Which of the project's web apps this is: "site", "admin", or "" for one app doing both.
+    app: APP,
     problems: await apiProblems(),
     siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL ?? null,
   });

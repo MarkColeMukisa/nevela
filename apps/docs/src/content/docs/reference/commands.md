@@ -362,10 +362,11 @@ nevela dev
 
 ```
   API ............................................. http://127.0.0.1:8000
-  Dashboard ............................... http://localhost:3000/sign-in
+  Site ..................................... http://localhost:3000
+  Admin ................................. http://localhost:3001/sign-in
 ```
 
-It checks the API's port before using it. If another program already has port 8000, it moves to the next free one, says so, and starts the dashboard pointed at that address. This matters most on Windows, where two programs can listen on the same port and the older one gets the requests: without the check, the dashboard would be talking to someone else's app.
+It checks the API's port before using it. If another program already has port 8000, it moves to the next free one, says so, and starts the site and the admin pointed at that address. The admin runs on 3001 beside the site; with no site (`--tier admin`) it is on 3000. This matters most on Windows, where two programs can listen on the same port and the older one gets the requests: without the check, the dashboard would be talking to someone else's app.
 
 | Option | Meaning |
 |---|---|

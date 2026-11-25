@@ -21,7 +21,7 @@ cd contacts
 nevela dev
 ```
 
-`nevela dev` runs the Laravel API and the dashboard together. Open http://localhost:3000/sign-in and sign in as `admin@example.com` with the password `password`. The dashboard is empty for now, apart from the blog every new app has.
+`nevela dev` runs the Laravel API, the site and the admin together. Open the admin at http://localhost:3001/sign-in and sign in as `admin@example.com` with the password `password`. The dashboard is empty for now, apart from the blog every new app has.
 
 If you don't have the `nevela` command, install it first with `npm install -g create-nevela`, or see [Without the nevela command](/reference/commands/#without-the-nevela-command).
 
