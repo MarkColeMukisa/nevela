@@ -19,7 +19,8 @@ export function AccountNav({ links }: { links: AccountLink[] }) {
   return (
     <nav aria-label="Account" className="-mb-px flex gap-1 overflow-x-auto border-b">
       {links.map((link) => {
-        const current = pathname === link.href;
+        // A part with pages of its own (Records) stays marked on them; the account's own page only on itself.
+        const current = pathname === link.href || (links[0]?.href !== link.href && pathname.startsWith(`${link.href}/`));
         return (
           <Link
             key={link.href}

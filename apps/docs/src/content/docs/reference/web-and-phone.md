@@ -33,7 +33,10 @@ In an app with both, what the dashboard does has a counterpart on the phone, and
 | Add several records at once | The "Add several" grid | No |
 | The API page | Yes | No |
 | Public site and forms | The pages, the forms and what they turned away | No |
-| A shop's customer side | Comes with the triple tier | Browse, cart, checkout and orders |
+| A customer's own account | On the site, at `/account`: profile, password, sign-in, devices, closing it | The same, under Account and Settings |
+| A customer's own records | On the site, at `/account/records`: what their role may view, theirs alone where the resource has an owner. Read only | The same, and created or changed where their role allows |
+| A customer's notifications | On the site, at `/account/notifications` | The bell, and push notifications |
+| A shop's customer side | Comes with the shop apps (step 13) | Browse, cart, checkout and orders |
 
 ## Only in the dashboard, and why
 
@@ -49,7 +52,8 @@ In an app with both, what the dashboard does has a counterpart on the phone, and
 
 - **Push notifications.** They go to phones. The dashboard has the bell.
 - **Opening a private file by a link.** The phone's browser can't send the app's token, so it asks for a [link that works for five minutes](/guides/images/#private-files). The dashboard's server fetches the file with the token.
-- **A shop's customer side**, until the [triple tier](https://github.com/MarkColeMukisa/nevela/issues/144) gives the web a public site and a customer area of its own.
+- **A shop's customer side**: browsing, a cart and checkout. The site's customer area has the account, records and notifications; the shop comes to it with the shop apps on the [roadmap](https://github.com/MarkColeMukisa/nevela/issues/144).
+- **Creating and changing records as a customer.** The site's customer area reads them; the phone also creates and changes them where the role allows.
 
 ## How it stays this way
 

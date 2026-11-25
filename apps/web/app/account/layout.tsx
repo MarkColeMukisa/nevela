@@ -6,6 +6,7 @@ import { BrandMark } from "@/components/auth/auth-shell";
 import { SignOutButton } from "@/components/sign-out-button";
 import { APP } from "@/lib/app";
 import { authConfig, twoFactorAvailable } from "@/lib/auth-config";
+import { visibleResources } from "@/lib/dashboard";
 import { noIndex } from "@/lib/seo";
 import { requireSession } from "@/lib/session";
 import { site } from "@/lib/site";
@@ -22,6 +23,8 @@ export default async function AccountLayout({ children }: { children: React.Reac
   if (APP !== "site") redirect("/dashboard/account");
   const { user } = await requireSession("/account");
   const security = twoFactorAvailable || authConfig.passkeys || (await enabledSocialProviders()).length > 0;
+  // What the app shares with them: each resource their role may view (the phone's Browse).
+  const records = (await visibleResources()).length > 0;
   // Staff sign in here too: their work is in the admin app.
   const admin = user.staff !== false ? process.env.NEVELA_ADMIN_URL : undefined;
 
@@ -46,11 +49,13 @@ export default async function AccountLayout({ children }: { children: React.Reac
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4 md:p-6">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold tracking-tight">Your account</h1>
-          <p className="text-sm text-muted-foreground">Your profile, how you sign in, and where you&apos;re signed in.</p>
+          <p className="text-sm text-muted-foreground">Your profile, what you have with us, how you sign in, and where you&apos;re signed in.</p>
         </div>
         <AccountNav
           links={[
             { href: "/account", label: "Profile" },
+            ...(records ? [{ href: "/account/records", label: "Records" }] : []),
+            { href: "/account/notifications", label: "Notifications" },
             { href: "/account/password", label: "Password" },
             ...(security ? [{ href: "/account/security", label: "Security" }] : []),
             { href: "/account/sessions", label: "Devices" },
