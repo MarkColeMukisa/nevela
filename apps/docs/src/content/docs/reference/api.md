@@ -407,6 +407,8 @@ A resource with [line items](/guides/line-items/#in-the-api) sends its lines wit
 |---|---|---|
 | `PUT` | `/api/_nevela/uploads/{Resource}/{field}?name=kettle.jpg` | Stores a file. The request body is the file itself, or a form's `file` part sent by `POST` with `_method=PUT` (see [Uploading](/guides/images/#uploading)). |
 | `GET` | `/api/_nevela/files/{key}` | The stored file. No token needed. |
+| `GET` | `/api/_nevela/private/{slug}/{id}/{field}` | A [private file](/guides/images/#private-files), to someone who may view the record. |
+| `POST` | `/api/_nevela/private/{slug}/{id}/{field}/link` | `{ path, expiresAt }`: a signed path that opens that private file without a token for five minutes, for a phone's browser. Only for that file: replaced or trashed, it opens nothing. |
 | `GET` | `/api/_nevela/profiles` | The image profiles and their renditions. |
 
 An upload answers 201 with the file's details:

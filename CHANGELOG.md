@@ -8,6 +8,21 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- The phone app does what the dashboard does on these screens, for apps with no dashboard above all:
+  - **Close account**, under Account, with the password. App Store and Google Play ask for this in any app where people make an account.
+  - **Deleted accounts**, below People: restore a closed account, remove one for good, and let a blocked address sign up again.
+  - **Connected accounts**, on the Security screen: the Google and GitHub accounts that sign in to yours, and disconnecting one.
+  - **A record's files open**, in the phone's browser. Private files too.
+  - **Rich text** is typed as paragraphs. Text with formatting the phone can't edit is kept as it is, unless the person chooses to drop it.
+- `POST /api/_nevela/private/{slug}/{id}/{field}/link`: a signed path that opens a private file without a token for five minutes, for someone who may view the record. Only for that file: replaced or trashed, it opens nothing.
+- [Web and phone](apps/docs/src/content/docs/reference/web-and-phone.md) in the docs: what the dashboard and the phone each do, screen by screen, and why one does something the other doesn't. In the repository, every API route is listed with which app uses it (`scripts/parity.json`). CI fails on a new route with no line, and on a line the apps' code says isn't true.
+
+### Fixed
+
+- On the phone, deleting a record said it could be restored from the dashboard. It says Account → Trash, which the phone has.
+
 ## [0.39.0] - 2026-11-25
 
 _A forgotten password reset from the phone, by emailed code_

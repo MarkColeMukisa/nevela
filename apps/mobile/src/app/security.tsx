@@ -8,6 +8,7 @@ import { Body, Button, Card, Field, Heading, Loading, Notice, Row, Screen } from
 import { api, ApiError, messageOf } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { radius, spacing, text, useColors } from "@/lib/theme";
+import { PROVIDERS } from "@/lib/social";
 import { useLoaded } from "@/lib/use-loaded";
 import { ago } from "@/lib/when";
 
@@ -33,7 +34,7 @@ interface Setup {
 
 const loadConfig = () => api.get<Config>("/auth/config");
 
-/** Two-step sign-in and passkeys: what protects the account beyond its password. */
+/** Two-step sign-in, passkeys and connected accounts: what protects the account beyond its password. */
 export default function Security() {
   const config = useLoaded(loadConfig);
   if (config.loading) return <Loading />;
@@ -44,6 +45,7 @@ export default function Security() {
       {config.error ? <Notice>{messageOf(config.error)}</Notice> : null}
       {twoFactor.authenticator !== false || twoFactor.email !== false ? <TwoStep authenticator={twoFactor.authenticator !== false} email={twoFactor.email !== false} /> : null}
       {config.data?.passkeys !== false ? <Passkeys /> : null}
+      <LinkedAccounts />
     </Screen>
   );
 }
@@ -233,6 +235,77 @@ function Passkeys() {
         </Card>
       ))}
       <Body muted small>Passkeys are added in the dashboard, under your account. Adding one from this app, and signing in to the app with one, need a build of the app tied to your own domain, so they are not part of the app you run in Expo Go.</Body>
+    </View>
+  );
+}
+
+interface LinkedAccount {
+  id: string;
+  provider: string;
+  email: string | null;
+  connectedAt: string | null;
+}
+
+const loadLinked = () => api.get<{ data: LinkedAccount[] }>("/auth/social");
+
+/**
+ * The Google and GitHub accounts that sign in to this one. Shown once there is one: signing
+ * in with a provider whose verified address is this account's connects it.
+ */
+function LinkedAccounts() {
+  const linked = useLoaded(loadLinked);
+  const [asking, setAsking] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
+  const { reload } = linked;
+
+  const disconnect = useCallback(
+    async (id: string) => {
+      setRemoving(id);
+      setError(null);
+      try {
+        await api.delete(`/auth/social/${encodeURIComponent(id)}`);
+        setAsking(null);
+        await reload();
+      } catch (caught) {
+        setError(caught);
+      } finally {
+        setRemoving(null);
+      }
+    },
+    [reload],
+  );
+
+  const all = linked.data?.data ?? [];
+  const shown = error ?? linked.error;
+  if (all.length === 0 && !shown) return null;
+
+  return (
+    <View style={{ gap: spacing.md }}>
+      <Heading>Connected accounts</Heading>
+      {shown ? <Notice>{messageOf(shown)}</Notice> : null}
+      {all.map((account) => {
+        const provider = PROVIDERS[account.provider];
+        const label = provider?.label ?? account.provider;
+        return (
+          <Card key={account.id}>
+            <Row
+              icon={provider?.icon ?? "link-outline"}
+              label={label}
+              detail={[account.email, account.connectedAt ? `Connected ${ago(account.connectedAt)}` : null].filter(Boolean).join(" · ")}
+              last={asking !== account.id}
+              onPress={asking === account.id ? undefined : () => setAsking(account.id)}
+            />
+            {asking === account.id ? (
+              <View style={{ padding: spacing.lg, paddingTop: 0, gap: spacing.sm }}>
+                <Body muted small>{label} won't sign you in any more. Your password, and an emailed code where the app has them, still do.</Body>
+                <Button variant="danger" label={`Disconnect ${label}`} busy={removing === account.id} onPress={() => disconnect(account.id)} />
+                <Button variant="secondary" label="Keep it" disabled={removing !== null} onPress={() => setAsking(null)} />
+              </View>
+            ) : null}
+          </Card>
+        );
+      })}
     </View>
   );
 }

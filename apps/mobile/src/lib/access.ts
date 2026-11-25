@@ -146,3 +146,26 @@ export function rolesLine(user: Pick<AccessUser, "roles">): string {
 export function rolesToggled(ids: string[], id: string): string[] {
   return ids.includes(id) ? ids.filter((one) => one !== id) : [...ids, id];
 }
+
+/** An account that was closed, as `GET _nevela/deleted-accounts` sends it: by its owner, or by someone deleting it. */
+export interface DeletedAccount extends AccessUser {
+  closedAt: string | null;
+  /** "self" when its owner closed it, "admin" when someone else did. */
+  closedBy: "self" | "admin" | null;
+  /** Who, when it wasn't the owner and they still have an account. */
+  closedByName: string | null;
+}
+
+/** An email whose account was removed for good. The address itself isn't kept, only enough to recognise it: "m•••@gmail.com". */
+export interface BlockedEmail {
+  id: string;
+  hint: string;
+  blockedAt: string;
+}
+
+/** Who closed an account, in words. */
+export function closedByLine(account: Pick<DeletedAccount, "closedBy" | "closedByName">): string {
+  if (account.closedBy === "self") return "by themselves";
+  if (account.closedByName) return `by ${account.closedByName}`;
+  return account.closedBy === "admin" ? "by an administrator" : "";
+}

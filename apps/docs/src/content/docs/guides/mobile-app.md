@@ -83,13 +83,13 @@ If the sign-in screen says it couldn't reach the server, it names the address it
 | Create an account | Name, email and password, where the API lets people [sign up](/guides/authentication/#letting-people-sign-up). Where it asks for the email to be proved first, the code it sent. |
 | Home | How the app is doing, from what it holds. In an app with a shop it starts with the business: today's orders against the same time last week, how many are waiting, and sales over the last seven days against the seven before ([shop figures](/reference/api/#shop-figures)). Then a card per resource with how many there are, how many were added this week against last, and a chart of the last 30 days. A button to add each kind of record, the latest changes from [the activity log](/guides/notifications/), and the bell. Every number is the API's, asked for with the person's own permissions. |
 | Records | Every resource your role may view: search it, open a record, and create, change or delete one where your role allows. See [Your resources](#your-resources). |
-| Account | Your profile picture (choose one or take one), your name, your roles, and changing your password. For someone who may manage them, **People** and **Roles and permissions** too: see [People and roles](#people-and-roles). |
-| Two-step sign-in | Turn on two-step sign-in with an authenticator app (a button that opens the one on the phone, a QR code for one on another device, and the setup key to copy) or with codes by email. Backup codes are shown once, to copy. Make new ones, or turn it off. List your passkeys and remove one. |
+| Account | Your profile picture (choose one or take one), your name, your roles, and changing your password. **Close account**, where the API allows it: with your password, it signs you out everywhere and keeps the account for an administrator to restore. App Store and Google Play ask for this in any app where people make an account. For someone who may manage them, **People** and **Roles and permissions** too: see [People and roles](#people-and-roles). |
+| Two-step sign-in | Turn on two-step sign-in with an authenticator app (a button that opens the one on the phone, a QR code for one on another device, and the setup key to copy) or with codes by email. Backup codes are shown once, to copy. Make new ones, or turn it off. List your passkeys and remove one. The Google and GitHub accounts connected to yours, and disconnecting one. |
 | Activity | The activity log, under Account for whoever holds `activity.view`: who added, changed, deleted, restored or removed which records, newest first, filtered by what was done. The home's **Recent activity** has **See all**. |
 | Trash | Under Account for whoever may delete something: each resource's deleted records and how long each has left. Restore one, remove one for good, or empty a resource's trash. See [The trash](/guides/trash/). |
 | Settings | Light, dark or the phone's appearance. **Devices**: everywhere the account is signed in, browsers and phones alike; sign one out, or all the others. Under **About**, an administrator is told when a new Nevela release is out. It is for whoever builds the app, so it stays off the home screen. |
 
-Signing in with an emailed link stays in the dashboard for now: it ends at a web address, which a phone app has to be taught to open.
+Signing in with an emailed link stays in the dashboard for now: it ends at a web address, which a phone app has to be taught to open. What else is the dashboard's alone, or the phone's, and why, is in [Web and phone](/reference/web-and-phone/).
 
 ## Customers and staff
 
@@ -114,7 +114,7 @@ For a shop that takes orders:
 
 Whoever may view users or roles (an administrator, or a role you give those permissions) finds **People** and **Roles and permissions** under Account. Everyone else doesn't see them, and Laravel refuses the requests anyway.
 
-- **People**: everyone who can sign in, with a search. Open one to change their name, email or roles, give them a new password, switch their sign-in off, sign them out everywhere, or remove them. **Add a person** makes an account with a password and roles.
+- **People**: everyone who can sign in, with a search. Open one to change their name, email or roles, give them a new password, switch their sign-in off, sign them out everywhere, or remove them. **Add a person** makes an account with a password and roles. For whoever may delete people, **Deleted accounts** below the list: the accounts that were closed, by their owners or from People. Restore one as it was, or remove it for good. An address whose account was removed for good can't sign up again until it is allowed, on the same screen.
 - **Roles and permissions**: each role, how many permissions it has and how many people hold it. Open one to name it and switch on what it may do to each part of the app: View, Create, Edit and Delete, and an action of a resource's own, such as "Cancel an order". **Make a role** adds one.
 
 It is the same rule as in the dashboard, kept by Laravel: nobody can give a role that allows more than their own, change an account that allows more than theirs, switch off their own account, or take the last administrator's access away. The built-in roles can be edited and not renamed or deleted, and ADMIN always allows everything.
@@ -203,14 +203,18 @@ Pull down on **Records**, or open the app again, and Products is there. That hol
 | A record | Every field as a person reads it: money and dates formatted, an enum by its label, a `belongsTo` by the other record's title and a tap away from it. Pictures, and [line items](/guides/line-items/) where the resource has them. Its [actions](/guides/actions/), a button each, for the person who may and while they apply, asking first what they ask; and its history, once one has been done. |
 | New and edit | A control per field: a keyboard to suit the format, a switch for a yes or no, a list for an enum, a search of the other resource for a `belongsTo`. A field with [a condition](/concepts/field-types/#a-field-that-only-sometimes-applies) appears when the condition holds. |
 
-What Laravel says about a save is shown where it belongs: a refused field under that field, and "someone else saved this first" when [two people edit the same record](/guides/web-app/#two-people-editing-the-same-record). An edit sends only the fields that changed. Deleting moves a record to [the trash](/guides/trash/), to be restored from the dashboard.
+What Laravel says about a save is shown where it belongs: a refused field under that field, and "someone else saved this first" when [two people edit the same record](/guides/web-app/#two-people-editing-the-same-record). An edit sends only the fields that changed. Deleting moves a record to [the trash](/guides/trash/), to be restored under Account → Trash or in the dashboard.
+
+A record's files open in the phone's browser, which shows a PDF or a picture and offers to save anything else. A [private file](/guides/images/#private-files) opens by a link the API makes for whoever may view the record, which works for five minutes and only for that file.
+
+Rich text is typed as paragraphs, a blank line between each. Text with formatting the phone can't edit (bold, links, headings, lists) is kept as it is, unless you choose to edit it as plain text, which drops the formatting.
 
 The buttons follow the person's [permissions](/guides/policies/): no `products.create`, no **+**. Laravel checks every request whatever the app shows.
 
 Not from the phone yet:
 
 - **Pictures** are added from the camera or the library, one or several where the field takes several, and sent as they are chosen. Laravel turns them the right way up, removes where they were taken and shrinks them to the field's image profile; lists show the small rendition and a record's page the middle one, kept on the phone once seen.
-- **Other files and JSON.** A PDF or a JSON field is the dashboard's to edit. A resource with a required file that isn't a picture can't be created from the app, and the form says so.
+- **Other files and JSON.** Attaching a PDF, or editing a JSON field, is the dashboard's for now. A resource with a required file that isn't a picture can't be created from the app, and the form says so.
 - **Line items.** An order's lines are read on the phone and edited in the dashboard. Editing the order itself leaves its lines as they are.
 - **Dates** are typed, as `2026-11-15` or `2026-11-15 14:30`, not picked from a calendar.
 - **Actions on the whole list, bulk changes, import and export.** A record's own actions are on its page.

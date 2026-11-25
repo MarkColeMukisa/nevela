@@ -168,6 +168,8 @@ Who may fetch one is the resource's policy: its `view`. Someone signed in withou
 
 In the dashboard a private file is shown as its name with a lock, and the name downloads it. It is not a column in the table unless you add it, since there is no thumbnail to show.
 
+The phone app opens it in the phone's browser, which can't send the app's token. So it asks for a link first: `POST /api/_nevela/private/<slug>/<id>/<field>/link`, by someone who may view the record, answers `{ "path": "/api/_nevela/private-link/…", "expiresAt": "…" }`. The path, after the API's own address, opens the file without signing in for five minutes. It is signed, so it can't be changed, and it names the file it was made for: once the record is trashed or the file replaced, it opens nothing.
+
 While its record is in [the trash](/guides/trash/) the file stays where it is and nobody can fetch it. Restoring the record brings it back; removing the record for good removes the file. If two records hold the same file, it goes with the last of them.
 
 The record's own JSON gives the address to fetch it from, in `<field>File.url`, and never puts the key in one.

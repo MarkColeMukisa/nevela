@@ -11,7 +11,8 @@ import { useLoaded } from "@/lib/use-loaded";
 
 interface Page {
   data: AccessUser[];
-  meta: { page: number; totalPages: number; total: number };
+  /** keepsDeleted: deleting a person closes the account, to be restored, where it used to remove it. */
+  meta: { page: number; totalPages: number; total: number; keepsDeleted?: boolean };
 }
 
 /** The people who can sign in: who they are, what role they hold, and whether they are switched on. */
@@ -96,6 +97,11 @@ export default function Users() {
         <Text style={{ color: colors.muted, fontSize: text.small }}>{rows.length} of {total}</Text>
       </View>
       {rows.length < total ? <Button variant="secondary" label="Show more" busy={loadingMore} onPress={showMore} /> : null}
+      {can(user, "users.delete") && people.data?.meta.keepsDeleted ? (
+        <Card>
+          <Row icon="person-remove-outline" label="Deleted accounts" detail="Closed accounts, to restore or remove for good" onPress={() => router.push("/access/deleted")} last />
+        </Card>
+      ) : null}
     </Screen>
   );
 }
