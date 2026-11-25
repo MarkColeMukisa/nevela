@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "Push to every phone, on PHP 8.5 and Laravel 13";
+export const RELEASE_HEADLINE = "A forgotten password reset from the phone, by emailed code";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "New: every notice in the bell also reaches people's phones as a push notification, and Nevela now runs on PHP 8.5 and Laravel 13, the latest of both.",
-  href: "/guides/mobile-app/#push-notifications",
-  label: "Push notifications",
+  text: "New: \"Forgot your password?\" on the phone emails a 6-digit code to choose a new one with, in every app, with a dashboard or without.",
+  href: "/guides/mobile-app/#what-is-in-it",
+  label: "The phone app's screens",
 };

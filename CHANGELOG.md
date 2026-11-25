@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.39.0] - 2026-11-25
+
+_A forgotten password reset from the phone, by emailed code_
+
 ### Added
 
 - **A forgotten password can be reset from the phone.** "Forgot your password?" on the sign-in screen emails a 6-digit code. The person enters it with a new password, and the phone signs in with it, through the second step where the account has one. Every other sign-in the account had ends. `POST /auth/password/forgot` sends a code with `"method": "code"`, and always in an app with no dashboard; `POST /auth/password/reset` takes the `email` and `code` as well as the link's `token`. A wrong code counts against a few tries. See [the API reference](https://nevela-docs.vercel.app/reference/api/#every-auth-endpoint).
@@ -994,7 +998,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.38.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.39.0...HEAD
+[0.39.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.38.0...v0.39.0
 [0.38.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.37.0...v0.38.0
 [0.37.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.36.0...v0.37.0
 [0.36.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.35.0...v0.36.0
