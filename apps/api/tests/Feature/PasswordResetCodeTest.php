@@ -97,6 +97,31 @@ class PasswordResetCodeTest extends TestCase
         $this->assertSame([], AuthMail::$outbox);
     }
 
+    public function test_the_reset_answers_an_unknown_address_exactly_as_a_real_one(): void
+    {
+        $this->user();
+        $answers = function (string $email): array {
+            $this->postJson('/api/auth/password/forgot', ['email' => $email, 'method' => 'code'])->assertOk();
+            $seen = [];
+            for ($i = 0; $i < 10; $i++) {
+                $answer = $this->postJson('/api/auth/password/reset', ['email' => $email, 'code' => '000000', 'newPassword' => 'a brand new passphrase']);
+                $seen[] = $answer->status().' '.$answer->json('code');
+                if ($answer->status() === 429) {
+                    break;
+                }
+            }
+
+            return $seen;
+        };
+
+        $real = $answers('ada@example.com');
+        $unknown = $answers('nobody@example.com');
+        // A wrong code, then too many tries, after the same number of attempts for both.
+        $this->assertSame('401 INVALID_OTP', $real[0]);
+        $this->assertSame('429 TOO_MANY_ATTEMPTS', end($real));
+        $this->assertSame($real, $unknown);
+    }
+
     public function test_the_dashboard_still_gets_a_link_unless_a_code_is_asked_for(): void
     {
         $this->user();
