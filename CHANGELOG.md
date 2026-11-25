@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.42.0] - 2026-11-25
+
+_What matters asks you to confirm it's you, every time_
+
 ### Added
 
 - Confirming it's you again, before something that matters. Such a request answers `428` with a challenge until the person confirms with their password, a code emailed to them, their authenticator app's code, or on the web a passkey (`POST /api/auth/confirm`). It is asked only once the request is allowed and valid. The API asks, so a script can't skip what the dashboard's dialog asks.
@@ -1057,7 +1061,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.41.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.42.0...HEAD
+[0.42.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.41.0...v0.42.0
 [0.41.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.40.0...v0.41.0
 [0.40.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.39.0...v0.40.0
 [0.39.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.38.0...v0.39.0

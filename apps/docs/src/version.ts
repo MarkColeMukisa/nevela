@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "A public site and a staff admin on one API, by default";
+export const RELEASE_HEADLINE = "What matters asks you to confirm it's you, every time";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "New: nevela new makes a public site with a customer area and a separate staff admin on one API, with two-step sign-in asked of staff.",
-  href: "/guides/site-and-admin/",
-  label: "The site and the admin",
+  text: "New: a refund, a transfer or a change to who can sign in asks for the password again, or a code, in the dashboard, on the phone and over the API.",
+  href: "/guides/authentication/#confirming-its-you-again",
+  label: "Confirming it's you",
 };
