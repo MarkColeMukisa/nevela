@@ -36,6 +36,8 @@ The file is yours, and an upgrade never changes it. A setting it doesn't have ta
 | `auth.require_email_verification` | `false` | Refuse password sign-in until the address is verified. |
 | `auth.check_breached_passwords` | `true` | Refuse a new password found in a known breach. |
 | `auth.web_url` | `http://localhost:3000`, or `NEVELA_WEB_URL` | Where the dashboard is: for links in emails, and for passkeys. |
+| `auth.staff_two_factor` | `null`, or `NEVELA_STAFF_TWO_FACTOR` | Whether staff must have two-step sign-in on to use the admin app. `null`: in production only. |
+| `auth.session.admin_absolute` | `720`, or `NEVELA_SESSION_ADMIN_ABSOLUTE` | Minutes a sign-in to the admin app lasts, however busy. Sign-ins to the site and the phone keep `auth.session.absolute`. |
 | `auth.admin_url` | `null`, or `NEVELA_ADMIN_URL` | Where the staff's admin app is, when the project has one beside the public site, such as `https://admin.example.com`. Links to dashboard pages go there, and a passkey made there is tied to it. Each app says which it is, so a link in an email goes back to the one the person used. Register its Google or GitHub callback address as well. |
 | `auth.attempts_per_address` | `300` | Sign-in attempts a minute from one address, on top of ten per account. |
 | `auth.proxy_secret` | none, or `NEVELA_PROXY_SECRET` | Shared with the dashboard, so Laravel believes what it says about a visitor's browser. See [Devices](/guides/authentication/#devices). |

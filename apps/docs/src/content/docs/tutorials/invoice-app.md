@@ -32,7 +32,7 @@ Any ISO 4217 code works; see [Money and its currency](/concepts/field-types/#mon
 nevela dev
 ```
 
-Sign in at http://localhost:3000/sign-in as `admin@example.com` with the password `password`. Run the commands below in a second terminal, in the same folder.
+Sign in to the admin at http://localhost:3001/sign-in as `admin@example.com` with the password `password`. Run the commands below in a second terminal, in the same folder.
 
 ## 2. Customers and products
 

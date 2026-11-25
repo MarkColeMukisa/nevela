@@ -3,7 +3,7 @@ title: "Deploying"
 description: "What each of the two apps needs in production."
 ---
 
-Nevela is two apps. Deploy each the way you would deploy any Laravel or Next.js app. On Laravel Cloud, follow [Deploying to Laravel Cloud](/guides/laravel-cloud/), which goes through both step by step. On a host that runs the app in one container from a start command (Sevalla, Railway, Fly.io, Render), see also [Deploying to a container host](/guides/container-hosts/).
+Nevela is three apps: the Laravel API, the public site (`apps/web`) and the staff's admin (`apps/admin`). An app made before 0.41 has two, with the site and the dashboard in one. Deploy each the way you would deploy any Laravel or Next.js app. What the site and the admin each need, and how to close the admin off, is in [The site and the admin](/guides/site-and-admin/#deploying-both). On Laravel Cloud, follow [Deploying to Laravel Cloud](/guides/laravel-cloud/), which goes through both step by step. On a host that runs the app in one container from a start command (Sevalla, Railway, Fly.io, Render), see also [Deploying to a container host](/guides/container-hosts/).
 
 ## The Laravel app
 

@@ -20,12 +20,31 @@ function whichApp(): string {
   }
 }
 
+const app = whichApp();
+
+/**
+ * The staff's admin app is stricter than the site: never shown inside another site's frame,
+ * forms posted only to itself, no plugins, the address of the page it came from never sent
+ * on, and no camera, microphone or location asked for. The site keeps the browser's
+ * defaults, so a public page can still be embedded or shared as people expect.
+ */
+const ADMIN_HEADERS = [
+  { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "same-origin" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+];
+
 const config: NextConfig = {
   // Compile @flaredev/core from source rather than resolving it as an opaque package.
   transpilePackages: ["@flaredev/core"],
   turbopack: { root: project },
   outputFileTracingRoot: project,
-  env: { NEVELA_APP: whichApp() },
+  env: { NEVELA_APP: app },
+  async headers() {
+    return app === "admin" ? [{ source: "/:path*", headers: ADMIN_HEADERS }] : [];
+  },
 };
 
 export default config;

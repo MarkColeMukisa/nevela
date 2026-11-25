@@ -34,7 +34,7 @@ A number that starts with its code, `+44 7400 123456`, is still read as what it 
 nevela dev
 ```
 
-Sign in at the address it prints, http://localhost:3000/sign-in unless that port is taken, as `admin@example.com` with the password `password`. Run the commands below in a second terminal, in the same folder.
+Sign in to the admin at the address it prints, http://localhost:3001/sign-in unless that port is taken, as `admin@example.com` with the password `password`. Run the commands below in a second terminal, in the same folder.
 
 ## 2. Companies
 

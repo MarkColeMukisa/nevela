@@ -116,6 +116,36 @@ class AdminAppTest extends TestCase
         $this->assertSame('/dashboard', self::queryOf($this->signInLink('cleo@example.com', 'USER', self::SITE))['next']);
     }
 
+    public function test_a_sign_in_to_the_admin_ends_sooner_than_one_to_the_site(): void
+    {
+        User::query()->create(['email' => 'eve@example.com', 'name' => 'Eve', 'password' => Hash::make('a long passphrase')]);
+        $signIn = function (string $origin) {
+            \Illuminate\Support\Facades\DB::table('nevela_sessions')->delete();
+            $this->postJson('/api/auth/token', ['email' => 'eve@example.com', 'password' => 'a long passphrase'], ['X-Nevela-Origin' => $origin])->assertCreated();
+
+            return \Illuminate\Support\Carbon::parse((string) \Illuminate\Support\Facades\DB::table('nevela_sessions')->value('expires_at'));
+        };
+
+        $this->assertEqualsWithDelta(now()->addHours(12)->timestamp, $signIn(self::ADMIN)->timestamp, 60);
+        $this->assertEqualsWithDelta(now()->addDays(30)->timestamp, $signIn(self::SITE)->timestamp, 60);
+        // Set by the app, and never longer than its own limit.
+        config(['nevela.auth.session.admin_absolute' => 60]);
+        $this->assertEqualsWithDelta(now()->addHour()->timestamp, $signIn(self::ADMIN)->timestamp, 60);
+    }
+
+    public function test_the_admin_is_told_whether_staff_need_two_step_sign_in(): void
+    {
+        // Unset: in production only.
+        $this->getJson('/api/auth/config')->assertJsonPath('staffTwoFactor', false);
+        $this->app->detectEnvironment(fn () => 'production');
+        $this->assertTrue(Account::staffTwoFactorRequired());
+        config(['nevela.auth.staff_two_factor' => 'false']);
+        $this->assertFalse(Account::staffTwoFactorRequired());
+        $this->app->detectEnvironment(fn () => 'testing');
+        config(['nevela.auth.staff_two_factor' => 'true']);
+        $this->getJson('/api/auth/config')->assertJsonPath('staffTwoFactor', true);
+    }
+
     public function test_a_passkey_made_on_the_admin_is_tied_to_the_admin(): void
     {
         $request = Request::create('/');

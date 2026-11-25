@@ -32,7 +32,7 @@ Any ISO 4217 code works: `UGX`, `EUR`, `KES`. Prices are then shown as `$49.50`,
 nevela dev
 ```
 
-Sign in at http://localhost:3000/sign-in as `admin@example.com` with the password `password`.
+Sign in to the admin at http://localhost:3001/sign-in as `admin@example.com` with the password `password`.
 
 ## 2. Categories
 
