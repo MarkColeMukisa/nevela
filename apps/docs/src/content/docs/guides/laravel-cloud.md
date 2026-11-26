@@ -1,6 +1,6 @@
 ---
 title: "Deploying to Laravel Cloud"
-description: "Both halves of a Nevela app on Laravel Cloud: the two applications, every variable and which must match, the scheduler and worker, Neon, and checking it all with one command."
+description: "A Nevela app on Laravel Cloud: the applications, every variable and which must match, the scheduler and worker, Neon, checking it all with one command, and what the edge protects."
 ---
 
 A Nevela app is three Laravel Cloud applications made from the same repository: the API from `apps/api`, the public site from `apps/web`, and the staff's admin from `apps/admin` ([The site and the admin](/guides/site-and-admin/)). An app made before 0.41 has no `apps/admin`: its `apps/web` is the dashboard and the site, and step 3 doesn't apply. This page goes through both, in the order that works. It is how Kian Rover went to production, with what went wrong at each step turned into what to do. For what any host needs, see [Deploying](/guides/deploying/).
@@ -136,6 +136,37 @@ When the admin gets its domain (`admin.example.com`), change `NEVELA_ADMIN_URL` 
 - The Turnstile widget's hostnames, if a form is protected.
 
 **Passkeys are tied to an address.** Those made on the Cloud address don't work on the domain, so their owners sign in another way and add a new one.
+
+## Security at the edge
+
+Laravel Cloud puts a Cloudflare-backed edge in front of every application. What it does, as Laravel's support confirmed in November 2026, and what Nevela does in the app on every plan:
+
+| | On Cloud's edge | In the app (Nevela) |
+|---|---|---|
+| Floods of traffic (DDoS) | Every plan, nothing to switch on | Can't be, by the time PHP runs: the edge's job |
+| A WAF (Cloudflare's OWASP Core Ruleset) | Every plan | |
+| Probes like `/.env` | Every plan, from a list you can't change | [Scanners turned away](/guides/security/#scanners-turned-away), with your own paths too |
+| Under Attack Mode (a JavaScript challenge for 24 hours) | Every plan, for an attack under way | |
+| A limit per address | 100 requests a minute, on Growth and Business | [Per person and per address](/guides/security/#a-limit-on-the-signed-in-api), set as you like |
+| Advanced limits, bot categories | Business | |
+| Blocking an address or range; a limit on one path such as `/api/auth/token` | Only with a dedicated edge network, a Business add-on | [The block list](/guides/security/#the-block-list), [repeat offenders](/guides/security/#repeat-offenders-blocked) and the [sign-in lockout](/guides/security/#wrong-passwords), on every plan |
+
+Static sites sit behind the same edge.
+
+### The visitor's address
+
+Cloud's edge sets `X-Forwarded-For`, with one address in it, and `X-Real-IP`, and a visitor can't forge either. A `CF-Connecting-IP` header sent by a visitor is refused with 403.
+
+- **Don't set `TrustedProxies` in the API.** `$request->ip()` is already the visitor's address on Cloud, and a list of your own could break that. Nevela sets none.
+- **The web apps keep `NEVELA_TRUSTED_PROXIES=1`**, the default: one proxy in front, which is Cloud's edge. That is how the site and the admin pass each visitor's own address to the API, for the limits, the block list and Devices.
+
+### Your own Cloudflare in front
+
+That works: when adding the domain, choose that it is already on Cloudflare and proxied. Cloud's edge rules still apply behind yours, as one more layer. Laravel hasn't yet said whether the visitor's address reaches the app the same way then, so after switching, check **Account → Devices**: each sign-in should show its own address, not one of Cloudflare's.
+
+### What an attack costs
+
+Traffic the edge blocks isn't billed. What reaches the app is usage like any other, and bandwidth past the plan's allowance is $0.10 a GB. **Set a maximum number of replicas** in each environment's autoscaling settings, so an attack that gets past the edge can't scale the bill with it. The site and the admin run one replica anyway (see [step 2](#2-the-dashboard-and-site)); give the API a ceiling you are happy to pay for.
 
 ## When something is wrong
 

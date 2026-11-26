@@ -139,4 +139,4 @@ The page still shows "Ada deleted 20 products" as one line: it joins the entries
 
 ## What the edge does instead
 
-Flooding a site with traffic (DDoS) is stopped before it reaches the app, by the host's edge or Cloudflare in front of it. Nothing in the app can do that: by the time a request reaches PHP, it has used what the attack was after. On Laravel Cloud, every plan already has a Cloudflare-backed edge with DDoS mitigation and a WAF. See [Deploying to Laravel Cloud](/guides/laravel-cloud/).
+Flooding a site with traffic (DDoS) is stopped before it reaches the app, by the host's edge or Cloudflare in front of it. Nothing in the app can do that: by the time a request reaches PHP, it has used what the attack was after. On Laravel Cloud, every plan already has a Cloudflare-backed edge with DDoS mitigation and a WAF. What each plan adds, the visitor's address, and capping what an attack costs: [Security at the edge](/guides/laravel-cloud/#security-at-the-edge).

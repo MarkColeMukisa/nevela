@@ -20,6 +20,7 @@ The first line under a version, in italics, is the release in a few words. The d
   - Pruning removes the oldest as a run, and a sealed record says where the log now starts. Entries from before the chain are kept unsealed.
   - What it doesn't catch, said plainly in the docs: someone holding the key, a database put back to an earlier copy, and entries from before.
   - New columns and two small tables: run `php nevela migrate`.
+- Security at the edge, in the Laravel Cloud guide (step 11, part 6): what Cloud's Cloudflare-backed edge does on every plan and on which plans the rest is, set beside what Nevela does in the app on all of them; the visitor's address (no `TrustedProxies` in the API, `NEVELA_TRUSTED_PROXIES=1` in the web apps); your own Cloudflare in front; and a maximum replica count so an attack can't scale the bill. [Security at the edge](apps/docs/src/content/docs/guides/laravel-cloud.md#security-at-the-edge).
 
 ### Changed
 
