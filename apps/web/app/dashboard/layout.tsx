@@ -62,7 +62,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // The screens for managing people, for those whose roles allow it.
   const { isAdmin, may } = await dashboardSession();
   // Deleted accounts are for whoever may delete one: the same people who can put it there.
-  const access = { users: may("users.view"), roles: may("roles.view"), deleted: may("users.delete"), activity: may("activity.view") };
+  const access = { users: may("users.view"), roles: may("roles.view"), deleted: may("users.delete"), activity: may("activity.view"), blocked: may("blocked_addresses.view") };
   // The trash is for those who may delete: whoever can put a record there can deal with it there.
   const trash = (await Promise.all(allResources().map((resource) => mayDo(resource, "delete")))).some(Boolean);
   // What the bell shows first. It asks again by itself from then on.

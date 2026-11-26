@@ -39,6 +39,10 @@ The file is yours, and an upgrade never changes it. A setting it doesn't have ta
 | `security.api_per_person` | `600`, or `NEVELA_API_PER_PERSON` | Requests a minute on the [signed-in API](/guides/security/#a-limit-on-the-signed-in-api), per person. `0`: no limit. |
 | `security.api_per_address` | `1200`, or `NEVELA_API_PER_ADDRESS` | The same, per address. |
 | `security.scanners` | `true`, or `NEVELA_SCANNERS` | [Scanners](/guides/security/#scanners-turned-away) asking for `/.env`, `wp-admin` and the like answer 404 at once. `security.scanner_paths`: more, as regular expressions. |
+| `security.block_after` | `20`, or `NEVELA_BLOCK_AFTER` | [Strikes](/guides/security/#repeat-offenders-blocked) within `block_window` that block an address. `0`: never blocked by itself. |
+| `security.block_window` | `10`, or `NEVELA_BLOCK_WINDOW` | Minutes the strikes are counted over. |
+| `security.block_minutes` | `60`, or `NEVELA_BLOCK_MINUTES` | Minutes an address is blocked for. |
+| `security.exempt` | `NEVELA_EXEMPT`, comma separated | Addresses and ranges never blocked, such as an office. |
 | `auth.confirm.access` | `false`, or `NEVELA_CONFIRM_ACCESS` | Whether changing who can sign in asks the person to [confirm it's them](/guides/authentication/#confirming-its-you-again) first. New apps set it to `true`. |
 | `auth.confirm.window` | `5`, or `NEVELA_CONFIRM_WINDOW` | Minutes one confirmation lets a sign-in go on changing who can sign in. |
 | `auth.staff_two_factor` | `null`, or `NEVELA_STAFF_TWO_FACTOR` | Whether staff must have two-step sign-in on to use the admin app. `null`: in production only. |

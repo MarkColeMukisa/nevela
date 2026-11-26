@@ -128,6 +128,7 @@ function Screens() {
             <Stack.Screen name="access/users/index" options={{ title: "People" }} />
             <Stack.Screen name="access/users/[id]" options={{ title: "" }} />
             <Stack.Screen name="access/deleted" options={{ title: "Deleted accounts" }} />
+            <Stack.Screen name="access/blocked" options={{ title: "Blocked addresses" }} />
             <Stack.Screen name="access/roles/index" options={{ title: "Roles and permissions" }} />
             <Stack.Screen name="access/roles/[id]" options={{ title: "" }} />
             <Stack.Screen name="shop/checkout" options={{ title: "Checkout" }} />

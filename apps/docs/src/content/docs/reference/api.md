@@ -455,6 +455,7 @@ Every error is JSON with an `error` message.
 | 409 | A unique value was taken between validation and saving | `{ error, field }` |
 | 409 | Someone else saved the record after the `updatedAt` you sent | `{ error, code: "CHANGED_SINCE_READ", current }` |
 | 422 | Validation failed | `{ error, issues: [{ path, message }] }` |
+| 403 | The address is on the [block list](/guides/security/#repeat-offenders-blocked). `until` is when the block ends, or null | `{ error, code: "ADDRESS_BLOCKED", until }` |
 | 428 | The person has to confirm it's them first | `{ error, code: "CONFIRMATION_REQUIRED", challenge, methods, window }` |
 | 429 | Too many requests. On the signed-in API, `Retry-After` and `retryAfter` say how many seconds to wait ([Security](/guides/security/#a-limit-on-the-signed-in-api)) | `{ error, code: "TOO_MANY_REQUESTS", retryAfter }` |
 

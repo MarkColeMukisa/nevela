@@ -65,7 +65,7 @@ export default function Account() {
   };
 
   const initials = (user.name ?? user.email ?? "?").trim().split(/\s+/).slice(0, 2).map((word) => word[0]?.toUpperCase() ?? "").join("");
-  const manages = can(user, "users.view") || can(user, "roles.view");
+  const manages = can(user, "users.view") || can(user, "roles.view") || can(user, "blocked_addresses.view");
   // The trash is for those who may delete something: Laravel narrows it to what they may deal with.
   const mayDelete = user.isAdmin || user.permissions.some((key) => key.endsWith(".delete"));
   // Asked of the API, which may have it switched off. Until it answers, the row waits.
@@ -105,7 +105,8 @@ export default function Account() {
           <Row icon="mail-outline" label="Email" value={user.emailVerified ? "Verified" : "Not verified"} />
           <Row icon="key-outline" label="Two-step sign-in" value={user.twoFactorEnabled ? "On" : "Off"} onPress={() => router.push("/security")} last={!manages} />
           {can(user, "users.view") ? <Row icon="people-outline" label="People" detail="Who can sign in, and their roles" onPress={() => router.push("/access/users")} last={!can(user, "roles.view")} /> : null}
-          {can(user, "roles.view") ? <Row icon="shield-checkmark-outline" label="Roles and permissions" detail="What each role may do" onPress={() => router.push("/access/roles")} last={!can(user, "activity.view") && !mayDelete} /> : null}
+          {can(user, "roles.view") ? <Row icon="shield-checkmark-outline" label="Roles and permissions" detail="What each role may do" onPress={() => router.push("/access/roles")} last={!can(user, "blocked_addresses.view")} /> : null}
+          {can(user, "blocked_addresses.view") ? <Row icon="ban-outline" label="Blocked addresses" detail="Addresses turned away, and blocking one" onPress={() => router.push("/access/blocked")} last /> : null}
         </Card>
         {!manages ? <Body muted small>Roles are given by someone who may manage users.</Body> : null}
       </View>
