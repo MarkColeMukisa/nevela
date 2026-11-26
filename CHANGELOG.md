@@ -8,6 +8,12 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- Security in the app itself, on any host (step 11 of the roadmap, after Grit's Sentinel). [Security](apps/docs/src/content/docs/guides/security.md) in the docs.
+  - **A limit on the signed-in API**: lists, records, actions and Nevela's own screens, 600 requests a minute per person and 1,200 per address (`NEVELA_API_PER_PERSON`, `NEVELA_API_PER_ADDRESS`). Beyond it, `429` with when to try again, in words and in `Retry-After`. A request the web app makes for a visitor counts against the visitor's address, not the web app's server.
+  - **Scanners turned away**: `/.env` and its cousins, a `.git` folder, WordPress, phpMyAdmin, PHPUnit's script and database dumps answer `404` at once, before the app does any work, and count against the address (`NEVELA_SCANNERS`, and `security.scanner_paths` for more).
+
 ## [0.42.0] - 2026-11-25
 
 _What matters asks you to confirm it's you, every time_
