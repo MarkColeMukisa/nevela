@@ -3,3 +3,8 @@ seed/products.sql
 seed/ids.json
 # Made by run.sh.
 results/
+# Made by apps/grit.sh, from the pinned Grit CLI.
+apps/grit-bench/
+apps/grit-seed
+seed/grit-products.sql
+seed/grit-ids.json

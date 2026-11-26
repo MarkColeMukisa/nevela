@@ -8,8 +8,10 @@ import { SharedArray } from 'k6/data';
  *
  *   k6 run -e BASE=http://nevela:8080 -e SCENARIO=show -e TOKEN=… k6/bench.js
  *
- * Every app here answers the same requests with the same JSON, so the script is the
- * same for all of them. Two scripts drift, and then you are comparing the scripts.
+ * Every app here answers the same requests, so the script is the same for all of them.
+ * Two scripts drift, and then you are comparing the scripts. Where an app's routes are
+ * named its own way, run.sh says so: PREFIX (/api, or Grit's and Bun's /api/v1) and
+ * PAGE_PARAM (perPage, or page_size).
  *
  *   show   GET  /api/products/{id}               one row by its key
  *   list   GET  /api/products?page=N&perPage=20  a page of rows, and the count of all of them
@@ -26,6 +28,8 @@ const VUS = parseInt(__ENV.VUS || '50', 10);
 const DURATION = __ENV.DURATION || '30s';
 // The app's sign-in token, for the apps that ask for one. The plain app gets none.
 const TOKEN = __ENV.TOKEN || '';
+const PREFIX = __ENV.PREFIX || '/api';
+const PAGE_PARAM = __ENV.PAGE_PARAM || 'perPage';
 
 if (!BASE) throw new Error('set -e BASE=http://host:port');
 
@@ -68,12 +72,12 @@ function record(res, expected) {
 export function list() {
   // Walk the pages rather than asking for page 1 all run, so no app gets to answer from one cached page.
   const page = (__ITER % 50) + 1;
-  record(http.get(`${BASE}/api/products?page=${page}&perPage=20`, { headers: HEADERS }), 200);
+  record(http.get(`${BASE}${PREFIX}/products?page=${page}&${PAGE_PARAM}=20`, { headers: HEADERS }), 200);
 }
 
 export function show() {
   const id = IDS[(__VU * 7919 + __ITER) % IDS.length];
-  record(http.get(`${BASE}/api/products/${id}`, { headers: HEADERS }), 200);
+  record(http.get(`${BASE}${PREFIX}/products/${id}`, { headers: HEADERS }), 200);
 }
 
 export function write() {
@@ -89,7 +93,7 @@ export function write() {
     stock: 42,
     active: true,
   });
-  record(http.post(`${BASE}/api/products`, body, { headers: HEADERS }), 201);
+  record(http.post(`${BASE}${PREFIX}/products`, body, { headers: HEADERS }), 201);
 }
 
 export function mixed() {

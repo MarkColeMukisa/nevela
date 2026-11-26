@@ -19,6 +19,8 @@ const APPS = {
   nevela: 'Nevela',
   'laravel-auth-octane': 'Laravel + Sanctum, Octane',
   'nevela-octane': 'Nevela, Octane',
+  grit: 'Grit',
+  bun: 'Bun',
 };
 const SCENARIOS = {
   show: 'show: one product by its id',
@@ -120,6 +122,11 @@ for (const [scenario, title] of Object.entries(SCENARIOS)) {
     ['laravel-auth-octane', 'laravel-auth'],
     ['nevela-octane', 'nevela'],
     ['nevela-octane', 'laravel-auth-octane'],
+    // The rally: Nevela, at its fastest and as most run it, against Grit and Bun.
+    ['nevela-octane', 'grit'],
+    ['nevela', 'grit'],
+    ['nevela-octane', 'bun'],
+    ['grit', 'bun'],
   ];
   for (const [a, b] of pairs) {
     if (!by[a] || !by[b]) continue;
