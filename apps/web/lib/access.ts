@@ -165,6 +165,30 @@ export interface BlockedAddress {
   until: string | null;
 }
 
+/** One row of the security log (Laravel's Security\SecurityLog): an address, a kind and an hour, with a count. */
+export interface SecurityEvent {
+  id: string;
+  address: string;
+  /** "scanner", "limit", "sign-in", "refused", "locked", "blocked" or "unblocked". */
+  kind: string;
+  count: number;
+  method: string | null;
+  /** The latest request's path, without its query. */
+  path: string | null;
+  userAgent: string | null;
+  /** For a block: its reason, and who made or cleared it. */
+  detail: string | null;
+  firstAt: string;
+  lastAt: string;
+}
+
+/** What was turned away in the last week, newest first. "migrate" before the table is there; null when the person may not see it. */
+export async function listSecurityEvents(): Promise<SecurityEvent[] | "migrate" | null> {
+  const response = await laravel("_nevela/security-events");
+  if (response.ok) return (response.body as { data: SecurityEvent[] }).data;
+  return response.status === 409 ? "migrate" : null;
+}
+
 /** The blocks in force, and the addresses never blocked. "migrate" before the table is there; null when the person may not see them. */
 export async function listBlockedAddresses(): Promise<{ data: BlockedAddress[]; exempt: string[] } | "migrate" | null> {
   const response = await laravel("_nevela/blocked-addresses");

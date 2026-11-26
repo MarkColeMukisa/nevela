@@ -8,7 +8,7 @@ import { useColorScheme } from "react-native";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { CartProvider, useCatalogue } from "@/lib/cart";
 import { forgetComeBack, takeComeBack } from "@/lib/guest";
-import { screenFor } from "@/lib/links";
+import { pageFor, screenFor } from "@/lib/links";
 import { followTaps, registerPush } from "@/lib/push";
 import { ResourcesProvider, useResources } from "@/lib/resources";
 import { loadAppearance, setAppearance, useColors } from "@/lib/theme";
@@ -87,7 +87,8 @@ function Screens() {
         return false; // followed once signed in
       }
       const target = screenFor(url);
-      router.push(target ? { pathname: "/r/[slug]/[id]", params: target } : "/notifications");
+      const page = pageFor(url);
+      router.push(target ? { pathname: "/r/[slug]/[id]", params: target } : (page ?? "/notifications"));
     }).then((unsubscribe) => {
       if (gone) unsubscribe();
       else stop = unsubscribe;

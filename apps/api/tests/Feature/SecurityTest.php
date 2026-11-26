@@ -311,6 +311,82 @@ class SecurityTest extends TestCase
         $this->signInFrom('203.0.113.80', 'ada@example.com', 'a brand new passphrase')->assertCreated();
     }
 
+    public function test_what_was_turned_away_is_logged_by_the_hour_with_a_count_not_a_row_each(): void
+    {
+        config(['nevela.security.block_after' => 3, 'nevela.security.spike_after' => 0]);
+        $from = ['REMOTE_ADDR' => '203.0.113.90'];
+        foreach (['/.env', '/wp-login.php', '/.git/config'] as $probe) {
+            $this->withServerVariables($from)->get($probe)->assertNotFound();
+        }
+        $writes = 0;
+        \Illuminate\Support\Facades\DB::listen(function ($query) use (&$writes) {
+            if (str_contains($query->sql, 'nevela_security_events') && ! str_starts_with(strtolower(ltrim($query->sql)), 'select')) {
+                $writes++;
+            }
+        });
+        // An attack from a blocked address: 300 refusals are one row, written at 1, 2, 5, 10, 20,
+        // 50, 100 and 200, never once a request.
+        foreach (range(1, 300) as $ignored) {
+            $this->withServerVariables($from)->getJson('/api/_nevela/ping?token=secret')->assertForbidden();
+        }
+        $this->assertSame(8, $writes);
+
+        // The true count, with nothing after it: read live from the cache between steps.
+        $log = collect(\Nevela\Laravel\Security\SecurityLog::recent());
+        $this->assertSame(300, $log->firstWhere('kind', 'refused')['count']);
+        $this->assertSame('/api/_nevela/ping', $log->firstWhere('kind', 'refused')['path']);
+        $this->assertSame('scanner', $log->firstWhere('kind', 'blocked')['detail']);
+        $this->assertSame(3, $log->firstWhere('kind', 'scanner')['count']);
+        // Never this computer, or an address the web app can't name.
+        $this->assertSame(['203.0.113.90'], $log->pluck('address')->unique()->values()->all());
+
+        // A visitor the web app speaks for: their browser, not the web app's own fetch.
+        config(['nevela.auth.proxy_secret' => 'shared']);
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.1'])->get('/.env', ['X-Nevela-Proxy-Secret' => 'shared', 'X-Nevela-Client' => '203.0.113.91', 'X-Nevela-User-Agent' => 'Firefox on Windows', 'User-Agent' => 'node'])->assertNotFound();
+        $this->assertSame('Firefox on Windows', collect(\Nevela\Laravel\Security\SecurityLog::recent(7, '203.0.113.91'))->first()['userAgent']);
+
+        // An administrator sees it, and who cleared a block.
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.5']);
+        $as = $this->signIn();
+        $this->getJson('/api/_nevela/security-events?address=203.0.113.90', $as)->assertOk()->assertJsonPath('data.0.address', '203.0.113.90');
+        $this->app['auth']->forgetGuards();
+        $id = Addresses::current()[0]['id'];
+        $this->deleteJson("/api/_nevela/blocked-addresses/{$id}", [], $as)->assertNoContent();
+        $this->assertSame('by Owner', collect(\Nevela\Laravel\Security\SecurityLog::recent())->firstWhere('kind', 'unblocked')['detail']);
+
+        // Kept for log_days, then gone in the nightly run.
+        $this->travel(31)->days();
+        $this->assertGreaterThan(0, \Nevela\Laravel\Security\SecurityLog::prune());
+        $this->assertSame([], \Nevela\Laravel\Security\SecurityLog::recent(365));
+    }
+
+    public function test_the_bell_tells_of_blocks_a_few_times_an_hour_and_of_a_spike_once(): void
+    {
+        config(['nevela.security.block_after' => 1, 'nevela.security.notify_blocks_per_hour' => 3, 'nevela.security.spike_after' => 10]);
+        $owner = User::query()->create(['email' => 'owner@example.com', 'name' => 'Owner', 'password' => Hash::make('a long passphrase')]);
+        Access::grant($owner, 'ADMIN');
+        \Illuminate\Support\Facades\Event::fake([\Nevela\Laravel\Events\NoticeSent::class]);
+
+        // Seven addresses block themselves: three are told (each a push), as one line in the bell.
+        foreach (range(1, 7) as $n) {
+            $this->withServerVariables(['REMOTE_ADDR' => "203.0.113.{$n}"])->get('/.env')->assertNotFound();
+        }
+        \Illuminate\Support\Facades\Event::assertDispatchedTimes(\Nevela\Laravel\Events\NoticeSent::class, 3);
+        $bell = \Nevela\Laravel\Notices\Notices::for($owner)['items'];
+        $this->assertSame('3 addresses blocked', collect($bell)->firstWhere('kind', 'security.blocked')['title']);
+
+        // Ten refusals in five minutes are a spike, told once; thirty more change nothing.
+        foreach (range(1, 40) as $n) {
+            $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.1'])->getJson('/api/_nevela/ping')->assertForbidden();
+        }
+        \Illuminate\Support\Facades\Event::assertDispatchedTimes(\Nevela\Laravel\Events\NoticeSent::class, 4);
+        $this->assertNotNull(collect(\Nevela\Laravel\Notices\Notices::for($owner)['items'])->firstWhere('kind', 'security.spike'));
+
+        // A block made by hand tells nobody: whoever made it knows.
+        Addresses::block('198.51.100.77', 'manual', 60, (string) $owner->getKey(), null);
+        \Illuminate\Support\Facades\Event::assertDispatchedTimes(\Nevela\Laravel\Events\NoticeSent::class, 4);
+    }
+
     public function test_scanners_are_turned_away_and_counted(): void
     {
         foreach (['/.env', '/laravel.env', '/.env.backup', '/api/.env', '/.git/config', '/wp-admin/', '/wp-login.php', '/xmlrpc.php', '/phpmyadmin/index.php', '/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php', '/backup.sql'] as $probe) {

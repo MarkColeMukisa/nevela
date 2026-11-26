@@ -4,7 +4,7 @@ import { RefreshControl, View } from "react-native";
 
 import { Body, Button, Card, Heading, Loading, Notice, Row, Screen } from "@/components/ui";
 import { api, messageOf } from "@/lib/api";
-import { screenFor } from "@/lib/links";
+import { pageFor, screenFor } from "@/lib/links";
 import { spacing } from "@/lib/theme";
 import { useLoaded } from "@/lib/use-loaded";
 import { ago } from "@/lib/when";
@@ -63,13 +63,14 @@ export default function Notifications() {
             <Card>
               {inbox.data.items.map((item, index, all) => {
                 const target = screenFor(item.url);
+                const page = pageFor(item.url);
                 return (
                   <Row
                     key={item.id}
                     icon={item.read ? "ellipse-outline" : "ellipse"}
                     label={item.count > 1 ? `${item.title} (${item.count})` : item.title}
                     detail={[item.body, ago(item.at)].filter(Boolean).join(" · ")}
-                    onPress={target ? () => router.push({ pathname: "/r/[slug]/[id]", params: target }) : undefined}
+                    onPress={target ? () => router.push({ pathname: "/r/[slug]/[id]", params: target }) : page ? () => router.push(page) : undefined}
                     last={index === all.length - 1}
                   />
                 );
