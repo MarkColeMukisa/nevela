@@ -69,6 +69,16 @@ class ActivityTest extends TestCase
         return DB::table('nevela_activity')->orderBy('created_at')->orderBy('id')->get()->all();
     }
 
+    /**
+     * The log as its page shows it, oldest first: entries joined into lines by their group.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function lines(User $viewer): array
+    {
+        return array_reverse(Activity::for($viewer, [], 1, 100)['data']);
+    }
+
     /** @return list<object> */
     private function bellOf(User $user): array
     {
@@ -94,6 +104,9 @@ class ActivityTest extends TestCase
         $this->assertSame(array_fill(0, 4, (string) $ada->getKey()), array_column($rows, 'user_id'));
         $this->assertSame('Kettle KET-1', $rows[0]->label);
         $this->assertSame([$id], json_decode($rows[0]->record_ids, true));
+        // Each sealed in turn.
+        $this->assertSame([1, 2, 3, 4], array_map('intval', array_column($rows, 'seq')));
+        $this->assertTrue(\Nevela\Laravel\Activity\Chain::verify()['ok']);
 
         // Everyone else who may see products is told of the create, delete and restore. A change isn't.
         $this->assertSame(['Ada created a product: Kettle KET-1', 'Ada deleted a product: Kettle, steel', 'Ada restored a product: Kettle, steel'], array_column($this->bellOf($bo), 'title'));
@@ -101,13 +114,15 @@ class ActivityTest extends TestCase
         $this->assertSame([], $this->bellOf($ada), 'nobody is told what they did');
         $this->assertSame([], $this->bellOf($nobody), 'nor what they may not see');
 
-        // Deleted again within two minutes: the same row, counted. Then removed for good from
-        // the trash: noted, and nobody is told.
+        // Deleted again within two minutes: an entry of its own, shown on the same line, counted.
+        // Then removed for good from the trash: noted, and nobody is told.
         $this->deleteJson("/api/products/{$id}")->assertNoContent();
         $this->deleteJson("/api/_nevela/trash/products/{$id}")->assertNoContent();
-        $rows = $this->activity();
-        $this->assertSame(['created', 'updated', 'deleted', 'restored', 'purged'], array_column($rows, 'action'));
-        $this->assertSame(2, (int) $rows[2]->count);
+        $this->assertCount(6, $this->activity(), 'every entry kept as written');
+        $lines = $this->lines($ada);
+        // A line is as recent as its latest entry: the second delete was after the restore.
+        $this->assertSame(['created', 'updated', 'restored', 'deleted', 'purged'], array_column($lines, 'action'));
+        $this->assertSame(2, $lines[3]['count']);
         $this->assertSame(['Ada created a product: Kettle KET-1', 'Ada deleted 2 products', 'Ada restored a product: Kettle, steel'], array_column($this->bellOf($bo), 'title'));
     }
 
@@ -125,10 +140,11 @@ class ActivityTest extends TestCase
             $this->deleteJson("/api/products/{$id}")->assertNoContent();
         }
 
-        $rows = $this->activity();
-        $this->assertSame(['created', 'deleted'], array_column($rows, 'action'));
-        $this->assertSame([5, 3], array_map('intval', array_column($rows, 'count')));
-        $this->assertSame(array_slice($ids, 0, 3), json_decode($rows[1]->record_ids, true));
+        // Stored as sent: one entry for the five, one for each delete. Shown as two lines.
+        $this->assertSame([5, 1, 1, 1], array_map('intval', array_column($this->activity(), 'count')));
+        $lines = $this->lines($ada);
+        $this->assertSame(['created', 'deleted'], array_column($lines, 'action'));
+        $this->assertSame([5, 3], array_column($lines, 'count'));
 
         $bell = $this->bellOf($bo);
         $this->assertSame(['Ada created 5 products', 'Ada deleted 3 products'], array_column($bell, 'title'));
@@ -138,7 +154,7 @@ class ActivityTest extends TestCase
         // A while later, the next is a row of its own; the bell's line, still unread, keeps counting.
         Carbon::setTestNow(now()->addMinutes(5));
         $this->deleteJson("/api/products/{$ids[3]}")->assertNoContent();
-        $this->assertSame([5, 3, 1], array_map('intval', array_column($this->activity(), 'count')));
+        $this->assertSame([5, 3, 1], array_column($this->lines($ada), 'count'));
         $this->assertSame('Ada deleted 4 products', $this->bellOf($bo)[1]->title);
 
         // Someone else doing the same is their own line.
@@ -225,9 +241,94 @@ class ActivityTest extends TestCase
     {
         Sanctum::actingAs($this->user('Ada', 'ADMIN'));
         $this->postJson('/api/products', $this->kettle('KET-1'))->assertCreated();
-        DB::table('nevela_activity')->update(['updated_at' => now()->subDays(Activity::KEEP_DAYS + 1)]);
+        $this->postJson('/api/products', $this->kettle('KET-2'))->assertCreated();
+        Carbon::setTestNow(now()->addDays(Activity::KEEP_DAYS - 1));
+        $this->postJson('/api/products', $this->kettle('KET-3'))->assertCreated();
+        Carbon::setTestNow(now()->addDays(2));
 
-        $this->assertSame(1, Activity::prune());
-        $this->assertSame([], $this->activity());
+        // The two old ones go, as a run from the start; the chain still checks, from where it now starts.
+        $this->assertSame(2, Activity::prune());
+        $this->assertSame([3], array_map('intval', array_column($this->activity(), 'seq')));
+        $this->assertTrue(\Nevela\Laravel\Activity\Chain::verify()['ok'], \Nevela\Laravel\Activity\Chain::verify()['message']);
+        // And the next entry follows on.
+        $this->postJson('/api/products', $this->kettle('KET-4'))->assertCreated();
+        $this->assertTrue(\Nevela\Laravel\Activity\Chain::verify()['ok']);
+    }
+
+    public function test_an_entry_changed_or_removed_in_the_database_is_caught(): void
+    {
+        Sanctum::actingAs($this->user('Ada', 'ADMIN'));
+        foreach (range(1, 4) as $n) {
+            $this->postJson('/api/products', $this->kettle("KET-{$n}"))->assertCreated();
+            Carbon::setTestNow(now()->addMinutes(3));
+        }
+        $verify = fn () => \Nevela\Laravel\Activity\Chain::verify();
+        $this->assertSame(['ok' => true, 'checked' => 4], array_intersect_key($verify(), ['ok' => 0, 'checked' => 0]));
+        $snapshot = DB::table('nevela_activity')->get()->map(fn ($row) => (array) $row)->all();
+        $head = (array) DB::table('nevela_activity_head')->first();
+        $restore = function () use ($snapshot, $head) {
+            DB::table('nevela_activity')->delete();
+            DB::table('nevela_activity')->insert($snapshot);
+            DB::table('nevela_activity_head')->where('id', 1)->update($head);
+        };
+
+        // A label edited.
+        DB::table('nevela_activity')->where('seq', 2)->update(['label' => 'Something else']);
+        $this->assertSame(2, $verify()['brokenAt']);
+        $restore();
+
+        // An entry from the middle deleted.
+        DB::table('nevela_activity')->where('seq', 3)->delete();
+        $this->assertFalse($verify()['ok']);
+        $this->assertSame(4, $verify()['brokenAt']);
+        $restore();
+
+        // The newest deleted: the sealed head says there was one more.
+        DB::table('nevela_activity')->where('seq', 4)->delete();
+        $this->assertStringContainsString('newest entries were deleted', $verify()['message']);
+        $restore();
+
+        // An entry written in by hand, with no seal, or with a made-up one outside the chain.
+        DB::table('nevela_activity')->insert(['id' => (string) \Illuminate\Support\Str::uuid7(), 'user_id' => '1', 'action' => 'deleted', 'resource' => 'Product', 'count' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        $this->assertStringContainsString('no seal', $verify()['message']);
+        DB::table('nevela_activity')->whereNull('seq')->update(['hash' => str_repeat('a', 64), 'key_id' => 'zzz']);
+        $this->assertStringContainsString('no seal', $verify()['message']);
+        DB::table('nevela_activity')->whereNull('seq')->delete();
+
+        // An entry changed and given a key this app doesn't hold, to dodge the check.
+        DB::table('nevela_activity')->where('seq', 3)->update(['label' => 'Hidden', 'key_id' => 'zzz']);
+        $this->assertSame(3, $verify()['brokenAt']);
+        $restore();
+
+        // The newest deleted, and the head pointed at the new last one under a made-up key.
+        DB::table('nevela_activity')->where('seq', 4)->delete();
+        DB::table('nevela_activity_head')->where('id', 1)->update(['seq' => 3, 'hash' => $snapshot[2]['hash'], 'key_id' => 'zzz']);
+        $this->assertFalse($verify()['ok']);
+        $restore();
+
+        // The oldest deleted, behind a prune record under a made-up key.
+        DB::table('nevela_activity')->where('seq', 1)->delete();
+        DB::table('nevela_activity_anchors')->insert(['id' => (string) \Illuminate\Support\Str::uuid(), 'kind' => 'prune', 'seq' => 2, 'prev_hash' => $snapshot[0]['hash'], 'removed' => 1, 'at' => now()->format('Y-m-d H:i:s'), 'key_id' => 'zzz', 'seal' => str_repeat('0', 64)]);
+        $this->assertFalse($verify()['ok']);
+        DB::table('nevela_activity_anchors')->where('kind', 'prune')->delete();
+        $restore();
+
+        // A prune record forged, to hide removing the oldest.
+        DB::table('nevela_activity')->where('seq', 1)->delete();
+        DB::table('nevela_activity_anchors')->insert(['id' => (string) \Illuminate\Support\Str::uuid(), 'kind' => 'prune', 'seq' => 2, 'prev_hash' => $snapshot[0]['hash'], 'removed' => 1, 'at' => now()->format('Y-m-d H:i:s'), 'key_id' => $snapshot[0]['key_id'], 'seal' => str_repeat('0', 64)]);
+        $this->assertStringContainsString('forged', $verify()['message']);
+        DB::table('nevela_activity_anchors')->where('kind', 'prune')->delete();
+        $restore();
+        $this->assertTrue($verify()['ok']);
+
+        // APP_KEY rotated, the old one kept in APP_PREVIOUS_KEYS: older entries still check.
+        $old = config('app.key');
+        config(['app.key' => 'base64:'.base64_encode(random_bytes(32)), 'app.previous_keys' => [$old]]);
+        $this->postJson('/api/products', $this->kettle('KET-5'))->assertCreated();
+        $this->assertSame(['ok' => true, 'checked' => 5], array_intersect_key($verify(), ['ok' => 0, 'checked' => 0]));
+        // Without it: in order, but not checkable, which deploy:check says.
+        config(['app.previous_keys' => []]);
+        $this->assertSame(4, $verify()['unverifiable']);
+        $this->assertTrue($verify()['ok']);
     }
 }

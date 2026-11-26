@@ -119,6 +119,24 @@ The person check needs Turnstile [set up](/guides/protecting-forms/#setting-up-t
 
 `0` switches the check or the lockout off. The account-wide check (`security.sign_in.account_captcha_after`, 20) and the list rule (`security.sign_in.stuffing_after`, 10) are set in `config/nevela.php`. To lift a lockout early, the person resets their password.
 
+## The activity log, sealed
+
+The [activity log](/guides/notifications/#the-activity-log) can't be quietly edited. Each entry is written once, never changed, and sealed: its hash covers the entry and the hash of the one before it, under a key the database doesn't hold (HMAC-SHA256, after Grit's audit chain). Change one entry, or delete one, and every hash from there on is wrong, and nobody can work them out again without the key.
+
+`php nevela deploy:check` walks the whole log and says where it breaks:
+
+```txt
+Activity log ............ 1,204 entries, none changed or removed.
+Activity log ............ Entry 512 was changed after it was written.
+```
+
+- **What it catches.** Anyone who can write to the database but doesn't hold the key: SQL injection, someone given database access, a changed copy put back. An entry edited, deleted from the middle or written in by hand, the newest deleted (a sealed record keeps the newest), and a forged record of a prune.
+- **What it doesn't.** Someone who holds the key, which means the server's environment: they can write the whole log again. A database put back to an earlier copy, which was a valid log of its time. The whole log wiped together with the chain's own records, which reads as a log that hasn't begun: nothing kept in the same database can tell. Entries written before the chain began, which are kept unsealed. Sending the log somewhere you don't control, which would answer the first, isn't something Nevela does.
+- **The key.** `NEVELA_AUDIT_KEY` if you set one, else one derived from `APP_KEY`. Each entry records which key sealed it. Rotating `APP_KEY` with Laravel's `APP_PREVIOUS_KEYS` keeps older entries checkable. Entries sealed with a key this app no longer holds are reported in yellow as not checkable, but only the oldest: after an entry this app can check, one claiming another key fails. A copy of another app's database, as production's on staging, says it can't be checked here.
+- **Pruning.** Entries older than 180 days go as a run from the start of the log, and a sealed record says where it now starts. No remaining entry is rewritten.
+
+The page still shows "Ada deleted 20 products" as one line: it joins the entries as it reads them, by the same person, change and resource within two minutes.
+
 ## What the edge does instead
 
 Flooding a site with traffic (DDoS) is stopped before it reaches the app, by the host's edge or Cloudflare in front of it. Nothing in the app can do that: by the time a request reaches PHP, it has used what the attack was after. On Laravel Cloud, every plan already has a Cloudflare-backed edge with DDoS mitigation and a WAF. See [Deploying to Laravel Cloud](/guides/laravel-cloud/).

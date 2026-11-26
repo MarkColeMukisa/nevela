@@ -36,7 +36,9 @@ What you did yourself isn't in your bell. It is in the activity log: who created
 
 The same thing done to many records by one person within two minutes is one line: deleting a selection, importing a file or adding several at once reads "You deleted 20 products", not twenty lines. Every way of changing a record is counted: the dashboard, an import, an action, and your own code, as long as someone is signed in. Seeding, the scheduler and visitors to the site leave no activity.
 
-It is for those whose roles include **Activity** (`activity.view`, under Access on the Roles screen), and each sees only the resources they may view. Administrators have it. Rows are kept for 180 days.
+It is for those whose roles include **Activity** (`activity.view`, under Access on the Roles screen), and each sees only the resources they may view. Administrators have it. Entries are kept for 180 days.
+
+Each entry is written once and sealed, chained to the one before, so an entry changed or deleted in the database shows: `nevela deploy:check` checks the whole log. The page joins entries into lines as it shows them; what is sealed stays one entry each. See [The activity log, sealed](/guides/security/#the-activity-log-sealed).
 
 ## What an administrator sees about the app
 
