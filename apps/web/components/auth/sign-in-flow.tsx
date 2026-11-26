@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FingerprintIcon, MailIcon, KeyRoundIcon } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { TurnstileCheck } from "@/components/public-form-guard";
 import type { SocialProvider } from "@/lib/auth-config";
 import { AuthInput, AuthLabel, Divider, FormMessage, PrimaryButton, SecondaryButton, TextButton } from "./ui";
 import { OtpInput } from "./otp-input";
@@ -72,6 +73,10 @@ export function SignInFlow({ providers, socialPlacement, socialStyle, methods, n
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [notice, setNotice] = useState<string | null>(initialNotice ?? null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  // The person check (Turnstile), shown once Laravel asks for it, and its current answer.
+  const [checking, setChecking] = useState(false);
+  const [personCheck, setPersonCheck] = useState<string | null>(null);
+  const [round, setRound] = useState(0);
 
   // Offer saved passkeys in the email field's autofill (conditional UI), where supported.
   useEffect(() => {
@@ -105,8 +110,14 @@ export function SignInFlow({ providers, socialPlacement, socialStyle, methods, n
 
   const signInWithPassword = () =>
     run("password", async () => {
-      const { data, error } = await authClient.signIn.email({ email, password });
-      if (error) return setError(authErrorMessage(error));
+      const { data, error } = await authClient.signIn.email({ email, password, turnstile: personCheck });
+      // An answer is good once: the next try needs a new one.
+      if (checking) setRound((value) => value + 1);
+      if (error) {
+        // Several wrong passwords from here: Laravel asks to show it's a person before it checks another.
+        if (error.code === "CAPTCHA_REQUIRED") setChecking(true);
+        return setError(authErrorMessage(error));
+      }
       // With two-factor on, the client plugin has already sent us to /two-factor.
       if (data && "twoFactorRedirect" in data && data.twoFactorRedirect) return;
       go(next);
@@ -234,6 +245,7 @@ export function SignInFlow({ providers, socialPlacement, socialStyle, methods, n
             aria-invalid={Boolean(error) || undefined}
           />
         </div>
+        {checking && <TurnstileCheck action="sign-in" onToken={setPersonCheck} round={round} />}
         <FormMessage>{error}</FormMessage>
         <PrimaryButton type="submit" pending={pending === "password"}>
           Sign in

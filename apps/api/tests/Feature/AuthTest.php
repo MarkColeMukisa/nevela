@@ -523,8 +523,12 @@ class AuthTest extends TestCase
         for ($try = 1; $try <= 10; $try++) {
             $this->postJson('/api/auth/token', ['email' => 'ada@example.com', 'password' => "guess {$try}"])->assertStatus(401);
         }
-        // The eleventh in a minute is turned away before the password is even looked at.
+        // The route allows ten a minute, so the eleventh straight away is slowed down...
         $this->postJson('/api/auth/token', ['email' => 'ada@example.com', 'password' => self::PASSWORD])->assertStatus(429);
+        // ...and once the minute is up, ten wrong from here have locked this address out of this
+        // account: turned away before the password is looked at, right or not (Security\SignInGuard).
+        $this->travel(61)->seconds();
+        $this->postJson('/api/auth/token', ['email' => 'ada@example.com', 'password' => self::PASSWORD])->assertStatus(429)->assertJsonPath('code', 'SIGN_IN_LOCKED');
     }
 
     public function test_the_dashboard_is_told_whether_its_proxy_secret_is_this_apps(): void

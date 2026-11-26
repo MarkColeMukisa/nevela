@@ -286,7 +286,8 @@ A new password is also checked against [Have I Been Pwned](https://haveibeenpwne
 
 ## What protects sign-in
 
-- **Attempts are limited** to ten a minute per account, so a password cannot be guessed at speed.
+- **Attempts are limited** to ten a minute per account from one address, so a password cannot be guessed at speed.
+- **Wrong passwords lock that address out of that account.** Ten wrong from one address and that address waits 15 minutes for that account, right password or not. The owner elsewhere, and everyone else at the same address, sign in as ever. On the web, after three, it asks to [show it's a person](/guides/security/#wrong-passwords) first. Many accounts tried from one address get the address blocked.
 - **A code allows five wrong guesses**, then it is thrown away. Six codes an hour can be sent to one address.
 - **Links and codes work once** and expire: sign-in links and codes in 5 minutes, reset and verification in an hour.
 - **Nothing says whether an address has an account.** Asking for a reset link, a sign-in link or a code gets the same answer either way, and a wrong password and an unknown address get the same answer in the same time.

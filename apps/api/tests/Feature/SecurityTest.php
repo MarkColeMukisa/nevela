@@ -198,6 +198,119 @@ class SecurityTest extends TestCase
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.78'])->getJson('/api/_nevela/ping')->assertOk();
     }
 
+    /** A password sign-in, from an address, with anything more the body carries. */
+    private function signInFrom(string $address, string $email, string $password, array $headers = [], array $more = []): \Illuminate\Testing\TestResponse
+    {
+        $this->app['auth']->forgetGuards();
+
+        return $this->withServerVariables(['REMOTE_ADDR' => $address])->postJson('/api/auth/token', ['email' => $email, 'password' => $password] + $more, $headers);
+    }
+
+    public function test_ten_wrong_passwords_lock_that_address_out_of_that_account_and_nobody_else(): void
+    {
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+        User::query()->create(['email' => 'ada@example.com', 'name' => 'Ada', 'password' => Hash::make('a long passphrase')]);
+        User::query()->create(['email' => 'bo@example.com', 'name' => 'Bo', 'password' => Hash::make('a long passphrase')]);
+        foreach (range(1, 10) as $try) {
+            $this->signInFrom('203.0.113.30', 'ada@example.com', "guess {$try}")->assertStatus(401);
+        }
+        // From here, even the right password waits.
+        $locked = $this->signInFrom('203.0.113.30', 'ada@example.com', 'a long passphrase')->assertStatus(429)->assertJsonPath('code', 'SIGN_IN_LOCKED');
+        $this->assertGreaterThan(800, (int) $locked->headers->get('Retry-After'));
+        // The owner elsewhere, and someone else at the same address, sign in as ever.
+        $this->signInFrom('198.51.100.30', 'ada@example.com', 'a long passphrase')->assertCreated();
+        $this->signInFrom('203.0.113.30', 'bo@example.com', 'a long passphrase')->assertCreated();
+        // An address with no account is answered the same: nothing says which have one.
+        foreach (range(1, 10) as $try) {
+            $this->signInFrom('203.0.113.31', 'nobody@example.com', "guess {$try}")->assertStatus(401);
+        }
+        $this->signInFrom('203.0.113.31', 'nobody@example.com', 'anything')->assertStatus(429)->assertJsonPath('code', 'SIGN_IN_LOCKED');
+
+        $this->travel(16)->minutes();
+        $this->signInFrom('203.0.113.30', 'ada@example.com', 'a long passphrase')->assertCreated();
+    }
+
+    public function test_the_web_sign_in_asks_for_a_person_check_after_three_and_the_phone_goes_on_to_the_lockout(): void
+    {
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+        config(['nevela.auth.proxy_secret' => 'shared', 'nevela.public.turnstile.secret' => 'turnstile-secret']);
+        \Illuminate\Support\Facades\Http::fake(['challenges.cloudflare.com/*' => \Illuminate\Support\Facades\Http::response(['success' => true, 'hostname' => 'localhost', 'action' => 'sign-in'])]);
+        User::query()->create(['email' => 'ada@example.com', 'name' => 'Ada', 'password' => Hash::make('a long passphrase')]);
+        $web = ['X-Nevela-Proxy-Secret' => 'shared', 'X-Nevela-Client' => '203.0.113.40'];
+
+        foreach (range(1, 3) as $try) {
+            $this->signInFrom('198.51.100.1', 'ada@example.com', "guess {$try}", $web)->assertStatus(401);
+        }
+        $this->signInFrom('198.51.100.1', 'ada@example.com', 'a long passphrase', $web, ['canCheck' => true])->assertStatus(428)->assertJsonPath('code', 'CAPTCHA_REQUIRED');
+        // A build that can't show the check (no site key) isn't asked: its people aren't stuck.
+        $this->signInFrom('198.51.100.1', 'ada@example.com', 'guess 4', $web)->assertStatus(401);
+        // Solved, it goes on, and the right password signs in.
+        $this->signInFrom('198.51.100.1', 'ada@example.com', 'a long passphrase', $web, ['canCheck' => true, 'turnstile' => 'a-solved-token'])->assertCreated();
+
+        // Calling the API itself (the phone): no check it couldn't show, the lockout instead.
+        foreach (range(1, 9) as $try) {
+            $this->signInFrom('203.0.113.41', 'ada@example.com', "guess {$try}")->assertStatus(401);
+        }
+        $this->signInFrom('203.0.113.41', 'ada@example.com', 'a long passphrase')->assertCreated();
+    }
+
+    public function test_one_account_tried_from_many_addresses_asks_for_a_check_and_is_never_locked(): void
+    {
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+        config(['nevela.auth.proxy_secret' => 'shared', 'nevela.public.turnstile.secret' => 'turnstile-secret']);
+        User::query()->create(['email' => 'ada@example.com', 'name' => 'Ada', 'password' => Hash::make('a long passphrase')]);
+        foreach (range(1, 20) as $n) {
+            $this->signInFrom("203.0.113.{$n}", 'ada@example.com', 'wrong');
+        }
+        // A new place on the web is asked to show it is a person.
+        $this->signInFrom('198.51.100.1', 'ada@example.com', 'a long passphrase', ['X-Nevela-Proxy-Secret' => 'shared', 'X-Nevela-Client' => '192.0.2.200'], ['canCheck' => true])->assertStatus(428);
+        // And the owner is never locked out by what others did.
+        $this->signInFrom('192.0.2.201', 'ada@example.com', 'a long passphrase')->assertCreated();
+    }
+
+    public function test_trying_a_list_of_accounts_from_one_address_gets_it_blocked(): void
+    {
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+        config(['nevela.security.block_after' => 2]);
+        foreach (range(1, 12) as $n) {
+            $this->signInFrom('203.0.113.60', "person{$n}@example.com", 'Winter2026!');
+        }
+        $this->assertSame('sign-in', collect(Addresses::current())->firstWhere('address', '203.0.113.60')['reason'] ?? null);
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.60'])->getJson('/api/_nevela/ping')->assertForbidden();
+    }
+
+    public function test_one_persons_typos_on_a_shared_address_are_never_a_strike(): void
+    {
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+        config(['nevela.security.block_after' => 1, 'nevela.security.sign_in.lock_after' => 0]);
+        // Ten people, one typo each: up to the limit, no strike.
+        foreach (range(1, 10) as $n) {
+            $this->signInFrom('203.0.113.70', "person{$n}@example.com", 'typo');
+        }
+        // The same accounts again, however often, are no new list.
+        foreach (range(1, 5) as $n) {
+            $this->signInFrom('203.0.113.70', 'person1@example.com', "typo {$n}");
+        }
+        $this->assertNull(collect(Addresses::current())->firstWhere('address', '203.0.113.70'));
+        // A new one past the limit is.
+        $this->signInFrom('203.0.113.70', 'person11@example.com', 'typo');
+        $this->assertNotNull(collect(Addresses::current())->firstWhere('address', '203.0.113.70'));
+    }
+
+    public function test_resetting_the_password_lifts_the_lockout(): void
+    {
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+        $user = User::query()->create(['email' => 'ada@example.com', 'name' => 'Ada', 'password' => Hash::make('a long passphrase')]);
+        foreach (range(1, 10) as $try) {
+            $this->signInFrom('203.0.113.80', 'ada@example.com', "guess {$try}");
+        }
+        $this->signInFrom('203.0.113.80', 'ada@example.com', 'a long passphrase')->assertStatus(429);
+
+        \Nevela\Laravel\Auth\Challenges::put('reset-password', 'a-reset-token', ['user' => $user->getKey()], 3600);
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.80'])->postJson('/api/auth/password/reset', ['token' => 'a-reset-token', 'newPassword' => 'a brand new passphrase'])->assertOk();
+        $this->signInFrom('203.0.113.80', 'ada@example.com', 'a brand new passphrase')->assertCreated();
+    }
+
     public function test_scanners_are_turned_away_and_counted(): void
     {
         foreach (['/.env', '/laravel.env', '/.env.backup', '/api/.env', '/.git/config', '/wp-admin/', '/wp-login.php', '/xmlrpc.php', '/phpmyadmin/index.php', '/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php', '/backup.sql'] as $probe) {

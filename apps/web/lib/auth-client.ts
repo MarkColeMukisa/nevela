@@ -10,6 +10,9 @@ import { ACCOUNT, HOME } from "@/lib/app";
  * Every method resolves to `{ data, error }` and never throws.
  */
 
+/** Whether this build can show the person check (Cloudflare Turnstile) at sign-in. */
+const CAN_CHECK = (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "") !== "";
+
 export interface AuthError {
   message: string;
   code?: string;
@@ -176,7 +179,13 @@ export interface SessionUser {
 export const authClient = {
   signIn: {
     /** With a second step set up, the browser is sent to /two-factor instead. */
-    email: ({ email, password }: { email: string; password: string }) => orSecondStep(post<{ twoFactorRedirect?: boolean }>("token", { email, password })),
+    /**
+     * `turnstile`: the person check's answer, once Laravel has asked for one (`CAPTCHA_REQUIRED`).
+     * `canCheck` tells Laravel this build can show the check: one built without
+     * NEXT_PUBLIC_TURNSTILE_SITE_KEY isn't asked, and goes on to the lockout like the phone.
+     */
+    email: ({ email, password, turnstile }: { email: string; password: string; turnstile?: string | null }) =>
+      orSecondStep(post<{ twoFactorRedirect?: boolean }>("token", { email, password, canCheck: CAN_CHECK, ...(turnstile ? { turnstile } : {}) })),
     magicLink: ({ email, callbackURL }: { email: string; callbackURL?: string; errorCallbackURL?: string }) => post("magic-link", { email, next: callbackURL }),
     emailOtp: ({ email, otp }: { email: string; otp: string }) => orSecondStep(post<{ twoFactorRedirect?: boolean }>("email-code/verify", { email, code: otp })),
     passkey: signInWithPasskey,

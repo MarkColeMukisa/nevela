@@ -15,6 +15,12 @@ The first line under a version, in italics, is the release in a few words. The d
   - **The block list**, under Blocked addresses in the admin and on the phone: see what is blocked and why, block an address for an hour, a day, a week or until cleared, and clear one. A new permission, Blocked addresses (view, create, delete), held by administrators. Blocking and clearing ask for confirmation where the app asks for it. Nobody can block this server, the exempt list, or their own address.
   - **The way back in**: `php nevela security blocked`, `security unblock <address>` and `security block <address>`, on the server.
   - Blocks that have ended are removed in the nightly scheduler run. A new table: run `php nevela migrate`.
+- Wrong passwords counted by address and account together (step 11, part 3). [Wrong passwords](apps/docs/src/content/docs/guides/security.md#wrong-passwords) in the docs.
+  - **The lockout**: ten wrong passwords from one address lock that address out of that account for 15 minutes, right password or not (`429` with `code: "SIGN_IN_LOCKED"`, `retryAfter` and `Retry-After`). The owner elsewhere, and everyone else at the same address, sign in as ever. The account itself is never locked, so nobody can lock someone out just by knowing their email (`NEVELA_SIGN_IN_LOCK_AFTER`, `NEVELA_SIGN_IN_LOCK_MINUTES`).
+  - **The person check**: after three wrong from one address, or 20 for one account in an hour from anywhere, the web sign-in shows Cloudflare Turnstile before it checks another password (`428` with `code: "CAPTCHA_REQUIRED"`, `NEVELA_SIGN_IN_CAPTCHA_AFTER`). Only where Turnstile is set up, and only on a web app built with `NEXT_PUBLIC_TURNSTILE_SITE_KEY`: set it in the admin's environment too. The phone, and anything else calling the API itself, goes on to the lockout.
+  - **Trying a list**: wrong passwords for more than 10 different accounts from one address within 10 minutes. Each further account is a strike, which soon blocks the address; the same account again isn't.
+  - Resetting the password lifts the lockout for that address. An emailed code, a sign-in link and a passkey are never locked.
+  - An email with no account is counted and answered the same. The sign-in route's own limit of ten a minute is now per address and account, not per account alone.
 
 ## [0.43.0] - 2026-11-26
 

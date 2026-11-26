@@ -42,6 +42,11 @@ The file is yours, and an upgrade never changes it. A setting it doesn't have ta
 | `security.block_after` | `20`, or `NEVELA_BLOCK_AFTER` | [Strikes](/guides/security/#repeat-offenders-blocked) within `block_window` that block an address. `0`: never blocked by itself. |
 | `security.block_window` | `10`, or `NEVELA_BLOCK_WINDOW` | Minutes the strikes are counted over. |
 | `security.block_minutes` | `60`, or `NEVELA_BLOCK_MINUTES` | Minutes an address is blocked for. |
+| `security.sign_in.captcha_after` | `3`, or `NEVELA_SIGN_IN_CAPTCHA_AFTER` | Wrong passwords from one address before the web sign-in asks to [show it's a person](/guides/security/#wrong-passwords). `0`: never asks. |
+| `security.sign_in.lock_after` | `10`, or `NEVELA_SIGN_IN_LOCK_AFTER` | Wrong passwords from one address that lock it out of that account. `0`: never locks. |
+| `security.sign_in.lock_minutes` | `15`, or `NEVELA_SIGN_IN_LOCK_MINUTES` | Minutes the lockout lasts. |
+| `security.sign_in.account_captcha_after` | `20` | Wrong passwords for one account in an hour, from anywhere, before every new place is asked to show it's a person. Never locks. |
+| `security.sign_in.stuffing_after` | `10` | Different accounts one address may get wrong in 10 minutes before each further one is a strike. |
 | `security.exempt` | `NEVELA_EXEMPT`, comma separated | Addresses and ranges never blocked, such as an office. |
 | `auth.confirm.access` | `false`, or `NEVELA_CONFIRM_ACCESS` | Whether changing who can sign in asks the person to [confirm it's them](/guides/authentication/#confirming-its-you-again) first. New apps set it to `true`. |
 | `auth.confirm.window` | `5`, or `NEVELA_CONFIRM_WINDOW` | Minutes one confirmation lets a sign-in go on changing who can sign in. |

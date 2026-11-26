@@ -38,7 +38,7 @@ Bots try every site for files nobody should serve: `/.env` (and `laravel.env`, `
 
 An address that keeps doing the wrong thing is blocked for a while: every request from it answers `403` until the block ends, before the app does any work.
 
-- **What counts.** A scanner's probe, and a request beyond the [per-address limit](#a-limit-on-the-signed-in-api), are strikes. The per-person limit isn't: one person's trouble shouldn't block everyone behind an office's shared address. Failed sign-ins have [their own lockout](/guides/authentication/#what-protects-sign-in).
+- **What counts.** A scanner's probe, a request beyond the [per-address limit](#a-limit-on-the-signed-in-api), and wrong passwords for [many different accounts](#wrong-passwords) are strikes. The per-person limit isn't: one person's trouble shouldn't block everyone behind an office's shared address.
 - **How many.** 20 strikes in 10 minutes block the address for an hour (`NEVELA_BLOCK_AFTER`, `NEVELA_BLOCK_WINDOW`, `NEVELA_BLOCK_MINUTES`). `NEVELA_BLOCK_AFTER=0` never blocks by itself.
 - **IPv6 by its /64.** One person usually holds a whole /64 and could change address with every request, so the /64 is counted and blocked as one.
 - **Whose address.** A request the web app makes for a visitor counts against that visitor. The web app's own server is never counted or blocked, or everyone using the site would be. A blocked visitor is sent to a page that says so.
@@ -72,6 +72,35 @@ php nevela security blocked                    # what is blocked
 php nevela security unblock 203.0.113.7        # clear it
 php nevela security block 203.0.113.7 --minutes=60 --note="Trying passwords"
 ```
+
+## Wrong passwords
+
+Wrong passwords are counted by the address and the account together, so a lockout falls on whoever is guessing, not on the account's owner.
+
+- **One address, one account.** After 3 wrong, the web sign-in asks to show it's a person (Cloudflare Turnstile) before it checks another. After 10, that address is locked out of that account for 15 minutes, even with the right password. The owner on another network signs in as ever, and so does everyone else at the same address.
+- **One account, any address.** After 20 wrong in an hour from anywhere, every web sign-in to it asks to show it's a person, the owner's included, until the hour is up. It is never locked: an account that could be locked from anywhere could be locked by anyone who knows its email.
+- **One address, many accounts.** Wrong passwords for more than 10 different accounts from one address within 10 minutes is someone trying a list. Each further account is a [strike](#repeat-offenders-blocked), which soon blocks the address. The same account again isn't, so one person's typos never add up to a block.
+- **The right password** starts that address again on that account, and so does resetting the password.
+
+The lockout covers the password only. An emailed code, a sign-in link, a passkey or Google and GitHub still sign the owner in, where the app offers them.
+
+A locked sign-in answers `429`, with how long to wait in words and in `Retry-After`:
+
+```json
+{ "error": "Too many wrong passwords for this account from here. Try again in 15 minutes, sign in another way, or reset the password.", "code": "SIGN_IN_LOCKED", "retryAfter": 900 }
+```
+
+The person check answers `428` with `CAPTCHA_REQUIRED`. The sign-in form then shows the widget and sends its answer as `turnstile`. It is asked only of a web sign-in that can show it: the form says so with `canCheck`. The phone can't show it, so the phone, and anything else calling the API itself, goes on to the lockout at 10. An email with no account is counted and answered the same, so none of this says which emails have one.
+
+The person check needs Turnstile [set up](/guides/protecting-forms/#setting-up-turnstile): `TURNSTILE_SECRET_KEY` in the Laravel app, and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` in each web app people sign in on. With a site and an admin, that means the admin's environment too, since that is where staff sign in. Add the admin's domain to the widget's domains in Cloudflare, and to `TURNSTILE_HOSTNAMES` if you set it. A web app built without the site key isn't asked, and goes on to the lockout like the phone. Without the secret there is no check anywhere, only the lockout.
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `NEVELA_SIGN_IN_CAPTCHA_AFTER` | `3` | Wrong passwords from one address before the web sign-in asks for the person check. |
+| `NEVELA_SIGN_IN_LOCK_AFTER` | `10` | Wrong passwords from one address before it is locked out of that account. |
+| `NEVELA_SIGN_IN_LOCK_MINUTES` | `15` | How long the lockout lasts. |
+
+`0` switches the check or the lockout off. The account-wide check (`security.sign_in.account_captcha_after`, 20) and the list rule (`security.sign_in.stuffing_after`, 10) are set in `config/nevela.php`. To lift a lockout early, the person resets their password.
 
 ## What the edge does instead
 
