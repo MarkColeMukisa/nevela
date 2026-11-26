@@ -14,7 +14,7 @@ import path from 'node:path';
 import readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { banner } from './banner.mjs';
-import { choiceProblem, decide, MAILERS, TIERS, withMail } from './choices.mjs';
+import { choiceProblem, decide, defaultPackageManager, MAILERS, runBin, TIERS, withMail } from './choices.mjs';
 import { PHP_LINE, phpIsRecentEnough, phpVersionOf } from './requirements.mjs';
 import { ATTEMPTS, worthRetrying } from './composer.mjs';
 import { isNewer, latestRelease, onPackagist } from './packagist.mjs';
@@ -118,8 +118,9 @@ const HELP = `  Create a new Nevela app: a Laravel API, with a public site and a
                                admin, with no public site. Default: web.
     --mail <resend|brevo|smtp> How it sends email on a server. Default: resend. On this computer
                                emails go to the log until you set MAIL_MAILER in apps/api/.env.
-    --pm <pnpm|npm|yarn|bun>   Package manager for the web apps and the phone app. Default: the
-                               one you ran this with.
+    --pm <bun|npm|pnpm|yarn>   Package manager for the web apps and the phone app. Default: the
+                               one you ran this with if that was pnpm, yarn or bun; otherwise
+                               bun, where it is installed, and npm where it isn't.
     --no-install               Don't install the web apps' or the phone app's dependencies.
     --no-user                  Don't create the starter admin account, or the sample users.
     --no-sample-users          Create the admin only, without the ten sample users.
@@ -280,17 +281,20 @@ function nevelaCommand(pm) {
 /** "my-shop" → "My Shop", for the dashboard's title. */
 const titleCase = (slug) => slug.split(/[-_]+/).filter(Boolean).map((word) => word[0].toUpperCase() + word.slice(1)).join(' ');
 
+/**
+ * Bun by default: it installs the web apps and the phone app several times faster, and starts
+ * their scripts sooner. Asked for with --pm, or run through `pnpm create`, `yarn create` or
+ * `bun create`, that one; npm where Bun isn't installed. The web apps still run on Node in
+ * production (`next start`): Bun installs and runs scripts, it isn't their server.
+ */
 function detectPackageManager(requested) {
-  const known = ['pnpm', 'npm', 'yarn', 'bun'];
+  const known = ['bun', 'npm', 'pnpm', 'yarn'];
   if (requested) {
     if (!known.includes(requested)) fail(`--pm must be one of: ${known.join(', ')}.`);
     if (!available(requested)) fail(`${requested} isn't installed, or isn't on your PATH.`);
     return requested;
   }
-  // "pnpm/10.1.0 npm/? node/v22…" when run through `pnpm create`.
-  const agent = (process.env.npm_config_user_agent ?? '').split('/')[0];
-  if (known.includes(agent)) return agent;
-  return available('pnpm') ? 'pnpm' : 'npm';
+  return defaultPackageManager(process.env.npm_config_user_agent, available);
 }
 
 /** Where the docs say what to install on this computer's system, and in what order. */
@@ -343,7 +347,7 @@ function writeRootFiles(root, { name, title, pm, admin, samples, blog, site, adm
       'dev:api': 'cd apps/api && php artisan serve',
       ...(site ? { 'dev:web': `cd apps/web && ${pm} run dev` } : {}),
       ...(adminApp ? { 'dev:admin': `cd apps/admin && ${pm} run dev${site ? ' -- --port 3001' : ''}` } : {}),
-      ...(mobile ? { 'dev:mobile': 'cd apps/mobile && npx expo start' } : {}),
+      ...(mobile ? { 'dev:mobile': `cd apps/mobile && ${runBin(pm, 'expo start')}` } : {}),
     },
   }, null, 2)}\n`);
 
@@ -406,7 +410,7 @@ ${mobile ? `## The phone app
 
 \`\`\`sh
 php nevela dev                        # the API, open to your network while a phone app is in the project
-cd apps/mobile && npx expo start      # in another terminal
+cd apps/mobile && ${runBin(pm, 'expo start').padEnd(16)}      # in another terminal
 \`\`\`
 
 Scan the QR code with the Expo Go app on a phone that is on the same Wi-Fi, or press \`a\` or \`i\` for an emulator. More: ${DOCS}/guides/mobile-app/
@@ -847,7 +851,12 @@ async function main() {
   // One after the other, never side by side: two installs at once is what runs a small machine out of memory.
   let queue = Promise.resolve();
   const installIn = (dir) => {
-    const done = queue.then(() => start(pm, ['install'], { cwd: dir }).done);
+    // Once more if it fails: a first install downloads everything, and one dropped download
+    // fails the lot. The second finds most of it in the package manager's cache.
+    const once = () => start(pm, ['install'], { cwd: dir }).done;
+    const done = queue
+      .then(once)
+      .then((first) => (first.ok ? first : once().then((second) => (second.ok ? second : { ...second, output: second.output || first.output }))));
     queue = done.then(() => undefined, () => undefined);
     return done;
   };
@@ -1051,7 +1060,7 @@ async function main() {
       say.done(result.ok ? [pm, counted(result.output)].filter(Boolean).join(' · ') : `${pm} install didn't finish`);
       return result;
     }, { failed: (result) => !result.ok })).ok;
-    if (!ok) notInstalled.push(dir);
+    if (!ok) notInstalled.push({ dir, output: (await done).output });
   }
 
   let mobileInstalled = false;
@@ -1082,11 +1091,18 @@ async function main() {
   if (!options.devTools) {
     console.log(`  ${dim('PHPUnit, Pint and the other development packages were left out. Add them: cd apps/api && composer install')}\n`);
   }
-  for (const dir of notInstalled) {
-    console.log(`  ${red('!')} The packages of apps/${path.basename(dir)} didn't install. Run it yourself to see why: cd ${name}/apps/${path.basename(dir)} && ${pm} install\n`);
+  // The end of what the package manager said, so the reason is on the screen rather than lost.
+  const said = (output) => {
+    const lines = String(output ?? '').split(/\r?\n/).filter((line) => line.trim()).slice(-6);
+    return lines.length ? `${lines.map((line) => `    ${dim(line)}`).join('\n')}\n` : '';
+  };
+  for (const { dir, output } of notInstalled) {
+    console.log(`  ${red('!')} The packages of apps/${path.basename(dir)} didn't install, after a second try. Try again: cd ${name}/apps/${path.basename(dir)} && ${pm} install`);
+    console.log(said(output));
   }
   if (mobilePackages && !mobileInstalled) {
-    console.log(`  ${red('!')} The mobile app's packages didn't install. Run it yourself to see why: cd ${name}/apps/mobile && ${pm} install\n`);
+    console.log(`  ${red('!')} The mobile app's packages didn't install, after a second try. Try again: cd ${name}/apps/mobile && ${pm} install`);
+    console.log(said((await mobilePackages).output));
   }
   console.log('  Next:\n');
   console.log(`    cd ${name}`);
@@ -1096,7 +1112,7 @@ async function main() {
   console.log(`    ${nevela} dev\n`);
   console.log(hasWeb
     ? `  Then open ${hasSite ? `the admin at ${indigo('http://localhost:3001/sign-in')}` : indigo('http://localhost:3000/sign-in')}${admin ? ' and sign in with:' : ''}`
-    : `  Then, in another terminal: ${bold(`cd apps/mobile${options.install ? '' : ` && ${pm} install`} && npx expo start`)}${admin ? ', and sign in on the phone with:' : ''}`);
+    : `  Then, in another terminal: ${bold(`cd apps/mobile${options.install ? '' : ` && ${pm} install`} && ${runBin(pm, 'expo start')}`)}${admin ? ', and sign in on the phone with:' : ''}`);
   if (admin) {
     console.log(`\n    Email      ${bold(ADMIN.email)}`);
     console.log(`    Password   ${bold(ADMIN.password)}\n`);
@@ -1116,7 +1132,7 @@ async function main() {
   }
   if (hasMobile && hasWeb) {
     console.log(`\n  The mobile app is in ${bold('apps/mobile')}. With ${nevela} dev running, in another terminal:`);
-    console.log(`\n    cd apps/mobile${options.install ? '' : ` && ${pm} install`} && npx expo start\n`);
+    console.log(`\n    cd apps/mobile${options.install ? '' : ` && ${pm} install`} && ${runBin(pm, 'expo start')}\n`);
     console.log(`  ${dim('Scan the QR code with Expo Go on a phone on the same Wi-Fi, and sign in with the same account.')}`);
   }
   console.log(`\n  Add ${blog ? 'a' : 'your first'} resource: ${dim(`${nevela} resource Product --fields="name:string, price:money"`)}`);

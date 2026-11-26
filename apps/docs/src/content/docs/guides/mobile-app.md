@@ -39,14 +39,14 @@ nevela dev
   API ............................................. http://127.0.0.1:8000
   Site ..................................... http://localhost:3000
   Admin ................................. http://localhost:3001/sign-in
-  Mobile app ........... in another terminal: cd apps/mobile && npx expo start
+  Mobile app ........... in another terminal: cd apps/mobile && bunx expo start
 ```
 
 In the second:
 
 ```sh
 cd apps/mobile
-npx expo start
+bunx expo start    # npx expo start with npm, pnpm exec expo start with pnpm
 ```
 
 Then open it one of three ways:

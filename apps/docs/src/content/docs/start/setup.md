@@ -10,8 +10,9 @@ A Nevela app is a Laravel app and a Next.js app, so your computer needs what tho
 | **PHP** | the Laravel app, the API | 8.5 or newer: Nevela runs on the latest PHP |
 | **Composer** | installing Laravel and Nevela's Laravel package | any recent |
 | **Node.js** | the dashboard and the `nevela` command | 20 or newer |
+| **[Bun](https://bun.sh)**, recommended | installing the web apps' and the phone app's packages, several times faster | any recent |
 
-Nothing else. The database is SQLite, a file inside the app, so there is no database server to install. Git is used if you have it, to start the app's history, and skipped if you don't.
+Nothing else. Without Bun, packages are installed with npm, which comes with Node.js. The database is SQLite, a file inside the app, so there is no database server to install. Git is used if you have it, to start the app's history, and skipped if you don't.
 
 ## Check what you have
 
@@ -69,6 +70,19 @@ Two things that surprise people on Windows:
 3. **Open a new terminal**, and check: `php -v`, `composer -V`, `node -v`.
 
 Nevela uses these PHP extensions: `pdo_sqlite` for the database, `gd` for optimising pictures, and `fileinfo` and `exif`. `php -m` lists the ones you have. Without `pdo_sqlite` a new app can't make its database: on Ubuntu and Debian, `sudo apt install php-sqlite3` adds it. Without `gd`, pictures are kept as they were uploaded.
+
+## Bun, for faster installs
+
+Optional, and the default where it is installed: `nevela new` installs the web apps and the phone app with Bun, and npm otherwise.
+
+```sh
+# macOS and Linux
+curl -fsSL https://bun.sh/install | bash
+# Windows, in PowerShell
+powershell -c "irm bun.sh/install.ps1 | iex"
+```
+
+Check with `bun --version`, in a new terminal.
 
 ## Then
 

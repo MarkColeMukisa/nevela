@@ -82,3 +82,23 @@ export function withMail(text, mail, { server }) {
     : `# On a server, mail is sent through ${how}. Here emails go to storage/logs/laravel.log; set MAIL_MAILER=${mailer} to send them.`;
   return `${out.replace(/\n*$/, '\n')}\n${note}\n${extra.map((line) => `${line}\n`).join('')}`;
 }
+
+/**
+ * The package manager a new app installs with, when --pm doesn't say: the one the installer was
+ * run through if that was pnpm, yarn or bun (`pnpm create nevela`); else Bun where it is
+ * installed, which installs several times faster; else npm. Through npx the agent says npm,
+ * which is only the way the installer was reached, so Bun still comes first then.
+ *
+ * @param {string | undefined} userAgent  npm_config_user_agent: "pnpm/10.1.0 npm/? node/v22…"
+ * @param {(command: string) => boolean} has  whether a command is installed
+ */
+export function defaultPackageManager(userAgent, has) {
+  const agent = (userAgent ?? '').split('/')[0];
+  if (['pnpm', 'yarn', 'bun'].includes(agent)) return agent;
+  return has('bun') ? 'bun' : 'npm';
+}
+
+/** A command a package brings ("expo start"), run the package manager's way: bunx, pnpm exec, yarn or npx. */
+export function runBin(pm, command) {
+  return { bun: `bunx ${command}`, pnpm: `pnpm exec ${command}`, yarn: `yarn ${command}` }[pm] ?? `npx ${command}`;
+}

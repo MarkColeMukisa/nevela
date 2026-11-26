@@ -170,6 +170,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # A new app's default: Bun installs its packages where it is installed. The tutorials
+      # below make theirs with --pm pnpm, so the other way stays tested too.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.x"
       # Run it the way people get it: from the packed npm tarball, not from the repository.
       - name: Pack create-nevela
         working-directory: packages/create-nevela
@@ -193,7 +198,7 @@ jobs:
         # --no-blog: an app with nothing in it first, so the steps below can see that an empty one builds.
         # The blog is added further down with the command a new app runs for itself.
         # --mobile: the Expo app as well, installed and type-checked below.
-        run: node create-nevela/package/index.mjs demo-app --yes --pm pnpm --bundled-package --no-blog --mobile
+        run: node create-nevela/package/index.mjs demo-app --yes --bundled-package --no-blog --mobile
       - name: The new app has what it should, and none of the examples
         working-directory: ${{ runner.temp }}/demo-app
         run: |
@@ -224,6 +229,10 @@ jobs:
           grep -q '^NEXT_PUBLIC_SITE_URL=http://localhost:3000$' apps/admin/.env.local
           test "$(grep '^NEVELA_PROXY_SECRET=' apps/web/.env.local)" = "$(grep '^NEVELA_PROXY_SECRET=' apps/admin/.env.local)"
           test -d apps/admin/node_modules
+          # Installed with Bun, the default where it is installed, and run with it.
+          test -f apps/web/bun.lock && test -f apps/admin/bun.lock && test -f apps/mobile/bun.lock
+          test ! -e apps/web/package-lock.json && test ! -e apps/web/pnpm-workspace.yaml
+          grep -q '"dev:mobile": "cd apps/mobile && bunx expo start"' package.json
           grep -q '"dev:admin"' package.json
           grep -q "export const resources = \[\] as const;" apps/admin/resources/index.ts
           # Asked for no blog: no Post resource, no pages, and nothing for the site's header to link to.
@@ -241,8 +250,8 @@ jobs:
       - name: Build the site and the admin before any resource exists
         working-directory: ${{ runner.temp }}/demo-app/apps
         run: |
-          (cd web && pnpm exec tsc --noEmit)
-          (cd admin && pnpm exec tsc --noEmit)
+          (cd web && bunx tsc --noEmit)
+          (cd admin && bunx tsc --noEmit)
       - name: The mobile app is named for the new app, type-checks and bundles
         working-directory: ${{ runner.temp }}/demo-app/apps/mobile
         env:
@@ -256,9 +265,9 @@ jobs:
           grep -q 'name: brand.name' src/lib/site.ts && grep -q 'name: "Demo App"' ../../packages/shared/brand.ts
           grep -q '"dev:mobile"' ../../package.json
           grep -q '^NEVELA_APP_REDIRECTS=demo-app://$' ../api/.env
-          pnpm exec tsc --noEmit
+          bunx tsc --noEmit
           # Metro resolving every import is what a type-check can't promise.
-          pnpm exec expo export --platform web --output-dir "$RUNNER_TEMP/mobile-web"
+          bunx expo export --platform web --output-dir "$RUNNER_TEMP/mobile-web"
           test -f "$RUNNER_TEMP/mobile-web/index.html"
       # From the top of the project, the way the docs say: no cd, and resource migrates.
       - name: Add a resource, a user and data with php nevela
@@ -429,8 +438,8 @@ jobs:
           test -f web/resources/product.resource.ts
           test -d admin/app/dashboard/products
           test ! -e web/app/dashboard
-          (cd web && pnpm exec tsc --noEmit && pnpm run build)
-          (cd admin && pnpm exec tsc --noEmit && pnpm run build)
+          (cd web && bunx tsc --noEmit && bun run build)
+          (cd admin && bunx tsc --noEmit && bun run build)
       - name: An update keeps the app's changes, backs up what it replaces, and can be undone
         working-directory: ${{ runner.temp }}/demo-app/apps/api
         env:
