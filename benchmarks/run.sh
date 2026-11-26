@@ -23,8 +23,8 @@ VUS="${VUS:-50}"
 DURATION="${DURATION:-30s}"
 WARMUP="${WARMUP:-8s}"
 SCENARIOS="${SCENARIOS:-show list write mixed}"
-APPS="${APPS:-laravel laravel-auth nevela laravel-auth-octane nevela-octane grit bun}"
-ALL_APPS="laravel laravel-auth nevela laravel-auth-octane nevela-octane grit bun"
+APPS="${APPS:-laravel laravel-auth nevela laravel-auth-octane nevela-octane grit bun rust nextjs}"
+ALL_APPS="laravel laravel-auth nevela laravel-auth-octane nevela-octane grit bun rust nextjs"
 OUT="${OUT:-results/latest}"
 K6_IMAGE=grafana/k6:1.8.2
 NETWORK=nevela-bench_default
@@ -35,11 +35,11 @@ export APP_CPUS="${APP_CPUS:-1}" PG_CPUS="${PG_CPUS:-2}" FPM_WORKERS="${FPM_WORK
 seconds() { echo "${1%s}"; }
 case "$DURATION$WARMUP" in *[!0-9s]* | *m*) echo "DURATION and WARMUP are in seconds: 30s" >&2; exit 2 ;; esac
 
-database() { case "$1" in nevela*) echo bench_nevela ;; grit) echo bench_grit ;; bun) echo bench_bun ;; *) echo bench_laravel ;; esac; }
-# Grit and Bun name their routes Grit's way: /api/v1/products?page_size=20.
-prefix() { case "$1" in grit | bun) echo /api/v1 ;; *) echo /api ;; esac; }
-page_param() { case "$1" in grit | bun) echo page_size ;; *) echo perPage ;; esac; }
-health() { case "$1" in grit | bun) echo /api/health ;; *) echo /up ;; esac; }
+database() { case "$1" in nevela*) echo bench_nevela ;; grit) echo bench_grit ;; bun) echo bench_bun ;; rust) echo bench_rust ;; nextjs) echo bench_nextjs ;; *) echo bench_laravel ;; esac; }
+# Grit, Bun, Rust and Next.js name their routes Grit's way: /api/v1/products?page_size=20.
+prefix() { case "$1" in grit | bun | rust | nextjs) echo /api/v1 ;; *) echo /api ;; esac; }
+page_param() { case "$1" in grit | bun | rust | nextjs) echo page_size ;; *) echo perPage ;; esac; }
+health() { case "$1" in grit | bun | rust | nextjs) echo /api/health ;; *) echo /up ;; esac; }
 measured() { case " $APPS " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 psql_in() { docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -q -U bench "$@"; }
 # As the web server's user, so nothing it writes is out of reach of the app afterwards.
@@ -101,8 +101,10 @@ if measured grit; then
   docker compose build grit
 fi
 if measured bun; then docker compose build bun; fi
+if measured rust; then docker compose build rust; fi
+if measured nextjs; then docker compose build nextjs; fi
 docker compose up -d --wait postgres
-for db in bench_laravel bench_nevela bench_grit bench_bun; do
+for db in bench_laravel bench_nevela bench_grit bench_bun bench_rust bench_nextjs; do
   psql_in -d bench -c "DROP DATABASE IF EXISTS $db WITH (FORCE);" -c "CREATE DATABASE $db;" >/dev/null
 done
 
@@ -117,12 +119,12 @@ artisan nevela nevela:user --name=Bench --email=bench@example.com \
   --password="bench-$(od -An -N12 -tx1 /dev/urandom | tr -d ' \n')" --no-interaction >/dev/null
 artisan nevela bench:token | tr -d '\r\n' > "$OUT/token-nevela"
 stop_apps
-# Grit and Bun: Grit's own migrations make both their tables, so the two are one table, and
+# Grit, Bun, Rust and Next.js: Grit's own migrations make all their tables, so they are one table, and
 # Grit's seeder makes its administrator (admin@example.com), who signs in for a token.
 SECRET=bench-only-not-a-secret-0123456789abcdef0123456789
-if measured grit || measured bun; then
+if measured grit || measured bun || measured rust || measured nextjs; then
   grit_password="bench-$(od -An -N12 -tx1 /dev/urandom | tr -d ' \n')"
-  for db in bench_grit bench_bun; do
+  for db in bench_grit bench_bun bench_rust bench_nextjs; do
     docker run --rm --network "$NETWORK" -v "$PWD/apps/grit-seed:/grit-seed:ro" \
       -e APP_ENV=production -e DB_PROVIDER=postgres -e DATABASE_URL="postgres://bench@postgres:5432/$db?sslmode=disable" \
       -e JWT_SECRET="$SECRET" -e SEED_ADMIN_PASSWORD="$grit_password" \
@@ -142,6 +144,9 @@ if measured grit; then
   stop_apps
 fi
 if measured bun; then node apps/tokens.mjs bun "$SECRET" > "$OUT/token-bun"; fi
+# Rust and Next.js check the same kind of token as Bun, under the same secret.
+if measured rust; then node apps/tokens.mjs bun "$SECRET" > "$OUT/token-rust"; fi
+if measured nextjs; then node apps/tokens.mjs bun "$SECRET" > "$OUT/token-nextjs"; fi
 # The Octane apps use the same databases, and so the same accounts.
 cp "$OUT/token-laravel-auth" "$OUT/token-laravel-auth-octane"
 cp "$OUT/token-nevela" "$OUT/token-nevela-octane"
@@ -155,13 +160,15 @@ if ! diff -u "$OUT/schema-bench_laravel.sql" "$OUT/schema-bench_nevela.sql"; the
   echo "!! the products tables differ: fix the plain app's migration first" >&2
   exit 1
 fi
-# Grit's table is Grit's own. Bun's comes from the same migrations, so it has to be the same.
-if measured grit || measured bun; then
-  for db in bench_grit bench_bun; do
+# Grit's table is Grit's own. Bun's, Rust's and Next.js's come from the same migrations, so they have to be the same.
+if measured grit || measured bun || measured rust || measured nextjs; then
+  for db in bench_grit bench_bun bench_rust bench_nextjs; do
     docker compose exec -T postgres pg_dump -U bench --schema-only --no-owner --table=products "$db" \
       | grep -vE '^(--|SET |SELECT pg_catalog|[\](un)?restrict )' | grep -v '^$' > "$OUT/schema-$db.sql"
   done
   diff -u "$OUT/schema-bench_grit.sql" "$OUT/schema-bench_bun.sql" || { echo "!! Grit's and Bun's products tables differ" >&2; exit 1; }
+  diff -u "$OUT/schema-bench_grit.sql" "$OUT/schema-bench_rust.sql" || { echo "!! Grit's and Rust's products tables differ" >&2; exit 1; }
+  diff -u "$OUT/schema-bench_grit.sql" "$OUT/schema-bench_nextjs.sql" || { echo "!! Grit's and Next.js's products tables differ" >&2; exit 1; }
 fi
 
 {
@@ -176,6 +183,8 @@ fi
   echo "laravel: $(artisan nevela --version --no-ansi | tr -d '\r')"
   if measured grit; then echo "grit: $(grit version 2>/dev/null | awk '{print $NF}'), $(sed -n 's/^go /go /p' apps/grit-bench/apps/api/go.mod | head -1)"; fi
   if measured bun; then echo "bun: $(sed -n 's|^FROM oven/bun:\([^ ]*\).*|\1|p' apps/bun/Dockerfile)"; fi
+  if measured rust; then echo "rust: $(sed -n 's|^FROM rust:\([0-9.]*\).*|\1|p' apps/rust/Dockerfile), axum $(grep -A1 '^name = "axum"$' apps/rust/Cargo.lock | sed -n 's/^version = "\(.*\)"/\1/p')"; fi
+  if measured nextjs; then echo "nextjs: $(node -p "const l=require('./apps/nextjs/package-lock.json').packages; 'next ' + l['node_modules/next'].version + ', prisma ' + l['node_modules/@prisma/client'].version")"; fi
   stop_apps
 } > "$OUT/environment.txt"
 cat "$OUT/environment.txt"

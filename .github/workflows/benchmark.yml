@@ -27,10 +27,10 @@ concurrency:
 
 jobs:
   benchmark:
-    name: Nevela, Laravel, Grit and Bun
+    name: Nevela, Laravel, Grit, Rust, Next.js and Bun
     runs-on: ubuntu-latest
-    # Seven apps, four scenarios, three runs each, and the builds: about two and a half hours.
-    timeout-minutes: 240
+    # Nine apps, four scenarios, three runs each, and the builds: about three and a half hours.
+    timeout-minutes: 330
     defaults:
       run:
         working-directory: benchmarks

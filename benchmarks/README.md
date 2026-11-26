@@ -1,8 +1,8 @@
 # Nevela benchmark: the speed rally
 
-How fast is an API that Nevela generates, next to the same API written by hand in Laravel, and next to Grit and Bun?
+How fast is an API that Nevela generates, next to the same API written by hand in Laravel, and next to Grit, Rust, Next.js and Bun?
 
-Seven apps, the same products API, the same database server, the same load script. The results and how to read them are in the docs: [Benchmarks](https://nevela-docs.vercel.app/benchmarks/).
+Nine apps, the same products API, the same database server, the same load script. The results and how to read them are in the docs: [Benchmarks](https://nevela-docs.vercel.app/benchmarks/).
 
 The design follows [Grit's benchmark harness](https://github.com/MUKE-coder/grit/tree/main/benchmarks) (MIT): the same scenarios, the same mix, the same production setup for Laravel, and the same rules for keeping it fair.
 
@@ -17,8 +17,10 @@ The design follows [Grit's benchmark harness](https://github.com/MUKE-coder/grit
 | **Nevela, Octane** | Nevela, the same way. |
 | **Grit** | A plain `grit new --api` with `grit generate resource Product`, as [Grit's own harness](https://github.com/MUKE-coder/grit/tree/main/benchmarks) builds it (`apps/grit.sh`, Grit pinned to 3.581.0). Go, Gin and GORM. Its generated routes ask for staff, so it is signed in as its administrator with a JWT. Run as Grit's harness runs it: Sentinel, Pulse and Studio off, no Redis. |
 | **Bun** | The Bun app from Grit's harness (`apps/bun`, MIT): `Bun.serve` and Drizzle, one process per CPU, on Grit's own table. Every products route checks a JWT, which reads no database: the lightest sign-in here, so it is a ceiling rather than like for like. |
+| **Rust** | Axum, Tokio and sqlx (`apps/rust`), written for this rally to answer exactly as the Bun app does, with the same JWT check, on the same table. One release binary, one Tokio worker thread per CPU. sqlx is not an ORM: the queries are written out, as most Axum apps write them. |
+| **Next.js** | The Next.js app from Grit's harness (`apps/nextjs`, MIT): App Router route handlers on Prisma, `next build` and the standalone server, one process per CPU, on Grit's table. The same JWT check as Bun added to every products route. |
 
-Every app is signed in, as each framework generates its routes, apart from the plain Laravel baseline. Grit and Bun name their routes Grit's way (`/api/v1/products?page_size=20`), and k6 is told so (`PREFIX`, `PAGE_PARAM`); the requests are otherwise the same.
+Every app is signed in, as each framework generates its routes, apart from the plain Laravel baseline. Grit, Bun, Rust and Next.js name their routes Grit's way (`/api/v1/products?page_size=20`), and k6 is told so (`PREFIX`, `PAGE_PARAM`); the requests are otherwise the same.
 
 **Limits off, nothing else.** k6 is one person at one address asking hundreds of times a second, which every app here would rightly refuse. Nevela's limits on the signed-in API are switched off through its settings (`NEVELA_API_PER_PERSON=0`, `NEVELA_API_PER_ADDRESS=0`); its other protections, the block list check, the scanner rules and the sealed activity log on every write, stay on as shipped. Grit's limits have no setting, so `apps/grit.sh` sets them to 0 in its own `internal/ratelimit/rules.go`, the table Grit says is where limits are changed. That is the only change made to Grit's generated code.
 
@@ -59,7 +61,7 @@ cd benchmarks
 go install github.com/MUKE-coder/grit/v3/cmd/grit@v3.581.0
 ./apps/grit.sh        # Grit's side, from its CLI (run.sh does it too when it is missing)
 ./run.sh check        # every app answers every scenario; nothing kept
-./run.sh              # 3 runs × 4 scenarios × 7 apps, about two hours
+./run.sh              # 3 runs × 4 scenarios × 9 apps, about three hours
 node report.mjs       # the tables, from results/latest
 ```
 

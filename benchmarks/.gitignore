@@ -8,3 +8,5 @@ apps/grit-bench/
 apps/grit-seed
 seed/grit-products.sql
 seed/grit-ids.json
+# Made by cargo, if the Rust app is built outside Docker.
+apps/rust/target/

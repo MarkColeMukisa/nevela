@@ -1,7 +1,7 @@
 // The sign-in tokens run.sh hands k6, for the contenders that aren't Laravel.
 //
 //   node apps/tokens.mjs grit < login-answer.json    Grit's access token, from its sign-in's answer
-//   node apps/tokens.mjs bun <secret>                a JWT (HS256) Bun checks, a day long
+//   node apps/tokens.mjs bun <secret>                a JWT (HS256) Bun, Rust and Next.js check, a day long
 import crypto from 'node:crypto';
 
 const [kind, secret] = process.argv.slice(2);

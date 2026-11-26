@@ -1,0 +1,25 @@
+[package]
+name = "rust-bench"
+version = "0.1.0"
+edition = "2021"
+publish = false
+# Versions are picked to build on the Rust the Dockerfile pins.
+rust-version = "1.91"
+resolver = "3"
+
+[dependencies]
+axum = "0.8"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "postgres", "chrono", "rust_decimal", "macros"] }
+rust_decimal = "1"
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4"] }
+jsonwebtoken = "9"
+
+# Rust at its best, as the Bun app is Bun at its best: one optimised binary.
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"

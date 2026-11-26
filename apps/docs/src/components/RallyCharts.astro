@@ -1,0 +1,218 @@
+---
+/**
+ * The speed rally's charts: Nevela against each rival, one chart a rival, in the order the
+ * rivals finished (the fastest first). Read from src/data/rally.json, which
+ * `node benchmarks/report.mjs <results> --docs ...` writes from a race run.
+ *
+ * Nevela runs as it does at its fastest, on Octane. Laravel's side is Laravel + Sanctum on
+ * Octane, the like-for-like app: signed in, on the same server.
+ */
+import rally from '../data/rally.json';
+
+type Cell = { rps: number; min: number; max: number; bound: string; failed: number };
+const results = rally.results as Record<string, Record<string, Cell>>;
+
+const NEVELA = 'nevela-octane';
+const RIVALS: Record<string, string> = {
+  grit: 'Grit',
+  rust: 'Rust',
+  nextjs: 'Next.js',
+  bun: 'Bun',
+  'laravel-auth-octane': 'Laravel',
+};
+const SCENARIOS: Record<string, string> = {
+  show: 'show',
+  list: 'list',
+  write: 'write',
+  mixed: 'mixed',
+};
+const scenarios = rally.scenarios.filter((s) => s in SCENARIOS);
+
+// One number a contender: the geometric mean of its scenarios, so no one scenario decides.
+const score = (app: string) => {
+  const cells = scenarios.map((s) => results[app]?.[s]?.rps).filter((v): v is number => !!v);
+  return cells.length === scenarios.length ? Math.exp(cells.reduce((sum, v) => sum + Math.log(v), 0) / cells.length) : 0;
+};
+const standings = [NEVELA, ...Object.keys(RIVALS)].filter((app) => score(app) > 0).sort((a, b) => score(b) - score(a));
+const place = (app: string) => standings.indexOf(app) + 1;
+const ordinal = (n: number) => `${n}${n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th'}`;
+const rivals = standings.filter((app) => app !== NEVELA);
+
+const n = (v: number) => v.toLocaleString('en-US');
+const times = (a: number, b: number) => {
+  const r = a / b;
+  return r >= 10 ? `${Math.round(r)}×` : `${r.toFixed(1)}×`;
+};
+const overlap = (a: Cell, b: Cell) => a.min <= b.max && b.min <= a.max;
+const why = (c: Cell) => (c.bound === 'the database' ? 'Postgres gave out first' : c.bound === 'the app' ? 'its CPU was full' : 'neither was full');
+
+const matchups = rivals.map((rival) => {
+  const name = RIVALS[rival];
+  const rows = scenarios.map((s) => ({ scenario: s, nevela: results[NEVELA][s], rival: results[rival][s] }));
+  const top = Math.max(...rows.flatMap((r) => [r.nevela.rps, r.rival.rps]));
+  const ahead = score(rival) > score(NEVELA);
+  const verdict = ahead
+    ? `${name} answered ${times(score(rival), score(NEVELA))} as many requests a second as Nevela`
+    : `Nevela answered ${times(score(NEVELA), score(rival))} as many requests a second as ${name}`;
+  return { rival, name, rows, top, verdict, place: ordinal(place(rival)) };
+});
+const nevelaPlace = ordinal(place(NEVELA));
+---
+
+<div class="rally">
+  <p class="rally-key" aria-hidden="true">
+    <span class="swatch nevela"></span> Nevela, Octane
+    <span class="swatch rival"></span> The rival
+    <span class="rally-unit">requests a second, more is better</span>
+  </p>
+
+  {matchups.map((m) => (
+    <section class="matchup" aria-labelledby={`vs-${m.rival}`}>
+      <header>
+        <span class="place">{m.place}</span>
+        <h3 id={`vs-${m.rival}`}>Nevela vs {m.name}</h3>
+        <p class="verdict">{m.verdict}, across the four scenarios.</p>
+      </header>
+      <div class="chart" role="img" aria-label={`Requests a second, Nevela against ${m.name}: ${m.rows.map((r) => `${r.scenario}, Nevela ${n(r.nevela.rps)}, ${m.name} ${n(r.rival.rps)}`).join('; ')}`}>
+        {m.rows.map((r) => (
+          <div class="group">
+            <span class="scenario">{SCENARIOS[r.scenario]}</span>
+            <div class="bars">
+              {[
+                { who: 'Nevela', cls: 'nevela', c: r.nevela },
+                { who: m.name, cls: 'rival', c: r.rival },
+              ].map((b) => (
+                <div class="track" tabindex="0">
+                  <span class={`bar ${b.cls}`} style={`width: ${Math.max(0.6, (b.c.rps / m.top) * 82)}%`}></span>
+                  <span class="value">{n(b.c.rps)} <span class="who">{b.who}</span></span>
+                  <span class="tip" role="tooltip">
+                    <strong>{b.who}</strong>, {r.scenario}: {n(b.c.rps)} a second. Runs {n(b.c.min)} to {n(b.c.max)}; {why(b.c)}.
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <details>
+        <summary>The numbers</summary>
+        <table>
+          <thead>
+            <tr><th>Scenario</th><th>Nevela, Octane</th><th>{m.name}</th><th>Nevela against {m.name}</th></tr>
+          </thead>
+          <tbody>
+            {m.rows.map((r) => (
+              <tr>
+                <td><code>{r.scenario}</code></td>
+                <td>{n(r.nevela.rps)}</td>
+                <td>{n(r.rival.rps)}{r.rival.bound === 'the database' ? ' *' : ''}</td>
+                <td>{overlap(r.nevela, r.rival) ? 'within the spread' : `${(r.nevela.rps / r.rival.rps).toFixed(2)}×`}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {m.rows.some((r) => r.rival.bound === 'the database') && (
+          <p class="note">* Postgres gave out before {m.name} did, so {m.name} could go further than this.</p>
+        )}
+      </details>
+    </section>
+  ))}
+
+  <p class="standing">Nevela finished <strong>{nevelaPlace}</strong> of {standings.length}.</p>
+</div>
+
+<style>
+  .rally {
+    --rally-nevela: #338ced;
+    --rally-rival: #e76624;
+    --rally-ink: var(--sl-color-white);
+    --rally-muted: var(--sl-color-gray-3);
+    --rally-rule: var(--sl-color-hairline);
+    --rally-tip-bg: var(--sl-color-gray-6);
+    margin-top: 1.5rem;
+  }
+  :global(:root[data-theme='light']) .rally {
+    --rally-nevela: #257de0;
+    --rally-rival: #f47230;
+  }
+  .rally-key {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.6rem;
+    font-size: var(--sl-text-sm);
+    color: var(--rally-muted);
+  }
+  .rally-unit { margin-left: auto; }
+  .swatch {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 3px;
+  }
+  .swatch.nevela, .bar.nevela { background: var(--rally-nevela); }
+  .swatch.rival, .bar.rival { background: var(--rally-rival); }
+  .matchup {
+    border-top: 1px solid var(--rally-rule);
+    padding-top: 1.25rem;
+    margin-top: 1.5rem;
+  }
+  .matchup header { display: grid; grid-template-columns: auto 1fr; column-gap: 0.75rem; align-items: baseline; }
+  .place {
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+    color: var(--rally-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .matchup h3 { margin: 0; font-size: var(--sl-text-h4); }
+  .verdict { grid-column: 2; margin: 0.25rem 0 0; color: var(--rally-muted); font-size: var(--sl-text-sm); }
+  .chart { margin-top: 1rem; display: grid; gap: 0.9rem; }
+  .group { display: grid; grid-template-columns: 3.5rem 1fr; align-items: center; column-gap: 0.75rem; margin: 0; }
+  .scenario { font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); color: var(--rally-muted); }
+  .bars { display: grid; gap: 2px; margin: 0; }
+  .track {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 1.1rem;
+    margin: 0;
+    border-radius: 4px;
+    outline-offset: 2px;
+  }
+  .bar { display: block; height: 0.85rem; border-radius: 0 4px 4px 0; flex: none; }
+  .value {
+    font-size: var(--sl-text-xs);
+    color: var(--rally-ink);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .who { color: var(--rally-muted); }
+  .tip {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 6px);
+    z-index: 5;
+    width: max-content;
+    max-width: min(22rem, 80vw);
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    background: var(--rally-tip-bg);
+    border: 1px solid var(--rally-rule);
+    color: var(--rally-ink);
+    font-size: var(--sl-text-xs);
+    line-height: 1.4;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+  .track:hover .tip, .track:focus-visible .tip { opacity: 1; }
+  .track:hover .bar, .track:focus-visible .bar { filter: brightness(1.12); }
+  details { margin-top: 0.9rem; font-size: var(--sl-text-sm); }
+  details table { margin-top: 0.5rem; }
+  .note { color: var(--rally-muted); font-size: var(--sl-text-xs); }
+  .standing { margin-top: 1.5rem; border-top: 1px solid var(--rally-rule); padding-top: 1rem; }
+  @media (forced-colors: active) {
+    .bar { forced-color-adjust: none; border: 1px solid CanvasText; }
+  }
+</style>
