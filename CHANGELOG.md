@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.43.0] - 2026-11-26
+
+_A limit on the signed-in API, and scanners turned away_
+
 ### Added
 
 - Security in the app itself, on any host (step 11 of the roadmap, after Grit's Sentinel). [Security](apps/docs/src/content/docs/guides/security.md) in the docs.
@@ -1067,7 +1071,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.42.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.43.0...HEAD
+[0.43.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.42.0...v0.43.0
 [0.42.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.41.0...v0.42.0
 [0.41.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.40.0...v0.41.0
 [0.40.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.39.0...v0.40.0

@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "What matters asks you to confirm it's you, every time";
+export const RELEASE_HEADLINE = "A limit on the signed-in API, and scanners turned away";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "New: a refund, a transfer or a change to who can sign in asks for the password again, or a code, in the dashboard, on the phone and over the API.",
-  href: "/guides/authentication/#confirming-its-you-again",
-  label: "Confirming it's you",
+  text: "New: every signed-in route has a limit per person and per address, and requests for /.env, wp-admin and other probes are turned away before the app does any work.",
+  href: "/guides/security/",
+  label: "Security",
 };
