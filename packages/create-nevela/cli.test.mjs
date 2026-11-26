@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
 import { ATTEMPTS, worthRetrying } from './composer.mjs';
-import { choiceProblem, decide, MAILERS, setEnv, TIERS, withMail } from './choices.mjs';
+import { choiceProblem, decide, defaultPackageManager, MAILERS, runBin, setEnv, TIERS, withMail } from './choices.mjs';
 import { PHP_LINE, phpIsRecentEnough, phpVersionOf } from './requirements.mjs';
 import { banner, ROWS, TAGLINE, WIDTH } from './banner.mjs';
 import { get } from './net.mjs';
@@ -524,4 +524,22 @@ test('an app on Laravel 12 or older is told it needs Laravel 13, and is not move
   const held = { require: { 'nevela/laravel': '^0.37' } };
   assert.deepEqual(repairManifest(held, null), []);
   assert.equal(held.require['nevela/laravel'], '^0.37');
+});
+
+test('a new app installs with Bun where it is installed, npm where it isn\'t, and as it was run through pnpm, yarn or bun', () => {
+  const has = (...commands) => (command) => commands.includes(command);
+  assert.equal(defaultPackageManager(undefined, has('bun', 'pnpm', 'npm')), 'bun');
+  assert.equal(defaultPackageManager(undefined, has('pnpm', 'npm')), 'npm', 'pnpm only when asked for, or run through');
+  // Through npx: npm is only how it was reached.
+  assert.equal(defaultPackageManager('npm/10.8.0 node/v22.4.0 linux x64', has('bun', 'npm')), 'bun');
+  assert.equal(defaultPackageManager('pnpm/10.1.0 npm/? node/v22.4.0', has('bun', 'pnpm')), 'pnpm');
+  assert.equal(defaultPackageManager('yarn/4.5.0 npm/? node/v22.4.0', has('bun', 'yarn')), 'yarn');
+  assert.equal(defaultPackageManager('bun/1.3.5 npm/? node/v24.3.0', has('npm')), 'bun');
+});
+
+test('a package\'s own command is run each package manager\'s way', () => {
+  assert.equal(runBin('bun', 'expo start'), 'bunx expo start');
+  assert.equal(runBin('pnpm', 'expo start'), 'pnpm exec expo start');
+  assert.equal(runBin('yarn', 'expo start'), 'yarn expo start');
+  assert.equal(runBin('npm', 'expo start'), 'npx expo start');
 });

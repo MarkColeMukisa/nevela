@@ -65,7 +65,7 @@ About a third quicker. Add them later with `composer install` in `apps/api`.
 
 A new app is always created by the newest installer. If the `nevela` command you have is older, it fetches the latest itself before doing anything.
 
-The web apps' packages are installed with pnpm when you have it, and npm otherwise. `--pm` picks another.
+The web apps' and the phone app's packages are installed with [Bun](https://bun.sh) when you have it, which is several times faster, and with npm otherwise. `--pm npm` or `--pm pnpm` picks another. Bun installs the packages and runs the scripts; the web apps still run on Node in production.
 
 You get this:
 
@@ -163,7 +163,7 @@ It lists the Nevela version, which migrations have run and which are pending, ho
 |---|---|
 | `--tier <web\|both\|mobile\|admin>` | Which apps it has. `web`: the triple tier, a public site with a customer area (`apps/web`), the staff's admin (`apps/admin`) and the API. `both`: those and [a phone app](/guides/mobile-app/) (Expo). `mobile`: the API and a phone app, with no web apps. `admin`: the API and the admin alone, for an internal tool. Asked when left off; `web` with `--yes`. |
 | `--mail <resend\|brevo\|smtp>` | How it [sends email](/guides/deploying/#mail) on a server. Asked when left off; `resend` with `--yes`. On your computer, emails go to the log until you set `MAIL_MAILER` and its settings in `apps/api/.env`. |
-| `--pm <pnpm\|npm\|yarn\|bun>` | Package manager for the web apps and the phone app. Default: pnpm when you have it, and npm otherwise. |
+| `--pm <bun\|npm\|pnpm\|yarn>` | Package manager for the web apps and the phone app. Default: Bun when you have it, and npm otherwise; run through `pnpm create`, `yarn create` or `bun create`, that one. |
 | `--no-install` | Don't install the web apps' or the phone app's dependencies. |
 | `--fast` | Leave out PHPUnit, Pint and Laravel's other development packages. About a third quicker. |
 | `--no-user` | Don't create the starter account, or the sample users. |

@@ -25,6 +25,8 @@ The first line under a version, in italics, is the release in a few words. The d
 ### Changed
 
 - **Breaking**, for code that reads `nevela_activity` itself: rows are no longer merged. Each request's changes are one entry, never updated after, with a `group_id` the page joins them by, so "Ada deleted 20 products" is still one line on the page, the phone and through `GET /api/_nevela/activity`. A line is as recent as its latest entry.
+- New apps install with [Bun](https://bun.sh) by default, where it is installed: `nevela new` runs `bun install` for the web apps and the phone app, several times faster than npm, and the app's scripts and hints use `bun run` and `bunx expo start`. npm is used where Bun isn't installed, and `--pm npm` or `--pm pnpm` still picks either; run through `pnpm create`, `yarn create` or `bun create`, that one. Before, the default was pnpm when installed. The web apps still run on Node in production: Bun installs and runs scripts. `nevela dev` prints the phone app's start command for the app's own package manager.
+- `nevela new` tries a failed install of the web apps' or the phone app's packages once more, since a first install downloads everything and one dropped download fails the lot. If the second fails too, it shows the end of what the package manager said, instead of only that it didn't finish.
 
 ## [0.44.0] - 2026-11-26
 

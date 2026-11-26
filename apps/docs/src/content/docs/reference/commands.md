@@ -56,7 +56,7 @@ Leave the name off and it asks for one. The [quickstart](/start/quickstart/) wal
 |---|---|
 | `--tier <web\|both\|mobile\|admin>` | Which apps it has. `web`: the triple tier, a public site with a customer area (`apps/web`), the staff's admin (`apps/admin`) and the API. `both`: those and [a phone app](/guides/mobile-app/) (Expo). `mobile`: the API and a phone app, with no web apps. `admin`: the API and the admin alone, for an internal tool. Asked when left off; `web` with `--yes`. |
 | `--mail <resend\|brevo\|smtp>` | How it [sends email](/guides/deploying/#mail) on a server. Asked when left off; `resend` with `--yes`. On your computer, emails go to the log until you set `MAIL_MAILER` and its settings in `apps/api/.env`. |
-| `--pm <pnpm\|npm\|yarn\|bun>` | Package manager for the web apps and the phone app. Default: pnpm when you have it, and npm otherwise. |
+| `--pm <bun\|npm\|pnpm\|yarn>` | Package manager for the web apps and the phone app. Default: Bun when you have it, and npm otherwise; run through `pnpm create`, `yarn create` or `bun create`, that one. |
 | `--no-install` | Don't install the web apps' or the phone app's dependencies. |
 | `--fast` | Leave out PHPUnit, Pint and Laravel's other development packages. About a third quicker. |
 | `--no-user` | Don't create the starter account, or the sample users. |
@@ -373,7 +373,7 @@ It checks the API's port before using it. If another program already has port 80
 | `--port=` | The first port to try for the API. Default 8000. |
 | `--api-only` | Start the API without the dashboard. |
 
-In a project with [a mobile app](/guides/mobile-app/), the API is served to your network and not only to this computer, so a phone on the same Wi-Fi can reach it. It says so when it starts, and writes the API's port to `apps/mobile/.env.local` for the app to read. Start the app itself in another terminal: `cd apps/mobile && npx expo start`.
+In a project with [a mobile app](/guides/mobile-app/), the API is served to your network and not only to this computer, so a phone on the same Wi-Fi can reach it. It says so when it starts, and writes the API's port to `apps/mobile/.env.local` for the app to read. Start the app itself in another terminal: `cd apps/mobile && bunx expo start` (`npx expo start` with npm, `pnpm exec expo start` with pnpm). `nevela dev` prints the one for your app.
 
 Where the app's queue isn't `sync`, it works the queue too, so the mail a [public form](/guides/protecting-forms/#the-mail-a-form-causes) causes is sent while you develop.
 
