@@ -1,4 +1,5 @@
 import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { COOKIE_PREFIX } from "@/lib/app";
 
 /**
@@ -110,6 +111,9 @@ export async function laravel(path: string, { method = "GET", body, token }: Lar
       parsed = { error: `Laravel answered ${response.status} with something that isn't JSON.` };
     }
   }
+  // This visitor's address is on the block list (Laravel's Security\Addresses): say so plainly,
+  // rather than leave every page to fail in its own way.
+  if (response.status === 403 && (parsed as { code?: unknown } | null)?.code === "ADDRESS_BLOCKED") redirect("/blocked");
   return { status: response.status, ok: response.ok, body: parsed };
 }
 

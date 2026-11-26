@@ -149,3 +149,25 @@ export async function getCatalog(): Promise<PermissionCatalog> {
   const response = await laravel("_nevela/permissions");
   return response.ok ? (response.body as PermissionCatalog) : { modules: [], total: 0 };
 }
+
+/** An address turned away (Laravel's Security\Addresses). */
+export interface BlockedAddress {
+  id: string;
+  /** An IPv4 address, or an IPv6 /64. */
+  address: string;
+  /** "scanner", "limit" or "manual". */
+  reason: string;
+  note: string | null;
+  blockedBy: string | null;
+  strikes: number;
+  blockedAt: string;
+  /** Null: until it is cleared. */
+  until: string | null;
+}
+
+/** The blocks in force, and the addresses never blocked. "migrate" before the table is there; null when the person may not see them. */
+export async function listBlockedAddresses(): Promise<{ data: BlockedAddress[]; exempt: string[] } | "migrate" | null> {
+  const response = await laravel("_nevela/blocked-addresses");
+  if (response.ok) return response.body as { data: BlockedAddress[]; exempt: string[] };
+  return response.status === 409 ? "migrate" : null;
+}

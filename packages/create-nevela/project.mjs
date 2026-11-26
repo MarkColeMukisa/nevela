@@ -12,7 +12,7 @@ import { PHP_LINE, phpIsRecentEnough, phpVersionOf } from './requirements.mjs';
 import { spawnCommand } from './shell.mjs';
 
 /** What `nevela <name>` runs: these go to `php artisan nevela:<name>`. */
-const NEVELA = ['upgrade', 'dev', 'status', 'version', 'resource', 'field', 'adopt', 'blog', 'generate', 'seed', 'user', 'trash', 'digest', 'disposable', 'publish', 'deploy:check', 'resource:remove', 'openapi', 'push'];
+const NEVELA = ['upgrade', 'dev', 'status', 'version', 'resource', 'field', 'adopt', 'blog', 'generate', 'seed', 'user', 'trash', 'digest', 'disposable', 'publish', 'deploy:check', 'security', 'resource:remove', 'openapi', 'push'];
 /** These go to the artisan command of the same name. */
 const ARTISAN = ['migrate', 'tinker', 'test', 'serve'];
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { accessError, type ManagedRole, type ManagedUser } from "@/lib/access";
+import { accessError, type BlockedAddress, type ManagedRole, type ManagedUser } from "@/lib/access";
 import { laravel } from "@/lib/laravel";
 import { getSession } from "@/lib/session";
 import { confirmAskedOf, type ConfirmAsked } from "@/lib/confirm";
@@ -85,4 +85,14 @@ export async function updateRoleAction(id: string, input: RoleInput): Promise<Ac
 
 export async function deleteRoleAction(id: string): Promise<AccessResult<null>> {
   return send(`_nevela/roles/${encodeURIComponent(id)}`, "DELETE");
+}
+
+/** Block an address: for some minutes, or until it is cleared (no minutes). */
+export async function blockAddressAction(input: { address: string; minutes?: number; note?: string }): Promise<AccessResult<BlockedAddress>> {
+  return send("_nevela/blocked-addresses", "POST", input);
+}
+
+/** Clear a block: the address can reach the app again. */
+export async function unblockAddressAction(id: string): Promise<AccessResult<null>> {
+  return send(`_nevela/blocked-addresses/${encodeURIComponent(id)}`, "DELETE");
 }

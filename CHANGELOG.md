@@ -8,6 +8,14 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- Repeat offenders blocked (step 11, part 2). A scanner's probe, and a request beyond the per-address limit, are strikes: 20 within 10 minutes block the address for an hour (`NEVELA_BLOCK_AFTER`, `NEVELA_BLOCK_WINDOW`, `NEVELA_BLOCK_MINUTES`). A blocked address gets `403` with `code: "ADDRESS_BLOCKED"` and `until` on every request, before the app does any work, and a visitor of the web apps gets a page that says so.
+  - The web app's own server is never counted or blocked, only the visitor it speaks for. IPv6 is counted and blocked by its /64. This computer, and the addresses and ranges in `NEVELA_EXEMPT`, never are.
+  - **The block list**, under Blocked addresses in the admin and on the phone: see what is blocked and why, block an address for an hour, a day, a week or until cleared, and clear one. A new permission, Blocked addresses (view, create, delete), held by administrators. Blocking and clearing ask for confirmation where the app asks for it. Nobody can block this server, the exempt list, or their own address.
+  - **The way back in**: `php nevela security blocked`, `security unblock <address>` and `security block <address>`, on the server.
+  - Blocks that have ended are removed in the nightly scheduler run. A new table: run `php nevela migrate`.
+
 ## [0.43.0] - 2026-11-26
 
 _A limit on the signed-in API, and scanners turned away_
