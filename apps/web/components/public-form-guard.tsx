@@ -45,6 +45,53 @@ function turnstile(): Promise<Turnstile> {
 }
 
 /**
+ * The Turnstile widget on its own, for a form that asks for it only when Laravel says so,
+ * such as the sign-in after several wrong passwords (`CAPTCHA_REQUIRED`). `onToken` gets each
+ * answer, or null when it expires or fails; change `round` after every attempt, because an
+ * answer is good once. With no NEXT_PUBLIC_TURNSTILE_SITE_KEY it shows nothing.
+ */
+export function TurnstileCheck({ action, onToken, round, className }: { action: string; onToken: (token: string | null) => void; round: number; className?: string }) {
+  const holder = React.useRef<HTMLDivElement>(null);
+  const widget = React.useRef<string | null>(null);
+  const report = React.useRef(onToken);
+  React.useEffect(() => {
+    report.current = onToken;
+  });
+
+  React.useEffect(() => {
+    if (SITE_KEY === "" || !holder.current) return;
+    let current = true;
+    let api: Turnstile | null = null;
+    turnstile()
+      .then((ready) => {
+        if (!current || !holder.current) return;
+        api = ready;
+        widget.current = ready.render(holder.current, {
+          sitekey: SITE_KEY,
+          action,
+          callback: (token) => report.current(token),
+          "expired-callback": () => report.current(null),
+          "error-callback": () => report.current(null),
+        });
+      })
+      .catch(() => report.current(null));
+    return () => {
+      current = false;
+      if (api && widget.current) api.remove(widget.current);
+      widget.current = null;
+    };
+  }, [action]);
+
+  React.useEffect(() => {
+    if (round === 0 || !widget.current) return;
+    (window as unknown as { turnstile?: Turnstile }).turnstile?.reset(widget.current);
+    report.current(null);
+  }, [round]);
+
+  return SITE_KEY === "" ? null : <div ref={holder} className={className} />;
+}
+
+/**
  * What a protected form carries besides its own fields. Put it inside the form:
  *
  * ```tsx
