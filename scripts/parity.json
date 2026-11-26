@@ -59,6 +59,7 @@
     "GET _nevela/blocked-addresses": "both",
     "POST _nevela/blocked-addresses": "both",
     "DELETE _nevela/blocked-addresses/{id}": "both",
+    "GET _nevela/security-events": "both",
     "GET _nevela/deleted-accounts": "both",
     "DELETE _nevela/deleted-accounts/{id}": "both",
     "POST _nevela/deleted-accounts/{id}/restore": "both",

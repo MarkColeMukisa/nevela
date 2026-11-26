@@ -18,9 +18,30 @@ interface Block {
   until: string | null;
 }
 
-type Loaded = { data: Block[]; exempt: string[] } | "migrate";
+/** One row of the security log: an address, a kind and an hour, with a count. */
+interface SecurityEvent {
+  id: string;
+  address: string;
+  kind: string;
+  count: number;
+  method: string | null;
+  path: string | null;
+  detail: string | null;
+  lastAt: string;
+}
 
-const WHY: Record<string, string> = { scanner: "Probing for files", limit: "Too many requests", manual: "Blocked by hand" };
+type Loaded = { data: Block[]; exempt: string[]; events: SecurityEvent[] } | "migrate";
+
+const WHY: Record<string, string> = { scanner: "Probing for files", limit: "Too many requests", "sign-in": "Trying many accounts", manual: "Blocked by hand" };
+const KIND: Record<string, string> = {
+  scanner: "Probe",
+  limit: "Over the limit",
+  "sign-in": "Tried many accounts",
+  locked: "Sign-in locked",
+  refused: "Turned away (blocked)",
+  blocked: "Blocked",
+  unblocked: "Cleared",
+};
 const LENGTHS = [
   { minutes: 60, label: "An hour" },
   { minutes: 1440, label: "A day" },
@@ -42,7 +63,10 @@ export default function BlockedAddresses() {
 
   const load = useCallback(async (): Promise<Loaded> => {
     try {
-      return await api.get<{ data: Block[]; exempt: string[] }>("/_nevela/blocked-addresses");
+      const list = await api.get<{ data: Block[]; exempt: string[] }>("/_nevela/blocked-addresses");
+      // The log has a table of its own: before its migration, the list still shows.
+      const events = await api.get<{ data: SecurityEvent[] }>("/_nevela/security-events").then((log) => log.data, () => []);
+      return { ...list, events };
     } catch (caught) {
       if (caught instanceof ApiError && caught.status === 409) return "migrate";
       throw caught;
@@ -133,6 +157,26 @@ export default function BlockedAddresses() {
                   </View>
                 ) : null}
               </View>
+            ))}
+          </Card>
+        )}
+      </View>
+
+      <View style={{ gap: spacing.sm }}>
+        <Heading>Turned away</Heading>
+        <Body muted small>The last week, by address and hour: probes, requests over the limit, sign-ins locked, and blocks made and cleared.</Body>
+        {(loaded.data?.events.length ?? 0) === 0 ? (
+          <Body muted>Nothing turned away this week.</Body>
+        ) : (
+          <Card>
+            {(loaded.data?.events ?? []).map((event, index, all) => (
+              <Row
+                key={event.id}
+                icon={event.kind === "blocked" ? "ban-outline" : "shield-outline"}
+                label={`${event.address} · ${KIND[event.kind] ?? event.kind}${event.count > 1 ? ` ×${event.count.toLocaleString()}` : ""}`}
+                detail={[event.detail, event.path ? `${event.method ?? ""} ${event.path}`.trim() : null, ago(event.lastAt)].filter(Boolean).join(" · ")}
+                last={index === all.length - 1}
+              />
             ))}
           </Card>
         )}

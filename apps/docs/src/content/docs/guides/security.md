@@ -73,6 +73,23 @@ php nevela security unblock 203.0.113.7        # clear it
 php nevela security block 203.0.113.7 --minutes=60 --note="Trying passwords"
 ```
 
+## What was turned away
+
+Under the block list, **Turned away** shows the last week: probes, requests over the per-address limit, many accounts tried, sign-ins locked, requests from blocked addresses, and blocks made and cleared, with who made or cleared them. It's on the phone too, under the same permission (Blocked addresses: view). The API is `GET /api/_nevela/security-events`, with `?days=` and `?address=`.
+
+- **One line per address, kind and hour**, with how many times. An attack of a million requests is a handful of lines. Each request adds one to a counter in the cache, as the rate limits do, and the line is written as the count reaches 1, 2, 5, 10, 20, 50, 100 and so on: about eighteen writes for a million. In production, use a fast cache such as Redis or Valkey (`CACHE_STORE`), as the limits already want.
+- **What it keeps:** the address, the latest request's method and path without its query (sign-in and reset tokens travel there), and the visitor's browser. Never headers or a body.
+- **How long:** 30 days, then removed in the nightly run (`NEVELA_SECURITY_LOG_DAYS`).
+
+## The bell
+
+Whoever may see the block list is told in the bell, and by push on the phone, where a tap opens the block list:
+
+- **When an address blocks itself**, at most 5 times an hour (`NEVELA_NOTIFY_BLOCKS_PER_HOUR`), as one line that counts them. Past that, the spike warning speaks for the rest. A block made by hand tells nobody: whoever made it knows.
+- **When requests are turned away in a spike**: about 300 within five minutes, from anywhere (`NEVELA_SPIKE_AFTER`). Once an hour at most.
+
+`0` switches either off. The log keeps everything either way.
+
 ## Wrong passwords
 
 Wrong passwords are counted by the address and the account together, so a lockout falls on whoever is guessing, not on the account's owner.

@@ -8,6 +8,13 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Added
+
+- What was turned away, shown (step 11, part 4). [What was turned away](apps/docs/src/content/docs/guides/security.md#what-was-turned-away) in the docs.
+  - **The log**: under the block list in the admin and on the phone, the last week of probes, requests over the per-address limit, many accounts tried, sign-ins locked, requests from blocked addresses, and blocks made and cleared with who did it (`GET /api/_nevela/security-events`, `?days=`, `?address=`). One line per address, kind and hour with a count: each request is one increment in the cache, and the line is written as the count reaches 1, 2, 5, 10, 20, 50, 100… It keeps the method, the path without its query and the browser; never headers or a body. Kept 30 days (`NEVELA_SECURITY_LOG_DAYS`).
+  - **The bell**, and a push: whoever may see the block list is told when an address blocks itself, at most 5 times an hour (`NEVELA_NOTIFY_BLOCKS_PER_HOUR`), and once an hour when about 300 requests are turned away within five minutes (`NEVELA_SPIKE_AFTER`). A tap on the phone opens the block list.
+  - A new table: run `php nevela migrate`.
+
 ## [0.44.0] - 2026-11-26
 
 _Repeat offenders blocked, and wrong passwords locked out per address_

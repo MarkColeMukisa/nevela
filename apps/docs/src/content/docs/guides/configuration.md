@@ -42,6 +42,9 @@ The file is yours, and an upgrade never changes it. A setting it doesn't have ta
 | `security.block_after` | `20`, or `NEVELA_BLOCK_AFTER` | [Strikes](/guides/security/#repeat-offenders-blocked) within `block_window` that block an address. `0`: never blocked by itself. |
 | `security.block_window` | `10`, or `NEVELA_BLOCK_WINDOW` | Minutes the strikes are counted over. |
 | `security.block_minutes` | `60`, or `NEVELA_BLOCK_MINUTES` | Minutes an address is blocked for. |
+| `security.log_days` | `30`, or `NEVELA_SECURITY_LOG_DAYS` | Days [what was turned away](/guides/security/#what-was-turned-away) is kept. |
+| `security.notify_blocks_per_hour` | `5`, or `NEVELA_NOTIFY_BLOCKS_PER_HOUR` | Times an hour the [bell](/guides/security/#the-bell) tells of an address that blocked itself. `0`: never. |
+| `security.spike_after` | `300`, or `NEVELA_SPIKE_AFTER` | Requests turned away within five minutes that the bell warns of, once an hour. `0`: never. |
 | `security.sign_in.captcha_after` | `3`, or `NEVELA_SIGN_IN_CAPTCHA_AFTER` | Wrong passwords from one address before the web sign-in asks to [show it's a person](/guides/security/#wrong-passwords). `0`: never asks. |
 | `security.sign_in.lock_after` | `10`, or `NEVELA_SIGN_IN_LOCK_AFTER` | Wrong passwords from one address that lock it out of that account. `0`: never locks. |
 | `security.sign_in.lock_minutes` | `15`, or `NEVELA_SIGN_IN_LOCK_MINUTES` | Minutes the lockout lasts. |
