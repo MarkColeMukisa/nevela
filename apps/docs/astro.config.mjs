@@ -69,6 +69,7 @@ export default defineConfig({
             { label: "The mobile app", slug: "guides/mobile-app" },
             { label: "Authentication", slug: "guides/authentication" },
             { label: "Users, roles and permissions", slug: "guides/policies" },
+            { label: "Security", slug: "guides/security" },
             { label: "Deleted accounts", slug: "guides/deleted-accounts" },
             { label: "The trash", slug: "guides/trash" },
             { label: "Notifications", slug: "guides/notifications" },

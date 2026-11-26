@@ -36,6 +36,9 @@ The file is yours, and an upgrade never changes it. A setting it doesn't have ta
 | `auth.require_email_verification` | `false` | Refuse password sign-in until the address is verified. |
 | `auth.check_breached_passwords` | `true` | Refuse a new password found in a known breach. |
 | `auth.web_url` | `http://localhost:3000`, or `NEVELA_WEB_URL` | Where the dashboard is: for links in emails, and for passkeys. |
+| `security.api_per_person` | `600`, or `NEVELA_API_PER_PERSON` | Requests a minute on the [signed-in API](/guides/security/#a-limit-on-the-signed-in-api), per person. `0`: no limit. |
+| `security.api_per_address` | `1200`, or `NEVELA_API_PER_ADDRESS` | The same, per address. |
+| `security.scanners` | `true`, or `NEVELA_SCANNERS` | [Scanners](/guides/security/#scanners-turned-away) asking for `/.env`, `wp-admin` and the like answer 404 at once. `security.scanner_paths`: more, as regular expressions. |
 | `auth.confirm.access` | `false`, or `NEVELA_CONFIRM_ACCESS` | Whether changing who can sign in asks the person to [confirm it's them](/guides/authentication/#confirming-its-you-again) first. New apps set it to `true`. |
 | `auth.confirm.window` | `5`, or `NEVELA_CONFIRM_WINDOW` | Minutes one confirmation lets a sign-in go on changing who can sign in. |
 | `auth.staff_two_factor` | `null`, or `NEVELA_STAFF_TWO_FACTOR` | Whether staff must have two-step sign-in on to use the admin app. `null`: in production only. |
