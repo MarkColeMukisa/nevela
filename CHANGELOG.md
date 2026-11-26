@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.44.0] - 2026-11-26
+
+_Repeat offenders blocked, and wrong passwords locked out per address_
+
 ### Added
 
 - Repeat offenders blocked (step 11, part 2). A scanner's probe, and a request beyond the per-address limit, are strikes: 20 within 10 minutes block the address for an hour (`NEVELA_BLOCK_AFTER`, `NEVELA_BLOCK_WINDOW`, `NEVELA_BLOCK_MINUTES`). A blocked address gets `403` with `code: "ADDRESS_BLOCKED"` and `until` on every request, before the app does any work, and a visitor of the web apps gets a page that says so.
@@ -1085,7 +1089,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.43.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.44.0...HEAD
+[0.44.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.43.0...v0.44.0
 [0.43.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.42.0...v0.43.0
 [0.42.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.41.0...v0.42.0
 [0.41.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.40.0...v0.41.0

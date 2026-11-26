@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "A limit on the signed-in API, and scanners turned away";
+export const RELEASE_HEADLINE = "Repeat offenders blocked, and wrong passwords locked out per address";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "New: every signed-in route has a limit per person and per address, and requests for /.env, wp-admin and other probes are turned away before the app does any work.",
+  text: "New: addresses that keep probing are blocked for a while, with a block list for administrators, and wrong passwords lock out only the address guessing, never the account.",
   href: "/guides/security/",
   label: "Security",
 };
