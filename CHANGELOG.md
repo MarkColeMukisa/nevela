@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.45.0] - 2026-11-27
+
+_The activity log sealed, what was turned away shown, Bun by default_
+
 ### Added
 
 - What was turned away, shown (step 11, part 4). [What was turned away](apps/docs/src/content/docs/guides/security.md#what-was-turned-away) in the docs.
@@ -21,6 +25,7 @@ The first line under a version, in italics, is the release in a few words. The d
   - What it doesn't catch, said plainly in the docs: someone holding the key, a database put back to an earlier copy, and entries from before.
   - New columns and two small tables: run `php nevela migrate`.
 - Security at the edge, in the Laravel Cloud guide (step 11, part 6): what Cloud's Cloudflare-backed edge does on every plan and on which plans the rest is, set beside what Nevela does in the app on all of them; the visitor's address (no `TrustedProxies` in the API, `NEVELA_TRUSTED_PROXIES=1` in the web apps); your own Cloudflare in front; and a maximum replica count so an attack can't scale the bill. [Security at the edge](apps/docs/src/content/docs/guides/laravel-cloud.md#security-at-the-edge).
+- The speed rally (step 12): Nevela against Rust, Bun, Grit, Next.js and Laravel, each answering the same products API on one CPU, with a chart for each rival on the [Benchmarks](apps/docs/src/content/docs/benchmarks.mdx) page, in the order they finished. Nevela finished last, and the page says why: its writes cost most, since the activity log was sealed, and that is the next speed step. The harness in `benchmarks/` now runs all nine apps, Rust (Axum and sqlx) and Next.js among them.
 
 ### Changed
 
@@ -1109,7 +1114,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.44.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.45.0...HEAD
+[0.45.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.44.0...v0.45.0
 [0.44.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.43.0...v0.44.0
 [0.43.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.42.0...v0.43.0
 [0.42.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.41.0...v0.42.0
