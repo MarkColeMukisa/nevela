@@ -547,7 +547,7 @@ jobs:
           # update is the nevela command updating itself. This copy was unpacked, not installed,
           # so outside an app it says how to install it and changes nothing,
           (cd "$RUNNER_TEMP" && node create-nevela/package/index.mjs update | tee tool-update.log)
-          grep -q 'npm install -g create-nevela' "$RUNNER_TEMP/tool-update.log"
+          grep -q 'bun add -g create-nevela' "$RUNNER_TEMP/tool-update.log"   # Bun is set up above
           # and inside one it does what "update" used to mean there: upgrade the app.
           NEVELA_NO_SELF_UPDATE=1 node "$RUNNER_TEMP/create-nevela/package/index.mjs" update --check | tee cli-update.log
           grep -q 'Upgrading this app' cli-update.log

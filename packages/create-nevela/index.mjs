@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Create a new Nevela app: a Laravel API, with a public site and a staff admin (Next.js), an Expo phone app, or both.
 //
+//   bun create nevela@latest my-app
 //   pnpm create nevela my-app
 //   npm create nevela@latest my-app
 //
@@ -22,7 +23,7 @@ import { createProgress, took } from './progress.mjs';
 import { COMMANDS, findProject, forward, upgrade } from './project.mjs';
 import { shellLine, spawnCommand, windows } from './shell.mjs';
 import { latestVersion, newerVersion, runVersion } from './selfupdate.mjs';
-import { copiesOnPath, globalInstall, INSTALL_COMMAND, removeCommand } from './tool.mjs';
+import { copiesOnPath, createCommand, globalInstall, installCommand, removeCommand } from './tool.mjs';
 import { copyLaravelPackage, copyMobileTemplate, copySharedTemplate, copyWebTemplate, fromRepository, mobileScheme, templateRecord } from './template.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -83,15 +84,16 @@ function showTitle() {
   console.log(banner({ version: VERSION, depth, columns: process.stdout.columns ?? 80, compact: Boolean(process.env.NEVELA_HANDED_OVER) }));
 }
 
-const HELP = `  Create a new Nevela app: a Laravel API, with a public site and a staff admin, a phone app, or all of them.
+/** The help, with the install and create commands for this computer's package manager. */
+const help = (pm = detectPackageManager()) => `  Create a new Nevela app: a Laravel API, with a public site and a staff admin, a phone app, or all of them.
 
   ${bold('Get the nevela command')}  (once; everything below is then this short)
-    npm install -g create-nevela
+    ${installCommand(pm)}
 
   ${bold('Anywhere')}
     nevela new [name] [options]   Create an app. It asks for the name, which apps it should
                                   have and how it sends email, unless you say with the options.
-                                  Without the command: pnpm create nevela <name>
+                                  Without the command: ${createCommand(pm, '<name>')}
     nevela update                 Update the nevela command itself to the latest version
     nevela --version              Which version the nevela command is, and this app when in one
 
@@ -222,7 +224,7 @@ function parseArgs(argv) {
     const arg = argv[i];
     if (arg === '-h' || arg === '--help') {
       showTitle();
-      console.log(HELP);
+      console.log(help());
       process.exit(0);
     } else if (arg === '-v' || arg === '--version') {
       console.log(VERSION);
@@ -443,7 +445,7 @@ Docs: ${DOCS}
 async function inProject(name, args) {
   const project = findProject(process.cwd());
   if (!project) {
-    fail(`"${name}" runs inside a Nevela app, and this folder isn't in one.`, `To create an app:  ${typedNevela ? 'nevela new my-app' : 'pnpm create nevela my-app'}`);
+    fail(`"${name}" runs inside a Nevela app, and this folder isn't in one.`, `To create an app:  ${typedNevela ? 'nevela new my-app' : createCommand(detectPackageManager())}`);
   }
   if (name !== 'upgrade') process.exit(forward(project, name, args));
 
@@ -679,7 +681,7 @@ async function updateTool(args) {
     }
     showTitle();
     console.log(`  The nevela command isn't installed on this computer, so there is nothing to update.`);
-    console.log(`  To install it:  ${bold(INSTALL_COMMAND)}`);
+    console.log(`  To install it:  ${bold(installCommand(detectPackageManager()))}`);
     console.log(`  Then, anywhere: ${bold('nevela new my-app')}   and inside an app: ${bold('nevela upgrade')}, ${bold('nevela dev')}\n`);
     return;
   }
@@ -740,7 +742,7 @@ async function main() {
     // `nevela` on its own says what it can do. `pnpm create nevela` on its own starts an
     // app, and so does a newer installer that an older `nevela new` handed over to.
     showTitle();
-    console.log(HELP);
+    console.log(help());
     return;
   }
   const options = parseArgs(argv);
@@ -757,7 +759,7 @@ async function main() {
       console.log(`  ${dim(`Your package manager served ${VERSION}. Fetching ${newer}, the latest…`)}`);
       const status = await runVersion(newer, argv);
       if (status !== null) process.exit(status);
-      outdated = `  ${red('!')} Couldn't fetch create-nevela ${bold(newer)}, so this is ${VERSION}. To get it: ${bold(`npm create nevela@latest ${options.name ?? 'my-app'}`)}\n`;
+      outdated = `  ${red('!')} Couldn't fetch create-nevela ${bold(newer)}, so this is ${VERSION}. To get it: ${bold(createCommand(detectPackageManager(), options.name ?? 'my-app'))}\n`;
       console.log(outdated);
     }
   }
@@ -766,7 +768,7 @@ async function main() {
   let name = options.name;
   if (name === undefined) {
     // Nobody to ask: say what to type instead.
-    if (options.yes || !process.stdin.isTTY) fail(`Give the app a name: ${typedNevela ? 'nevela new my-app' : 'pnpm create nevela my-app'}`);
+    if (options.yes || !process.stdin.isTTY) fail(`Give the app a name: ${typedNevela ? 'nevela new my-app' : createCommand(detectPackageManager())}`);
     name = await askName();
     console.log('');
   } else {

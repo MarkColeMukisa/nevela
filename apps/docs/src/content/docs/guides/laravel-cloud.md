@@ -77,11 +77,15 @@ Create a second application on the same repository, with **root directory `apps/
 
 The dashboard imports `packages/shared` from beside `apps/`, and that works with this root directory. Laravel's support confirmed that Cloud's build has the whole repository, and `next build` bundles what the dashboard imports into its output. So nothing outside `apps/web` is needed when it runs. Nothing has to be set for it.
 
-**Build with pnpm.** A Nevela web app has `pnpm-lock.yaml`. Set the build command, or Cloud uses npm and ignores the lock file:
+**Build with the package manager the app was made with.** Its lock file says which: a new app made with Bun has `bun.lock` in `apps/web`, one made with npm `package-lock.json`, one made with pnpm `pnpm-lock.yaml`. Set the build command to match, or Cloud uses npm and ignores a lock file that isn't npm's:
 
 ```sh
-corepack enable && pnpm install --frozen-lockfile && pnpm build
+npx --yes bun@1 install --frozen-lockfile && npx --yes bun@1 run build    # bun.lock
+npm ci && npm run build                                                  # package-lock.json
+corepack enable && pnpm install --frozen-lockfile && pnpm build          # pnpm-lock.yaml
 ```
+
+The Bun line fetches Bun through npm, so it works whether or not Cloud's build image has Bun. Bun only installs the packages and runs the build script: the dashboard still runs on Node.
 
 **The environment:**
 

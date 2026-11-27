@@ -23,6 +23,7 @@ import {
   siX,
 } from "simple-icons";
 import portrait from "../assets/markcole-mukisa.jpg";
+import RallyCharts from "./RallyCharts.astro";
 import { NEVELA_VERSION, RELEASE_HEADLINE, RELEASE_URL, REPO_URL } from "../version";
 /**
  * The docs home page. One idea carries it: describe a resource once, and Nevela writes
@@ -49,7 +50,7 @@ const creator = {
 };
 
 const install = [
-  { id: "install", label: "Install", command: "npm install -g create-nevela" },
+  { id: "install", label: "Install", command: "bun add -g create-nevela" },
   { id: "new", label: "New app", command: "nevela new my-app" },
   { id: "resource", label: "Add a resource", command: 'nevela resource Product --fields="name:string, sku:string!, price:money"' },
   { id: "seed", label: "Seed", command: "nevela seed Product --count=1000" },
@@ -145,7 +146,7 @@ const generators = [
     out: [
       ["✔", "Creating the Laravel app"],
       ["✔", "Setting up the database"],
-      ["✔", "Installing dashboard packages (pnpm)"],
+      ["✔", "Installing dashboard packages (bun)"],
       ["✔", "Created my-app"],
       ["", "Sign in with admin@example.com / password"],
     ],
@@ -593,6 +594,16 @@ const faq = [
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- The speed rally -->
+    <section class="fl-section fl-rail" aria-labelledby="fl-speed">
+      <p class="fl-step"><span>[ Speed ]</span> The rally</p>
+      <div class="fl-section-head">
+        <h2 id="fl-speed">Raced against the fastest,<br /><span class="fl-ember-text">and honest about the result</span></h2>
+        <p>Nevela against Rust, Bun, Grit, Next.js and Laravel, each answering the same signed-in products API on one CPU. Nevela finished last: it checks roles, logs and seals every change, and does more on every request. The benchmarks page has every number, what held each app back, and what gets faster next.</p>
+      </div>
+      <RallyCharts link="/benchmarks/" linkText="The full results" numbers={false} />
     </section>
 
     <!-- FAQ -->

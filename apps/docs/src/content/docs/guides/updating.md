@@ -21,7 +21,7 @@ nevela upgrade       # inside the app
 Install it once, and every command is this short, in every shell:
 
 ```sh
-npm install -g create-nevela
+bun add -g create-nevela        # or npm install -g create-nevela, without Bun
 ```
 
 | | |
@@ -91,7 +91,7 @@ The same thing, if you have not installed the command:
 
 ```sh
 php nevela upgrade             # the app's own launcher
-pnpm nevela upgrade            # through your package manager; works in every shell
+bun run nevela upgrade         # through your package manager (npm run nevela -- upgrade, pnpm nevela upgrade)
 npx create-nevela upgrade      # nothing to install, and works on an app of any age
 ```
 
@@ -215,7 +215,7 @@ The update downloads the dashboard for the version it is moving to. It tries npm
 
 ## Creating apps is separate
 
-`nevela new my-app` (or `pnpm create nevela my-app`) always creates a new app. It fetches the newest installer itself before doing anything, so it is current even when your package manager hands it an older one.
+`nevela new my-app` (or `bun create nevela@latest my-app`) always creates a new app. It fetches the newest installer itself before doing anything, so it is current even when your package manager hands it an older one.
 
 ## Options
 

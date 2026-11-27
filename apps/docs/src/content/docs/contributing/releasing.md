@@ -152,7 +152,7 @@ git tag -d v0.2.0
 
 ## Publishing the create command to npm
 
-`create-nevela` is what makes `pnpm create nevela my-app` work. Publish it after tagging a release:
+`create-nevela` is the `nevela` command, and what makes `bun create nevela@latest my-app` and `npm create nevela@latest my-app` work. Publish it after tagging a release:
 
 ```sh
 cd packages/create-nevela

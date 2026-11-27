@@ -3,19 +3,21 @@
 The `nevela` command. It creates a new [Nevela](https://nevela-docs.vercel.app) app, a Laravel API and a Next.js dashboard generated from one resource description, and runs everything inside one.
 
 ```sh
-npm install -g create-nevela    # once
+bun add -g create-nevela        # once (npm install -g create-nevela without Bun)
 nevela new my-app
 ```
 
 Or without installing anything:
 
 ```sh
-pnpm create nevela my-app
+bun create nevela@latest my-app
 # or
 npm create nevela@latest my-app
+# or
+pnpm create nevela my-app
 ```
 
-You need PHP 8.5 or newer, Composer, and Node.js 20 or newer.
+You need PHP 8.5 or newer, Composer, and Node.js 20 or newer. [Bun](https://bun.sh) is recommended: where it is installed, new apps install their packages with it, several times faster than npm.
 
 ## What you get
 

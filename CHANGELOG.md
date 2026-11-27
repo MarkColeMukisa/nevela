@@ -8,6 +8,12 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Changed
+
+- The `nevela` command's own hints follow your package manager: `nevela --help`, and its messages when the command isn't installed or an app has no name, say `bun add -g create-nevela` and `bun create nevela@latest my-app` where Bun is installed, the pnpm forms when run through pnpm, and npm's otherwise. Before, they always said npm or pnpm.
+- The docs and READMEs install the command with Bun first, `bun add -g create-nevela`, with npm's `npm install -g create-nevela` beside it for computers without Bun. The [Laravel Cloud guide](apps/docs/src/content/docs/guides/laravel-cloud.md) builds the web app with whichever package manager made it, by its lock file: an app made with 0.45.0's Bun default has `bun.lock`, not `pnpm-lock.yaml`.
+- The speed rally's charts, laid out after Grit's: a tab for each scenario, the rivals' logos, a pair of bars a rival in the order they finished, on the [Benchmarks](apps/docs/src/content/docs/benchmarks.mdx) page and on the docs' home page.
+
 ## [0.45.0] - 2026-11-27
 
 _The activity log sealed, what was turned away shown, Bun by default_

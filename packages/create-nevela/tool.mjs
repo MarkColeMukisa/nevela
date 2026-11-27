@@ -124,5 +124,12 @@ export function removeCommand(dir, launcher = '') {
   return 'npm uninstall -g create-nevela';
 }
 
-/** What to type to get the `nevela` command, for someone who doesn't have it yet. */
-export const INSTALL_COMMAND = 'npm install -g create-nevela';
+/** What to type to get the `nevela` command, for someone who doesn't have it yet, with their package manager. */
+export function installCommand(pm) {
+  return pm === 'bun' ? 'bun add -g create-nevela' : pm === 'pnpm' ? 'pnpm add -g create-nevela' : 'npm install -g create-nevela';
+}
+
+/** What to type to create an app without the `nevela` command. `@latest` so npm and Bun don't reuse an old copy. */
+export function createCommand(pm, name = 'my-app') {
+  return pm === 'bun' ? `bun create nevela@latest ${name}` : pm === 'pnpm' ? `pnpm create nevela ${name}` : pm === 'yarn' ? `yarn create nevela ${name}` : `npm create nevela@latest ${name}`;
+}

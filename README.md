@@ -5,15 +5,15 @@ Nevela is a Laravel-first full-stack framework. **Laravel is the authority**: it
 ## Create an app
 
 ```sh
-npm install -g create-nevela    # once: the nevela command
+bun add -g create-nevela        # once: the nevela command (npm install -g without Bun)
 nevela new my-app
 cd my-app
 nevela dev
 ```
 
-You need PHP 8.5+ (Nevela runs on the latest PHP), Composer and Node.js 20+. Sign in at http://localhost:3000/sign-in as `admin@example.com` with the password `password`. Everything else is `nevela` and a word, from anywhere in the app: `nevela resource …`, `nevela seed …`, `nevela user`, `nevela upgrade`. `nevela --version` says which version you have, and `nevela update` brings the command up to date.
+You need PHP 8.5+ (Nevela runs on the latest PHP), Composer and Node.js 20+, and [Bun](https://bun.sh) is recommended: new apps install with it, several times faster than npm. Sign in at http://localhost:3000/sign-in as `admin@example.com` with the password `password`. Everything else is `nevela` and a word, from anywhere in the app: `nevela resource …`, `nevela seed …`, `nevela user`, `nevela upgrade`. `nevela --version` says which version you have, and `nevela update` brings the command up to date.
 
-Without installing anything, `pnpm create nevela my-app` creates an app, and inside it `php nevela dev` does what `nevela dev` does. The docs are at https://nevela-docs.vercel.app.
+Without installing anything, `bun create nevela@latest my-app` (or `npm create nevela@latest my-app`) creates an app, and inside it `php nevela dev` does what `nevela dev` does. The docs are at https://nevela-docs.vercel.app.
 
 ## Add a resource
 
@@ -39,7 +39,7 @@ Accounts live in Laravel; the screens are Flare's. Beside the password there is 
 ```
 nevela/
 ├─ packages/laravel/        nevela/laravel: Composer package (generator + runtime)
-├─ packages/create-nevela/  the `nevela` command (and `pnpm create nevela`)
+├─ packages/create-nevela/  the `nevela` command (and `bun create nevela`)
 ├─ apps/api/           a Laravel app using the package
 ├─ apps/web/           Flare's Next.js dashboard, backed by Laravel
 ├─ apps/docs/           the documentation site (Astro Starlight)
