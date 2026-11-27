@@ -118,6 +118,8 @@ jobs:
       - run: php artisan test
       # Several processes making orders at once, which a test in one process can't show.
       - run: php tests/numbers-at-once.php
+      # Several processes writing to the sealed activity log at once: one unbroken chain.
+      - run: php tests/activity-at-once.php
       # A seed killed partway, and run again.
       - run: php tests/seed-resumes.php
 

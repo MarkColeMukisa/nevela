@@ -165,20 +165,38 @@ final class Access
      *
      * @return \Illuminate\Database\Eloquent\Builder<\Illuminate\Database\Eloquent\Model>
      */
-    public static function holders(string $permission)
+    public static function holders(string $permission, ?array $ids = null)
     {
         $instance = new (Account::model());
         $query = ClosedAccounts::open()->when(SchemaFacts::hasColumn($instance->getTable(), 'active'), fn ($query) => $query->where('active', true));
+        $ids ??= self::holderIds($permission);
+
+        return $ids === null ? $query : $query->whereIn($instance->getKeyName(), $ids);
+    }
+
+    /**
+     * The ids of the accounts given a permission by one of their roles, leaving out `$except`,
+     * whether or not they can sign in (holders() asks that). Null before the roles tables
+     * exist, when everyone may do everything. Asked each time, never kept: someone who has
+     * just lost a permission isn't told about records they may no longer see.
+     *
+     * @return list<string>|null
+     */
+    public static function holderIds(string $permission, ?string $except = null): ?array
+    {
         if (! self::ready()) {
-            return $query;
+            return null;
         }
         // A permission is held when one grant covers it, so each role can be asked alone.
         $roles = Role::query()->get()->filter(fn (Role $role) => Permissions::granted($role->grants, $permission))->pluck('id')->all();
+        if ($roles === []) {
+            return [];
+        }
         // As ids, not a subquery: the roles table keeps them as text, and Postgres won't
         // compare text with a numeric key.
-        $ids = DB::table('nevela_role_user')->whereIn('role_id', $roles)->distinct()->pluck('user_id')->all();
-
-        return $query->whereIn($instance->getKeyName(), $ids);
+        return DB::table('nevela_role_user')->whereIn('role_id', $roles)
+            ->when($except !== null, fn ($query) => $query->where('user_id', '!=', $except))
+            ->distinct()->pluck('user_id')->map(fn ($id) => (string) $id)->all();
     }
 
     /**

@@ -74,9 +74,21 @@ final class Chain
      * Append an entry: under the head's lock, at the next place, chained to the newest. The row
      * is everything but the chain's own columns; created_at is set here, as stored.
      *
+     * `$joins` finds the run the entry belongs to: the newest entry by the same person, change
+     * and resource since a time. Its group is the entry's, else the entry starts one of its own
+     * (`group_id` in the row). Asked in the same read as the head, one trip to the database
+     * fewer. On Postgres a writer that waited for the lock still sees the log as it was when it
+     * asked, so the same person's changes starting at the same moment on several workers can
+     * begin a run each: shown as a line each, as before. The chain itself is never affected.
+     *
+     * Every append is in one transaction: lock and read the head, write, commit. On Postgres
+     * the entry and the head are written in one statement. The hash is made here, never in the
+     * database, so the key stays out of its statements and its logs.
+     *
      * @param  array<string, mixed>  $row
+     * @param  array{user_id: string, action: string, resource: string, since: string}|null  $joins
      */
-    public static function append(array $row): void
+    public static function append(array $row, ?array $joins = null): void
     {
         $keys = self::keys();
         if ($keys === []) {
@@ -85,23 +97,61 @@ final class Chain
         $keyId = (string) array_key_first($keys);
         $key = $keys[$keyId];
 
-        DB::transaction(function () use ($row, $keyId, $key) {
-            $head = DB::table(self::HEAD)->where('id', 1)->lockForUpdate()->first();
+        DB::transaction(function () use ($row, $joins, $keyId, $key) {
+            $head = DB::table(self::HEAD)->where('id', 1)
+                ->when($joins !== null, fn ($query) => $query->select('*')->selectSub(
+                    DB::table(Activity::TABLE)->select('group_id')
+                        ->where('user_id', $joins['user_id'])->where('action', $joins['action'])->where('resource', $joins['resource'])
+                        // updated_at as well: the same as created_at in a sealed entry, written once,
+                        // and the one the index has. Without it, someone with thousands of entries
+                        // has them all read, under the lock every write waits on.
+                        ->whereNotNull('seq')->where('updated_at', '>=', $joins['since'])->where('created_at', '>=', $joins['since'])
+                        ->orderByDesc('seq')->limit(1),
+                    'open_group',
+                ))
+                ->lockForUpdate()->first();
             $seq = (int) $head->seq + 1;
             $at = now()->format('Y-m-d H:i:s');
             if ((int) $head->seq === 0 && ! DB::table(self::ANCHORS)->where('kind', 'genesis')->exists()) {
                 self::anchor('genesis', 1, '', 0, $at);
             }
+            if (($head->open_group ?? null) !== null) {
+                $row['group_id'] = (string) $head->open_group;
+            }
             $entry = [...$row, 'seq' => $seq, 'created_at' => $at, 'updated_at' => $at, 'key_id' => $keyId, 'prev_hash' => (string) $head->hash];
             $entry['hash'] = hash_hmac('sha256', $entry['prev_hash']."\n".self::canonical((object) $entry), $key);
-            DB::table(Activity::TABLE)->insert($entry);
-            DB::table(self::HEAD)->where('id', 1)->update([
+            $moved = [
                 'seq' => $seq,
                 'hash' => $entry['hash'],
                 'key_id' => $keyId,
                 'seal' => hash_hmac('sha256', "head\n{$seq}\n{$entry['hash']}", $key),
-            ]);
+            ];
+            if (DB::connection()->getDriverName() === 'pgsql') {
+                self::writeTogether($entry, $moved);
+            } else {
+                // SQLite and MySQL can't write two tables in one statement.
+                DB::table(Activity::TABLE)->insert($entry);
+                DB::table(self::HEAD)->where('id', 1)->update($moved);
+            }
         }, 3);
+    }
+
+    /**
+     * The entry and the head, in one Postgres statement: a writable CTE, with the values bound
+     * as the two statements would bind them.
+     *
+     * @param  array<string, mixed>  $entry
+     * @param  array<string, mixed>  $moved
+     */
+    private static function writeTogether(array $entry, array $moved): void
+    {
+        $insert = DB::table(Activity::TABLE);
+        $grammar = $insert->getGrammar();
+        $set = implode(', ', array_map(fn (string $column) => $grammar->wrap($column).' = ?', array_keys($moved)));
+        DB::statement(
+            'with entry as ('.$grammar->compileInsert($insert, [$entry]).') update '.$grammar->wrapTable(self::HEAD).' set '.$set.' where '.$grammar->wrap('id').' = 1',
+            [...array_values($entry), ...array_values($moved)],
+        );
     }
 
     /**

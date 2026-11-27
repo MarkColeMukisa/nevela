@@ -139,4 +139,4 @@ node report.mjs    # the tables, from results/latest
 
 It builds the Nevela app from the package in your checkout, so it measures the code as it is now. `APPS="nevela-octane rust"` measures fewer apps. On a machine with more cores, give the apps what Grit's harness does: `APP_CPUS=4 PG_CPUS=8 FPM_WORKERS=32 ./run.sh`.
 
-It also runs on GitHub as the **Benchmark** workflow, by hand from the Actions tab and on any pull request that changes `benchmarks/`. The tables are in the run's summary.
+It also runs on GitHub as the **Benchmark** workflow, by hand from the Actions tab and on any pull request that changes `benchmarks/`. By hand, it can race fewer apps and scenarios: `nevela-octane laravel-auth-octane` with `write` takes about twenty minutes, enough to see what a change to Nevela did. The tables are in the run's summary.
