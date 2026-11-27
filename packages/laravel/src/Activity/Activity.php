@@ -317,11 +317,12 @@ final class Activity
         if (Chain::ready()) {
             // Written once and sealed, never added to: the page joins a run of them into one line
             // by its group, the same person, change and resource within a couple of minutes.
-            $open = DB::table(self::TABLE)
-                ->where('user_id', $who)->where('action', $action)->where('resource', $descriptor->name)
-                ->whereNotNull('seq')->where('created_at', '>=', $now->copy()->subSeconds(self::MERGE_SECONDS)->format('Y-m-d H:i:s'))
-                ->orderByDesc('seq')->value('group_id');
-            Chain::append([...$row, 'group_id' => $open ?? $row['id']]);
+            Chain::append([...$row, 'group_id' => $row['id']], [
+                'user_id' => $who,
+                'action' => $action,
+                'resource' => $descriptor->name,
+                'since' => $now->copy()->subSeconds(self::MERGE_SECONDS)->format('Y-m-d H:i:s'),
+            ]);
         } else {
             // Before the chain's migration: one row each, as the page then shows them.
             DB::table(self::TABLE)->insert([...$row, 'created_at' => $now, 'updated_at' => $now]);

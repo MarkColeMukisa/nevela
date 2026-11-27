@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+### Changed
+
+- Writes do less after the answer is sent (the speed rally's first step). On Postgres, the sealed activity log takes four trips to the database instead of six, counting the transaction's start and commit: the newest entry and whether it starts a new line are read together under the chain's lock, and the entry and the chain's head are written in one statement. The hash is still made in PHP, so the key never reaches the database. And the bell stops asking as soon as it finds nobody else to tell: one query fewer for a create nobody else may see. Measured on one create in the benchmark app: 7 queries after the answer down to 4, and the time spent there down by about a third. The benchmark app has one user, so the bell's saving there is the smallest case: telling each other person still costs a few trips each.
+
 ## [0.45.1] - 2026-11-27
 
 _Bun first in the docs and installer, and the rally on the home page_

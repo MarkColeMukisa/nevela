@@ -169,15 +169,22 @@ final class Announce
      */
     private static function toViewers(string $permission, string $model, array $ids, Closure $notice, mixed $except = null): void
     {
+        $exceptKey = is_object($except) && method_exists($except, 'getAuthIdentifier') ? $except->getAuthIdentifier() : null;
+        $exceptId = $exceptKey === null ? null : (string) $exceptKey;
         try {
-            $query = Access::holders($permission);
+            // Who else holds it, first: when nobody does, as often, nothing more is asked.
+            $holders = Access::holderIds($permission, $exceptId);
+            if ($holders === []) {
+                return;
+            }
+            $query = Access::holders($permission, $holders);
         } catch (\Throwable $e) {
             report($e);
 
             return;
         }
-        if (is_object($except) && method_exists($except, 'getAuthIdentifier')) {
-            $query->whereKeyNot($except->getAuthIdentifier());
+        if ($exceptKey !== null) {
+            $query->whereKeyNot($exceptKey);
         }
         self::tell($query, $model, $ids, $notice);
     }

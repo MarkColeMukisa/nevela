@@ -11,6 +11,12 @@ on:
       duration:
         description: Length of each run, in seconds (30s)
         default: 30s
+      apps:
+        description: Which apps, by name, space-separated (empty is all nine; "nevela-octane laravel-auth-octane" takes about 20 minutes)
+        default: ""
+      scenarios:
+        description: Which scenarios, space-separated (empty is show list write mixed)
+        default: ""
   pull_request:
     paths:
       - benchmarks/**
@@ -50,11 +56,17 @@ jobs:
       - run: go install github.com/MUKE-coder/grit/v3/cmd/grit@v3.581.0
       - run: ./apps/grit.sh
       # Every app answers every scenario without a failure, before half an hour is spent measuring.
+      # The apps and scenarios asked for, through the environment: run.sh takes all of them when empty.
       - run: ./run.sh check
+        env:
+          APPS: ${{ inputs.apps }}
+          SCENARIOS: ${{ inputs.scenarios }}
       - run: ./run.sh
         env:
           REPS: ${{ inputs.reps || '3' }}
           DURATION: ${{ inputs.duration || '30s' }}
+          APPS: ${{ inputs.apps }}
+          SCENARIOS: ${{ inputs.scenarios }}
       - run: node report.mjs >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
