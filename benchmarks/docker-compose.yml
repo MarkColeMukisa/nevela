@@ -107,6 +107,11 @@ services:
     environment:
       <<: *env
       DB_DATABASE: bench_nevela
+      # Nevela's limits on the signed-in API (600 a minute per person, 1,200 per address) are
+      # off for the race: k6 is one person at one address, asking hundreds of times a second.
+      # Every other protection is as shipped.
+      NEVELA_API_PER_PERSON: "0"
+      NEVELA_API_PER_ADDRESS: "0"
 
   # ── The same two signed-in apps on Octane (FrankenPHP), which keeps the app booted ──
   laravel-auth-octane:
@@ -135,5 +140,94 @@ services:
     environment:
       <<: *env
       DB_DATABASE: bench_nevela
+      # Nevela's limits on the signed-in API (600 a minute per person, 1,200 per address) are
+      # off for the race: k6 is one person at one address, asking hundreds of times a second.
+      # Every other protection is as shipped.
+      NEVELA_API_PER_PERSON: "0"
+      NEVELA_API_PER_ADDRESS: "0"
       OCTANE_SERVER: frankenphp
       OCTANE_WORKERS: "${FPM_WORKERS:-8}"
+
+  # ── The rally's other contenders ──────────────────────────────────────
+  # Grit: a plain `grit new --api` with `grit generate resource Product` (apps/grit.sh), as
+  # Grit's own harness builds it, in its own image. Run as Grit's harness runs it: Sentinel,
+  # Pulse and Studio off, no Redis. Its request limits are 0 in its rules table (apps/grit.sh).
+  grit:
+    <<: *app
+    image: nevela-bench/grit
+    build:
+      context: ./apps/grit-bench/apps/api
+      dockerfile: Dockerfile
+    environment:
+      APP_ENV: production
+      GIN_MODE: release
+      PORT: "8080"
+      DB_PROVIDER: postgres
+      DATABASE_URL: postgres://bench@postgres:5432/bench_grit?sslmode=disable
+      # A fixed secret so the image needs no .env, as the PHP apps' APP_KEY. It signs nothing that matters here.
+      JWT_SECRET: bench-only-not-a-secret-0123456789abcdef0123456789
+      # Long enough for the whole run, so one sign-in serves every scenario.
+      JWT_ACCESS_EXPIRY: 24h
+      AUDIT_CHAIN_KEY: bench-only-not-a-secret-0123456789abcdef
+      LOG_LEVEL: error
+      DB_LOG_LEVEL: warn
+      STORAGE_DRIVER: local
+      ALLOW_LOCAL_STORAGE_IN_PRODUCTION: "true"
+      STUDIO_ENABLED: "false"
+      PULSE_ENABLED: "false"
+      SENTINEL_ENABLED: "false"
+      REDIS_URL: ""
+      # Grit refuses to start in production with these at their defaults, even switched off.
+      SENTINEL_PASSWORD: bench-only-not-a-secret-sentinel-0123456789
+      SENTINEL_SECRET_KEY: bench-only-not-a-secret-sentinel-key-0123456789abcdef
+      PULSE_PASSWORD: bench-only-not-a-secret-pulse-0123456789
+
+  # Bun: Grit's harness's Bun.serve + Drizzle app, with a JWT check on every products route
+  # (apps/bun). On Grit's own table: run.sh migrates its database with Grit's migrations.
+  bun:
+    <<: *app
+    image: nevela-bench/bun
+    build:
+      context: ./apps/bun
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+      DATABASE_URL: postgres://bench@postgres:5432/bench_bun
+      DB_MAX_OPEN_CONNS: "100"
+      BENCH_JWT_SECRET: bench-only-not-a-secret-0123456789abcdef0123456789
+      # One process per CPU the app is given, sharing the socket, as Bun's docs advise.
+      BUN_WORKERS: "${APP_CPUS:-1}"
+
+  # Rust: Axum, Tokio and sqlx (apps/rust), answering as the Bun app does, with the same JWT
+  # check. On Grit's own table too, migrated by Grit's migrations.
+  rust:
+    <<: *app
+    image: nevela-bench/rust
+    build:
+      context: ./apps/rust
+      dockerfile: Dockerfile
+    environment:
+      PORT: "8080"
+      DATABASE_URL: postgres://bench@postgres:5432/bench_rust
+      DB_MAX_OPEN_CONNS: "100"
+      BENCH_JWT_SECRET: bench-only-not-a-secret-0123456789abcdef0123456789
+      # One worker thread per CPU the app is given.
+      TOKIO_WORKER_THREADS: "${APP_CPUS:-1}"
+
+  # Next.js: Grit's harness's App Router route handlers on Prisma, the standalone server, one
+  # process per CPU (apps/nextjs), with the same JWT check as Bun. On Grit's own table too.
+  nextjs:
+    <<: *app
+    image: nevela-bench/nextjs
+    build:
+      context: ./apps/nextjs
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+      HOSTNAME: 0.0.0.0
+      DATABASE_URL: postgres://bench@postgres:5432/bench_nextjs
+      DB_MAX_OPEN_CONNS: "100"
+      BENCH_JWT_SECRET: bench-only-not-a-secret-0123456789abcdef0123456789
+      NODE_CLUSTER_WORKERS: "${APP_CPUS:-1}"

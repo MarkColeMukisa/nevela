@@ -6,3 +6,9 @@
 packages/laravel/vendor
 packages/laravel/tests
 packages/laravel/composer.lock
+# The rally's other contenders are built from their own folders, not into the PHP images.
+benchmarks/apps/grit-bench
+benchmarks/apps/grit-seed
+benchmarks/apps/grit.sh
+benchmarks/apps/bun
+benchmarks/apps/tokens.mjs

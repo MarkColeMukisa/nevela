@@ -1,7 +1,7 @@
 name: Benchmark
 
-# Nevela against plain Laravel, on one GitHub runner, every app in turn. See
-# benchmarks/README.md for what is measured and how to read it.
+# The speed rally: Nevela against plain Laravel, Grit and Bun, on one GitHub runner, every
+# app in turn. See benchmarks/README.md for what is measured and how to read it.
 on:
   workflow_dispatch:
     inputs:
@@ -27,9 +27,10 @@ concurrency:
 
 jobs:
   benchmark:
-    name: Nevela against plain Laravel
+    name: Nevela, Laravel, Grit, Rust, Next.js and Bun
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    # Nine apps, four scenarios, three runs each, and the builds: about three and a half hours.
+    timeout-minutes: 330
     defaults:
       run:
         working-directory: benchmarks
@@ -41,6 +42,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # Grit's side is built by Grit's own CLI, at the version the rally is pinned to.
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: false
+      - run: go install github.com/MUKE-coder/grit/v3/cmd/grit@v3.581.0
+      - run: ./apps/grit.sh
       # Every app answers every scenario without a failure, before half an hour is spent measuring.
       - run: ./run.sh check
       - run: ./run.sh

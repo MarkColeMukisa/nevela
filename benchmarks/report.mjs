@@ -19,6 +19,10 @@ const APPS = {
   nevela: 'Nevela',
   'laravel-auth-octane': 'Laravel + Sanctum, Octane',
   'nevela-octane': 'Nevela, Octane',
+  grit: 'Grit',
+  bun: 'Bun',
+  rust: 'Rust',
+  nextjs: 'Next.js',
 };
 const SCENARIOS = {
   show: 'show: one product by its id',
@@ -120,6 +124,16 @@ for (const [scenario, title] of Object.entries(SCENARIOS)) {
     ['laravel-auth-octane', 'laravel-auth'],
     ['nevela-octane', 'nevela'],
     ['nevela-octane', 'laravel-auth-octane'],
+    // The rally: Nevela, at its fastest and as most run it, against Grit, Rust, Next.js and Bun.
+    ['nevela-octane', 'grit'],
+    ['nevela', 'grit'],
+    ['nevela-octane', 'bun'],
+    ['grit', 'bun'],
+    ['nevela-octane', 'rust'],
+    ['grit', 'rust'],
+    ['bun', 'rust'],
+    ['nevela-octane', 'nextjs'],
+    ['nevela', 'nextjs'],
   ];
   for (const [a, b] of pairs) {
     if (!by[a] || !by[b]) continue;
@@ -136,3 +150,34 @@ const markdown = `${lines.join('\n')}\n`;
 fs.writeFileSync(path.join(dir, 'summary.md'), markdown);
 fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify(json, null, 2)}\n`);
 process.stdout.write(markdown);
+
+// The docs' charts read this: `node report.mjs results/latest --docs ../apps/docs/src/data/rally.json --run <url>`.
+const option = (name) => {
+  const at = process.argv.indexOf(name);
+  return at > 0 ? process.argv[at + 1] : undefined;
+};
+const docs = option('--docs');
+if (docs) {
+  const field = (name) => new RegExp(`^${name}: (.*)$`, 'm').exec(environment)?.[1]?.trim() ?? null;
+  const results = {};
+  for (const [scenario, rows] of Object.entries(json)) {
+    for (const [app, r] of Object.entries(rows)) {
+      (results[app] ??= {})[scenario] = { rps: Math.round(r.rps), min: Math.round(r.min), max: Math.round(r.max), bound: r.bound, failed: r.failed };
+    }
+  }
+  const data = {
+    run: option('--run') ?? null,
+    date: field('date'),
+    commit: field('commit'),
+    machine: field('machine'),
+    cpu: field('cpu'),
+    limits: field('limits'),
+    load: field('load'),
+    versions: Object.fromEntries(['php', 'laravel', 'grit', 'bun', 'rust', 'nextjs'].map((k) => [k, field(k)]).filter(([, v]) => v)),
+    apps: Object.fromEntries(Object.keys(results).map((app) => [app, APPS[app]])),
+    scenarios: Object.keys(json),
+    results,
+  };
+  fs.mkdirSync(path.dirname(path.resolve(docs)), { recursive: true });
+  fs.writeFileSync(path.resolve(docs), `${JSON.stringify(data, null, 2)}\n`);
+}

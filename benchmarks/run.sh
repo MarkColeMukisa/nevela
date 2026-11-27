@@ -23,7 +23,8 @@ VUS="${VUS:-50}"
 DURATION="${DURATION:-30s}"
 WARMUP="${WARMUP:-8s}"
 SCENARIOS="${SCENARIOS:-show list write mixed}"
-APPS="${APPS:-laravel laravel-auth nevela laravel-auth-octane nevela-octane}"
+APPS="${APPS:-laravel laravel-auth nevela laravel-auth-octane nevela-octane grit bun rust nextjs}"
+ALL_APPS="laravel laravel-auth nevela laravel-auth-octane nevela-octane grit bun rust nextjs"
 OUT="${OUT:-results/latest}"
 K6_IMAGE=grafana/k6:1.8.2
 NETWORK=nevela-bench_default
@@ -34,11 +35,16 @@ export APP_CPUS="${APP_CPUS:-1}" PG_CPUS="${PG_CPUS:-2}" FPM_WORKERS="${FPM_WORK
 seconds() { echo "${1%s}"; }
 case "$DURATION$WARMUP" in *[!0-9s]* | *m*) echo "DURATION and WARMUP are in seconds: 30s" >&2; exit 2 ;; esac
 
-database() { case "$1" in nevela*) echo bench_nevela ;; *) echo bench_laravel ;; esac; }
+database() { case "$1" in nevela*) echo bench_nevela ;; grit) echo bench_grit ;; bun) echo bench_bun ;; rust) echo bench_rust ;; nextjs) echo bench_nextjs ;; *) echo bench_laravel ;; esac; }
+# Grit, Bun, Rust and Next.js name their routes Grit's way: /api/v1/products?page_size=20.
+prefix() { case "$1" in grit | bun | rust | nextjs) echo /api/v1 ;; *) echo /api ;; esac; }
+page_param() { case "$1" in grit | bun | rust | nextjs) echo page_size ;; *) echo perPage ;; esac; }
+health() { case "$1" in grit | bun | rust | nextjs) echo /api/health ;; *) echo /up ;; esac; }
+measured() { case " $APPS " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 psql_in() { docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -q -U bench "$@"; }
 # As the web server's user, so nothing it writes is out of reach of the app afterwards.
 artisan() { local app="$1"; shift; docker compose exec -T -u www-data "$app" php artisan "$@"; }
-stop_apps() { docker compose stop laravel laravel-auth nevela laravel-auth-octane nevela-octane >/dev/null 2>&1 || true; }
+stop_apps() { docker compose stop $ALL_APPS >/dev/null 2>&1 || true; }
 
 # Up and answering. Asked from inside the network, as k6 asks.
 start_app() {
@@ -46,7 +52,7 @@ start_app() {
   stop_apps
   docker compose up -d "$app" >/dev/null 2>&1
   for i in $(seq 1 90); do
-    docker run --rm --network "$NETWORK" curlimages/curl:8.22.0 -sf --max-time 3 "http://$app:8080/up" >/dev/null 2>&1 && return 0
+    docker run --rm --network "$NETWORK" curlimages/curl:8.22.0 -sf --max-time 3 "http://$app:8080$(health "$app")" >/dev/null 2>&1 && return 0
     sleep 1
   done
   echo "!! $app did not start" >&2
@@ -59,6 +65,12 @@ start_app() {
 reset_products() {
   local db; db="$(database "$1")"
   psql_in -d "$db" -c "TRUNCATE products;" >/dev/null
+  # And what each app writes as it goes, which grows as the products do: Nevela's sealed
+  # activity log (its head back to the start), its security log and the bell; Grit's activity log.
+  case "$1" in
+    nevela*) psql_in -d "$db" -c "TRUNCATE nevela_activity, nevela_activity_anchors, nevela_security_events, nevela_notifications; UPDATE nevela_activity_head SET seq = 0, hash = '', key_id = NULL, seal = NULL;" >/dev/null ;;
+    grit) psql_in -d "$db" < seed/grit-reset.sql >/dev/null ;;
+  esac
   psql_in -d "$db" < seed/products.sql >/dev/null
   [ "$(psql_in -d "$db" -tA -c 'SELECT count(*) FROM products;' | tr -d '[:space:]')" = 10000 ]
 }
@@ -68,6 +80,7 @@ k6() { # app scenario duration run-name [summary file]
   docker run --rm --network "$NETWORK" --user "$(id -u):$(id -g)" -v "$PWD:/bench" -w /bench \
     -e BASE="http://$1:8080" -e SCENARIO="$2" -e VUS="$VUS" -e DURATION="$3" \
     -e TOKEN="$(cat "$OUT/token-$1" 2>/dev/null || true)" -e RUN="$4" -e SUMMARY="${5:-}" \
+    -e PREFIX="$(prefix "$1")" -e PAGE_PARAM="$(page_param "$1")" \
     "$K6_IMAGE" run --quiet k6/bench.js || true
 }
 
@@ -83,8 +96,15 @@ for app in laravel-auth-octane nevela-octane; do
   case " $APPS " in *" $app "*) octane="$octane $app" ;; esac
 done
 docker compose build laravel nevela $octane
+if measured grit; then
+  [ -d apps/grit-bench ] && [ -f apps/grit-seed ] || ./apps/grit.sh
+  docker compose build grit
+fi
+if measured bun; then docker compose build bun; fi
+if measured rust; then docker compose build rust; fi
+if measured nextjs; then docker compose build nextjs; fi
 docker compose up -d --wait postgres
-for db in bench_laravel bench_nevela; do
+for db in bench_laravel bench_nevela bench_grit bench_bun bench_rust bench_nextjs; do
   psql_in -d bench -c "DROP DATABASE IF EXISTS $db WITH (FORCE);" -c "CREATE DATABASE $db;" >/dev/null
 done
 
@@ -99,6 +119,34 @@ artisan nevela nevela:user --name=Bench --email=bench@example.com \
   --password="bench-$(od -An -N12 -tx1 /dev/urandom | tr -d ' \n')" --no-interaction >/dev/null
 artisan nevela bench:token | tr -d '\r\n' > "$OUT/token-nevela"
 stop_apps
+# Grit, Bun, Rust and Next.js: Grit's own migrations make all their tables, so they are one table, and
+# Grit's seeder makes its administrator (admin@example.com), who signs in for a token.
+SECRET=bench-only-not-a-secret-0123456789abcdef0123456789
+if measured grit || measured bun || measured rust || measured nextjs; then
+  grit_password="bench-$(od -An -N12 -tx1 /dev/urandom | tr -d ' \n')"
+  for db in bench_grit bench_bun bench_rust bench_nextjs; do
+    docker run --rm --network "$NETWORK" -v "$PWD/apps/grit-seed:/grit-seed:ro" \
+      -e APP_ENV=production -e DB_PROVIDER=postgres -e DATABASE_URL="postgres://bench@postgres:5432/$db?sslmode=disable" \
+      -e JWT_SECRET="$SECRET" -e SEED_ADMIN_PASSWORD="$grit_password" \
+      -e STORAGE_DRIVER=local -e ALLOW_LOCAL_STORAGE_IN_PRODUCTION=true -e REDIS_URL= \
+      -e SENTINEL_ENABLED=false -e PULSE_ENABLED=false -e STUDIO_ENABLED=false \
+      -e SENTINEL_PASSWORD=bench-only-not-a-secret-sentinel-0123456789 \
+      -e SENTINEL_SECRET_KEY=bench-only-not-a-secret-sentinel-key-0123456789abcdef \
+      -e PULSE_PASSWORD=bench-only-not-a-secret-pulse-0123456789 \
+      alpine:3.22 /grit-seed >/dev/null
+  done
+fi
+if measured grit; then
+  start_app grit
+  docker run --rm --network "$NETWORK" curlimages/curl:8.22.0 -s -X POST "http://grit:8080/api/v1/auth/login" \
+    -H 'Content-Type: application/json' -d "{\"email\":\"admin@example.com\",\"password\":\"$grit_password\"}" \
+    | node apps/tokens.mjs grit > "$OUT/token-grit"
+  stop_apps
+fi
+if measured bun; then node apps/tokens.mjs bun "$SECRET" > "$OUT/token-bun"; fi
+# Rust and Next.js check the same kind of token as Bun, under the same secret.
+if measured rust; then node apps/tokens.mjs bun "$SECRET" > "$OUT/token-rust"; fi
+if measured nextjs; then node apps/tokens.mjs bun "$SECRET" > "$OUT/token-nextjs"; fi
 # The Octane apps use the same databases, and so the same accounts.
 cp "$OUT/token-laravel-auth" "$OUT/token-laravel-auth-octane"
 cp "$OUT/token-nevela" "$OUT/token-nevela-octane"
@@ -112,6 +160,16 @@ if ! diff -u "$OUT/schema-bench_laravel.sql" "$OUT/schema-bench_nevela.sql"; the
   echo "!! the products tables differ: fix the plain app's migration first" >&2
   exit 1
 fi
+# Grit's table is Grit's own. Bun's, Rust's and Next.js's come from the same migrations, so they have to be the same.
+if measured grit || measured bun || measured rust || measured nextjs; then
+  for db in bench_grit bench_bun bench_rust bench_nextjs; do
+    docker compose exec -T postgres pg_dump -U bench --schema-only --no-owner --table=products "$db" \
+      | grep -vE '^(--|SET |SELECT pg_catalog|[\](un)?restrict )' | grep -v '^$' > "$OUT/schema-$db.sql"
+  done
+  diff -u "$OUT/schema-bench_grit.sql" "$OUT/schema-bench_bun.sql" || { echo "!! Grit's and Bun's products tables differ" >&2; exit 1; }
+  diff -u "$OUT/schema-bench_grit.sql" "$OUT/schema-bench_rust.sql" || { echo "!! Grit's and Rust's products tables differ" >&2; exit 1; }
+  diff -u "$OUT/schema-bench_grit.sql" "$OUT/schema-bench_nextjs.sql" || { echo "!! Grit's and Next.js's products tables differ" >&2; exit 1; }
+fi
 
 {
   echo "date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -123,6 +181,10 @@ fi
   start_app nevela >/dev/null
   echo "php: $(docker compose exec -T nevela php -r 'echo PHP_VERSION;')"
   echo "laravel: $(artisan nevela --version --no-ansi | tr -d '\r')"
+  if measured grit; then echo "grit: $(grit version 2>/dev/null | awk '{print $NF}'), $(sed -n 's/^go /go /p' apps/grit-bench/apps/api/go.mod | head -1)"; fi
+  if measured bun; then echo "bun: $(sed -n 's|^FROM oven/bun:\([^ ]*\).*|\1|p' apps/bun/Dockerfile)"; fi
+  if measured rust; then echo "rust: $(sed -n 's|^FROM rust:\([0-9.]*\).*|\1|p' apps/rust/Dockerfile), axum $(grep -A1 '^name = "axum"$' apps/rust/Cargo.lock | sed -n 's/^version = "\(.*\)"/\1/p')"; fi
+  if measured nextjs; then echo "nextjs: $(node -p "const l=require('./apps/nextjs/package-lock.json').packages; 'next ' + l['node_modules/next'].version + ', prisma ' + l['node_modules/@prisma/client'].version")"; fi
   stop_apps
 } > "$OUT/environment.txt"
 cat "$OUT/environment.txt"
@@ -151,13 +213,14 @@ for scenario in $SCENARIOS; do
       k6 "$app" "$scenario" "$DURATION" "r$rep" "$OUT/$app-$scenario-$rep.json" | tail -1
       wait "$sampler" || true
 
-      # Clean: no failed request, and none left unanswered (a run that overran its time).
+      # Clean: no failed request, and none left unanswered (a run that overran its time). A
+      # check asks only the first: its 3-second runs are too short for a slow machine's tail.
       problem=$(node -e '
         const s = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
         const failed = s.metrics.failed_requests ? s.metrics.failed_requests.values.rate : 1;
-        const overran = s.state.testRunDurationMs > parseInt(process.argv[2], 10) * 1000 + 2000;
+        const overran = process.argv[3] !== "check" && s.state.testRunDurationMs > parseInt(process.argv[2], 10) * 1000 + 2000;
         console.log(failed > 0 ? `failed requests (${failed})` : overran ? "requests left unanswered" : "");
-      ' "$OUT/$app-$scenario-$rep.json" "$DURATION" 2>/dev/null || echo "no results")
+      ' "$OUT/$app-$scenario-$rep.json" "$DURATION" "$MODE" 2>/dev/null || echo "no results")
       if [ -n "$problem" ]; then
         echo "   !! $app $scenario: $problem" >&2
         docker compose logs --tail 20 "$app" >&2
