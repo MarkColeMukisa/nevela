@@ -1,16 +1,18 @@
 {
-  "run": "https://github.com/MarkColeMukisa/nevela/actions/runs/45832679972",
-  "date": "2026-11-26T13:57:27Z",
-  "commit": "077aa27",
+  "run": "https://github.com/MarkColeMukisa/nevela/actions/runs/45901640680",
+  "date": "2026-11-26T22:12:54Z",
+  "commit": "09e3f5e",
   "machine": "4 CPUs, 16759431168 bytes, Ubuntu 26.04.1 LTS",
-  "cpu": "AMD EPYC 9V45 96-Core Processor",
+  "cpu": "AMD EPYC 7763 64-Core Processor",
   "limits": "app 1 CPUs, postgres 2 CPUs, 8 PHP-FPM or Octane workers",
   "load": "50 virtual users, 30s per run, 3 runs per app and scenario",
   "versions": {
     "php": "8.5.13",
     "laravel": "Laravel Framework 13.44.1",
     "grit": "3.581.0, go 1.26.11",
-    "bun": "1.3.5-alpine"
+    "bun": "1.3.5-alpine",
+    "rust": "1.91, axum 0.8.9",
+    "nextjs": "next 15.5.29, prisma 6.19.3"
   },
   "apps": {
     "laravel": "Laravel",
@@ -19,7 +21,9 @@
     "laravel-auth-octane": "Laravel + Sanctum, Octane",
     "nevela-octane": "Nevela, Octane",
     "grit": "Grit",
-    "bun": "Bun"
+    "bun": "Bun",
+    "rust": "Rust",
+    "nextjs": "Next.js"
   },
   "scenarios": [
     "show",
@@ -30,211 +34,271 @@
   "results": {
     "laravel": {
       "show": {
-        "rps": 269,
-        "min": 260,
-        "max": 288,
+        "rps": 198,
+        "min": 192,
+        "max": 206,
         "bound": "the app",
         "failed": 0
       },
       "list": {
-        "rps": 185,
-        "min": 170,
-        "max": 212,
+        "rps": 132,
+        "min": 125,
+        "max": 132,
         "bound": "the app",
         "failed": 0
       },
       "write": {
-        "rps": 258,
-        "min": 255,
-        "max": 265,
+        "rps": 168,
+        "min": 162,
+        "max": 169,
         "bound": "the app",
         "failed": 0
       },
       "mixed": {
-        "rps": 200,
-        "min": 192,
-        "max": 217,
+        "rps": 126,
+        "min": 123,
+        "max": 135,
         "bound": "the app",
         "failed": 0
       }
     },
     "laravel-auth": {
       "show": {
-        "rps": 197,
-        "min": 187,
-        "max": 203,
+        "rps": 149,
+        "min": 146,
+        "max": 152,
         "bound": "the app",
         "failed": 0
       },
       "list": {
-        "rps": 144,
-        "min": 139,
-        "max": 162,
+        "rps": 105,
+        "min": 104,
+        "max": 107,
         "bound": "the app",
         "failed": 0
       },
       "write": {
-        "rps": 187,
-        "min": 181,
-        "max": 210,
+        "rps": 131,
+        "min": 127,
+        "max": 132,
         "bound": "the app",
         "failed": 0
       },
       "mixed": {
-        "rps": 154,
-        "min": 142,
-        "max": 178,
+        "rps": 102,
+        "min": 100,
+        "max": 104,
         "bound": "the app",
         "failed": 0
       }
     },
     "nevela": {
       "show": {
-        "rps": 141,
-        "min": 140,
-        "max": 147,
+        "rps": 114,
+        "min": 106,
+        "max": 117,
         "bound": "the app",
         "failed": 0
       },
       "list": {
-        "rps": 114,
-        "min": 107,
-        "max": 123,
+        "rps": 82,
+        "min": 81,
+        "max": 85,
         "bound": "the app",
         "failed": 0
       },
       "write": {
-        "rps": 110,
-        "min": 105,
-        "max": 111,
+        "rps": 73,
+        "min": 73,
+        "max": 75,
         "bound": "the app",
         "failed": 0
       },
       "mixed": {
-        "rps": 125,
-        "min": 109,
-        "max": 134,
+        "rps": 81,
+        "min": 79,
+        "max": 81,
         "bound": "the app",
         "failed": 0
       }
     },
     "laravel-auth-octane": {
       "show": {
-        "rps": 396,
-        "min": 394,
-        "max": 409,
+        "rps": 284,
+        "min": 273,
+        "max": 287,
         "bound": "the app",
         "failed": 0
       },
       "list": {
-        "rps": 227,
-        "min": 201,
-        "max": 237,
+        "rps": 147,
+        "min": 145,
+        "max": 148,
         "bound": "the app",
         "failed": 0
       },
       "write": {
-        "rps": 346,
-        "min": 340,
-        "max": 355,
+        "rps": 217,
+        "min": 215,
+        "max": 217,
         "bound": "the app",
         "failed": 0
       },
       "mixed": {
-        "rps": 250,
-        "min": 235,
-        "max": 261,
+        "rps": 149,
+        "min": 144,
+        "max": 154,
         "bound": "the app",
         "failed": 0
       }
     },
     "nevela-octane": {
       "show": {
-        "rps": 288,
-        "min": 276,
-        "max": 302,
+        "rps": 203,
+        "min": 196,
+        "max": 209,
         "bound": "the app",
         "failed": 0
       },
       "list": {
-        "rps": 171,
-        "min": 157,
-        "max": 174,
+        "rps": 116,
+        "min": 115,
+        "max": 117,
         "bound": "the app",
         "failed": 0
       },
       "write": {
-        "rps": 164,
-        "min": 161,
-        "max": 169,
+        "rps": 103,
+        "min": 101,
+        "max": 107,
         "bound": "the app",
         "failed": 0
       },
       "mixed": {
-        "rps": 195,
-        "min": 192,
-        "max": 202,
+        "rps": 116,
+        "min": 115,
+        "max": 118,
         "bound": "the app",
         "failed": 0
       }
     },
     "grit": {
       "show": {
-        "rps": 3224,
-        "min": 3050,
-        "max": 3602,
+        "rps": 2075,
+        "min": 2038,
+        "max": 2102,
         "bound": "the app",
         "failed": 0
       },
       "list": {
-        "rps": 1899,
-        "min": 1821,
-        "max": 2004,
+        "rps": 1192,
+        "min": 1175,
+        "max": 1195,
         "bound": "the app",
         "failed": 0
       },
       "write": {
-        "rps": 3138,
-        "min": 3122,
-        "max": 3276,
+        "rps": 1802,
+        "min": 1797,
+        "max": 1826,
         "bound": "the app",
         "failed": 0
       },
       "mixed": {
-        "rps": 1575,
-        "min": 1512,
-        "max": 1593,
+        "rps": 869,
+        "min": 867,
+        "max": 876,
         "bound": "the database",
         "failed": 0
       }
     },
     "bun": {
       "show": {
-        "rps": 5260,
-        "min": 5059,
-        "max": 5857,
+        "rps": 2926,
+        "min": 2896,
+        "max": 2961,
         "bound": "the app",
         "failed": 0
       },
       "list": {
-        "rps": 2164,
-        "min": 1441,
-        "max": 2187,
-        "bound": "the app",
+        "rps": 794,
+        "min": 781,
+        "max": 804,
+        "bound": "the database",
         "failed": 0
       },
       "write": {
-        "rps": 6271,
-        "min": 5520,
-        "max": 6375,
+        "rps": 2830,
+        "min": 2818,
+        "max": 2835,
         "bound": "the app",
         "failed": 0
       },
       "mixed": {
-        "rps": 1403,
-        "min": 1391,
-        "max": 1440,
+        "rps": 809,
+        "min": 801,
+        "max": 838,
         "bound": "the database",
+        "failed": 0
+      }
+    },
+    "rust": {
+      "show": {
+        "rps": 6525,
+        "min": 6490,
+        "max": 6595,
+        "bound": "the app",
+        "failed": 0
+      },
+      "list": {
+        "rps": 795,
+        "min": 790,
+        "max": 815,
+        "bound": "the database",
+        "failed": 0
+      },
+      "write": {
+        "rps": 6517,
+        "min": 6493,
+        "max": 6670,
+        "bound": "neither",
+        "failed": 0
+      },
+      "mixed": {
+        "rps": 807,
+        "min": 804,
+        "max": 833,
+        "bound": "the database",
+        "failed": 0
+      }
+    },
+    "nextjs": {
+      "show": {
+        "rps": 362,
+        "min": 344,
+        "max": 396,
+        "bound": "the app",
+        "failed": 0
+      },
+      "list": {
+        "rps": 204,
+        "min": 202,
+        "max": 206,
+        "bound": "the app",
+        "failed": 0
+      },
+      "write": {
+        "rps": 420,
+        "min": 419,
+        "max": 431,
+        "bound": "the app",
+        "failed": 0
+      },
+      "mixed": {
+        "rps": 198,
+        "min": 198,
+        "max": 202,
+        "bound": "the app",
         "failed": 0
       }
     }
