@@ -16,12 +16,12 @@ On a new computer, or if you aren't sure you have them, start with [Set up your 
 ## 1. Get the nevela command
 
 ```sh
-npm install -g create-nevela
+bun add -g create-nevela
 ```
 
-Once, on your computer. Every command on this site is then `nevela` and a word, in any shell. `nevela --version` says which version you have, and `nevela update` brings it up to date.
+Without [Bun](/start/setup/#bun-for-faster-installs), `npm install -g create-nevela` does the same. Once, on your computer. Every command on this site is then `nevela` and a word, in any shell. `nevela --version` says which version you have, and `nevela update` brings it up to date.
 
-You can skip this: `pnpm create nevela my-app` (or `npm create nevela@latest my-app`) creates an app without installing anything, and inside an app `php nevela dev` does what `nevela dev` does. [Without the nevela command](/reference/commands/#without-the-nevela-command) lists the longer forms.
+You can skip this: `bun create nevela@latest my-app` (or `npm create nevela@latest my-app`) creates an app without installing anything, and inside an app `php nevela dev` does what `nevela dev` does. [Without the nevela command](/reference/commands/#without-the-nevela-command) lists the longer forms.
 
 ## 2. Create the app
 
@@ -41,11 +41,11 @@ Leave the name off and it asks for one. It asks nothing else, and does the setup
   ✔ Administrator            admin@example.com
   ✔ Sample users             2 editors · 8 users
   ✔ Blog                     Post resource · 3 posts · /blog
-  ✔ Site packages            pnpm · 140 packages                         36.0s
-  ✔ Admin packages           pnpm · 140 packages                         31.2s
+  ✔ Site packages            bun · 140 packages                           6.1s
+  ✔ Admin packages           bun · 140 packages                           5.4s
   ✔ Git repository           git init                                    412ms
 
-  Created my-app  Laravel API · site · admin · blog · 3m 02s
+  Created my-app  Laravel API · site · admin · blog · 2m 08s
 
   Then open the admin at http://localhost:3001/sign-in and sign in with:
 
@@ -149,7 +149,7 @@ It lists the Nevela version, which migrations have run and which are pending, ho
 
 **"Can't reach the server" on the sign-in page.** The API is not running. Start it with `nevela dev`.
 
-**"nevela: command not found".** The command isn't installed, or your terminal was open before it was. Run `npm install -g create-nevela` and open a new terminal. Without it, `pnpm nevela dev` works inside an app in every shell.
+**"nevela: command not found".** The command isn't installed, or your terminal was open before it was. Run `bun add -g create-nevela` (or `npm install -g create-nevela`) and open a new terminal. Without it, `bun run nevela dev` (`npm run nevela -- dev` in an app made with npm) works inside an app in every shell.
 
 **"php: command not found" in Git Bash.** With Laravel Herd on Windows, PHP is `php.bat`, and Git Bash does not run that when you type `php`. The `nevela` command is not affected: it finds PHP itself. Only the longer form `php nevela …` needs PowerShell there.
 

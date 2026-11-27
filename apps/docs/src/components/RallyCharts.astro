@@ -1,200 +1,301 @@
 ---
 /**
- * The speed rally's charts: Nevela against each rival, one chart a rival, in the order the
- * rivals finished (the fastest first). Read from src/data/rally.json, which
- * `node benchmarks/report.mjs <results> --docs ...` writes from a race run.
+ * The speed rally's charts: Nevela against each rival, side by side, one pair of bars a rival,
+ * in the order the rivals finished (the fastest first), with a tab for each scenario.
+ * Read from src/data/rally.json, which `node benchmarks/report.mjs <results> --docs ...`
+ * writes from a race run.
  *
  * Nevela runs as it does at its fastest, on Octane. Laravel's side is Laravel + Sanctum on
  * Octane, the like-for-like app: signed in, on the same server.
+ *
+ * Bar heights are scaled within each pair, as Grit's page does it: the gaps run from 1.3× to
+ * 63×, so one shared scale would leave most of Nevela's bars invisible. The figures printed
+ * are the measurements; the table under the charts has them all.
  */
+import { Image } from 'astro:assets';
 import rally from '../data/rally.json';
+
+interface Props {
+  /** Where the footnote's link goes, and what it says: the methodology on the benchmarks page, the page itself elsewhere. */
+  link?: string;
+  linkText?: string;
+  /** The table of every number, under the charts. The benchmarks page has it; the home page links there instead. */
+  numbers?: boolean;
+}
+const { link = '#fair-to-all-of-them', linkText = 'Methodology', numbers = true } = Astro.props;
+import laravelLogo from '../assets/rally/laravel.png';
+import bunLogo from '../assets/rally/bun.png';
+import gritLogo from '../assets/rally/grit.png';
+import rustSvg from '../assets/rally/rust.svg?raw';
+import nextSvg from '../assets/rally/nextdotjs.svg?raw';
+import nevelaSvg from '../assets/nevela-mark.svg?raw';
 
 type Cell = { rps: number; min: number; max: number; bound: string; failed: number };
 const results = rally.results as Record<string, Record<string, Cell>>;
 
 const NEVELA = 'nevela-octane';
-const RIVALS: Record<string, string> = {
-  grit: 'Grit',
-  rust: 'Rust',
-  nextjs: 'Next.js',
-  bun: 'Bun',
-  'laravel-auth-octane': 'Laravel',
+type Rival = { name: string; stack: string; png?: ImageMetadata; svg?: string };
+const RIVALS: Record<string, Rival> = {
+  grit: { name: 'Grit', stack: 'v3.581 + Go, GORM', png: gritLogo },
+  rust: { name: 'Rust', stack: 'v1.91 + Axum, sqlx', svg: rustSvg },
+  nextjs: { name: 'Next.js', stack: 'v15.5 + Prisma', svg: nextSvg },
+  bun: { name: 'Bun', stack: 'v1.3 + Drizzle', png: bunLogo },
+  'laravel-auth-octane': { name: 'Laravel', stack: 'v13 + Sanctum', png: laravelLogo },
 };
-const SCENARIOS: Record<string, string> = {
-  show: 'show',
-  list: 'list',
-  write: 'write',
-  mixed: 'mixed',
+const SCENARIOS: Record<string, { tab: string; title: string; about: string }> = {
+  mixed: { tab: 'Mixed', title: 'Requests a second, 85% list / 10% read / 5% write', about: 'Closer to the shape of an API people read more than they write, and the fairest single number here' },
+  show: { tab: 'Read by ID', title: 'Requests a second, one product by its id', about: 'Routing, signing in, one row by its key and the JSON: what each framework costs on its own' },
+  write: { tab: 'Insert', title: 'Requests a second, validate and insert', about: 'The request body, validation with a unique check, and an insert' },
+  list: { tab: 'Paginated list', title: 'Requests a second, a page of 20 and the total', about: 'Twenty rows and a count of all 10,000, where the database does most of the work' },
 };
-const scenarios = rally.scenarios.filter((s) => s in SCENARIOS);
+const scenarios = Object.keys(SCENARIOS).filter((s) => rally.scenarios.includes(s));
 
 // One number a contender: the geometric mean of its scenarios, so no one scenario decides.
 const score = (app: string) => {
-  const cells = scenarios.map((s) => results[app]?.[s]?.rps).filter((v): v is number => !!v);
-  return cells.length === scenarios.length ? Math.exp(cells.reduce((sum, v) => sum + Math.log(v), 0) / cells.length) : 0;
+  const cells = rally.scenarios.map((s) => results[app]?.[s]?.rps).filter((v): v is number => !!v);
+  return cells.length === rally.scenarios.length ? Math.exp(cells.reduce((sum, v) => sum + Math.log(v), 0) / cells.length) : 0;
 };
 const standings = [NEVELA, ...Object.keys(RIVALS)].filter((app) => score(app) > 0).sort((a, b) => score(b) - score(a));
-const place = (app: string) => standings.indexOf(app) + 1;
 const ordinal = (n: number) => `${n}${n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th'}`;
 const rivals = standings.filter((app) => app !== NEVELA);
+const nevelaPlace = ordinal(standings.indexOf(NEVELA) + 1);
 
 const n = (v: number) => v.toLocaleString('en-US');
-const times = (a: number, b: number) => {
-  const r = a / b;
-  return r >= 10 ? `${Math.round(r)}×` : `${r.toFixed(1)}×`;
-};
+const times = (r: number) => (r >= 10 ? r.toFixed(1) : r.toFixed(2)) + '×';
 const overlap = (a: Cell, b: Cell) => a.min <= b.max && b.min <= a.max;
 const why = (c: Cell) => (c.bound === 'the database' ? 'Postgres gave out first' : c.bound === 'the app' ? 'its CPU was full' : 'neither was full');
+// Within the pair: the taller bar fills the plot, the other is to scale, never thinner than a sliver.
+const height = (v: number, top: number) => `${Math.max(2.5, (v / top) * 100).toFixed(1)}%`;
 
-const matchups = rivals.map((rival) => {
-  const name = RIVALS[rival];
-  const rows = scenarios.map((s) => ({ scenario: s, nevela: results[NEVELA][s], rival: results[rival][s] }));
-  const top = Math.max(...rows.flatMap((r) => [r.nevela.rps, r.rival.rps]));
-  const ahead = score(rival) > score(NEVELA);
-  const verdict = ahead
-    ? `${name} answered ${times(score(rival), score(NEVELA))} as many requests a second as Nevela`
-    : `Nevela answered ${times(score(NEVELA), score(rival))} as many requests a second as ${name}`;
-  return { rival, name, rows, top, verdict, place: ordinal(place(rival)) };
-});
-const nevelaPlace = ordinal(place(NEVELA));
+const panels = scenarios.map((s) => ({
+  scenario: s,
+  ...SCENARIOS[s],
+  pairs: rivals.map((rival) => {
+    const me = results[NEVELA][s];
+    const them = results[rival][s];
+    const close = overlap(me, them);
+    const leader = them.rps >= me.rps ? RIVALS[rival].name : 'Nevela';
+    const ratio = Math.max(me.rps, them.rps) / Math.min(me.rps, them.rps);
+    return { rival, ...RIVALS[rival], me, them, top: Math.max(me.rps, them.rps), close, leader, ratio };
+  }),
+}));
 ---
 
 <div class="rally">
-  <p class="rally-key" aria-hidden="true">
-    <span class="swatch nevela"></span> Nevela, Octane
-    <span class="swatch rival"></span> The rival
-    <span class="rally-unit">requests a second, more is better</span>
-  </p>
+  <div class="tabs" role="tablist" aria-label="Scenario">
+    {panels.map((p, i) => (
+      <button type="button" role="tab" id={`rally-tab-${p.scenario}`} aria-controls={`rally-panel-${p.scenario}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1}>
+        {p.tab}
+      </button>
+    ))}
+  </div>
 
-  {matchups.map((m) => (
-    <section class="matchup" aria-labelledby={`vs-${m.rival}`}>
-      <header>
-        <span class="place">{m.place}</span>
-        <h3 id={`vs-${m.rival}`}>Nevela vs {m.name}</h3>
-        <p class="verdict">{m.verdict}, across the four scenarios.</p>
-      </header>
-      <div class="chart" role="img" aria-label={`Requests a second, Nevela against ${m.name}: ${m.rows.map((r) => `${r.scenario}, Nevela ${n(r.nevela.rps)}, ${m.name} ${n(r.rival.rps)}`).join('; ')}`}>
-        {m.rows.map((r) => (
-          <div class="group">
-            <span class="scenario">{SCENARIOS[r.scenario]}</span>
-            <div class="bars">
+  {panels.map((p, i) => (
+    <section class="panel" role="tabpanel" id={`rally-panel-${p.scenario}`} aria-labelledby={`rally-tab-${p.scenario}`} hidden={i !== 0}>
+      <h3 class="title">{p.title}</h3>
+      <p class="about">{p.about}</p>
+      <p class="key">
+        <span class="mark" set:html={nevelaSvg} />
+        <strong>Nevela, Octane</strong>
+        <span class="vs">vs</span>
+        each rival, in the order they finished
+      </p>
+
+      <div class="pairs">
+        {p.pairs.map((m) => (
+          <figure class="pair" aria-label={`${p.tab}: Nevela ${n(m.me.rps)} requests a second, ${m.name} ${n(m.them.rps)}. ${m.close ? 'Too close to call.' : `${m.leader} ${times(m.ratio)} faster.`}`}>
+            <div class="logo" aria-hidden="true">
+              {m.png ? <Image src={m.png} alt="" height={88} /> : <span class="svg" set:html={m.svg} />}
+            </div>
+            <div class="plot" aria-hidden="true">
               {[
-                { who: 'Nevela', cls: 'nevela', c: r.nevela },
-                { who: m.name, cls: 'rival', c: r.rival },
+                { who: 'Nevela', cls: 'nevela', c: m.me },
+                { who: m.name, cls: 'rival', c: m.them },
               ].map((b) => (
-                <div class="track" tabindex="0">
-                  <span class={`bar ${b.cls}`} style={`width: ${Math.max(0.6, (b.c.rps / m.top) * 82)}%`}></span>
-                  <span class="value">{n(b.c.rps)} <span class="who">{b.who}</span></span>
-                  <span class="tip" role="tooltip">
-                    <strong>{b.who}</strong>, {r.scenario}: {n(b.c.rps)} a second. Runs {n(b.c.min)} to {n(b.c.max)}; {why(b.c)}.
-                  </span>
+                <div class="col" tabindex="0">
+                  <span class={`bar ${b.cls}`} style={`height: ${height(b.c.rps, m.top)}`}><span class="value">{n(b.c.rps)}</span></span>
+                  <span class="tip" role="tooltip"><strong>{b.who}</strong>: {n(b.c.rps)} a second. Runs {n(b.c.min)} to {n(b.c.max)}; {why(b.c)}.</span>
                 </div>
               ))}
             </div>
-          </div>
+            <div class="names" aria-hidden="true"><span>Nevela</span><span>{m.name}</span></div>
+            <figcaption>
+              <span class={`verdict ${m.close ? 'close' : m.leader === 'Nevela' ? 'win' : ''}`}>
+                {m.close ? 'too close to call' : `${m.leader === 'Nevela' ? 'Nevela ' : ''}${times(m.ratio)} faster`}
+              </span>
+              <span class="against">{m.leader === 'Nevela' || m.close ? `vs ${m.name}` : `${m.name} vs Nevela`}</span>
+              <span class="stack">{m.stack}</span>
+            </figcaption>
+          </figure>
         ))}
       </div>
-      <details>
-        <summary>The numbers</summary>
-        <table>
-          <thead>
-            <tr><th>Scenario</th><th>Nevela, Octane</th><th>{m.name}</th><th>Nevela against {m.name}</th></tr>
-          </thead>
-          <tbody>
-            {m.rows.map((r) => (
-              <tr>
-                <td><code>{r.scenario}</code></td>
-                <td>{n(r.nevela.rps)}</td>
-                <td>{n(r.rival.rps)}{r.rival.bound === 'the database' ? ' *' : ''}</td>
-                <td>{overlap(r.nevela, r.rival) ? 'within the spread' : `${(r.nevela.rps / r.rival.rps).toFixed(2)}×`}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {m.rows.some((r) => r.rival.bound === 'the database') && (
-          <p class="note">* Postgres gave out before {m.name} did, so {m.name} could go further than this.</p>
-        )}
-      </details>
     </section>
   ))}
 
-  <p class="standing">Nevela finished <strong>{nevelaPlace}</strong> of {standings.length}.</p>
+  <footer class="foot">
+    <p>
+      Every app ran on one GitHub runner, one after another, three times each, the median reported, with no
+      failed requests. 50 users at once, 1 CPU an app, one Postgres on 2 CPUs, the same 10,000 rows. Nevela
+      finished <strong>{nevelaPlace}</strong> of {standings.length}. Bar heights are scaled <em>within</em> each
+      pair, so compare the two bars in a pair, not heights across pairs. The printed figures are the measurements.
+    </p>
+    <a class="method" href={link}>{linkText} <span aria-hidden="true">→</span></a>
+  </footer>
+
+  {numbers && (
+  <details class="numbers">
+    <summary>All the numbers</summary>
+    <table>
+      <thead>
+        <tr><th>Rival</th>{panels.map((p) => <th>{p.tab}</th>)}</tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">Nevela, Octane</th>
+          {panels.map((p) => <td>{n(results[NEVELA][p.scenario].rps)}</td>)}
+        </tr>
+        {rivals.map((rival) => (
+          <tr>
+            <th scope="row">{RIVALS[rival].name}</th>
+            {panels.map((p) => (
+              <td>{n(results[rival][p.scenario].rps)}{results[rival][p.scenario].bound === 'the database' ? ' *' : ''}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <p class="note">Requests a second. * Postgres gave out before the app did, so the app could go further than this.</p>
+  </details>
+  )}
 </div>
+
+<script>
+  // Tabs: click, or the arrow keys, Home and End, as the ARIA tabs pattern has it.
+  for (const list of document.querySelectorAll<HTMLElement>('.rally [role="tablist"]')) {
+    const tabs = [...list.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const select = (tab: HTMLButtonElement) => {
+      for (const t of tabs) {
+        const on = t === tab;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+        document.getElementById(t.getAttribute('aria-controls')!)!.hidden = !on;
+      }
+    };
+    for (const tab of tabs) {
+      tab.addEventListener('click', () => select(tab));
+      tab.addEventListener('keydown', (e) => {
+        const i = tabs.indexOf(tab);
+        const next = e.key === 'ArrowRight' ? tabs[(i + 1) % tabs.length] : e.key === 'ArrowLeft' ? tabs[(i - 1 + tabs.length) % tabs.length] : e.key === 'Home' ? tabs[0] : e.key === 'End' ? tabs[tabs.length - 1] : null;
+        if (next) {
+          e.preventDefault();
+          select(next);
+          next.focus();
+        }
+      });
+    }
+  }
+</script>
 
 <style>
   .rally {
-    --rally-nevela: #338ced;
-    --rally-rival: #e76624;
+    --rally-nevela-top: #b69cff;
+    --rally-nevela-bottom: #7c4dff;
+    --rally-rival: #3b3f48;
     --rally-ink: var(--sl-color-white);
     --rally-muted: var(--sl-color-gray-3);
+    --rally-faint: var(--sl-color-gray-4);
+    --rally-accent: #b69cff;
     --rally-rule: var(--sl-color-hairline);
+    --rally-surface: var(--sl-color-black);
+    --rally-tab-on: rgba(124, 77, 255, 0.22);
     --rally-tip-bg: var(--sl-color-gray-6);
     margin-top: 1.5rem;
+    padding: 1.75rem 1.25rem 1.25rem;
+    border: 1px solid var(--rally-rule);
+    border-radius: 1rem;
+    background: var(--rally-surface);
   }
   :global(:root[data-theme='light']) .rally {
-    --rally-nevela: #257de0;
-    --rally-rival: #f47230;
+    --rally-nevela-top: #8f66ff;
+    --rally-nevela-bottom: #6f00ff;
+    --rally-rival: #a3a8b3;
+    --rally-accent: #6f00ff;
+    --rally-tab-on: rgba(111, 0, 255, 0.1);
   }
-  .rally-key {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.35rem 0.6rem;
-    font-size: var(--sl-text-sm);
-    color: var(--rally-muted);
-  }
-  .rally-unit { margin-left: auto; }
-  .swatch {
-    display: inline-block;
-    width: 0.75rem;
-    height: 0.75rem;
-    border-radius: 3px;
-  }
-  .swatch.nevela, .bar.nevela { background: var(--rally-nevela); }
-  .swatch.rival, .bar.rival { background: var(--rally-rival); }
-  .matchup {
-    border-top: 1px solid var(--rally-rule);
-    padding-top: 1.25rem;
-    margin-top: 1.5rem;
-  }
-  .matchup header { display: grid; grid-template-columns: auto 1fr; column-gap: 0.75rem; align-items: baseline; }
-  .place {
-    font-size: var(--sl-text-sm);
-    font-weight: 600;
-    color: var(--rally-muted);
-    font-variant-numeric: tabular-nums;
-  }
-  .matchup h3 { margin: 0; font-size: var(--sl-text-h4); }
-  .verdict { grid-column: 2; margin: 0.25rem 0 0; color: var(--rally-muted); font-size: var(--sl-text-sm); }
-  .chart { margin-top: 1rem; display: grid; gap: 0.9rem; }
-  .group { display: grid; grid-template-columns: 3.5rem 1fr; align-items: center; column-gap: 0.75rem; margin: 0; }
-  .scenario { font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); color: var(--rally-muted); }
-  .bars { display: grid; gap: 2px; margin: 0; }
-  .track {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    height: 1.1rem;
+
+  .tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.25rem; margin: 0; }
+  .tabs button {
     margin: 0;
-    border-radius: 4px;
-    outline-offset: 2px;
+    padding: 0.45rem 1rem;
+    border: 0;
+    border-radius: 0.5rem;
+    background: none;
+    color: var(--rally-muted);
+    font: inherit;
+    font-size: var(--sl-text-sm);
+    cursor: pointer;
   }
-  .bar { display: block; height: 0.85rem; border-radius: 0 4px 4px 0; flex: none; }
+  .tabs button:hover { color: var(--rally-ink); }
+  .tabs button[aria-selected='true'] { background: var(--rally-tab-on); color: var(--rally-accent); font-weight: 600; }
+  .tabs button:focus-visible { outline: 2px solid var(--rally-accent); outline-offset: 2px; }
+
+  .panel { margin: 0; }
+  .title { margin: 1.5rem 0 0; text-align: center; font-size: var(--sl-text-h3); line-height: 1.25; }
+  .about { margin: 0.4rem auto 0; max-width: 36rem; text-align: center; color: var(--rally-muted); font-size: var(--sl-text-sm); }
+  .key { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.25rem 0.5rem; margin: 0.6rem 0 0; color: var(--rally-muted); font-size: var(--sl-text-xs); }
+  .key strong { color: var(--rally-ink); font-weight: 600; }
+  .key .vs { color: var(--rally-faint); padding: 0 0.35rem; }
+  .mark { display: inline-flex; width: 1.1rem; height: 1.1rem; }
+  .mark :global(svg) { width: 100%; height: 100%; }
+
+  .pairs {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2rem 0.9rem;
+    margin: 1.75rem 0 0;
+  }
+  .pair { display: grid; align-content: start; margin: 0; }
+  .logo { display: flex; align-items: center; justify-content: center; height: 3rem; margin: 0 0 1rem; color: var(--rally-ink); }
+  .logo :global(img) { height: 2.75rem; width: auto; max-width: 7rem; object-fit: contain; }
+  .logo .svg { display: inline-flex; width: 2.75rem; height: 2.75rem; }
+  .logo .svg :global(svg) { width: 100%; height: 100%; fill: currentColor; }
+
+  .plot { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem; height: 13rem; margin: 0; }
+  .col { position: relative; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; margin: 0; padding-top: 1.5rem; border-radius: 6px; outline-offset: 3px; }
+  .col:focus-visible { outline: 2px solid var(--rally-accent); }
   .value {
-    font-size: var(--sl-text-xs);
-    color: var(--rally-ink);
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-  .who { color: var(--rally-muted); }
-  .tip {
     position: absolute;
     left: 0;
+    right: 0;
+    bottom: calc(100% + 0.3rem);
+    margin: 0;
+    text-align: center;
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--rally-ink);
+  }
+  .col:first-child .value { color: var(--rally-accent); }
+  .bar { position: relative; display: block; flex: none; margin: 0; border-radius: 6px 6px 2px 2px; }
+  .bar.nevela { background: linear-gradient(180deg, var(--rally-nevela-top), var(--rally-nevela-bottom)); }
+  .bar.rival { background: var(--rally-rival); }
+  .col:hover .bar, .col:focus-visible .bar { filter: brightness(1.12); }
+
+  .names { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem; margin: 0.5rem 0 0; text-align: center; font-size: var(--sl-text-xs); color: var(--rally-muted); }
+  figcaption { display: grid; justify-items: center; gap: 0.15rem; margin: 0.85rem 0 0; text-align: center; }
+  .verdict { font-weight: 700; font-size: var(--sl-text-base); color: var(--rally-ink); }
+  .verdict.win { color: var(--rally-accent); }
+  .verdict.close { color: var(--rally-muted); }
+  .against { font-size: var(--sl-text-xs); color: var(--rally-ink); }
+  .stack { font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); color: var(--rally-faint); }
+
+  .tip {
+    position: absolute;
+    left: 50%;
     bottom: calc(100% + 6px);
     z-index: 5;
     width: max-content;
-    max-width: min(22rem, 80vw);
+    max-width: min(16rem, 70vw);
     padding: 0.4rem 0.6rem;
     border-radius: 6px;
     background: var(--rally-tip-bg);
@@ -204,15 +305,35 @@ const nevelaPlace = ordinal(place(NEVELA));
     line-height: 1.4;
     pointer-events: none;
     opacity: 0;
+    transform: translateX(-50%);
     transition: opacity 0.1s;
   }
-  .track:hover .tip, .track:focus-visible .tip { opacity: 1; }
-  .track:hover .bar, .track:focus-visible .bar { filter: brightness(1.12); }
-  details { margin-top: 0.9rem; font-size: var(--sl-text-sm); }
-  details table { margin-top: 0.5rem; }
+  .col:hover .tip, .col:focus-visible .tip { opacity: 1; }
+
+  .foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    margin: 2rem 0 0;
+    padding: 1.25rem 0 0;
+    border-top: 1px solid var(--rally-rule);
+  }
+  .foot p { flex: 1 1 26rem; margin: 0; font-size: var(--sl-text-sm); color: var(--rally-muted); }
+  .method { color: var(--rally-accent); font-weight: 600; text-decoration: none; white-space: nowrap; }
+  .method:hover { text-decoration: underline; }
+  .numbers { margin: 1rem 0 0; font-size: var(--sl-text-sm); }
+  .numbers table { margin-top: 0.5rem; }
   .note { color: var(--rally-muted); font-size: var(--sl-text-xs); }
-  .standing { margin-top: 1.5rem; border-top: 1px solid var(--rally-rule); padding-top: 1rem; }
+
+  @media (max-width: 40rem) {
+    .rally { padding: 1.25rem 1rem 1rem; }
+    .pairs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem 1.25rem; }
+    .plot { height: 10rem; }
+  }
   @media (forced-colors: active) {
     .bar { forced-color-adjust: none; border: 1px solid CanvasText; }
+    .tabs button[aria-selected='true'] { outline: 2px solid Highlight; }
   }
 </style>

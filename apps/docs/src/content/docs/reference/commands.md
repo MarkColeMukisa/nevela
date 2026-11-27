@@ -6,7 +6,7 @@ description: "Every nevela command and option: new, update, resource, field, res
 Install the `nevela` command once, and everything is this short, in every shell:
 
 ```sh
-npm install -g create-nevela
+bun add -g create-nevela        # or npm install -g create-nevela, without Bun
 ```
 
 Anywhere:
@@ -519,11 +519,11 @@ Everything above works without installing anything. There are three longer forms
 | | Create an app | Inside an app |
 |---|---|---|
 | The `nevela` command | `nevela new my-app` | `nevela dev` |
-| Your package manager | `pnpm create nevela my-app` | `pnpm nevela dev` |
+| Your package manager | `bun create nevela@latest my-app` | `bun run nevela dev` |
 | The app's own launcher | | `php nevela dev` |
 | Artisan, in `apps/api` | | `php artisan nevela:dev` |
 
-With npm the first is `npm create nevela@latest my-app`, and the second is `npm run nevela -- dev`.
+With npm the first is `npm create nevela@latest my-app`, and the second is `npm run nevela -- dev`. With pnpm, `pnpm create nevela my-app` and `pnpm nevela dev`. Inside an app, use the package manager it was made with.
 
 ### The php nevela launcher
 
@@ -560,7 +560,9 @@ The file is written by `nevela generate` and kept up to date by it. Add your own
 In Git Bash on Windows with Laravel Herd, `php` is not found, because PHP there is `php.bat`. The `nevela` command works in every shell, and so does your package manager:
 
 ```sh
-pnpm nevela dev
-pnpm nevela resource Product --fields="name:string, price:money" --seed
-pnpm nevela upgrade
+bun run nevela dev
+bun run nevela resource Product --fields="name:string, price:money" --seed
+bun run nevela upgrade
 ```
+
+In an app made with npm, `npm run nevela -- dev`; with pnpm, `pnpm nevela dev`.

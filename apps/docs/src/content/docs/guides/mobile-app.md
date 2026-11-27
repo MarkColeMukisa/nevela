@@ -71,7 +71,7 @@ You don't write an address down. The app works it out:
 2. While developing, the address the phone already used to reach Expo's server on your computer, with the API's port.
 3. On an emulator, the emulator's own name for your computer.
 
-`nevela dev` writes the API's port to `apps/mobile/.env.local` each time it starts (`EXPO_PUBLIC_API_PORT`), so the two still agree when port 8000 was taken and the API moved to 8001. Restart `npx expo start` after the port changes.
+`nevela dev` writes the API's port to `apps/mobile/.env.local` each time it starts (`EXPO_PUBLIC_API_PORT`), so the two still agree when port 8000 was taken and the API moved to 8001. Restart `bunx expo start` after the port changes.
 
 If the sign-in screen says it couldn't reach the server, it names the address it tried. The usual causes are `nevela dev` not running, the phone on a different Wi-Fi (or on mobile data), and a firewall on the computer that blocks the API's port.
 
@@ -292,13 +292,13 @@ Expo Go is for developing. To give the app to other people, build it:
 2. Set your own `ios.bundleIdentifier` and `android.package` in `app.json`, such as `com.example.myapp`.
 3. Build with [EAS](https://docs.expo.dev/build/introduction/): `npx eas-cli@latest build --platform android` (or `ios`).
 
-`npx expo start --web` runs the app in a browser, which is handy for a quick look. Think before shipping it: a browser has no keychain, so the tokens sit in the page's storage, where any script on the page can read them. The dashboard is the web app.
+`bunx expo start --web` runs the app in a browser, which is handy for a quick look. Think before shipping it: a browser has no keychain, so the tokens sit in the page's storage, where any script on the page can read them. The dashboard is the web app.
 
 When a web version is worth that, for example for iPhone users before you have an Apple developer account, build it for a static host:
 
 ```sh
 cd apps/mobile
-EXPO_PUBLIC_API_URL=https://api.example.com/api npm run export:web
+EXPO_PUBLIC_API_URL=https://api.example.com/api bun run export:web
 ```
 
 Publish `dist/`, with `index.html` as both the index and the error page, so an address inside the app loads directly. `export:web` also moves the icon fonts out of `node_modules` folders inside `dist/`. Hosts that skip such folders when they upload, as Sevalla's static sites do, would otherwise leave every icon an empty box.
@@ -350,7 +350,7 @@ npx eas-cli@latest update:configure
 That adds the project's update address to `app.json`. `eas.json` already gives each build profile its channel: `preview` for builds you share, `production` for the stores. Before the first update, store `EXPO_PUBLIC_API_URL` as an EAS environment variable (step 1 of [Put it on a phone for real](#put-it-on-a-phone-for-real)). An update reads only those, and one published without it leaves every phone that takes it unable to reach the API. Then, after a change:
 
 ```sh
-npm run update:preview        # or update:production
+bun run update:preview        # or update:production; npm run … in an app made with npm
 ```
 
 A phone takes the update after one or two launches. An update reaches only builds of the same `version` in `app.json` (`runtimeVersion` is `appVersion`). Anything native needs a new build and a new `version`: the icon, the splash screen, the notification icon, a permission, or a new package with native code.

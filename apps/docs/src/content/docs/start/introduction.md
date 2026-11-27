@@ -8,7 +8,7 @@ Nevela is a Laravel-first fullstack framework. Laravel owns the data, the rules 
 ## The idea in one example
 
 ```sh
-npm install -g create-nevela    # once
+bun add -g create-nevela        # once (npm install -g create-nevela without Bun)
 nevela new my-app
 ```
 

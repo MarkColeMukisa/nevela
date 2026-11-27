@@ -158,7 +158,7 @@ You can do the same on the phone, signed in as the administrator: **Account**, t
 
 ```sh
 cd apps/mobile
-npx expo start
+bunx expo start    # npx expo start in an app made with npm
 ```
 
 Scan the code with Expo Go, on a phone on the same Wi-Fi as your computer. [The mobile app](/guides/mobile-app/) says what to do when the phone can't find the API.

@@ -96,7 +96,7 @@ There is no `routes/api.php`. Nevela registers its own routes under `/api`, from
 | File | What it does |
 |---|---|
 | `nevela` | The app's own launcher, for anyone without the `nevela` command installed: `php nevela resource …`, `php nevela upgrade` and the rest, without `cd apps/api`. See [Commands](/reference/commands/#the-php-nevela-launcher). |
-| `package.json` | Shortcuts for people who prefer their package manager: `pnpm dev` is `nevela dev`, and `pnpm nevela <command>` is `nevela <command>`. |
+| `package.json` | Shortcuts for people who prefer their package manager: `bun run dev` is `nevela dev`, and `bun run nevela <command>` is `nevela <command>` (`npm run …` or `pnpm …` in an app made with those). |
 | `.gitignore` | Keeps `vendor`, `node_modules`, `.env` files and build output out of git. |
 
 ## Where your code goes

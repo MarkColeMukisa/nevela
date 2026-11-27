@@ -95,5 +95,5 @@ Go to the [Quickstart](/start/quickstart/). It installs the `nevela` command and
 | `php: command not found` right after installing Herd | Open a new terminal window. |
 | `Nevela runs on the latest PHP, 8.5 or newer. You have 8.4.` | In Herd, choose PHP 8.5 under **PHP**, and open a new terminal. Elsewhere, install PHP 8.5. |
 | `Nevela needs Node.js 20 or newer.` | `nvm install 22`, or the LTS from nodejs.org. |
-| `npm install -g` fails with `EACCES` (macOS, Linux) | Your Node.js was installed for all users. Use Herd's or nvm's, or `npx create-nevela my-app`. |
+| `npm install -g` fails with `EACCES` (macOS, Linux) | Your Node.js was installed for all users. Install the command with Bun instead, `bun add -g create-nevela`, which needs no administrator rights. Or use Herd's or nvm's Node.js, or `npx create-nevela my-app`. |
 | "Composer couldn't download Laravel's packages" (Windows) | Delete the app's folder and run `nevela new` again. If it keeps happening, add the folder to your antivirus's exclusions. |
