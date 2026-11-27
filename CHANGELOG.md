@@ -8,6 +8,10 @@ The first line under a version, in italics, is the release in a few words. The d
 
 ## [Unreleased]
 
+## [0.45.1] - 2026-11-27
+
+_Bun first in the docs and installer, and the rally on the home page_
+
 ### Changed
 
 - The `nevela` command's own hints follow your package manager: `nevela --help`, and its messages when the command isn't installed or an app has no name, say `bun add -g create-nevela` and `bun create nevela@latest my-app` where Bun is installed, the pnpm forms when run through pnpm, and npm's otherwise. Before, they always said npm or pnpm.
@@ -1120,7 +1124,8 @@ _The first release_
 - This changelog and a release script, `pnpm release`.
 - CI: package tests on PHP 8.3 and 8.4, a generate, migrate and seed run in the Laravel app, a type-check and build of the web app, and a new app created with `create-nevela` and built.
 
-[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.45.0...HEAD
+[Unreleased]: https://github.com/MarkColeMukisa/nevela/compare/v0.45.1...HEAD
+[0.45.1]: https://github.com/MarkColeMukisa/nevela/compare/v0.45.0...v0.45.1
 [0.45.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.44.0...v0.45.0
 [0.44.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.43.0...v0.44.0
 [0.43.0]: https://github.com/MarkColeMukisa/nevela/compare/v0.42.0...v0.43.0

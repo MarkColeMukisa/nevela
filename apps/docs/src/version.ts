@@ -13,11 +13,11 @@ export const RELEASE_URL = "/reference/changelog/";
  * the version beside it can never disagree with the version in package.json. Both the
  * hero pill and the site banner read it.
  */
-export const RELEASE_HEADLINE = "The activity log sealed, what was turned away shown, Bun by default";
+export const RELEASE_HEADLINE = "Bun first in the docs and installer, and the rally on the home page";
 
 /** The banner across the top of every page. Points at what the release added. */
 export const RELEASE_BANNER = {
-  text: "New: every activity log entry is sealed to the one before, so a changed or deleted entry shows, and deploy:check says where. Administrators see what was turned away, and new apps install with Bun.",
-  href: "/guides/security/#the-activity-log-sealed",
-  label: "Security",
+  text: "New: the speed rally, Nevela against Rust, Bun, Grit, Next.js and Laravel, with every number and what held each app back. And the nevela command installs with Bun: bun add -g create-nevela.",
+  href: "/benchmarks/",
+  label: "Benchmarks",
 };
